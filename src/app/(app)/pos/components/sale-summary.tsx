@@ -20,7 +20,7 @@ interface SaleSummaryProps {
 }
 
 export function SaleSummary({ onOpenValidateDialog, validatedFolios }: SaleSummaryProps) {
-  const { control, formState, setValue } = useFormContext();
+  const { control, formState, setValue, watch } = useFormContext();
   
   const watchedItems = useWatch({ control, name: "items" });
   const watchedPayments = useWatch({ control, name: "payments" });
@@ -53,7 +53,7 @@ export function SaleSummary({ onOpenValidateDialog, validatedFolios }: SaleSumma
     const commissionCost = watch('cardCommission') || 0;
     
     return { subTotal: newSubTotal, tax: newTax, total: newTotalAmount, commission: commissionCost };
-  }, [watchedItems, watch]);
+  }, [watchedItems]);
 
   const hasItems = watchedItems && watchedItems.some((item: any) => item.inventoryItemId !== COMMISSION_ITEM_ID);
 
