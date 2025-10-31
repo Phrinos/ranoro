@@ -33,8 +33,8 @@ export default function ComisionesContent({ allServices, allUsers }: ComisionesC
   const monthOptions = useMemo(() => generateMonthOptions(), []);
   const [selectedMonth, setSelectedMonth] = useState<string>(monthOptions[0]?.value || '');
 
-  const performanceData = useMemo(() => {
-    if (!selectedMonth || allUsers.length === 0) return [];
+  const { advisorPerformance, technicianPerformance } = useMemo(() => {
+    if (!selectedMonth || allUsers.length === 0) return { advisorPerformance: [], technicianPerformance: [] };
     
     const [year, month] = selectedMonth.split('-').map(Number);
     const startDate = startOfMonth(new Date(year, month - 1));
@@ -46,15 +46,12 @@ export default function ComisionesContent({ allServices, allUsers }: ComisionesC
         return s.status === 'Entregado' && deliveryDate && isValid(deliveryDate) && isWithinInterval(deliveryDate, interval);
     });
     
-    const advisors = allUsers.filter(u => u.functions?.includes('asesor') || u.role.toLowerCase().includes('asesor'));
-
-    return advisors.map(advisor => {
+    const advisors = allUsers.filter(u => !u.isArchived && (u.functions?.includes('asesor') || u.role.toLowerCase().includes('asesor')));
+    const technicians = allUsers.filter(u => !u.isArchived && (u.functions?.includes('tecnico') || u.role.toLowerCase().includes('tecnico')));
+    
+    const advisorData = advisors.map(advisor => {
         const servicesForAdvisor = completedServicesInRange.filter(s => s.serviceAdvisorId === advisor.id);
-        const totalRevenue = servicesForAdvisor.reduce((sum, s) => {
-            const serviceTotal = Number(s.totalCost) || 0;
-            return sum + serviceTotal;
-        }, 0);
-
+        const totalRevenue = servicesForAdvisor.reduce((sum, s) => sum + (Number(s.totalCost) || 0), 0);
         return {
             id: advisor.id,
             name: advisor.name,
@@ -65,54 +62,137 @@ export default function ComisionesContent({ allServices, allUsers }: ComisionesC
     .filter(data => data.servicesCount > 0)
     .sort((a,b) => b.generatedRevenue - a.generatedRevenue);
 
+    const techPerformanceMap: Record<string, { id: string; name: string; services: Set<string>; generatedRevenue: number; }> = {};
+
+    completedServicesInRange.forEach(service => {
+        const serviceTotal = Number(service.totalCost) || 0;
+        const techsInService = new Set<string>();
+
+        (service.serviceItems || []).forEach(item => {
+            const techId = (item as any).technicianId;
+            if (techId) {
+                techsInService.add(techId);
+            }
+        });
+        
+        // Also consider the main technician if assigned
+        if (service.technicianId) {
+          techsInService.add(service.technicianId);
+        }
+
+        techsInService.forEach(techId => {
+            if (!techPerformanceMap[techId]) {
+                const techUser = technicians.find(t => t.id === techId);
+                if (techUser) {
+                    techPerformanceMap[techId] = {
+                        id: techId,
+                        name: techUser.name,
+                        services: new Set(),
+                        generatedRevenue: 0,
+                    };
+                }
+            }
+            if (techPerformanceMap[techId]) {
+                if (!techPerformanceMap[techId].services.has(service.id)) {
+                    techPerformanceMap[techId].services.add(service.id);
+                    techPerformanceMap[techId].generatedRevenue += serviceTotal;
+                }
+            }
+        });
+    });
+
+    const technicianData = Object.values(techPerformanceMap)
+        .map(tech => ({
+            ...tech,
+            servicesCount: tech.services.size
+        }))
+        .sort((a, b) => b.generatedRevenue - a.generatedRevenue);
+
+    return { advisorPerformance: advisorData, technicianPerformance: technicianData };
+
   }, [selectedMonth, allUsers, allServices]);
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <CardTitle>Rendimiento de Asesores por Mes</CardTitle>
-            <CardDescription>Servicios completados y monto total ingresado por cada asesor en el mes seleccionado.</CardDescription>
-          </div>
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-full sm:w-[200px] bg-card">
-              <SelectValue placeholder="Seleccionar mes..." />
-            </SelectTrigger>
-            <SelectContent>
-              {monthOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </CardHeader>
-      <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {performanceData.length > 0 ? performanceData.map(person => (
-          <Card key={person.id} className="shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <UserIcon className="h-5 w-5" />
-                {person.name}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-muted-foreground flex items-center gap-2"><Wrench className="h-4 w-4"/> Servicios Completados:</span>
-                <span className="font-bold text-lg">{person.servicesCount}</span>
-              </div>
-              <div className="flex justify-between items-center border-t pt-2 mt-2">
-                <span className="text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4" /> Trabajo Ingresado:</span>
-                <span className="font-bold text-lg text-primary">{formatCurrency(person.generatedRevenue)}</span>
-              </div>
-            </CardContent>
-          </Card>
-        )) : (
-            <div className="sm:col-span-2 lg:col-span-3 text-center text-muted-foreground p-8">
-                No hay datos de rendimiento para el mes seleccionado.
+    <div className="space-y-8">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle>Rendimiento de Asesores por Mes</CardTitle>
+              <CardDescription>Servicios completados y monto total ingresado por cada asesor en el mes seleccionado.</CardDescription>
             </div>
-        )}
-      </CardContent>
-    </Card>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-full sm:w-[200px] bg-card">
+                <SelectValue placeholder="Seleccionar mes..." />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map(option => (
+                  <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {advisorPerformance.length > 0 ? advisorPerformance.map(person => (
+            <Card key={person.id} className="shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <UserIcon className="h-5 w-5" />
+                  {person.name}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground flex items-center gap-2"><Wrench className="h-4 w-4"/> Servicios Completados:</span>
+                  <span className="font-bold text-lg">{person.servicesCount}</span>
+                </div>
+                <div className="flex justify-between items-center border-t pt-2 mt-2">
+                  <span className="text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4" /> Trabajo Ingresado:</span>
+                  <span className="font-bold text-lg text-primary">{formatCurrency(person.generatedRevenue)}</span>
+                </div>
+              </CardContent>
+            </Card>
+          )) : (
+              <div className="sm:col-span-2 lg:col-span-3 text-center text-muted-foreground p-8">
+                  No hay datos de asesores para el mes seleccionado.
+              </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+            <CardTitle>Rendimiento de Técnicos por Mes</CardTitle>
+            <CardDescription>Servicios en los que participó cada técnico y el valor total de dichos servicios.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {technicianPerformance.length > 0 ? technicianPerformance.map(person => (
+                <Card key={person.id} className="shadow-sm bg-muted/50">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <UserIcon className="h-5 w-5" />
+                            {person.name}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2 text-sm">
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground flex items-center gap-2"><Wrench className="h-4 w-4"/> Servicios Atendidos:</span>
+                            <span className="font-bold text-lg">{person.servicesCount}</span>
+                        </div>
+                        <div className="flex justify-between items-center border-t pt-2 mt-2">
+                            <span className="text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4" /> Trabajo Realizado:</span>
+                            <span className="font-bold text-lg text-primary">{formatCurrency(person.generatedRevenue)}</span>
+                        </div>
+                    </CardContent>
+                </Card>
+            )) : (
+                <div className="sm:col-span-2 lg:col-span-3 text-center text-muted-foreground p-8">
+                    No hay datos de técnicos para el mes seleccionado.
+                </div>
+            )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
