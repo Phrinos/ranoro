@@ -74,24 +74,30 @@ export function RendimientoPersonalContent() {
       const commissionRate = user.commissionRate || 0;
 
       for (const service of completedServicesInRange) {
-        // --- Cálculo de Ingresos Generados ---
-        // Si el usuario es el asesor del servicio, se le atribuye el total del servicio.
+        const serviceTotal = Number(service.totalCost) || 0;
+        let userWasInvolved = false;
+
+        // --- Atribución de Ingresos Generados ---
+        // 1. Contar para el asesor del servicio
         if (service.serviceAdvisorId === user.id) {
-          generatedRevenue += Number(service.totalCost) || 0;
-        } 
-        // Si el usuario es un técnico, se le atribuye solo los ítems que tiene asignados.
-        else {
-          for (const item of service.serviceItems || []) {
-            if ((item as any).technicianId === user.id) {
-              generatedRevenue += Number(item.sellingPrice) || 0;
-            }
-          }
+          generatedRevenue += serviceTotal;
+          userWasInvolved = true;
+        }
+
+        // 2. Contar para los técnicos del servicio
+        const technicianIdsInService = new Set(
+          (service.serviceItems || []).map(item => (item as any).technicianId).filter(Boolean)
+        );
+
+        if (technicianIdsInService.has(user.id)) {
+          // Si el técnico participó, se le acredita el valor total del servicio
+          generatedRevenue += serviceTotal;
+          userWasInvolved = true;
         }
 
         // --- Cálculo de Comisiones ---
-        // La comisión se calcula por ítem para el técnico asignado a ese ítem.
-        if (commissionRate > 0) {
-          for (const item of service.serviceItems || []) {
+        if (userWasInvolved && commissionRate > 0) {
+           for (const item of service.serviceItems || []) {
             let userIsResponsibleForItem = false;
             
             // Técnico es responsable de su ítem.
