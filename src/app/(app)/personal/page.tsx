@@ -1,4 +1,5 @@
 
+// src/app/(app)/personal/page.tsx
 
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
@@ -12,7 +13,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 
 const RendimientoPersonalContent = lazy(() => import('./components/rendimiento-content').then(m => ({ default: m.RendimientoPersonalContent })));
-const ComisionesContent = lazy(() => import('./components/comisiones-content').then(m => ({ default: m.ComisionesContent })));
+const ComisionesContent = lazy(() => import('./components/comisiones-content'));
 const UsuariosPageContent = lazy(() => import('./components/usuarios-content').then(m => ({ default: m.UsuariosPageContent })));
 const RolesPageContent = lazy(() => import('./components/roles-content').then(m => ({ default: m.RolesPageContent })));
 
