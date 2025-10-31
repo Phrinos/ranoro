@@ -12,6 +12,32 @@ import { Loader2, User as UserIcon, Wrench, DollarSign } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { Badge } from "@/components/ui/badge";
 
+
+// Helpers
+const toNumber = (v: unknown) => {
+  const n = typeof v === 'string' ? Number(v) : (Number(v) as number);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const getServiceDate = (s: ServiceRecord) => {
+  // Usa la mejor fecha disponible: entrega > completado > creado > ISO genérico
+  return (
+    parseDate((s as any).deliveryDateTime) ||
+    parseDate((s as any).completedAt) ||
+    parseDate((s as any).createdAt) ||
+    (typeof (s as any).date === 'string' ? parseISO((s as any).date) : undefined)
+  );
+};
+
+const getServiceTotal = (s: ServiceRecord) => {
+  // Asegura compatibilidad si alguna vez guardaste con otra clave
+  return toNumber((s as any).total ?? (s as any).totalCost ?? (s as any).grandTotal);
+};
+
+// Si quieres filtrar por estado, ajusta aquí. Por defecto: cuenta solo los servicios del mes entregados.
+const shouldCount = (s: ServiceRecord) => s.status === 'Entregado';
+
+
 interface ComisionesContentProps {
   allServices: ServiceRecord[];
   allUsers: User[];
@@ -34,83 +60,78 @@ export default function ComisionesContent({ allServices, allUsers }: ComisionesC
   const [selectedMonth, setSelectedMonth] = useState<string>(monthOptions[0]?.value || '');
 
   const { advisorPerformance, technicianPerformance } = useMemo(() => {
-    if (!selectedMonth || allUsers.length === 0) return { advisorPerformance: [], technicianPerformance: [] };
-    
+    if (!selectedMonth) return { advisorPerformance: [], technicianPerformance: [] };
+
     const [year, month] = selectedMonth.split('-').map(Number);
     const startDate = startOfMonth(new Date(year, month - 1));
     const endDate = endOfMonth(startDate);
     const interval = { start: startDate, end: endDate };
 
-    const completedServicesInRange = allServices.filter(s => {
-        const deliveryDate = parseDate(s.deliveryDateTime);
-        return s.status === 'Entregado' && deliveryDate && isValid(deliveryDate) && isWithinInterval(deliveryDate, interval);
-    });
-    
-    const advisors = allUsers.filter(u => !u.isArchived && (u.functions?.includes('asesor') || u.role.toLowerCase().includes('asesor')));
-    const technicians = allUsers.filter(u => !u.isArchived && (u.functions?.includes('tecnico') || u.role.toLowerCase().includes('tecnico')));
-    
-    const advisorData = advisors.map(advisor => {
-        const servicesForAdvisor = completedServicesInRange.filter(s => s.serviceAdvisorId === advisor.id);
-        const totalRevenue = servicesForAdvisor.reduce((sum, s) => sum + (Number(s.totalCost) || 0), 0);
-        return {
-            id: advisor.id,
-            name: advisor.name,
-            servicesCount: servicesForAdvisor.length,
-            generatedRevenue: totalRevenue,
-        };
-    })
-    .filter(data => data.servicesCount > 0)
-    .sort((a,b) => b.generatedRevenue - a.generatedRevenue);
+    // Mapa id -> nombre desde usuarios (por si quieres sobreescribir nombres)
+    const userNameById = new Map<string, string>(
+      allUsers.map(u => [u.id, u.name] as const)
+    );
 
-    const techPerformanceMap: Record<string, { id: string; name: string; services: Set<string>; generatedRevenue: number; }> = {};
-
-    completedServicesInRange.forEach(service => {
-        const serviceTotal = Number(service.totalCost) || 0;
-        const techsInService = new Set<string>();
-
-        (service.serviceItems || []).forEach(item => {
-            const techId = (item as any).technicianId;
-            if (techId) {
-                techsInService.add(techId);
-            }
-        });
-        
-        // Also consider the main technician if assigned
-        if (service.technicianId) {
-          techsInService.add(service.technicianId);
-        }
-
-        techsInService.forEach(techId => {
-            if (!techPerformanceMap[techId]) {
-                const techUser = technicians.find(t => t.id === techId);
-                if (techUser) {
-                    techPerformanceMap[techId] = {
-                        id: techId,
-                        name: techUser.name,
-                        services: new Set(),
-                        generatedRevenue: 0,
-                    };
-                }
-            }
-            if (techPerformanceMap[techId]) {
-                if (!techPerformanceMap[techId].services.has(service.id)) {
-                    techPerformanceMap[techId].services.add(service.id);
-                    techPerformanceMap[techId].generatedRevenue += serviceTotal;
-                }
-            }
-        });
+    // Filtra por mes y (opcionalmente) por estado
+    const servicesInRange = (allServices || []).filter(s => {
+      const d = getServiceDate(s);
+      return d && isValid(d) && isWithinInterval(d, interval) && shouldCount(s);
     });
 
-    const technicianData = Object.values(techPerformanceMap)
-        .map(tech => ({
-            ...tech,
-            servicesCount: tech.services.size
-        }))
-        .sort((a, b) => b.generatedRevenue - a.generatedRevenue);
+    // --- Agrupar por ASESOR (serviceAdvisorId)
+    const advisorMap = new Map<
+      string,
+      { id: string; name: string; servicesCount: number; generatedRevenue: number }
+    >();
+
+    for (const s of servicesInRange) {
+      const id = (s as any).serviceAdvisorId || 'sin-asesor';
+      const name =
+        (s as any).serviceAdvisorName ||
+        userNameById.get(id) ||
+        'Sin asesor';
+
+      const total = getServiceTotal(s);
+      if (!advisorMap.has(id)) {
+        advisorMap.set(id, { id, name, servicesCount: 0, generatedRevenue: 0 });
+      }
+      const acc = advisorMap.get(id)!;
+      acc.servicesCount += 1;
+      acc.generatedRevenue += total;
+    }
+
+    const advisorData = Array.from(advisorMap.values())
+      .filter(a => a.servicesCount > 0)
+      .sort((a, b) => b.generatedRevenue - a.generatedRevenue);
+
+    // --- Agrupar por TÉCNICO (technicianId)
+    const techMap = new Map<
+      string,
+      { id: string; name: string; servicesCount: number; generatedRevenue: number }
+    >();
+
+    for (const s of servicesInRange) {
+      const id = (s as any).technicianId || 'sin-tecnico';
+      const name =
+        (s as any).technicianName ||
+        userNameById.get(id) ||
+        'Sin técnico';
+
+      const total = getServiceTotal(s);
+      if (!techMap.has(id)) {
+        techMap.set(id, { id, name, servicesCount: 0, generatedRevenue: 0 });
+      }
+      const acc = techMap.get(id)!;
+      acc.servicesCount += 1;
+      acc.generatedRevenue += total;
+    }
+
+    const technicianData = Array.from(techMap.values())
+      .filter(t => t.servicesCount > 0)
+      .sort((a, b) => b.generatedRevenue - a.generatedRevenue);
 
     return { advisorPerformance: advisorData, technicianPerformance: technicianData };
-
-  }, [selectedMonth, allUsers, allServices]);
+  }, [selectedMonth, allServices, allUsers]);
 
   return (
     <div className="space-y-8">
@@ -181,7 +202,7 @@ export default function ComisionesContent({ allServices, allUsers }: ComisionesC
                             <span className="font-bold text-lg">{person.servicesCount}</span>
                         </div>
                         <div className="flex justify-between items-center border-t pt-2 mt-2">
-                            <span className="text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4" /> Trabajo Realizado:</span>
+                            <span className="text-muted-foreground flex items-center gap-2"><DollarSign className="h-4 w-4" /> Trabajo Ingresado:</span>
                             <span className="font-bold text-lg text-primary">{formatCurrency(person.generatedRevenue)}</span>
                         </div>
                     </CardContent>
