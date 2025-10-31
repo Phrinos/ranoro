@@ -73,36 +73,29 @@ export function RendimientoPersonalContent() {
         let totalCommission = 0;
         const commissionRate = user.commissionRate || 0;
 
-        // Iterar sobre los servicios completados para calcular ingresos y comisiones
         for (const service of completedServicesInRange) {
-            // Verificar si el usuario fue el asesor de este servicio
-            if (service.serviceAdvisorId === user.id) {
-                const serviceTotal = (service.totalCost || 0);
-                generatedRevenue += serviceTotal;
+            for (const item of service.serviceItems || []) {
+                const itemPrice = (item as any).sellingPrice || 0;
+                let userIsResponsible = false;
                 
-                // La comisión del asesor se calcula sobre la ganancia total del servicio
-                if (commissionRate > 0) {
-                    const serviceProfit = calcEffectiveProfit(service, inventoryItems);
-                    if (serviceProfit > 0) {
-                        totalCommission += serviceProfit * (commissionRate / 100);
-                    }
+                // Asigna ingreso y comisión al técnico si está definido en el ítem.
+                if ((item as any).technicianId === user.id) {
+                    userIsResponsible = true;
+                    generatedRevenue += itemPrice;
+                } 
+                // Si no hay técnico, se le asigna al asesor del servicio.
+                else if (!(item as any).technicianId && service.serviceAdvisorId === user.id) {
+                    userIsResponsible = true;
+                    generatedRevenue += itemPrice;
                 }
-            } else {
-                // Si no es el asesor, verificar si fue técnico de algún item
-                for (const item of service.serviceItems || []) {
-                    if ((item as any).technicianId === user.id) {
-                        const itemPrice = (item as any).sellingPrice || 0;
-                        generatedRevenue += itemPrice;
 
-                        // La comisión del técnico se calcula sobre la ganancia del item específico
-                        if (commissionRate > 0) {
-                             const suppliesCost = inventoryService.getSuppliesCostForItem(item, inventoryItems);
-                             const itemProfit = itemPrice - suppliesCost;
-                             if (itemProfit > 0) {
-                                totalCommission += itemProfit * (commissionRate / 100);
-                             }
-                        }
-                    }
+                // Si el usuario (sea técnico o asesor) es responsable del ingreso, calcula su comisión.
+                if (userIsResponsible && commissionRate > 0) {
+                     const suppliesCost = inventoryService.getSuppliesCostForItem(item, inventoryItems);
+                     const itemProfit = itemPrice - suppliesCost;
+                     if (itemProfit > 0) {
+                        totalCommission += itemProfit * (commissionRate / 100);
+                     }
                 }
             }
         }
