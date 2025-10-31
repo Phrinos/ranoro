@@ -69,51 +69,66 @@ export function RendimientoPersonalContent() {
     const activeUsers = allUsers.filter(u => !u.isArchived);
     
     return activeUsers.map(user => {
-        let generatedRevenue = 0;
-        let totalCommission = 0;
-        const commissionRate = user.commissionRate || 0;
+      let generatedRevenue = 0;
+      let totalCommission = 0;
+      const commissionRate = user.commissionRate || 0;
 
-        for (const service of completedServicesInRange) {
-            for (const item of service.serviceItems || []) {
-                const itemPrice = (item as any).sellingPrice || 0;
-                let userIsResponsible = false;
-                
-                // Asigna ingreso y comisión al técnico si está definido en el ítem.
-                if ((item as any).technicianId === user.id) {
-                    userIsResponsible = true;
-                    generatedRevenue += itemPrice;
-                } 
-                // Si no hay técnico, se le asigna al asesor del servicio.
-                else if (!(item as any).technicianId && service.serviceAdvisorId === user.id) {
-                    userIsResponsible = true;
-                    generatedRevenue += itemPrice;
-                }
-
-                // Si el usuario (sea técnico o asesor) es responsable del ingreso, calcula su comisión.
-                if (userIsResponsible && commissionRate > 0) {
-                     const suppliesCost = inventoryService.getSuppliesCostForItem(item, inventoryItems);
-                     const itemProfit = itemPrice - suppliesCost;
-                     if (itemProfit > 0) {
-                        totalCommission += itemProfit * (commissionRate / 100);
-                     }
-                }
+      for (const service of completedServicesInRange) {
+        // --- Cálculo de Ingresos Generados ---
+        // Si el usuario es el asesor del servicio, se le atribuye el total del servicio.
+        if (service.serviceAdvisorId === user.id) {
+          generatedRevenue += Number(service.totalCost) || 0;
+        } 
+        // Si el usuario es un técnico, se le atribuye solo los ítems que tiene asignados.
+        else {
+          for (const item of service.serviceItems || []) {
+            if ((item as any).technicianId === user.id) {
+              generatedRevenue += Number(item.sellingPrice) || 0;
             }
+          }
         }
-        
-        const baseSalary = user.monthlySalary || 0;
-        const totalSalary = baseSalary + totalCommission;
 
-        return {
-          id: user.id,
-          name: user.name,
-          role: user.role,
-          baseSalary,
-          generatedRevenue,
-          commission: totalCommission,
-          totalSalary
-        };
-      })
-      .sort((a,b) => b.totalSalary - a.totalSalary);
+        // --- Cálculo de Comisiones ---
+        // La comisión se calcula por ítem para el técnico asignado a ese ítem.
+        if (commissionRate > 0) {
+          for (const item of service.serviceItems || []) {
+            let userIsResponsibleForItem = false;
+            
+            // Técnico es responsable de su ítem.
+            if ((item as any).technicianId === user.id) {
+              userIsResponsibleForItem = true;
+            } 
+            // Asesor es responsable del ítem si no hay técnico asignado a ese ítem.
+            else if (service.serviceAdvisorId === user.id && !(item as any).technicianId) {
+              userIsResponsibleForItem = true;
+            }
+
+            if (userIsResponsibleForItem) {
+              const itemPrice = Number(item.sellingPrice) || 0;
+              const suppliesCost = inventoryService.getSuppliesCostForItem(item, inventoryItems);
+              const itemProfit = itemPrice - suppliesCost;
+              if (itemProfit > 0) {
+                totalCommission += itemProfit * (commissionRate / 100);
+              }
+            }
+          }
+        }
+      }
+
+      const baseSalary = user.monthlySalary || 0;
+      const totalSalary = baseSalary + totalCommission;
+
+      return {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        baseSalary,
+        generatedRevenue,
+        commission: totalCommission,
+        totalSalary
+      };
+    })
+    .sort((a,b) => b.totalSalary - a.totalSalary);
   }, [dateRange, allUsers, allServices, inventoryItems]);
 
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
