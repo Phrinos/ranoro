@@ -12,6 +12,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 
 const RendimientoPersonalContent = lazy(() => import('./components/rendimiento-content').then(m => ({ default: m.RendimientoPersonalContent })));
+const ComisionesContent = lazy(() => import('./components/comisiones-content').then(m => ({ default: m.ComisionesContent })));
 const UsuariosPageContent = lazy(() => import('./components/usuarios-content').then(m => ({ default: m.UsuariosPageContent })));
 const RolesPageContent = lazy(() => import('./components/roles-content').then(m => ({ default: m.RolesPageContent })));
 
@@ -26,6 +27,7 @@ function PageInner() {
   const [activeTab, setActiveTab] = useState(defaultTab);
     
   const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [allRoles, setAllRoles] = useState<AppRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -43,6 +45,7 @@ function PageInner() {
 
     const unsubs: (() => void)[] = [
       adminService.onUsersUpdate(setAllUsers),
+      serviceService.onServicesUpdate(setAllServices),
       adminService.onRolesUpdate((roles) => {
         setAllRoles(roles);
         setIsLoading(false);
@@ -55,6 +58,7 @@ function PageInner() {
     
   const tabs = [
     { value: "rendimiento", label: "Rendimiento", content: <Suspense fallback={<Loader2 className="animate-spin" />}><RendimientoPersonalContent /></Suspense> },
+    { value: "comisiones", label: "Comisiones", content: <Suspense fallback={<Loader2 className="animate-spin" />}><ComisionesContent allServices={allServices} allUsers={allUsers} /></Suspense> },
     { value: "usuarios", label: "Personal", content: <Suspense fallback={<Loader2 className="animate-spin" />}><UsuariosPageContent currentUser={currentUser} initialUsers={allUsers} initialRoles={allRoles} /></Suspense> },
     { value: "roles", label: "Roles y Permisos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><RolesPageContent currentUser={currentUser} initialRoles={allRoles} /></Suspense> },
   ];
