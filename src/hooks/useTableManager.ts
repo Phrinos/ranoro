@@ -1,15 +1,14 @@
 
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { isWithinInterval, isValid, startOfDay, endOfDay, compareAsc, compareDesc, startOfMonth, endOfMonth as dfnsEndOdMonth } from 'date-fns';
+import { useState, useMemo, useEffect } from 'react';
+import { isWithinInterval, isValid, startOfDay, endOfDay, compareAsc, compareDesc } from 'date-fns';
 import { parseDate } from '@/lib/forms';
-
 
 interface DateRange {
     from: Date | undefined;
     to?: Date | undefined;
-  }
+}
 
 type FilterFn<T> = (item: T) => Date | null;
 
@@ -19,6 +18,7 @@ interface UseTableManagerOptions<T> {
   searchKeys: (keyof T | string)[];
   dateFilterKey: keyof T | string | FilterFn<T>;
   itemsPerPage?: number;
+  initialDateRange?: DateRange;
 }
 
 const getNestedValue = (obj: any, path: string) =>
@@ -37,20 +37,20 @@ export function useTableManager<T extends Record<string, any>>({
   searchKeys,
   dateFilterKey,
   itemsPerPage = 20,
+  initialDateRange,
 }: UseTableManagerOptions<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<string>(initialSortOption);
   const [otherFilters, setOtherFilters] = useState<Record<string, string | 'all'>>({});
   const [currentPage, setCurrentPage] = useState(1);
-  
-  // DateRange is now managed by the parent component
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: startOfMonth(new Date()), to: dfnsEndOdMonth(new Date()) });
-
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(initialDateRange);
 
   const fullFilteredData = useMemo(() => {
     let data = [...initialData];
+    const hasSearchTerm = searchTerm.trim() !== '';
 
-    if (searchTerm) {
+    // 1. Apply search filter first
+    if (hasSearchTerm) {
       const q = searchTerm.toLowerCase();
       data = data.filter(item =>
         searchKeys.some(key => {
@@ -67,7 +67,8 @@ export function useTableManager<T extends Record<string, any>>({
       );
     }
 
-    if (dateFilterKey && dateRange?.from) {
+    // 2. Apply date range filter ONLY if there is no search term
+    if (!hasSearchTerm && dateFilterKey && dateRange?.from) {
       const from = startOfDay(dateRange.from);
       const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
       data = data.filter(item => {
@@ -82,6 +83,7 @@ export function useTableManager<T extends Record<string, any>>({
       });
     }
 
+    // 3. Apply other select-based filters
     Object.entries(otherFilters).forEach(([key, value]) => {
       if (value !== 'all' && value !== undefined) {
         data = data.filter(item => {
@@ -95,6 +97,7 @@ export function useTableManager<T extends Record<string, any>>({
       }
     });
 
+    // 4. Apply sorting
     if (sortOption !== 'default_order') {
       data.sort((a, b) => {
         const [sortKey, dir] = sortOption.split('_');
@@ -150,7 +153,7 @@ export function useTableManager<T extends Record<string, any>>({
     otherFilters,
     setOtherFilters,
     paginatedData,
-    filteredData: paginatedData, // for backward compatibility
+    filteredData: paginatedData,
     fullFilteredData,
     currentPage,
     totalPages,
