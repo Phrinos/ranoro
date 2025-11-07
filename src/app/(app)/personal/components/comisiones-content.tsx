@@ -101,31 +101,28 @@ export default function ComisionesContent({ allServices, allUsers }: ComisionesC
       .filter(a => a.servicesCount > 0)
       .sort((a, b) => b.generatedRevenue - a.generatedRevenue);
 
-    // --- Agrupar por TÉCNICO (technicianId en cada serviceItem)
+    // --- Agrupar por TÉCNICO (technicianId)
     const techMap = new Map<
       string,
       { id: string; name: string; servicesCount: number; generatedRevenue: number }
     >();
 
     for (const s of servicesInRange) {
-      if (!s.serviceItems || s.serviceItems.length === 0) continue;
+      const id = (s as any).technicianId || 'sin-tecnico';
+      if(id === 'sin-tecnico') continue;
+      
+      const name =
+        (s as any).technicianName ||
+        userNameById.get(id) ||
+        'Sin técnico';
 
-      for (const item of s.serviceItems) {
-        const id = (item as any).technicianId || 'sin-tecnico';
-        if (id === 'sin-tecnico') continue;
-        
-        const name = (item as any).technicianName || userNameById.get(id) || 'Sin técnico';
-
-        const itemRevenue = Number(item.sellingPrice || 0);
-
-        if (!techMap.has(id)) {
-          techMap.set(id, { id, name, servicesCount: 0, generatedRevenue: 0 });
-        }
-        
-        const acc = techMap.get(id)!;
-        acc.servicesCount += 1;
-        acc.generatedRevenue += itemRevenue;
+      const total = getServiceTotal(s);
+      if (!techMap.has(id)) {
+        techMap.set(id, { id, name, servicesCount: 0, generatedRevenue: 0 });
       }
+      const acc = techMap.get(id)!;
+      acc.servicesCount += 1;
+      acc.generatedRevenue += total;
     }
 
     const technicianData = Array.from(techMap.values())
