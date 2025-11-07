@@ -75,37 +75,33 @@ export function RendimientoPersonalContent() {
 
       for (const service of completedServicesInRange) {
         const serviceTotal = Number(service.totalCost) || 0;
-        let userWasInvolved = false;
+        let userWasInvolvedAsAdvisor = false;
+        let userWasInvolvedAsTechnician = false;
 
         // --- Atribución de Ingresos Generados ---
-        // 1. Contar para el asesor del servicio
-        if (service.serviceAdvisorId === user.id) {
+        // 1. Asesor del servicio
+        if (service.serviceAdvisorId === user.id || service.serviceAdvisorName === user.name) {
           generatedRevenue += serviceTotal;
-          userWasInvolved = true;
+          userWasInvolvedAsAdvisor = true;
         }
 
-        // 2. Contar para los técnicos del servicio
-        const technicianIdsInService = new Set(
-          (service.serviceItems || []).map(item => (item as any).technicianId).filter(Boolean)
-        );
-
-        if (technicianIdsInService.has(user.id)) {
-          // Si el técnico participó, se le acredita el valor total del servicio
-          generatedRevenue += serviceTotal;
-          userWasInvolved = true;
+        // 2. Técnico del servicio
+        if (service.technicianId === user.id || service.technicianName === user.name) {
+            generatedRevenue += serviceTotal;
+            userWasInvolvedAsTechnician = true;
         }
 
         // --- Cálculo de Comisiones ---
-        if (userWasInvolved && commissionRate > 0) {
+        if ((userWasInvolvedAsAdvisor || userWasInvolvedAsTechnician) && commissionRate > 0) {
            for (const item of service.serviceItems || []) {
             let userIsResponsibleForItem = false;
             
             // Técnico es responsable de su ítem.
-            if ((item as any).technicianId === user.id) {
+            if ((item as any).technicianId === user.id || (item as any).technicianName === user.name) {
               userIsResponsibleForItem = true;
             } 
             // Asesor es responsable del ítem si no hay técnico asignado a ese ítem.
-            else if (service.serviceAdvisorId === user.id && !(item as any).technicianId) {
+            else if ((service.serviceAdvisorId === user.id || service.serviceAdvisorName === user.name) && !(item as any).technicianId && !(item as any).technicianName) {
               userIsResponsibleForItem = true;
             }
 
