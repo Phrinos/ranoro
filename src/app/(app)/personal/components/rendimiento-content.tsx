@@ -47,9 +47,6 @@ const matchByIdOrName = (
   return false;
 };
 
-/** Fecha de referencia del servicio:
- * 1) deliveryDateTime; 2) serviceDate
- */
 const getServiceReferenceDate = (s: any): Date | undefined => {
   const candidates = [
     s?.deliveryDateTime,
@@ -65,7 +62,7 @@ const getServiceReferenceDate = (s: any): Date | undefined => {
 export function RendimientoPersonalContent() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]); // si no lo usas, puedes borrar esto
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
@@ -77,7 +74,7 @@ export function RendimientoPersonalContent() {
     setIsLoading(true);
     const unsubs: (() => void)[] = [
       adminService.onUsersUpdate(setAllUsers),
-      inventoryService.onItemsUpdate(setInventoryItems), // opcional
+      inventoryService.onItemsUpdate(setInventoryItems),
       serviceService.onServicesUpdate((services) => {
         setAllServices(services);
         setIsLoading(false);
@@ -93,7 +90,6 @@ export function RendimientoPersonalContent() {
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
-    // Filtra solo servicios entregados y dentro del rango por fecha de referencia
     const completedServicesInRange = allServices.filter((s: any) => {
       if (s?.status !== 'Entregado') return false;
       const refDate = getServiceReferenceDate(s);
@@ -106,40 +102,35 @@ export function RendimientoPersonalContent() {
       .map((user) => {
         const commissionRate = user.commissionRate || 0;
         
-        let generatedRevenueByAdvisor = 0;
-        let generatedRevenueByTechnician = 0;
-        
-        // Calcular ingresos como asesor
-        for (const service of completedServicesInRange) {
-            const isAdvisor = matchByIdOrName(user, (service as any).serviceAdvisorId, (service as any).serviceAdvisorName);
-            if(isAdvisor) {
-                generatedRevenueByAdvisor += Number((service as any).totalCost) || 0;
-            }
-        }
-        
-        // Calcular ingresos como técnico
-        for (const service of completedServicesInRange) {
-            const isTechnician = matchByIdOrName(user, (service as any).technicianId, (service as any).technicianName);
-            if (isTechnician) {
-                generatedRevenueByTechnician += Number((service as any).totalCost) || 0;
-            }
-        }
-        
-        // Para el rol de "Asesor y Técnico", sumamos ambos ingresos. Para otros, tomamos el que corresponda.
-        const userFunctions = user.functions || [];
-        const isBoth = userFunctions.includes('asesor') && userFunctions.includes('tecnico');
-        
-        let totalGeneratedRevenue;
-        if (isBoth) {
-            totalGeneratedRevenue = generatedRevenueByAdvisor + generatedRevenueByTechnician;
-        } else if (userFunctions.includes('asesor')) {
-            totalGeneratedRevenue = generatedRevenueByAdvisor;
-        } else if (userFunctions.includes('tecnico')) {
-            totalGeneratedRevenue = generatedRevenueByTechnician;
-        } else {
-             totalGeneratedRevenue = generatedRevenueByAdvisor;
-        }
+        // Asesor
+        const advisorServices = completedServicesInRange.filter(service => 
+            matchByIdOrName(user, (service as any).serviceAdvisorId, (service as any).serviceAdvisorName)
+        );
+        const generatedRevenueByAdvisor = advisorServices.reduce((sum, service) => {
+            const total = Number((service as any).totalCost || (service as any).total || 0);
+            return sum + total;
+        }, 0);
 
+        // Técnico
+        const technicianServices = completedServicesInRange.filter(service => 
+            matchByIdOrName(user, (service as any).technicianId, (service as any).technicianName)
+        );
+        const generatedRevenueByTechnician = technicianServices.reduce((sum, service) => {
+            const total = Number((service as any).totalCost || (service as any).total || 0);
+            return sum + total;
+        }, 0);
+
+        const isAdvisor = user.functions?.includes('asesor');
+        const isTechnician = user.functions?.includes('tecnico');
+        
+        let totalGeneratedRevenue = 0;
+        if(isAdvisor) totalGeneratedRevenue += generatedRevenueByAdvisor;
+        if(isTechnician) totalGeneratedRevenue += generatedRevenueByTechnician;
+        
+        // If user has no specific function, but is found as advisor or tech, sum their revenue
+        if (!isAdvisor && !isTechnician) {
+            totalGeneratedRevenue = generatedRevenueByAdvisor + generatedRevenueByTechnician;
+        }
 
         const totalCommission =
           commissionRate > 0 ? (totalGeneratedRevenue * commissionRate) / 100 : 0;
@@ -158,7 +149,7 @@ export function RendimientoPersonalContent() {
         };
       })
       .sort((a, b) => b.totalSalary - a.totalSalary);
-  }, [dateRange, allUsers, allServices, inventoryItems]);
+  }, [dateRange, allUsers, allServices]);
 
   if (isLoading) {
     return (
