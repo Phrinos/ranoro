@@ -35,6 +35,8 @@ import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
 import { formatCurrency } from '@/lib/utils';
 import { nanoid } from 'nanoid';
 
+// --- Normalization Functions ---
+
 function normalizeAdvisor(record: any, users: User[]): Partial<ServiceFormValues> {
   const id = record?.serviceAdvisorId || "";
   const user = users.find(u => u.id === id);
@@ -69,6 +71,10 @@ function normalizeForForm(record: any, users: User[]): ServiceFormValues {
     ...item,
     suppliesUsed: (item.suppliesUsed ?? []).map((s: any) => ({ ...s, unitType: s?.unitType ?? undefined })),
   }));
+  
+  const mileageValue = (record.mileage !== undefined && record.mileage !== null && !isNaN(Number(record.mileage)))
+    ? Number(record.mileage)
+    : null;
 
   return {
     ...record,
@@ -78,6 +84,7 @@ function normalizeForForm(record: any, users: User[]): ServiceFormValues {
     serviceItems,
     status: record.status ?? "Cotizacion",
     vehicleId: record.vehicleId ?? "",
+    mileage: mileageValue,
   } as ServiceFormValues;
 }
 

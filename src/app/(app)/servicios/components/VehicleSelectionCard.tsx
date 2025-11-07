@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/VehicleSelectionCard.tsx
 "use client";
 
@@ -96,17 +95,22 @@ export function VehicleSelectionCard({
       setValue("vehicleId", preset.id, { shouldValidate: false, shouldDirty: true });
       setValue("customerName", preset.ownerName || "", { shouldValidate: false, shouldDirty: true });
       setValue("ownerPhone", preset.ownerPhone || "", { shouldValidate: false, shouldDirty: true });
-      setValue("mileage", preset.currentMileage ?? null, { shouldValidate: false, shouldDirty: true });
+      // Use currentMileage from vehicle as fallback for new services
+      if (getValues('mileage') === null || getValues('mileage') === undefined) {
+        setValue("mileage", preset.currentMileage ?? null, { shouldValidate: false, shouldDirty: true });
+      }
     }
-  }, [initialVehicleId, safeVehicles, selectedVehicleId, setValue]);
+  }, [initialVehicleId, safeVehicles, selectedVehicleId, setValue, getValues]);
 
   const handleVehicleSelect = (vehicleId: string) => {
     const vehicle = safeVehicles.find((v) => v.id === vehicleId);
     if (vehicle) {
-      setValue("vehicleId", vehicle.id, { shouldValidate: false, shouldDirty: true });
-      setValue("customerName", vehicle.ownerName || "", { shouldValidate: false, shouldDirty: true });
-      setValue("ownerPhone", vehicle.ownerPhone || "", { shouldValidate: false, shouldDirty: true });
-      setValue("mileage", vehicle.currentMileage ?? null, { shouldValidate: false, shouldDirty: true });
+      setValue("vehicleId", vehicle.id, { shouldValidate: true, shouldDirty: true });
+      setValue("customerName", vehicle.ownerName || "", { shouldValidate: true, shouldDirty: true });
+      setValue("ownerPhone", vehicle.ownerPhone || "", { shouldValidate: true, shouldDirty: true });
+      if (getValues('mileage') === null || getValues('mileage') === undefined) {
+        setValue("mileage", vehicle.currentMileage ?? null, { shouldValidate: true, shouldDirty: true });
+      }
     }
     setIsSelectionDialogOpen(false);
   };
