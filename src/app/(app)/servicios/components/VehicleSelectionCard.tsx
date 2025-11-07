@@ -1,4 +1,5 @@
 
+// src/app/(app)/servicios/components/VehicleSelectionCard.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
@@ -23,7 +24,7 @@ import type { VehicleFormValues } from "@/app/(app)/vehiculos/components/vehicle
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { inventoryService } from "@/lib/services";
-import { VehiclePricingCard } from "../../vehiculos/components/VehiclePricingCard";
+import { VehiclePricingCard } from "../../precios/components/VehiclePricingCard";
 import type { EngineData } from "@/lib/data/vehicle-database-types";
 import { EditEngineDataDialog } from "@/app/(app)/precios/components/EditEngineDataDialog";
 import { useToast } from "@/hooks/use-toast";
