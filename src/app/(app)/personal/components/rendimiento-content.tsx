@@ -1,13 +1,14 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { ServiceRecord, User, InventoryItem } from '@/types';
-import { format, startOfMonth, endOfMonth, isWithinInterval, isValid } from "date-fns";
+import { format, startOfMonth, endOfMonth, isWithinInterval, isValid, startOfDay, endOfDay } from "date-fns";
 import { es } from 'date-fns/locale';
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, capitalizeWords } from "@/lib/utils";
 import { serviceService, adminService, inventoryService } from '@/lib/services';
-import { Loader2 } from 'lucide-react';
+import { Loader2, User as UserIcon, Wrench, DollarSign } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { Badge } from "@/components/ui/badge";
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
@@ -47,7 +48,7 @@ const matchByIdOrName = (
 };
 
 /** Fecha de referencia del servicio:
- * 1) deliveryDateTime; 2) serviceDate;
+ * 1) deliveryDateTime; 2) serviceDate
  */
 const getServiceReferenceDate = (s: any): Date | undefined => {
   const candidates = [
@@ -64,7 +65,7 @@ const getServiceReferenceDate = (s: any): Date | undefined => {
 export function RendimientoPersonalContent() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]); // si no lo usas, puedes borrar esto
   const [isLoading, setIsLoading] = useState(true);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
@@ -76,7 +77,7 @@ export function RendimientoPersonalContent() {
     setIsLoading(true);
     const unsubs: (() => void)[] = [
       adminService.onUsersUpdate(setAllUsers),
-      inventoryService.onItemsUpdate(setInventoryItems),
+      inventoryService.onItemsUpdate(setInventoryItems), // opcional
       serviceService.onServicesUpdate((services) => {
         setAllServices(services);
         setIsLoading(false);
@@ -92,6 +93,7 @@ export function RendimientoPersonalContent() {
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
 
+    // Filtra solo servicios entregados y dentro del rango por fecha de referencia
     const completedServicesInRange = allServices.filter((s: any) => {
       if (s?.status !== 'Entregado') return false;
       const refDate = getServiceReferenceDate(s);
@@ -106,36 +108,38 @@ export function RendimientoPersonalContent() {
         
         let generatedRevenueByAdvisor = 0;
         let generatedRevenueByTechnician = 0;
-
+        
         // Calcular ingresos como asesor
         for (const service of completedServicesInRange) {
-          const userIsAdvisor = matchByIdOrName(
-            user,
-            (service as any).serviceAdvisorId,
-            (service as any).serviceAdvisorName
-          );
-          if (userIsAdvisor) {
-            generatedRevenueByAdvisor += Number((service as any).totalCost) || 0;
-          }
+            const isAdvisor = matchByIdOrName(user, (service as any).serviceAdvisorId, (service as any).serviceAdvisorName);
+            if(isAdvisor) {
+                generatedRevenueByAdvisor += Number((service as any).totalCost) || 0;
+            }
         }
         
         // Calcular ingresos como técnico
         for (const service of completedServicesInRange) {
-          const userIsTechnician = matchByIdOrName(
-            user,
-            (service as any).technicianId,
-            (service as any).technicianName
-          );
-          if (userIsTechnician) {
-            generatedRevenueByTechnician += Number((service as any).totalCost) || 0;
-          }
+            const isTechnician = matchByIdOrName(user, (service as any).technicianId, (service as any).technicianName);
+            if (isTechnician) {
+                generatedRevenueByTechnician += Number((service as any).totalCost) || 0;
+            }
+        }
+        
+        // Para el rol de "Asesor y Técnico", sumamos ambos ingresos. Para otros, tomamos el que corresponda.
+        const userFunctions = user.functions || [];
+        const isBoth = userFunctions.includes('asesor') && userFunctions.includes('tecnico');
+        
+        let totalGeneratedRevenue;
+        if (isBoth) {
+            totalGeneratedRevenue = generatedRevenueByAdvisor + generatedRevenueByTechnician;
+        } else if (userFunctions.includes('asesor')) {
+            totalGeneratedRevenue = generatedRevenueByAdvisor;
+        } else if (userFunctions.includes('tecnico')) {
+            totalGeneratedRevenue = generatedRevenueByTechnician;
+        } else {
+             totalGeneratedRevenue = generatedRevenueByAdvisor;
         }
 
-        // El "Trabajo Ingresado" total es la suma de ambos roles.
-        // Esto es correcto porque una persona puede ser ambos, pero en servicios diferentes.
-        // Si una persona es asesor y tecnico en el MISMO servicio, esto lo contaria doble,
-        // pero la logica de negocio dice que es un tecnico Y un asesor.
-        const totalGeneratedRevenue = generatedRevenueByAdvisor + generatedRevenueByTechnician;
 
         const totalCommission =
           commissionRate > 0 ? (totalGeneratedRevenue * commissionRate) / 100 : 0;
@@ -154,7 +158,7 @@ export function RendimientoPersonalContent() {
         };
       })
       .sort((a, b) => b.totalSalary - a.totalSalary);
-  }, [dateRange, allUsers, allServices]);
+  }, [dateRange, allUsers, allServices, inventoryItems]);
 
   if (isLoading) {
     return (
