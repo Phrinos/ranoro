@@ -1,4 +1,5 @@
 
+
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
@@ -36,7 +37,8 @@ import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle
 export function ServiceForm({
   initialData, vehicles, users, inventoryItems, serviceTypes, categories, suppliers, serviceHistory,
   onSave, onComplete, onVehicleCreated, onCancel, onValidationErrors, mode, activeTab, onTabChange,
-  isChecklistWizardOpen, setIsChecklistWizardOpen, onOpenNewVehicleDialog, isNewRecord, onSaveSuccess
+  isChecklistWizardOpen, setIsChecklistWizardOpen, onOpenNewVehicleDialog, isNewRecord, onSaveSuccess,
+  isReadOnly
 }: {
   initialData: ServiceRecord | null;
   vehicles: Vehicle[];
@@ -59,6 +61,7 @@ export function ServiceForm({
   setIsChecklistWizardOpen: (v: boolean) => void;
   onOpenNewVehicleDialog: (vehicle?: Partial<Vehicle> | null) => void;
   isNewRecord: boolean;
+  isReadOnly?: boolean; // Prop para controlar el modo solo lectura
 }) {
   const { toast } = useToast();
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = React.useState(false);
@@ -88,8 +91,6 @@ export function ServiceForm({
 
   const watchedStatus = watch('status');
   const serviceItems = watch('serviceItems');
-
-  const isReadOnly = initialData?.status === 'Entregado' || initialData?.status === 'Cancelado';
 
   const totalCost = React.useMemo(() => {
     return (serviceItems || []).reduce((sum, item: any) => sum + (Number(item?.sellingPrice) || 0), 0);

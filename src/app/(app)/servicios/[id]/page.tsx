@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -32,6 +33,7 @@ import { ActiveServicesSheet } from '../components/ActiveServicesSheet';
 import { PhotoReportModal } from '../components/PhotoReportModal';
 import { PaymentDetailsDialog } from '@/components/shared/PaymentDetailsDialog';
 import { formatCurrency } from '@/lib/utils';
+import { nanoid } from 'nanoid';
 
 function normalizeAdvisor(record: any, users: User[]): Partial<ServiceFormValues> {
   const id = record?.serviceAdvisorId || "";
@@ -109,7 +111,7 @@ export default function ServicioPage() {
   const [editingVehicle, setEditingVehicle] = useState<Partial<Vehicle> | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [serviceToComplete, setServiceToComplete] = useState<ServiceRecord | null>(null);
-
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const isEditMode = serviceId !== 'nuevo';
 
@@ -153,6 +155,7 @@ export default function ServicioPage() {
       setIsLoading(true);
       const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
       const user = authUserString ? JSON.parse(authUserString) : null;
+      setCurrentUser(user);
 
       try {
         const [
@@ -356,6 +359,8 @@ export default function ServicioPage() {
   const pageDescription = isEditMode
     ? `Modifica los detalles para el vehículo ${initialData?.vehicleIdentifier || ''}.`
     : "Completa los datos para crear un nuevo registro.";
+    
+  const isReadOnly = (initialData?.status === 'Entregado' || initialData?.status === 'Cancelado') && currentUser?.role !== 'Superadministrador';
 
   if (isLoading) {
     return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="mr-2 h-8 w-8 animate-spin" /></div>;
@@ -390,6 +395,7 @@ export default function ServicioPage() {
         setIsChecklistWizardOpen={setIsChecklistWizardOpen}
         onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
         isNewRecord={!isEditMode}
+        isReadOnly={isReadOnly}
       />
 
       <ServiceMobileBar
