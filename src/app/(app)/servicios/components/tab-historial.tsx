@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/tab-historial.tsx
 "use client";
 
@@ -65,7 +66,7 @@ const sortOptions = [
   { value: "deliveryDateTime_desc", label: "Fecha (Más Reciente)" },
   { value: "deliveryDateTime_asc", label: "Fecha (Más Antiguo)" },
   { value: "totalCost_desc", label: "Costo (Mayor a Menor)" },
-  { value: "totalCost_asc", label: "Costo (Menor a Menor)" },
+  { value: "totalCost_asc", label: "Costo (Menor a Mayor)" },
   { value: "vehicleIdentifier_asc", label: "Placa (A-Z)" },
 ];
 
@@ -122,23 +123,23 @@ export default function HistorialTabContent({
     [services]
   );
 
-  const { paginatedData, fullFilteredData, ...tableManager } =
-    useTableManager<ServiceRecord>({
-      initialData: historicalServices,
-      searchKeys: [
-        "id",
-        "folio",
-        "vehicleIdentifier",
-        "customerName",
-        "description",
-        "serviceItems.name",
-        "suppliesUsed.supplyName",
-      ],
-      dateFilterKey: getRelevantDateForFiltering, 
-      initialSortOption: "deliveryDateTime_desc",
-      initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
-      itemsPerPage: 10,
-    });
+  const tableManager = useTableManager<ServiceRecord>({
+    initialData: historicalServices,
+    searchKeys: [
+      "id",
+      "folio",
+      "vehicleIdentifier",
+      "customerName",
+      "description",
+      "serviceItems.name",
+      "suppliesUsed.supplyName",
+    ],
+    dateFilterKey: getRelevantDateForFiltering, 
+    initialSortOption: "deliveryDateTime_desc",
+    itemsPerPage: 10,
+  });
+
+  const { paginatedData, fullFilteredData } = tableManager;
 
 
   // --- EXPORTACIÓN CSV: “profesional”

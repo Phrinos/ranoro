@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -17,7 +16,6 @@ type FilterFn<T> = (item: T) => Date | null;
 interface UseTableManagerOptions<T> {
   initialData: T[];
   initialSortOption?: string;
-  initialDateRange?: DateRange;
   searchKeys: (keyof T | string)[];
   dateFilterKey: keyof T | string | FilterFn<T>;
   itemsPerPage?: number;
@@ -36,31 +34,18 @@ const getSortDate = (item: any, sortKey: string) => {
 export function useTableManager<T extends Record<string, any>>({
   initialData,
   initialSortOption = 'date_desc',
-  initialDateRange,
   searchKeys,
   dateFilterKey,
   itemsPerPage = 20,
 }: UseTableManagerOptions<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<string>(initialSortOption);
-  
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(initialDateRange);
-  
   const [otherFilters, setOtherFilters] = useState<Record<string, string | 'all'>>({});
   const [currentPage, setCurrentPage] = useState(1);
+  
+  // DateRange is now managed by the parent component
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: startOfMonth(new Date()), to: dfnsEndOdMonth(new Date()) });
 
-  const initialFromTime = initialDateRange?.from?.getTime();
-  const initialToTime = initialDateRange?.to?.getTime();
-
-  useEffect(() => {
-    if (initialDateRange === undefined) return;
-    setDateRange(prev => {
-      const same =
-        prev?.from?.getTime() === initialFromTime &&
-        prev?.to?.getTime() === initialToTime;
-      return same ? prev : initialDateRange;
-    });
-  }, [initialFromTime, initialToTime, initialDateRange]);
 
   const fullFilteredData = useMemo(() => {
     let data = [...initialData];
@@ -140,13 +125,9 @@ export function useTableManager<T extends Record<string, any>>({
     return data;
   }, [initialData, searchTerm, sortOption, dateRange, otherFilters, searchKeys, dateFilterKey]);
 
-  const dateRangeFromTime = dateRange?.from?.getTime();
-  const dateRangeToTime = dateRange?.to?.getTime();
-  const stringifiedOtherFilters = JSON.stringify(otherFilters);
-
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, sortOption, dateRangeFromTime, dateRangeToTime, stringifiedOtherFilters]);
+  }, [searchTerm, sortOption, dateRange, otherFilters]);
 
   const totalItems = fullFilteredData.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -169,7 +150,7 @@ export function useTableManager<T extends Record<string, any>>({
     otherFilters,
     setOtherFilters,
     paginatedData,
-    filteredData: paginatedData,
+    filteredData: paginatedData, // for backward compatibility
     fullFilteredData,
     currentPage,
     totalPages,
