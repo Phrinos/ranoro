@@ -47,6 +47,9 @@ const asMoney = (v: unknown): number => {
 };
 
 const isCash = (m: string | PaymentMethod) => String(m).toLowerCase() === 'efectivo';
+const isCard = (m: string | PaymentMethod) => String(m).toLowerCase() === 'tarjeta';
+const isTransfer = (m: string | PaymentMethod) => String(m).toLowerCase() === 'transferencia';
+const isImmediatePayment = (m: string | PaymentMethod) => isCash(m) || isCard(m) || isTransfer(m);
 const isCredit = (m: string | PaymentMethod) => String(m).toLowerCase() === 'crédito' || String(m).toLowerCase() === 'credito';
 
 /**
@@ -101,7 +104,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   const payableRef = isCredit(data.paymentMethod) ? doc(collection(db, 'payableAccounts')) : null;
   const payableAccountId = payableRef?.id ?? null;
 
-  const cashTxRef = isCash(data.paymentMethod) ? doc(collection(db, 'cashDrawerTransactions')) : null;
+  const cashTxRef = isImmediatePayment(data.paymentMethod) ? doc(collection(db, 'cashDrawerTransactions')) : null;
   const cashTransactionId = cashTxRef?.id ?? null;
 
   // --- 4) Documento de compra
@@ -154,8 +157,8 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     batch.set(payableRef, cleanObjectForFirestore(newPayableAccount));
     const currentDebt = (supplierDoc as any)?.debtAmount || 0;
     batch.set(supplierRef, { debtAmount: asMoney(currentDebt + invoiceTotal) }, { merge: true });
-  } else if (isCash(data.paymentMethod) && cashTxRef) {
-    // 5b) Pago inmediato en efectivo: salida en caja
+  } else if (isImmediatePayment(data.paymentMethod) && cashTxRef) {
+    // 5b) Pago inmediato: salida en caja
     batch.set(
       cashTxRef,
       cleanObjectForFirestore({
@@ -164,7 +167,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
         type: 'Salida',
         amount: invoiceTotal,
         concept: `Compra a ${supplierName} (Factura: ${purchaseDoc.invoiceId})`,
-        paymentMethod: 'Efectivo',
+        paymentMethod: data.paymentMethod,
         userId: user?.id || 'system',
         userName: user?.name || 'Sistema',
         relatedType: 'Compra',
