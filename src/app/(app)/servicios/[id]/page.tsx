@@ -69,6 +69,8 @@ function normalizeDates(record: any): Partial<ServiceFormValues> {
 function normalizeForForm(record: any, users: User[]): ServiceFormValues {
   const serviceItems = (Array.isArray(record.serviceItems) ? record.serviceItems : []).map((item: any) => ({
     ...item,
+    name: item.serviceType || item.name, // Map serviceType to name for the form's select
+    itemName: item.name || item.itemName, // The detailed name
     suppliesUsed: (item.suppliesUsed ?? []).map((s: any) => ({ ...s, unitType: s?.unitType ?? undefined })),
   }));
   
@@ -452,3 +454,4 @@ export default function ServicioPage() {
     </FormProvider>
   );
 }
+
