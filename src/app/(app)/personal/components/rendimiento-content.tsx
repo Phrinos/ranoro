@@ -48,9 +48,7 @@ const matchByIdOrName = (
   return false;
 };
 
-/** Fecha de referencia del servicio:
- * 1) serviceDate; 2) deliveryDateTime; 3) createdAt;
- */
+
 const getServiceReferenceDate = (s: any): Date | undefined => {
   const candidates = [
     s?.serviceDate,
@@ -67,7 +65,7 @@ const getServiceReferenceDate = (s: any): Date | undefined => {
 export function RendimientoPersonalContent() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
-  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]); 
   const [isLoading, setIsLoading] = useState(true);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
@@ -79,7 +77,7 @@ export function RendimientoPersonalContent() {
     setIsLoading(true);
     const unsubs: (() => void)[] = [
       adminService.onUsersUpdate(setAllUsers),
-      inventoryService.onItemsUpdate(setInventoryItems),
+      inventoryService.onItemsUpdate(setInventoryItems), 
       serviceService.onServicesUpdate((services) => {
         setAllServices(services);
         setIsLoading(false);
@@ -94,7 +92,7 @@ export function RendimientoPersonalContent() {
     const from = startOfDay(dateRange.from);
     const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
     const interval = { start: from, end: to };
-
+    
     const completedServicesInRange = allServices.filter((s: any) => {
       if (s?.status !== 'Entregado') return false;
       const refDate = getServiceReferenceDate(s);
@@ -103,56 +101,46 @@ export function RendimientoPersonalContent() {
 
     const activeUsers = allUsers.filter((u) => !u.isArchived);
 
-    return activeUsers.map((user) => {
-      const commissionRate = user.commissionRate || 0;
-      let generatedRevenueByAdvisor = 0;
-      let generatedRevenueByTechnician = 0;
+    return activeUsers
+      .map((user) => {
+        let generatedRevenue = 0;
+        const commissionRate = user.commissionRate || 0;
+        const countedServiceIds = new Set<string>();
 
-      // Calcular ingresos como asesor
-      for (const service of completedServicesInRange) {
-        if (matchByIdOrName(user, (service as any).serviceAdvisorId, (service as any).serviceAdvisorName)) {
-          const serviceTotal = Number((service as any).totalCost || (service as any).total || 0);
-          generatedRevenueByAdvisor += serviceTotal;
+        for (const service of completedServicesInRange) {
+          const sid = (service as any).id ?? '';
+          if (!sid || countedServiceIds.has(sid)) {
+            continue;
+          }
+
+          const serviceTotal = Number((service as any).totalCost) || Number((service as any).total) || 0;
+          
+          const isAdvisor = matchByIdOrName(user, (service as any).serviceAdvisorId, (service as any).serviceAdvisorName);
+          const isTechnician = matchByIdOrName(user, (service as any).technicianId, (service as any).technicianName);
+
+          if (isAdvisor || isTechnician) {
+            generatedRevenue += serviceTotal;
+            countedServiceIds.add(sid);
+          }
         }
-      }
+        
+        const totalCommission =
+          commissionRate > 0 ? (generatedRevenue * commissionRate) / 100 : 0;
 
-      // Calcular ingresos como técnico
-      for (const service of completedServicesInRange) {
-        const userIsTechnician = (service.serviceItems || []).some(item =>
-          matchByIdOrName(user, (item as any).technicianId, (item as any).technicianName)
-        );
-        if (userIsTechnician) {
-            // Atribuye el valor de los items que el técnico trabajó
-            const technicianItemsValue = (service.serviceItems || []).reduce((sum, item) => {
-                if (matchByIdOrName(user, (item as any).technicianId, (item as any).technicianName)) {
-                    return sum + (Number(item.sellingPrice) || 0);
-                }
-                return sum;
-            }, 0);
-            generatedRevenueByTechnician += technicianItemsValue;
-        } else if (matchByIdOrName(user, (service as any).technicianId, (service as any).technicianName)) {
-            // Fallback: si no hay técnico por item, pero sí en el servicio general
-            generatedRevenueByTechnician += Number((service as any).totalCost || (service as any).total || 0);
-        }
-      }
+        const baseSalary = user.monthlySalary || 0;
+        const totalSalary = baseSalary + totalCommission;
 
-      const totalGeneratedRevenue = generatedRevenueByAdvisor + generatedRevenueByTechnician;
-      const totalCommission = commissionRate > 0 ? (totalGeneratedRevenue * commissionRate) / 100 : 0;
-      const baseSalary = user.monthlySalary || 0;
-      const totalSalary = baseSalary + totalCommission;
-
-      return {
-        id: user.id,
-        name: user.name,
-        role: user.role,
-        baseSalary,
-        generatedRevenue: totalGeneratedRevenue,
-        commission: totalCommission,
-        totalSalary,
-      };
-    })
-    .sort((a, b) => b.totalSalary - a.totalSalary);
-
+        return {
+          id: user.id,
+          name: user.name,
+          role: user.role,
+          baseSalary,
+          generatedRevenue,
+          commission: totalCommission,
+          totalSalary,
+        };
+      })
+      .sort((a, b) => b.totalSalary - a.totalSalary);
   }, [dateRange, allUsers, allServices]);
 
   if (isLoading) {
