@@ -4,7 +4,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { isWithinInterval, isValid, startOfDay, endOfDay, compareAsc, compareDesc, startOfMonth, endOfMonth as dfnsEndOdMonth } from 'date-fns';
-import { parseDate } from '../forms';
+import { parseDate } from '@/lib/forms';
 
 
 interface DateRange {
@@ -48,8 +48,6 @@ export function useTableManager<T extends Record<string, any>>({
   
   const [otherFilters, setOtherFilters] = useState<Record<string, string | 'all'>>({});
   const [currentPage, setCurrentPage] = useState(1);
-
-  const didInitRange = useRef(false);
 
   const initialFromTime = initialDateRange?.from?.getTime();
   const initialToTime = initialDateRange?.to?.getTime();
