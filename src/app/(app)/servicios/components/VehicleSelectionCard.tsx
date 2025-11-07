@@ -45,7 +45,7 @@ export function VehicleSelectionCard({
   onOpenNewVehicleDialog,
   initialVehicleId,
 }: VehicleSelectionCardProps) {
-  const { control, watch, setValue } = useFormContext();
+  const { control, watch, setValue, getValues } = useFormContext();
   const { toast } = useToast();
 
   const [isSelectionDialogOpen, setIsSelectionDialogOpen] = useState(false);
