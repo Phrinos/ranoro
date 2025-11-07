@@ -12,7 +12,6 @@ import { Loader2, User as UserIcon, Wrench, DollarSign } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { Badge } from "@/components/ui/badge";
 
-
 // Helpers
 const toNumber = (v: unknown) => {
   const n = typeof v === 'string' ? Number(v) : (Number(v) as number);
@@ -34,7 +33,7 @@ const getServiceTotal = (s: ServiceRecord) => {
   return toNumber((s as any).total ?? (s as any).totalCost ?? (s as any).grandTotal);
 };
 
-// Si quieres filtrar por estado, ajusta aquí. Por defecto: cuenta solo los servicios del mes entregados.
+// Filtro por estado: cuenta solo los servicios del mes entregados.
 const shouldCount = (s: ServiceRecord) => s.status === 'Entregado';
 
 
@@ -67,12 +66,10 @@ export default function ComisionesContent({ allServices, allUsers }: ComisionesC
     const endDate = endOfMonth(startDate);
     const interval = { start: startDate, end: endDate };
 
-    // Mapa id -> nombre desde usuarios (por si quieres sobreescribir nombres)
     const userNameById = new Map<string, string>(
       allUsers.map(u => [u.id, u.name] as const)
     );
 
-    // Filtra por mes y (opcionalmente) por estado
     const servicesInRange = (allServices || []).filter(s => {
       const d = getServiceDate(s);
       return d && isValid(d) && isWithinInterval(d, interval) && shouldCount(s);
@@ -104,26 +101,31 @@ export default function ComisionesContent({ allServices, allUsers }: ComisionesC
       .filter(a => a.servicesCount > 0)
       .sort((a, b) => b.generatedRevenue - a.generatedRevenue);
 
-    // --- Agrupar por TÉCNICO (technicianId)
+    // --- Agrupar por TÉCNICO (technicianId en cada serviceItem)
     const techMap = new Map<
       string,
       { id: string; name: string; servicesCount: number; generatedRevenue: number }
     >();
 
     for (const s of servicesInRange) {
-      const id = (s as any).technicianId || 'sin-tecnico';
-      const name =
-        (s as any).technicianName ||
-        userNameById.get(id) ||
-        'Sin técnico';
+      if (!s.serviceItems || s.serviceItems.length === 0) continue;
 
-      const total = getServiceTotal(s);
-      if (!techMap.has(id)) {
-        techMap.set(id, { id, name, servicesCount: 0, generatedRevenue: 0 });
+      for (const item of s.serviceItems) {
+        const id = (item as any).technicianId || 'sin-tecnico';
+        if (id === 'sin-tecnico') continue;
+        
+        const name = (item as any).technicianName || userNameById.get(id) || 'Sin técnico';
+
+        const itemRevenue = Number(item.sellingPrice || 0);
+
+        if (!techMap.has(id)) {
+          techMap.set(id, { id, name, servicesCount: 0, generatedRevenue: 0 });
+        }
+        
+        const acc = techMap.get(id)!;
+        acc.servicesCount += 1;
+        acc.generatedRevenue += itemRevenue;
       }
-      const acc = techMap.get(id)!;
-      acc.servicesCount += 1;
-      acc.generatedRevenue += total;
     }
 
     const technicianData = Array.from(techMap.values())
