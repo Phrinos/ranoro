@@ -4,7 +4,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { isWithinInterval, isValid, startOfDay, endOfDay, compareAsc, compareDesc, startOfMonth, endOfMonth as dfnsEndOdMonth } from 'date-fns';
-import { parseDate } from '@/lib/forms';
+import { parseDate } from '../forms';
 
 
 interface DateRange {
@@ -62,7 +62,6 @@ export function useTableManager<T extends Record<string, any>>({
         prev?.to?.getTime() === initialToTime;
       return same ? prev : initialDateRange;
     });
-    if (!didInitRange.current) didInitRange.current = true;
   }, [initialFromTime, initialToTime, initialDateRange]);
 
   const fullFilteredData = useMemo(() => {
