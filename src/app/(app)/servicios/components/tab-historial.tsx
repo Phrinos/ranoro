@@ -63,6 +63,8 @@ const paymentMethodOptions: { value: PaymentMethod | "all"; label: string }[] = 
 ];
 
 const sortOptions = [
+  { value: "folio_desc", label: "Folio (Más Reciente)" },
+  { value: "folio_asc", label: "Folio (Más Antiguo)" },
   { value: "deliveryDateTime_desc", label: "Fecha (Más Reciente)" },
   { value: "deliveryDateTime_asc", label: "Fecha (Más Antiguo)" },
   { value: "totalCost_desc", label: "Costo (Mayor a Menor)" },
@@ -135,7 +137,7 @@ export default function HistorialTabContent({
       "suppliesUsed.supplyName",
     ],
     dateFilterKey: getRelevantDateForFiltering, 
-    initialSortOption: "deliveryDateTime_desc",
+    initialSortOption: "folio_desc",
     itemsPerPage: 10,
   });
 
