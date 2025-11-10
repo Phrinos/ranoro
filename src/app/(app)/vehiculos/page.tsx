@@ -73,10 +73,11 @@ function PageInner() {
     return { total, recent, inactive6Months, inactive12Months };
   }, [allVehicles]);
 
-  const handleSaveVehicle = async (data: VehicleFormValues, id?: string) => {
+  const handleSaveVehicle = async (data: VehicleFormValues) => {
     try {
-      await inventoryService.saveVehicle(data, id);
-      toast({ title: `Vehículo ${id ? 'Actualizado' : 'Creado'}` });
+      // Correctly pass the ID of the vehicle being edited.
+      await inventoryService.saveVehicle(data, editingVehicle?.id);
+      toast({ title: `Vehículo ${editingVehicle?.id ? 'Actualizado' : 'Creado'}` });
       setIsVehicleDialogOpen(false);
     } catch (error) {
       console.error("Error saving vehicle: ", error);
