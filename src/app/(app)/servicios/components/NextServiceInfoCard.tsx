@@ -30,8 +30,12 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
   useEffect(() => {
     const parsed = nextServiceInfo?.date ? parseDate(nextServiceInfo.date) : null;
     setDate(parsed ?? undefined);
-    setMileage(nextServiceInfo?.mileage || '');
-  }, [nextServiceInfo]);
+    setMileage(
+      typeof nextServiceInfo?.mileage === 'number'
+        ? nextServiceInfo.mileage
+        : (typeof currentMileage === 'number' ? currentMileage : '')
+    );
+  }, [nextServiceInfo, currentMileage]);
   
   const handleUpdate = () => {
     onUpdate({
@@ -47,11 +51,16 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
     onUpdate({ date: newDate.toISOString(), mileage: Number(mileage) || null });
   };
   
+  const getBaseMileage = () => {
+    const stateVal = typeof mileage === 'number' && !Number.isNaN(mileage) ? mileage : null;
+    const propVal  = typeof currentMileage === 'number' && !Number.isNaN(currentMileage) ? currentMileage : null;
+    return stateVal ?? propVal ?? 0;
+  };
+
   const handleSetMileageReminder = (km: number) => {
-    const current = Number(currentMileage || 0);
-    const newMileage = current + km;
+    const base = getBaseMileage();
+    const newMileage = base + km;
     setMileage(newMileage);
-    // Automatically trigger update when a button is clicked
     onUpdate({ date: date ? date.toISOString() : null, mileage: newMileage });
   };
   
@@ -104,9 +113,15 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
               placeholder="Kilometraje"
               value={mileage}
               onChange={(e) => {
-                const newMileage = Number(e.target.value);
+                const v = e.target.value;
+                if (v === '') {
+                  setMileage('');
+                  onUpdate({ date: date ? date.toISOString() : null, mileage: null });
+                  return;
+                }
+                const newMileage = Number(v);
                 setMileage(newMileage);
-                onUpdate({ date: date ? date.toISOString() : null, mileage: newMileage || null });
+                onUpdate({ date: date ? date.toISOString() : null, mileage: Number.isFinite(newMileage) ? newMileage : null });
               }}
             />
             <div className="flex gap-2">
