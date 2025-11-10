@@ -370,6 +370,8 @@ export default function ServicioPage() {
     : "Completa los datos para crear un nuevo registro.";
     
   const isReadOnly = (initialData?.status === 'Entregado' || initialData?.status === 'Cancelado') && currentUser?.role !== 'Superadministrador';
+  
+  const selectedVehicle = vehicles.find(v => v.id === methods.watch('vehicleId'));
 
   if (isLoading) {
     return <div className="flex h-screen w-full items-center justify-center"><Loader2 className="mr-2 h-8 w-8 animate-spin" /></div>;

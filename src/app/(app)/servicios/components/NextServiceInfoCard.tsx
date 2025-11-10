@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import Calendar from 'react-calendar';
+import { NewCalendar } from "@/components/ui/calendar";
 import 'react-calendar/dist/Calendar.css';
 import { CalendarIcon } from 'lucide-react';
 import { format, addMonths } from 'date-fns';
@@ -83,7 +84,7 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
-                <Calendar
+                <NewCalendar
                   onChange={onCalendarChange}
                   value={date}
                   minDate={new Date()}
