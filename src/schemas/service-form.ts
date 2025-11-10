@@ -2,7 +2,7 @@
 import { z } from 'zod';
 
 const supplySchema = z.object({
-  supplyId: z.string(),
+  supplyId: z.string().optional(),
   supplyName: z.string(),
   quantity: z.number(),
   unitPrice: z.number(), // Costo para el taller
