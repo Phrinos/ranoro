@@ -48,7 +48,7 @@ function ServiceHistoryTable({ services, onRowClick }: { services: ServiceRecord
         initialData: services,
         searchKeys: [],
         dateFilterKey: 'serviceDate',
-        initialSortOption: 'serviceDate_desc',
+        initialSortOption: 'folio_desc',
     });
 
     const handleSort = (key: string) => {
