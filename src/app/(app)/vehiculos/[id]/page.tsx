@@ -43,6 +43,7 @@ const getServiceDescriptionText = (service: ServiceRecord) => {
 };
 
 function ServiceHistoryTable({ services, onRowClick }: { services: ServiceRecord[], onRowClick: (service: ServiceRecord) => void }) {
+    const router = useRouter();
     const { filteredData: sortedServices, sortOption, onSortOptionChange } = useTableManager<ServiceRecord>({
         initialData: services,
         searchKeys: [],
@@ -67,6 +68,7 @@ function ServiceHistoryTable({ services, onRowClick }: { services: ServiceRecord
                         <Table>
                             <TableHeader className="bg-black">
                                 <TableRow>
+                                    <SortableTableHeader sortKey="folio" label="Folio" onSort={handleSort} currentSort={sortOption} textClassName="text-white"/>
                                     <SortableTableHeader sortKey="serviceDate" label="Fecha" onSort={handleSort} currentSort={sortOption} textClassName="text-white"/>
                                     <SortableTableHeader sortKey="mileage" label="Kilometraje" onSort={handleSort} currentSort={sortOption} textClassName="text-white"/>
                                     <SortableTableHeader sortKey="description" label="Descripción" onSort={handleSort} currentSort={sortOption} textClassName="text-white"/>
@@ -78,7 +80,8 @@ function ServiceHistoryTable({ services, onRowClick }: { services: ServiceRecord
                                 {sortedServices.map((service) => {
                                     const relevantDate = parseDate(service.deliveryDateTime || service.receptionDateTime || service.serviceDate);
                                     return (
-                                        <TableRow key={service.id} onClick={() => onRowClick(service)} className="cursor-pointer">
+                                        <TableRow key={service.id} onClick={() => router.push(`/servicios/${service.id}`)} className="cursor-pointer">
+                                            <TableCell className="font-mono text-xs">{service.folio || service.id.slice(-6)}</TableCell>
                                             <TableCell>{relevantDate && isValid(relevantDate) ? format(relevantDate, "dd MMM yyyy, HH:mm", { locale: es }) : "N/A"}</TableCell>
                                             <TableCell>{(service as any).mileage ? `${formatNumber((service as any).mileage)} km` : "N/A"}</TableCell>
                                             <TableCell>{getServiceDescriptionText(service)}</TableCell>
