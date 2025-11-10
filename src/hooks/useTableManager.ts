@@ -99,28 +99,29 @@ export function useTableManager<T extends Record<string, any>>({
 
     // 4. Apply sorting
     if (sortOption !== 'default_order') {
+      const [sortKey, dir] = sortOption.split('_');
+      const isAsc = dir === 'asc';
+      
       data.sort((a, b) => {
-        const [sortKey, dir] = sortOption.split('_');
-        const isAsc = dir === 'asc';
         const isDateKey = sortKey.toLowerCase().includes('date') || sortKey.toLowerCase().includes('at');
 
         if (isDateKey) {
-          const da = getSortDate(a, sortKey);
-          const db = getSortDate(b, sortKey);
-          if (!da || !isValid(da)) return 1;
-          if (!db || !isValid(db)) return -1;
-          return isAsc ? compareAsc(da, db) : compareDesc(da, db);
+            const da = getSortDate(a, sortKey);
+            const db = getSortDate(b, sortKey);
+            if (!da || !isValid(da)) return 1;
+            if (!db || !isValid(db)) return -1;
+            return isAsc ? compareAsc(da, db) : compareDesc(da, db);
         }
 
         const va = getNestedValue(a, sortKey);
         const vb = getNestedValue(b, sortKey);
 
-        if (typeof va === 'number' && typeof vb === 'number') return isAsc ? va - vb : vb - va;
-        if (typeof va === 'string' && typeof vb === 'string')
-          return isAsc
-            ? va.localeCompare(vb, 'es', { sensitivity: 'base' })
-            : vb.localeCompare(va, 'es', { sensitivity: 'base' });
-
+        if (typeof va === 'number' && typeof vb === 'number') {
+            return isAsc ? va - vb : vb - va;
+        }
+        if (typeof va === 'string' && typeof vb === 'string') {
+            return isAsc ? va.localeCompare(vb, 'es', { sensitivity: 'base' }) : vb.localeCompare(va, 'es', { sensitivity: 'base' });
+        }
         return 0;
       });
     }
