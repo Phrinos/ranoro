@@ -18,7 +18,7 @@ import type {
   Supplier,
 } from '@/types';
 import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
-import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
+import type { VehicleFormValues } from '@/schemas/vehicle-form-schema';
 import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-form';
 import { PageHeader } from '@/components/page-header';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -456,4 +456,3 @@ export default function ServicioPage() {
     </FormProvider>
   );
 }
-
