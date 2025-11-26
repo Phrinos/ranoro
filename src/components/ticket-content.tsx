@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { SaleReceipt, ServiceRecord, Vehicle, Technician } from '@/types';
@@ -86,9 +87,19 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
 
     const operation = sale || service;
     const operationId = sale?.id || service?.folio || service?.id;
-
-    const formattedDateTime = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es });
     
+    const operationDate = useMemo(() => {
+        if (sale) return parseDate(sale.saleDate);
+        if (service) return parseDate(service.deliveryDateTime) || parseDate(service.serviceDate);
+        return new Date();
+    }, [sale, service]);
+
+    const formattedOperationDateTime = operationDate && isValid(operationDate)
+        ? format(operationDate, "dd/MM/yyyy HH:mm:ss", { locale: es })
+        : 'N/A';
+    
+    const formattedPrintDateTime = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es });
+
     const calculatedTotals = useMemo(() => {
       if (sale) {
         return {
@@ -158,7 +169,8 @@ export const TicketContent = React.forwardRef<HTMLDivElement, TicketContentProps
         {renderDashedLine()}
         
         <div style={{ fontSize: `${bodyFontSize}px` }}>
-          <div>Fecha: {formattedDateTime}</div>
+          <div>Fecha: {formattedOperationDateTime}</div>
+          <div>Impreso el: {formattedPrintDateTime}</div>
           <div>Folio: {operationId}</div>
           {vehicle && <div>Vehículo: {vehicle.make} {vehicle.model} ({vehicle.licensePlate})</div>}
           <div>Cliente: {customerNameToDisplay}</div>
