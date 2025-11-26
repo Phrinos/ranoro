@@ -123,13 +123,13 @@ export function FlotillaCajaTab({
     switch (t.transactionType) {
       case 'income': {
         const Icon = paymentMethodIcons[t.paymentMethod as PaymentMethod] || Wallet;
-        return { variant: t.paymentMethod === 'Transferencia' ? 'info' : 'success', label: 'Ingreso', description: `Pago de ${t.driverName}`, methodIcon: <Icon className="h-4 w-4" />, methodName: t.paymentMethod };
+        return { variant: t.paymentMethod === 'Transferencia' ? 'info' : 'success', label: 'Ingreso', description: `Pago de ${t.driverName}`, note: t.note, methodIcon: <Icon className="h-4 w-4" />, methodName: t.paymentMethod };
       }
       case 'withdrawal': {
-        return { variant: 'destructive', label: 'Retiro', description: `Retiro de ${t.ownerName}`, methodIcon: null, methodName: 'N/A' };
+        return { variant: 'destructive', label: 'Retiro', description: `Retiro de ${t.ownerName}`, note: t.note, methodIcon: null, methodName: 'N/A' };
       }
       case 'expense': {
-        return { variant: 'secondary', label: 'Gasto', description: `${t.description} (${t.vehicleLicensePlate})`, methodIcon: null, methodName: 'N/A' };
+        return { variant: 'secondary', label: 'Gasto', description: `${t.description} (${t.vehicleLicensePlate})`, note: t.description, methodIcon: null, methodName: 'N/A' };
       }
     }
   };
@@ -169,6 +169,7 @@ export function FlotillaCajaTab({
                   <SortableTableHeader sortKey="date" label="Fecha" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
                   <SortableTableHeader sortKey="transactionType" label="Tipo" onSort={handleSort} currentSort={sortOption} className="hidden md:table-cell" textClassName="text-white" />
                   <SortableTableHeader sortKey="description" label="Descripción" onSort={handleSort} currentSort={sortOption} className="hidden md:table-cell" textClassName="text-white" />
+                  <SortableTableHeader sortKey="note" label="Comentario" onSort={handleSort} currentSort={sortOption} className="hidden md:table-cell" textClassName="text-white" />
                   <SortableTableHeader sortKey="paymentMethod" label="Método" onSort={handleSort} currentSort={sortOption} className="text-center hidden md:table-cell" textClassName="text-white" />
                   <SortableTableHeader sortKey="amount" label="Monto" onSort={handleSort} currentSort={sortOption} className="text-right" textClassName="text-white" />
                   <TableHead className="text-right text-white font-bold">Acciones</TableHead>
@@ -184,6 +185,7 @@ export function FlotillaCajaTab({
                         <TableCell className="md:hidden"><div className="flex flex-col"><Badge variant={details.variant as any} className="w-min">{details.label}</Badge><span className="text-xs text-muted-foreground mt-1">{details.description}</span></div></TableCell>
                         <TableCell className="hidden md:table-cell"><Badge variant={details.variant as any}>{details.label}</Badge></TableCell>
                         <TableCell className="hidden md:table-cell">{details.description}</TableCell>
+                        <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{details.note || ''}</TableCell>
                         <TableCell className="text-center hidden md:table-cell">{details.methodName !== 'N/A' && (<TooltipProvider><Tooltip><TooltipTrigger><div className="flex items-center justify-center">{details.methodIcon}</div></TooltipTrigger><TooltipContent><p>{details.methodName}</p></TooltipContent></Tooltip></TooltipProvider>)}</TableCell>
                         <TableCell className={cn("text-right font-semibold", details.variant === 'success' ? 'text-green-600' : details.variant === 'info' ? 'text-blue-600' : 'text-destructive')}>{details.variant !== 'destructive' && details.variant !== 'secondary' ? '+' : '-'} {formatCurrency(t.amount)}</TableCell>
                         <TableCell className="text-right">{t.transactionType === 'income' && (<Button variant="ghost" size="icon" onClick={() => handleShowTicket(t as RentalPayment)}><Printer className="h-4 w-4"/></Button>)}</TableCell>
@@ -191,7 +193,7 @@ export function FlotillaCajaTab({
                     );
                   })
                 ) : (
-                  <TableRow><TableCell colSpan={6} className="h-24 text-center">No hay movimientos de caja para el mes seleccionado.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="h-24 text-center">No hay movimientos de caja para el mes seleccionado.</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
