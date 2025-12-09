@@ -5,7 +5,7 @@ import { z } from 'zod';
 import type { SaleReceipt, ServiceRecord } from '@/types';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient.js';
-import Facturapi from 'facturapi';
+// import Facturapi from 'facturapi';
 
 // --- Zod Schemas ---
 const billingFormSchema = z.object({
@@ -81,7 +81,7 @@ const createInvoiceFlow = ai.defineFlow(
         success: false,
         error: "La funcionalidad de facturación está deshabilitada temporalmente.",
     };
-    
+    /*
     const facturaComCredentials = await getFacturaComInstance();
     if (!facturaComCredentials) {
       throw new Error('La configuración de facturación no ha sido establecida. Contacte al administrador del taller.');
@@ -162,6 +162,7 @@ const createInvoiceFlow = ai.defineFlow(
       invoiceUrl: invoice.pdf_url,
       status: invoice.status,
     };
+    */
   }
 );
 
@@ -171,6 +172,8 @@ const createInvoiceFlow = ai.defineFlow(
  * ------------------------------------- */
 
 export async function cancelInvoice(invoiceId: string): Promise<{ success: boolean; error?: string }> {
+  return { success: false, error: 'Función no disponible.' };
+  /*
   try {
     const facturaComCredentials = await getFacturaComInstance();
     if (!facturaComCredentials) throw new Error('Credenciales de facturación no configuradas.');
@@ -187,6 +190,7 @@ export async function cancelInvoice(invoiceId: string): Promise<{ success: boole
     console.error('Cancelación de factura fallida:', e.message);
     return { success: false, error: e?.data?.message || e.message || 'Error desconocido' };
   }
+  */
 }
 
 
@@ -195,6 +199,8 @@ export async function cancelInvoice(invoiceId: string): Promise<{ success: boole
  * ------------------------------------- */
 
 export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: boolean; url?: string; error?: string }> {
+  return { success: false, error: 'Función no disponible.' };
+  /*
   try {
     const facturaComCredentials = await getFacturaComInstance();
     if (!facturaComCredentials) throw new Error('Credenciales de facturación no configuradas.');
@@ -212,6 +218,7 @@ export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: bo
      console.error('Get PDF URL error:', e.message);
      return { success: false, error: e?.data?.message || e.message || 'Error desconocido' };
   }
+  */
 }
 
 /* -------------------------------------
@@ -226,14 +233,14 @@ export async function getInvoices(): Promise<{ data: any[], error?: string, page
     }
     const { apiKey, isLiveMode } = facturaComCredentials;
     
-    const facturapi = new Facturapi(apiKey, { live: isLiveMode });
-    const result = await facturapi.invoice.list();
+    // const facturapi = new Facturapi(apiKey, { live: isLiveMode });
+    // const result = await facturapi.invoice.list();
 
     return {
-      data: result.data || [], 
-      page: result.page,
-      total_pages: result.total_pages,
-      total_results: result.total_results,
+      data: [] as any[], //result.data || [], 
+      page: 1, //result.page,
+      total_pages: 1, //result.total_pages,
+      total_results: 0, //result.total_results,
     };
   } catch (e: any) {
     console.error('Factura.com list invoices error:', e);
