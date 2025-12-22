@@ -56,36 +56,6 @@ const coerceDate = (v: unknown): Date | null => {
   return null;
 };
 
-// ---------- Subcomponents ----------
-const SheetHeader = React.memo(({ service, workshopInfo }: { service: ServiceRecord, workshopInfo: any }) => {
-  const creationDate = coerceDate(service.serviceDate) || new Date();
-  const formattedCreationDate = isValid(creationDate) ? format(creationDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-        <div className="relative w-[150px] h-[50px] mb-4 sm:mb-0">
-          {workshopInfo?.logoUrl && (
-            <Image
-              src={workshopInfo.logoUrl}
-              alt={`${workshopInfo?.name ?? 'Taller'} Logo`}
-              fill
-              style={{ objectFit: 'contain' }}
-              data-ai-hint="workshop logo"
-              sizes="150px"
-            />
-          )}
-        </div>
-        <div className="text-left sm:text-right">
-          <p className="font-bold text-lg">Folio: {service.folio || service.id}</p>
-          <p className="text-sm text-muted-foreground">{formattedCreationDate}</p>
-        </div>
-      </CardHeader>
-    </Card>
-  );
-});
-SheetHeader.displayName = 'SheetHeader';
-
 const pickText = (...vals: any[]) => {
   for (const v of vals) {
     if (typeof v === "string" && v.trim()) return v.trim();
@@ -140,6 +110,36 @@ const toWhatsAppDigits = (raw: string) => {
   if (last10.length !== 10) return "";
   return `52${last10}`;
 };
+
+// ---------- Subcomponents ----------
+const SheetHeader = React.memo(({ service, workshopInfo }: { service: ServiceRecord, workshopInfo: any }) => {
+  const creationDate = coerceDate(service.serviceDate) || new Date();
+  const formattedCreationDate = isValid(creationDate) ? format(creationDate, "dd 'de' MMMM 'de' yyyy", { locale: es }) : 'N/A';
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+        <div className="relative w-[150px] h-[50px] mb-4 sm:mb-0">
+          {workshopInfo?.logoUrl && (
+            <Image
+              src={workshopInfo.logoUrl}
+              alt={`${workshopInfo?.name ?? 'Taller'} Logo`}
+              fill
+              style={{ objectFit: 'contain' }}
+              data-ai-hint="workshop logo"
+              sizes="150px"
+            />
+          )}
+        </div>
+        <div className="text-left sm:text-right">
+          <p className="font-bold text-lg">Folio: {service.folio || service.id}</p>
+          <p className="text-sm text-muted-foreground">{formattedCreationDate}</p>
+        </div>
+      </CardHeader>
+    </Card>
+  );
+});
+SheetHeader.displayName = 'SheetHeader';
 
 const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, vehicle?: Vehicle | null }) => {
   // ---- Cliente (robusto)
@@ -635,9 +635,9 @@ function ServiceOrderTab(
       <div className={cn("grid grid-cols-1 gap-6", service.status === 'Entregado' && "md:grid-cols-2")}>
         {showReceptionCard && (
           <Card>
-            <CardHeader><CardTitle>Ingreso del Vehiculo al Taller</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Recepción del Vehículo</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <ReceptionAndDelivery 
+              <ReceptionAndDelivery
                 part="reception"
                 isReadOnly={true}
                 isEnhancingText={null}
@@ -650,9 +650,9 @@ function ServiceOrderTab(
         
         {service.status === 'Entregado' && (
           <Card>
-            <CardHeader><CardTitle>Salida del Vehículo del Taller</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Entrega y Conformidad</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-               <ReceptionAndDelivery 
+               <ReceptionAndDelivery
                 part="delivery"
                 isReadOnly={true}
                 isEnhancingText={null}
