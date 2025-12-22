@@ -16,12 +16,11 @@ import type {
   NextServiceInfo
 } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ServiceItemsList } from './ServiceItemsList';
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { ServiceDetailsCard } from './ServiceDetailsCard';
 import { NextServiceInfoCard } from './NextServiceInfoCard';
-import { ReceptionAndDelivery } from './ReceptionAndDelivery';
 import { SafetyChecklist } from './SafetyChecklist';
 import PhotoReportTab from './PhotoReportTab';
 import { ServiceSummary } from './ServiceSummary';
@@ -30,8 +29,51 @@ import { SignatureDialog } from './signature-dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { ServiceFormValues } from '@/schemas/service-form';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
+import { FormField, FormLabel, FormControl, FormItem } from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { BrainCircuit, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 
-// --- (Utils sin cambios) ---
+const ReceptionContent = ({ part, isReadOnly, isEnhancingText, handleEnhanceText, onOpenSignature }: any) => {
+    const { control, watch } = useFormContext();
+    const signatureUrl = watch(part === 'reception' ? 'customerSignatureReception' : 'customerSignatureDelivery');
+    const signatureLabel = part === 'reception' ? 'Firma de Recepción (Cliente)' : 'Firma de Conformidad (Cliente)';
+
+    return (
+        <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField control={control} name="vehicleConditions" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="flex justify-between items-center w-full"><span>Condiciones del Vehículo</span>{!isReadOnly && <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText('vehicleConditions')} disabled={isEnhancingText === 'vehicleConditions' || !watch('vehicleConditions')}><BrainCircuit className="h-4 w-4" /></Button>}</FormLabel>
+                        <FormControl><Textarea placeholder="Describir daños, rayones, etc." {...field} disabled={isReadOnly} className="min-h-[100px] bg-card" /></FormControl>
+                    </FormItem>
+                )}/>
+                <FormField control={control} name="customerItems" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Pertenencias del Cliente</FormLabel>
+                        <FormControl><Textarea placeholder="Herramientas, documentos, etc." {...field} disabled={isReadOnly} className="min-h-[100px] bg-card" /></FormControl>
+                    </FormItem>
+                )}/>
+            </div>
+            <FormField control={control} name="fuelLevel" render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Nivel de Combustible</FormLabel>
+                    <Input type="range" min="0" max="8" step="1" {...field} disabled={isReadOnly} />
+                </FormItem>
+            )}/>
+            <FormItem>
+                <FormLabel>{signatureLabel}</FormLabel>
+                <div className="p-2 border rounded-md min-h-[100px] flex justify-center items-center bg-muted/50">
+                    {signatureUrl ? <Image src={signatureUrl} alt="Firma" width={200} height={100} style={{ objectFit: 'contain' }} /> : <p className="text-sm text-muted-foreground">No hay firma.</p>}
+                </div>
+                {!isReadOnly && <Button type="button" variant="outline" size="sm" onClick={() => onOpenSignature(part)} className="mt-2">Capturar Firma</Button>}
+            </FormItem>
+        </div>
+    );
+};
+
 
 // -------------------- Componente Principal --------------------
 export function ServiceForm({
@@ -172,7 +214,7 @@ export function ServiceForm({
             </TabsContent>
 
             <TabsContent value="reception-delivery" className="mt-4">
-              <ReceptionAndDelivery 
+              <ReceptionContent
                 part="reception"
                 isReadOnly={isReadOnly}
                 isEnhancingText={null}
