@@ -1,4 +1,3 @@
-
 // src/lib/services/service.service.ts
 import {
   collection,
@@ -28,7 +27,7 @@ const toNumber = (v: any): number =>
   typeof v === 'number'
     ? (Number.isFinite(v) ? v : 0)
     : typeof v === 'string'
-      ? (Number(v.replace(/[^\d.-]/g, '')) || 0)
+      ? (Number(v.replace(/[^\\d.-]/g, '')) || 0)
       : 0;
 
 const pickTotal = (o: any): number => {
@@ -64,7 +63,10 @@ async function denormalizeService(
   if (vehicle) {
     serviceData.vehicleIdentifier = buildVehicleIdentifier(vehicle);
     serviceData.customerName = vehicle.ownerName || serviceData.customerName;
-    serviceData.customerPhone = vehicle.ownerPhone || serviceData.customerPhone; // Denormalize phone
+    const vp = (vehicle as any).ownerPhone;
+    if (vp !== null && vp !== undefined && String(vp).trim()) {
+      serviceData.customerPhone = String(vp);
+    }
   }
 
   // 2. User (Advisor/Technician) Denormalization
@@ -111,6 +113,7 @@ function buildPublicData(svc: any) {
       status: svc.status || null,
       subStatus: svc.subStatus ?? null,
       customerName: svc.customerName || null,
+      customerPhone: svc.customerPhone != null ? String(svc.customerPhone) : null,
       serviceAdvisorName: svc.serviceAdvisorName || null,
       vehicleId: svc.vehicleId || null,
       vehicleIdentifier: svc.vehicleIdentifier || null,
