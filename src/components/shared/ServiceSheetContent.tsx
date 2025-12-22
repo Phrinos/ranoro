@@ -17,8 +17,8 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { cancelAppointmentAction } from '@/app/(public)/s/actions';
 import { useToast } from '@/hooks/use-toast';
 import { parseDate } from '@/lib/forms';
-import { GARANTIA_CONDICIONES_TEXT, INGRESO_CONDICIONES_TEXT } from '@/lib/constants/legal-text';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { GARANTIA_CONDICIONES_TEXT, INGRESO_CONDICIONES_TEXT } from "@/lib/constants/legal-text";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 /** Branding/Ticket settings locales (lee de localStorage 'workshopTicketInfo') */
 const defaultTicketSettings: any = {
@@ -84,57 +84,187 @@ const SheetHeader = React.memo(({ service, workshopInfo }: { service: ServiceRec
 });
 SheetHeader.displayName = 'SheetHeader';
 
-const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, vehicle?: Vehicle | null }) => {
-  const customerName = capitalizeWords(service.customerName || vehicle?.ownerName || '');
-  const customerPhone = service.customerPhone || vehicle?.ownerPhone || 'Teléfono no disponible';
-  
-  const vehicleMake = vehicle?.make || '';
-  const vehicleModel = vehicle?.model || '';
-  const vehicleYear = vehicle?.year || 'N/A';
-  
-  // Lógica mejorada para extraer la placa
-  let vehicleTitle = service.vehicleIdentifier || 'Vehículo no asignado';
-  let vehicleLicensePlate = 'N/A';
-  
-  if (vehicle) {
-    vehicleLicensePlate = vehicle.licensePlate || 'N/A';
-    vehicleTitle = `${vehicleMake} ${vehicleModel} (${vehicleYear})`;
-  } else if (service.vehicleIdentifier) {
-    const plateMatch = service.vehicleIdentifier.match(/([A-Z0-9-]{6,10})$/);
-    if (plateMatch) {
-      vehicleLicensePlate = plateMatch[0];
-      vehicleTitle = service.vehicleIdentifier.replace(plateMatch[0], '').trim();
-    }
+const pickText = (...vals: any[]) => {
+  for (const v of vals) {
+    if (typeof v === "string" && v.trim()) return v.trim();
   }
+  return "";
+};
 
-  return(
+const pickYear = (...vals: any[]) => {
+  for (const v of vals) {
+    const s = String(v ?? "").trim();
+    if (/^\d{4}$/.test(s)) return s;
+  }
+  return "";
+};
+
+const normalizePlate = (raw: string) =>
+  raw
+    .toUpperCase()
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9-]/g, "");
+
+const isLikelyPlate = (raw: string) => {
+  const p = normalizePlate(raw);
+  // 5–10 chars, al menos una letra y un número (evita "2020")
+  return p.length >= 5 && p.length <= 10 && /[A-Z]/.test(p) && /\d/.test(p);
+};
+
+const extractPlateFromText = (text: string) => {
+  const upper = String(text || "").toUpperCase();
+  const tokens = upper.match(/[A-Z0-9-]{5,12}/g) ?? [];
+  const candidate = tokens.find(t => /[A-Z]/.test(t) && /\d/.test(t) && t.length <= 10);
+  return candidate ? normalizePlate(candidate) : "";
+};
+
+const stripPlateFromText = (text: string, plate: string) => {
+  if (!text) return "";
+  if (!plate) return text.trim();
+  return text.replace(new RegExp(plate, "i"), "").replace(/\s{2,}/g, " ").trim();
+};
+
+const formatPhoneMx = (raw: string) => {
+  const digits = String(raw || "").replace(/\D/g, "");
+  const last10 = digits.length > 10 ? digits.slice(-10) : digits;
+  if (last10.length !== 10) return raw; // deja tal cual si no es 10 dígitos
+  return `(${last10.slice(0, 3)}) ${last10.slice(3, 6)}-${last10.slice(6)}`;
+};
+
+const toWhatsAppDigits = (raw: string) => {
+  const digits = String(raw || "").replace(/\D/g, "");
+  const last10 = digits.length > 10 ? digits.slice(-10) : digits;
+  if (last10.length !== 10) return "";
+  return `52${last10}`;
+};
+
+const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, vehicle?: Vehicle | null }) => {
+  // ---- Cliente (robusto)
+  const customerName = capitalizeWords(
+    pickText(
+      (service as any).customerName,
+      (service as any).customer?.name,
+      (service as any).customer?.fullName,
+      vehicle?.ownerName
+    )
+  ) || "Cliente no registrado";
+
+  const customerPhoneRaw = pickText(
+    (service as any).customerPhone,
+    (service as any).customer?.phone,
+    (service as any).customer?.phoneNumber,
+    (service as any).phone,
+    vehicle?.ownerPhone
+  );
+
+  const customerPhone = customerPhoneRaw ? formatPhoneMx(customerPhoneRaw) : "Teléfono no disponible";
+  const waDigits = customerPhoneRaw ? toWhatsAppDigits(customerPhoneRaw) : "";
+
+  // ---- Vehículo (robusto)
+  const make = pickText(
+    vehicle?.make,
+    (service as any).vehicleMake,
+    (service as any).vehicle?.make
+  );
+
+  const model = pickText(
+    vehicle?.model,
+    (service as any).vehicleModel,
+    (service as any).vehicle?.model
+  );
+
+  const year = pickYear(
+    vehicle?.year,
+    (service as any).vehicleYear,
+    (service as any).vehicle?.year
+  );
+
+  // Placa: evita usar licensePlate si trae texto raro
+  const fromVehiclePlate = pickText(vehicle?.licensePlate, (vehicle as any)?.plates);
+  const safeVehiclePlate = fromVehiclePlate && isLikelyPlate(fromVehiclePlate) ? normalizePlate(fromVehiclePlate) : "";
+
+  const fromServicePlate = pickText(
+    (service as any).licensePlate,
+    (service as any).vehicleLicensePlate,
+    (service as any).plates
+  );
+  const safeServicePlate = fromServicePlate && isLikelyPlate(fromServicePlate) ? normalizePlate(fromServicePlate) : "";
+
+  const parsedPlate = extractPlateFromText(pickText((service as any).vehicleIdentifier));
+  const vehicleLicensePlate = safeVehiclePlate || safeServicePlate || parsedPlate || "";
+
+  // Título: marca + modelo + (año). Si no hay, usa vehicleIdentifier sin placa.
+  const titleParts = [make, model].filter(Boolean).join(" ").trim();
+  const vehicleTitle =
+    titleParts
+      ? `${titleParts}${year ? ` (${year})` : ""}`
+      : (pickText((service as any).vehicleIdentifier)
+          ? stripPlateFromText(pickText((service as any).vehicleIdentifier), vehicleLicensePlate) || "Vehículo no asignado"
+          : "Vehículo no asignado");
+
+  const color = pickText(vehicle?.color, (service as any).vehicleColor);
+  const vin = pickText((vehicle as any)?.vin, (service as any)?.vin);
+
+  return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <Card>
         <CardHeader className="flex flex-row items-center gap-4 p-4">
-          <User className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
+          <User className="w-8 h-8 text-muted-foreground flex-shrink-0" />
           <CardTitle className="text-base">Cliente</CardTitle>
         </CardHeader>
-        <CardContent className="p-4 pt-0">
+        <CardContent className="p-4 pt-0 space-y-2">
           <p className="font-semibold">{customerName}</p>
-          <p className="text-sm text-muted-foreground">{customerPhone}</p>
+
+          <div className="text-sm text-muted-foreground flex items-center justify-between gap-3 flex-wrap">
+            <span>{customerPhone}</span>
+            {waDigits && (
+              <a
+                href={`https://wa.me/${waDigits}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex"
+              >
+                <Button variant="secondary" size="sm" className="h-8">
+                  <Icon icon="logos:whatsapp-icon" className="h-4 w-4 mr-2" />
+                  WhatsApp
+                </Button>
+              </a>
+            )}
+          </div>
+
+          {!!pickText((service as any).customerEmail, (service as any).customer?.email) && (
+            <p className="text-xs text-muted-foreground">
+              {pickText((service as any).customerEmail, (service as any).customer?.email)}
+            </p>
+          )}
         </CardContent>
       </Card>
+
       <Card>
         <CardHeader className="flex flex-row items-center gap-4 p-4">
-          <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
+          <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0" />
           <CardTitle className="text-base">Vehículo</CardTitle>
         </CardHeader>
-        <CardContent className="p-4 pt-0">
+        <CardContent className="p-4 pt-0 space-y-1">
           <p className="font-semibold">{vehicleTitle}</p>
-          <p className="text-muted-foreground">{vehicleLicensePlate}</p>
-          {vehicle?.color && <p className="text-xs text-muted-foreground">Color: {vehicle.color}</p>}
-          {service.mileage && <p className="text-xs text-muted-foreground">KM: {formatNumber(service.mileage)}</p>}
+
+          <p className="text-sm text-muted-foreground">
+            <span className="font-medium">Placas:</span>{" "}
+            {vehicleLicensePlate || "No registradas"}
+          </p>
+
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground pt-1">
+            {color && <span>Color: {color}</span>}
+            {vin && <span>VIN: {vin}</span>}
+            {!!(service as any).mileage && <span>KM: {formatNumber((service as any).mileage)}</span>}
+          </div>
         </CardContent>
       </Card>
     </div>
   );
 });
-ClientInfo.displayName = 'ClientInfo';
+ClientInfo.displayName = "ClientInfo";
 
 const StatusCard = React.memo((
   { service, isConfirming, onConfirmClick, onCancelAppointment }: 
@@ -184,7 +314,7 @@ const StatusCard = React.memo((
     return { title: "COTIZACIÓN DE SERVICIO", description: null, badge: null, cardClass: "bg-muted/50", titleClass: "text-foreground", descClass: "text-muted-foreground" };
   }, [status, appointmentStatus, service.subStatus, formattedAppointmentDate, formattedReceptionDate, formattedDeliveryDate]);
 
-  const shouldShowNextService = service.status === 'Entregado'
+  const shouldShowNextService = status === 'entregado'
     && service.nextServiceInfo?.date
     && isValid(parseDate(service.nextServiceInfo.date)!);
 
@@ -435,10 +565,8 @@ function ServiceOrderTab(
     return { subTotal: sub, taxAmount: tax, totalCost: total };
   }, [items]);
 
-  const showReceptionCard =
-    service.status === 'En Taller' ||
-    service.status === 'Entregado' ||
-    (service as any).status === 'Completado';
+  const statusLower = (service.status || "").toLowerCase();
+  const showReceptionCard = ["en taller", "entregado", "completado"].includes(statusLower);
 
   return (
     <div className="space-y-6">
@@ -490,7 +618,7 @@ function ServiceOrderTab(
               </Button>
             )}
             <Button asChild variant="outline">
-              <Link href={`/facturar?folio=${service.folio || service.id}&total=${service.totalCost}`} target="_blank">
+              <Link href={`/facturar?folio=${service.folio || service.id}&total=${totalCost}`} target="_blank">
                 <FileJson className="mr-2 h-4 w-4"/>Facturar
               </Link>
             </Button>
@@ -751,3 +879,5 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
     </Card>
   );
 }
+
+    

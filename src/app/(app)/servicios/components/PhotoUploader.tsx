@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/PhotoUploader.tsx
 "use client";
 
@@ -24,6 +23,12 @@ interface PhotoUploaderProps {
 const MAX_FILE_SIZE_MB = 10;
 const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+const withTimeout = <T,>(p: Promise<T>, ms: number) =>
+  Promise.race([
+    p,
+    new Promise<T>((_, rej) => setTimeout(() => rej(new Error("Upload timeout")), ms)),
+  ]);
 
 export function PhotoUploader({
   reportIndex,
@@ -78,10 +83,11 @@ export function PhotoUploader({
 
     try {
         const dataUrl = await optimizeImage(file, 1280);
-        const fileName = `${Date.now()}_${file.name.replace(/\s+/g, "_")}.jpg`;
+        const safeBase = file.name.replace(/\s+/g, "_").replace(/[^a-zA-Z0-9._-]/g, "");
+        const fileName = `${Date.now()}_${safeBase}.jpg`;
         const photoRef = ref(storage, `service-photos/${serviceId}/${fileName}`);
         
-        await uploadString(photoRef, dataUrl, "data_url");
+        await withTimeout(uploadString(photoRef, dataUrl, "data_url"), 20000);
         const downloadURL = await getDownloadURL(photoRef);
         
         const identifier = fieldName ?? reportIndex ?? 0;
@@ -93,7 +99,9 @@ export function PhotoUploader({
         console.error("Error al subir:", err);
         let errorMessage = "Ocurrió un error desconocido.";
         if (err instanceof Error) {
-            if (err.message.includes("storage/unauthorized") || err.message.includes("storage/object-not-found")) {
+            if (String(err).includes("CORS") || String(err).includes("preflight")) {
+              errorMessage = "Bloqueado por CORS. Este dominio no está permitido para subir a Storage (configura CORS del bucket).";
+            } else if (err.message.includes("storage/unauthorized") || err.message.includes("storage/object-not-found")) {
                 errorMessage = "No tienes permisos para realizar esta acción.";
             } else if (err.message.includes("network-request-failed")) {
                 errorMessage = "Error de red. Por favor, comprueba tu conexión a internet.";
@@ -138,3 +146,5 @@ export function PhotoUploader({
     </>
   );
 }
+
+    
