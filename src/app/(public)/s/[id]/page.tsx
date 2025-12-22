@@ -67,6 +67,7 @@ const pickFirstText = (...vals: any[]) => {
   return undefined;
 };
 
+
 const extractPlate = (s?: string | null) => {
   const t = (s ?? "").trim();
   if (!t) return null;
@@ -211,7 +212,8 @@ export default function PublicServicePage() {
 
   const serviceForSheet = {
     ...service,
-    customerPhone: pickFirstText(
+    customerPhone:
+      pickFirstText(
         service?.customerPhone,
         (service as any)?.customer?.phone,
         (service as any)?.customer?.phoneNumber,
@@ -296,5 +298,3 @@ export default function PublicServicePage() {
     </>
   );
 }
-
-```
