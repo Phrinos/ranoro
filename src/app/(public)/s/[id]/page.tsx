@@ -15,6 +15,7 @@ import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog
 import { TicketContent } from "@/components/ticket-content";
 import { Button } from "@/components/ui/button";
 import {
+  getPublicServiceData,
   scheduleAppointmentAction,
   confirmAppointmentAction,
   cancelAppointmentAction,
@@ -128,6 +129,9 @@ export default function PublicServicePage() {
       setService(null);
       return;
     }
+    
+    // Dispara auto-repair (no bloquea la UI; onSnapshot seguirá funcionando)
+    getPublicServiceData(publicId).catch((e) => console.warn("auto-repair failed:", e));
 
     const ref = doc(db, "publicServices", publicId);
     const unsub = onSnapshot(

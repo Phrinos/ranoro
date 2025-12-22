@@ -1,3 +1,4 @@
+
 "use client";
 
 import type {
@@ -115,19 +116,8 @@ const SheetHeader = React.memo(
 );
 SheetHeader.displayName = "SheetHeader";
 
-const pickFirstText = (...vals: any[]) => {
-  for (const v of vals) {
-    if (v === null || v === undefined) continue;
-
-    if (typeof v === "number" && Number.isFinite(v)) return String(v);
-
-    if (typeof v === "string") {
-      const s = v.trim();
-      if (s && s.toLowerCase() !== "na") return s;
-    }
-  }
-  return undefined;
-};
+const pickFirstText = (...vals: any[]) =>
+  vals.find(v => typeof v === "string" && v.trim() && v.trim().toLowerCase() !== "na") as string | undefined;
 
 const extractPlate = (s?: string | null) => {
   const t = (s ?? "").trim();
@@ -143,121 +133,72 @@ const splitIdentifier = (identifier?: string) => {
   return { title, plate };
 };
 
-const ClientInfo = React.memo(
-  ({
-    service,
-    vehicle,
-  }: {
-    service: ServiceRecord;
-    vehicle?: Vehicle | null;
-  }) => {
-    const customerName = capitalizeWords(
-      pickFirstText(
-        service.customerName,
-        (vehicle as any)?.ownerName,
-        (vehicle as any)?.customerName
-      ) ?? ""
-    );
-    const customerPhone =
-      pickFirstText(
-        service.customerPhone,
-        (service as any).phone,
-        (service as any).telefono,
-        (vehicle as any)?.ownerPhone,
-        (vehicle as any)?.phone,
-        (vehicle as any)?.telefono
-      ) ?? "Teléfono no disponible";
+const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, vehicle?: Vehicle | null }) => {
+  const customerName = capitalizeWords(pickFirstText(service.customerName, (vehicle as any)?.ownerName, (vehicle as any)?.customerName) ?? "");
+  const customerPhone =
+    pickFirstText(
+      service.customerPhone,
+      (service as any).phone,
+      (service as any).telefono,
+      (vehicle as any)?.ownerPhone,
+      (vehicle as any)?.phone,
+      (vehicle as any)?.telefono
+    ) ?? "Teléfono no disponible";
 
-    const idSplit = splitIdentifier(service.vehicleIdentifier);
+  const idSplit = splitIdentifier(service.vehicleIdentifier);
 
-    const rawVehiclePlate = pickFirstText(
-      (vehicle as any)?.licensePlate,
-      (vehicle as any)?.plates,
-      (vehicle as any)?.placas
-    );
-    const plateFromVehicle = extractPlate(rawVehiclePlate) ?? rawVehiclePlate ?? null;
-    const vehicleLicensePlate = plateFromVehicle ?? idSplit.plate ?? "N/A";
+  // placa: primero la del vehículo, si viene “rara” la parseamos, si no usamos la del identifier
+  const rawVehiclePlate = pickFirstText((vehicle as any)?.licensePlate, (vehicle as any)?.plates, (vehicle as any)?.placas);
+  const plateFromVehicle = extractPlate(rawVehiclePlate) ?? rawVehiclePlate ?? null;
+  const vehicleLicensePlate = plateFromVehicle ?? idSplit.plate ?? "N/A";
 
-    const make = pickFirstText(
-      (vehicle as any)?.make,
-      (vehicle as any)?.brand,
-      (vehicle as any)?.marca
-    ) ?? "";
-    const model =
-      pickFirstText(
-        (vehicle as any)?.model,
-        (vehicle as any)?.subModel,
-        (vehicle as any)?.modelo,
-        (vehicle as any)?.version
-      ) ?? "";
-    const year =
-      pickFirstText(
-        String((vehicle as any)?.year ?? ""),
-        String((vehicle as any)?.anio ?? ""),
-        String((vehicle as any)?.año ?? "")
-      ) ?? "";
+  // título: intenta make/model/year; si viene vacío, usa el identifier (sin placa) o “Vehículo no asignado”
+  const make = pickFirstText((vehicle as any)?.make, (vehicle as any)?.brand, (vehicle as any)?.marca) ?? "";
+  const model = pickFirstText((vehicle as any)?.model, (vehicle as any)?.subModel, (vehicle as any)?.modelo, (vehicle as any)?.version) ?? "";
+  const year = pickFirstText(String((vehicle as any)?.year ?? ""), String((vehicle as any)?.anio ?? ""), String((vehicle as any)?.año ?? "")) ?? "";
 
-    const composedTitle = `${make} ${model}`.trim();
-    const vehicleTitle =
-      (composedTitle ? `${composedTitle}${year ? ` (${year})` : ""}` : "") ||
-      idSplit.title ||
-      "Vehículo no asignado";
+  const composedTitle = `${make} ${model}`.trim();
+  const vehicleTitle =
+    (composedTitle ? `${composedTitle}${year ? ` (${year})` : ""}` : "") ||
+    idSplit.title ||
+    "Vehículo no asignado";
 
-    const mileageOk =
-      typeof service.mileage === "number" && isFinite(service.mileage);
+  const mileageOk = typeof service.mileage === "number" && isFinite(service.mileage);
 
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-4 p-4">
-            <User className="w-8 h-8 text-muted-foreground flex-shrink-0" />
-            <CardTitle className="text-base">Cliente</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <p className="font-semibold">{customerName || "Cliente"}</p>
-            <p className="text-sm text-muted-foreground">
-              {customerPhone !== "Teléfono no disponible" ? (
-                <a
-                  className="hover:underline"
-                  href={`tel:${customerPhone.replace(/\D/g, "")}`}
-                >
-                  {customerPhone}
-                </a>
-              ) : (
-                customerPhone
-              )}
-            </p>
-          </CardContent>
-        </Card>
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-4 p-4">
+          <User className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
+          <CardTitle className="text-base">Cliente</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          <p className="font-semibold">{customerName || "Cliente"}</p>
+          <p className="text-sm text-muted-foreground">
+            {customerPhone !== "Teléfono no disponible"
+              ? <a className="hover:underline" href={`tel:${customerPhone.replace(/\D/g, "")}`}>{customerPhone}</a>
+              : customerPhone}
+          </p>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-4 p-4">
-            <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0" />
-            <CardTitle className="text-base">Vehículo</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <p className="font-semibold">{vehicleTitle}</p>
-            <p className="text-muted-foreground">
-              {vehicleLicensePlate !== "N/A"
-                ? `Placas: ${vehicleLicensePlate}`
-                : "Placas: N/A"}
-            </p>
-            {(vehicle as any)?.color && (
-              <p className="text-xs text-muted-foreground">
-                Color: {(vehicle as any).color}
-              </p>
-            )}
-            {mileageOk && (
-              <p className="text-xs text-muted-foreground">
-                KM: {formatNumber(service.mileage!)}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-);
+      <Card>
+        <CardHeader className="flex flex-row items-center gap-4 p-4">
+          <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
+          <CardTitle className="text-base">Vehículo</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-0">
+          <p className="font-semibold">{vehicleTitle}</p>
+          <p className="text-muted-foreground">
+            {vehicleLicensePlate !== "N/A" ? `Placas: ${vehicleLicensePlate}` : "Placas: N/A"}
+          </p>
+          {(vehicle as any)?.color && <p className="text-xs text-muted-foreground">Color: {(vehicle as any).color}</p>}
+          {mileageOk && <p className="text-xs text-muted-foreground">KM: {formatNumber(service.mileage!)}</p>}
+        </CardContent>
+      </Card>
+    </div>
+  );
+});
 ClientInfo.displayName = "ClientInfo";
 
 const StatusCard = React.memo(
@@ -703,7 +644,7 @@ export const ServiceSheetContent = React.forwardRef<
         availableTabs.push({
           value: "checklist",
           label: "Revisión de Seguridad",
-          content: <SafetyChecklistDisplay inspection={service.safetyInspection as SafetyInspection} />,
+          content: <SafetyChecklistDisplay inspection={service.safetyInspection} />,
         });
       }
       if (
@@ -976,47 +917,68 @@ type SafetyInspectionRecord = SafetyInspection & {
 function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }) {
   const inspectionRecord = (inspection ?? {}) as SafetyInspectionRecord;
 
-  const groups = [
-    { title: "LUCES", items: [
-      { name: "luces_altas_bajas_niebla", label: "ALTAS, BAJAS Y NIEBLA" },
-      { name: "luces_cuartos", label: "CUARTOS" },
-      { name: "luces_direccionales", label: "DIRECCIONALES" },
-      { name: "luces_frenos_reversa", label: "FRENOS Y REVERSA" },
-      { name: "luces_interiores", label: "INTERIORES" },
-    ]},
-    { title: "NIVELES Y FUGAS", items: [
-      { name: "fugas_refrigerante", label: "REFRIGERANTE" },
-      { name: "fugas_limpiaparabrisas", label: "LIMPIAPARABRISAS" },
-      { name: "fugas_frenos_embrague", label: "FRENOS Y EMBRAGUE" },
-      { name: "fugas_transmision", label: "TRANSMISIÓN" },
-      { name: "fugas_direccion_hidraulica", label: "DIRECCIÓN HIDRÁULICA" },
-    ]},
-    { title: "CARROCERÍA", items: [
-      { name: "carroceria_cristales_espejos", label: "CRISTALES/ESPEJOS" },
-      { name: "carroceria_puertas_cofre", label: "PUERTAS/COFRE/CAJUELA" },
-      { name: "carroceria_asientos_tablero", label: "ASIENTOS/TABLERO" },
-      { name: "carroceria_plumas", label: "PLUMAS LIMPIAPARABRISAS" },
-    ]},
-    { title: "SUSPENSIÓN", items: [
-      { name: "suspension_rotulas", label: "RÓTULAS" },
-      { name: "suspension_amortiguadores", label: "AMORTIGUADORES" },
-      { name: "suspension_caja_direccion", label: "CAJA DE DIRECCIÓN" },
-      { name: "suspension_terminales", label: "TERMINALES" },
-    ]},
-    { title: "LLANTAS", items: [
-      { name: "llantas_delanteras_traseras", label: "DELANTERAS/TRASERAS" },
-      { name: "llantas_refaccion", label: "REFACCIÓN" },
-    ]},
-    { title: "FRENOS", items: [
-      { name: "frenos_discos_delanteros", label: "FRENOS DELANTEROS" },
-      { name: "frenos_discos_traseros", label: "FRENOS TRASEROS" },
-    ]},
-    { title: "OTROS", items: [
-      { name: "otros_tuberia_escape", label: "SISTEMA DE ESCAPE" },
-      { name: "otros_soportes_motor", label: "SOPORTES DE MOTOR" },
-      { name: "otros_claxon", label: "CLAXON" },
-      { name: "otros_inspeccion_sdb", label: "INSPECCIÓN SDB" },
-    ]},
+  const inspectionGroups = [
+    {
+      title: "LUCES",
+      items: [
+        { name: "luces_altas_bajas_niebla", label: "ALTAS, BAJAS Y NIEBLA" },
+        { name: "luces_cuartos", label: "CUARTOS" },
+        { name: "luces_direccionales", label: "DIRECCIONALES" },
+        { name: "luces_frenos_reversa", label: "FRENOS Y REVERSA" },
+        { name: "luces_interiores", label: "INTERIORES" },
+      ],
+    },
+    {
+      title: "NIVELES Y FUGAS",
+      items: [
+        { name: "fugas_refrigerante", label: "REFRIGERANTE" },
+        { name: "fugas_limpiaparabrisas", label: "LIMPIAPARABRISAS" },
+        { name: "fugas_frenos_embrague", label: "FRENOS Y EMBRAGUE" },
+        { name: "fugas_transmision", label: "TRANSMISIÓN" },
+        { name: "fugas_direccion_hidraulica", label: "DIRECCIÓN HIDRÁULICA" },
+      ],
+    },
+    {
+      title: "CARROCERÍA",
+      items: [
+        { name: "carroceria_cristales_espejos", label: "CRISTALES/ESPEJOS" },
+        { name: "carroceria_puertas_cofre", label: "PUERTAS/COFRE/CAJUELA" },
+        { name: "carroceria_asientos_tablero", label: "ASIENTOS/TABLERO" },
+        { name: "carroceria_plumas", label: "PLUMAS LIMPIAPARABRISAS" },
+      ],
+    },
+    {
+      title: "SUSPENSIÓN",
+      items: [
+        { name: "suspension_rotulas", label: "RÓTULAS" },
+        { name: "suspension_amortiguadores", label: "AMORTIGUADORES" },
+        { name: "suspension_caja_direccion", label: "CAJA DE DIRECCIÓN" },
+        { name: "suspension_terminales", label: "TERMINALES" },
+      ],
+    },
+    {
+      title: "LLANTAS",
+      items: [
+        { name: "llantas_delanteras_traseras", label: "DELANTERAS/TRASERAS" },
+        { name: "llantas_refaccion", label: "REFACCIÓN" },
+      ],
+    },
+    {
+      title: "FRENOS",
+      items: [
+        { name: "frenos_discos_delanteros", label: "FRENOS DELANTEROS" },
+        { name: "frenos_discos_traseros", label: "FRENOS TRASEROS" },
+      ],
+    },
+    {
+      title: "OTROS",
+      items: [
+        { name: "otros_tuberia_escape", label: "SISTEMA DE ESCAPE" },
+        { name: "otros_soportes_motor", label: "SOPORTES DE MOTOR" },
+        { name: "otros_claxon", label: "CLAXON" },
+        { name: "otros_inspeccion_sdb", label: "INSPECCIÓN SDB" },
+      ],
+    },
   ];
 
   const StatusIndicator = ({ status }: { status?: SafetyCheckValue['status'] }) => {
@@ -1042,7 +1004,7 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-          {groups.map((group) => (
+          {inspectionGroups.map((group) => (
             <div key={group.title}>
               <h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">
                 {group.title}
