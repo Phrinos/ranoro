@@ -1,3 +1,4 @@
+// src/components/shared/ServiceSheetContent.tsx
 
 "use client";
 
@@ -59,6 +60,20 @@ import {
 } from "@/components/ui/tabs";
 import { defaultTicketSettings } from "@/lib/placeholder-data";
 
+const pickFirstText = (...vals: any[]) => {
+    for (const v of vals) {
+      if (v === null || v === undefined) continue;
+
+      if (typeof v === "number" && Number.isFinite(v)) return String(v);
+
+      if (typeof v === "string") {
+        const s = v.trim();
+        if (s && s.toLowerCase() !== "na") return s;
+      }
+    }
+    return undefined;
+};
+
 const coerceDate = (v: unknown): Date | null => {
   if (!v) return null;
   if (v instanceof Date) return isValid(v) ? v : null;
@@ -78,21 +93,6 @@ const coerceDate = (v: unknown): Date | null => {
   }
   return null;
 };
-
-const pickFirstText = (...vals: any[]) => {
-    for (const v of vals) {
-      if (v === null || v === undefined) continue;
-
-      if (typeof v === "number" && Number.isFinite(v)) return String(v);
-
-      if (typeof v === "string") {
-        const s = v.trim();
-        if (s && s.toLowerCase() !== "na") return s;
-      }
-    }
-    return undefined;
-};
-
 
 const SheetHeader = React.memo(
   ({ service, workshopInfo }: { service: ServiceRecord; workshopInfo: any }) => {
@@ -154,15 +154,7 @@ const ClientInfo = React.memo(
     vehicle?: Vehicle | null;
   }) => {
     const customerName = capitalizeWords(pickFirstText(service.customerName, (vehicle as any)?.ownerName, (vehicle as any)?.customerName) ?? "");
-    const customerPhone =
-      pickFirstText(
-        service.customerPhone,
-        (service as any).phone,
-        (service as any).telefono,
-        (vehicle as any)?.ownerPhone,
-        (vehicle as any)?.phone,
-        (vehicle as any)?.telefono
-      ) ?? "Teléfono no disponible";
+    const customerPhone = pickFirstText(service.customerPhone, (service as any).phone, (service as any).telefono, (vehicle as any)?.ownerPhone, (vehicle as any)?.phone, (vehicle as any)?.telefono) ?? "Teléfono no disponible";
 
     const idSplit = splitIdentifier(service.vehicleIdentifier);
 
@@ -865,7 +857,7 @@ function ServiceOrderTab({
                   {INGRESO_CONDICIONES_TEXT}
                 </p>
                 <h4 className="font-semibold mb-2 mt-4">Firma de Autorización</h4>
-                 <div className="text-center">
+                <div className="text-center">
                     <p className="text-xs font-semibold">CLIENTE (RECEPCIÓN)</p>
                     <div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">
                       {service.customerSignatureReception ? (

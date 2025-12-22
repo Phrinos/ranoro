@@ -113,9 +113,9 @@ function buildPublicData(svc: any) {
       status: svc.status || null,
       subStatus: svc.subStatus ?? null,
       customerName: svc.customerName || null,
-      customerPhone: svc.customerPhone != null ? String(svc.customerPhone) : null, // ✅ NUEVO
+      customerPhone: svc.customerPhone != null ? String(svc.customerPhone) : null,
       serviceAdvisorName: svc.serviceAdvisorName || null,
-      serviceAdvisorSignatureDataUrl: svc.serviceAdvisorSignatureDataUrl || null, // ✅ NUEVO
+      serviceAdvisorSignatureDataUrl: svc.serviceAdvisorSignatureDataUrl || null,
       vehicleId: svc.vehicleId || null,
       vehicleIdentifier: svc.vehicleIdentifier || null,
       receptionDateTime: svc.receptionDateTime || null,

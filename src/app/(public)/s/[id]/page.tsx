@@ -1,3 +1,4 @@
+// src/app/(public)/s/[id]/page.tsx
 
 "use client";
 
@@ -33,6 +34,7 @@ type PublicServiceDoc = {
   subStatus?: string | null;
   customerName?: string;
   customerPhone?: string | number;
+  serviceAdvisorSignatureDataUrl?: string | null;
   vehicleIdentifier?: string;
   receptionDateTime?: string | Date | Timestamp | null;
   deliveryDateTime?: string | Date | Timestamp | null;

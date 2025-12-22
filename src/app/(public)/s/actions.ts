@@ -1,4 +1,3 @@
-
 // src/app/(public)/s/actions.ts
 "use server";
 
@@ -11,93 +10,65 @@ type ActionResult = { success: boolean; error?: string };
 const db = getAdminDb();
 
 export async function getPublicServiceData(publicId: string): Promise<DataResult<ServiceRecord>> {
-  // helpers
-  const normText = (v: any): string | null => {
-    if (v == null) return null;
-    if (typeof v === "number") return String(v);
-    if (typeof v !== "string") return null;
-    const t = v.trim();
-    if (!t) return null;
-    const low = t.toLowerCase();
-    if (low === "na" || low === "n/a" || low.includes("no disponible")) return null;
-    return t;
-  };
-
-  const pick = (...vals: any[]): string | null => {
-    for (const v of vals) {
-      const s = normText(v);
-      if (s) return s;
-    }
-    return null;
-  };
+  const asText = (v: any) => (v == null ? null : String(v).trim() || null);
 
   try {
-    const ref = db.collection("publicServices").doc(publicId);
-    const snap = await ref.get();
-
-    if (!snap.exists) {
+    const publicRef = db.collection("publicServices").doc(publicId);
+    const publicSnap = await publicRef.get();
+    if (!publicSnap.exists) {
       return { data: null, error: "El servicio no fue encontrado o el enlace es incorrecto." };
     }
 
-    const pub = snap.data() as any;
+    const pub = publicSnap.data() as any;
 
-    // Si ya tiene teléfono, regresamos tal cual
-    const existingPhone = pick(pub?.customerPhone);
-    if (existingPhone) {
-      return { data: { ...pub, id: snap.id } as ServiceRecord, error: null };
+    const hasPhone = !!asText(pub.customerPhone);
+    const hasAdvisorSig = !!asText(pub.serviceAdvisorSignatureDataUrl);
+
+    // fast path: ya está completo
+    if (hasPhone && hasAdvisorSig) {
+      return { data: { ...pub, id: publicSnap.id } as ServiceRecord, error: null };
     }
 
-    // Intentar “reparar” trayendo la info desde el doc principal
-    const serviceId = pick(pub?.serviceId) ?? publicId;
+    const serviceId = asText(pub.serviceId) ?? publicId;
+    const mainSnap = await db.collection("serviceRecords").doc(serviceId).get();
+    const main = mainSnap.exists ? (mainSnap.data() as any) : null;
 
-    let main: any = null;
-    try {
-      const mainSnap = await db.collection("serviceRecords").doc(serviceId).get();
-      if (mainSnap.exists) main = mainSnap.data();
-    } catch {
-      // ignore
-    }
+    let phone =
+      asText(pub.customerPhone) ??
+      asText(main?.customerPhone) ??
+      asText(main?.customer?.phone) ??
+      asText(main?.customer?.phoneNumber);
 
-    // Intentar desde vehículo (si existe)
-    const vehicleId = pick(pub?.vehicleId, main?.vehicleId);
-    let vehicle: any = null;
-    if (vehicleId) {
-      try {
-        const vSnap = await db.collection("vehicles").doc(vehicleId).get();
-        if (vSnap.exists) vehicle = vSnap.data();
-      } catch {
-        // ignore
+    let advisorName =
+      asText(pub.serviceAdvisorName) ??
+      asText(main?.serviceAdvisorName);
+
+    let advisorSig =
+      asText(pub.serviceAdvisorSignatureDataUrl) ??
+      asText(main?.serviceAdvisorSignatureDataUrl);
+
+    if (!advisorSig) {
+      const advisorId = asText(main?.serviceAdvisorId);
+      if (advisorId) {
+        const uSnap = await db.collection("users").doc(advisorId).get();
+        const u = uSnap.exists ? (uSnap.data() as any) : null;
+        advisorSig = asText(u?.signatureDataUrl);
+        advisorName = advisorName ?? asText(u?.name);
       }
     }
 
-    const repairedPhone = pick(
-      pub?.customerPhone,
-      main?.customerPhone,
-      main?.customer?.phone,
-      main?.customer?.phoneNumber,
-      vehicle?.ownerPhone,
-      vehicle?.phone,
-      vehicle?.telefono,
-      vehicle?.owner?.phone
-    );
-
-    // También podemos reparar nombre si viene vacío (opcional, pero ayuda)
-    const repairedName = pick(pub?.customerName, main?.customerName, vehicle?.ownerName, vehicle?.owner?.name);
-
     const patch: Record<string, any> = {};
-    if (repairedPhone) patch.customerPhone = repairedPhone;
-    if (repairedName && !pick(pub?.customerName)) patch.customerName = repairedName;
+    if (phone) patch.customerPhone = phone;
+    if (advisorName) patch.serviceAdvisorName = advisorName;
+    if (advisorSig) patch.serviceAdvisorSignatureDataUrl = advisorSig;
 
-    if (Object.keys(patch).length > 0) {
+    if (Object.keys(patch).length) {
       patch.updatedAt = serverTimestamp();
-      await ref.set(patch, { merge: true });
-
-      // devolver ya “parchado”
-      return { data: { ...pub, ...patch, id: snap.id } as ServiceRecord, error: null };
+      await publicRef.set(patch, { merge: true });
+      return { data: { ...pub, ...patch, id: publicSnap.id } as ServiceRecord, error: null };
     }
 
-    // no se pudo reparar (no hay teléfono en ningún lado)
-    return { data: { ...pub, id: snap.id } as ServiceRecord, error: null };
+    return { data: { ...pub, id: publicSnap.id } as ServiceRecord, error: null };
   } catch (e) {
     console.error("getPublicServiceData error:", e);
     return { data: null, error: "Ocurrió un error al cargar la información del servicio." };
