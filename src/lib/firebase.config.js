@@ -2,7 +2,7 @@
 export const firebaseConfig = {
   projectId: "ranoro-jm8l0",
   appId: "1:290934350177:web:2365c77eaca4bb0d906520",
-  storageBucket: "ranoro-jm8l0.appspot.app",
+  storageBucket: "ranoro-jm8l0.firebasestorage.app",
   apiKey: "AIzaSyAZAD2tIMh_0ck0dR8V-_bLneo2jzha7ME",
   authDomain: "ranoro-jm8l0.firebaseapp.com",
   messagingSenderId: "290934350177",

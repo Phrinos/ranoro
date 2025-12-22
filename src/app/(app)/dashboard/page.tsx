@@ -1,10 +1,11 @@
+
 // src/app/(app)/dashboard/page.tsx
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { calculateSaleProfit } from '@/lib/placeholder-data';
+import { calculateSaleProfit, calcEffectiveProfit } from '@/lib/money-helpers';
 import type { User, CapacityAnalysisOutput, ServiceRecord, SaleReceipt, InventoryItem, Personnel, MonthlyFixedExpense, Driver, Vehicle, PaymentMethod } from '@/types';
 import { BrainCircuit, Loader2, Wrench, DollarSign, AlertTriangle, Receipt, Truck } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
@@ -124,7 +125,7 @@ export default function DashboardPage() {
     );
 
     const profitFromServices = servicesCompletedToday.reduce(
-      (sum, s) => sum + (Number(s.serviceProfit) || 0),
+      (sum, s) => sum + calcEffectiveProfit(s, allInventory),
       0
     );
 

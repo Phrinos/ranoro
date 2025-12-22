@@ -10,10 +10,16 @@ export function calcTotalFromItems(items: ServiceRecord["serviceItems"]): number
   return (items ?? []).reduce((s, i) => s + (Number(i.sellingPrice) || 0), 0);
 }
 
-export function calcSuppliesCostFromItems(items: ServiceRecord["serviceItems"]): number {
-  return (items ?? [])
+export function calcSuppliesCostFromItems(items: ServiceRecord["serviceItems"], allInventory: InventoryItem[] = []): number {
+  if (!Array.isArray(items) || !Array.isArray(allInventory)) return 0;
+  const inventoryMap = new Map(allInventory.map(i => [i.id, i.unitPrice]));
+  
+  return items
     .flatMap((i) => i.suppliesUsed ?? [])
-    .reduce((s, su) => s + (Number(su.unitPrice) || 0) * Number(su.quantity || 0), 0);
+    .reduce((s, su) => {
+      const unitCost = inventoryMap.get(su.supplyId) ?? su.unitPrice ?? 0;
+      return s + (Number(unitCost) || 0) * Number(su.quantity || 0);
+    }, 0);
 }
 
 export function calcCardCommission(total: number, payments?: Payment[], fallbackPayment?: string): number {
@@ -29,10 +35,7 @@ export function calcCardCommission(total: number, payments?: Payment[], fallback
 export function calcEffectiveProfit(s: ServiceRecord, allInventory: InventoryItem[] = []): number {
   const total = calcTotalFromItems(s.serviceItems);
   
-  const supplies = (s.serviceItems ?? []).reduce((acc, item) => {
-    return acc + inventoryService.getSuppliesCostForItem(item, allInventory);
-  }, 0);
-
+  const supplies = calcSuppliesCostFromItems(s.serviceItems, allInventory);
 
   const hasCardSignals =
     (s.payments?.some(p => p.method === 'Tarjeta' || p.method === 'Tarjeta MSI') ?? false) ||
