@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ReceptionAndDelivery.tsx
 "use client";
 
@@ -62,8 +61,6 @@ export const ReceptionAndDelivery = ({
 }: ReceptionAndDeliveryProps) => {
   const { control, watch, getValues } = useFormContext<ServiceFormValues>();
   
-  const [isEditingDate, setIsEditingDate] = useState(false);
-  
   if (part === 'reception') {
     const receptionDateTime = watch("receptionDateTime" as any);
     const formattedReceptionDate = receptionDateTime && isValid(receptionDateTime)
@@ -81,34 +78,10 @@ export const ReceptionAndDelivery = ({
         </CardHeader>
         <CardContent className="space-y-6">
            <div className="space-y-2">
-               <div className="flex justify-between items-center">
-                  <FormLabel>Fecha y Hora de Ingreso</FormLabel>
-                   {!isReadOnly && (
-                    <Button type="button" variant="ghost" size="icon" onClick={() => setIsEditingDate(!isEditingDate)}>
-                        <Edit className="h-4 w-4" />
-                    </Button>
-                   )}
-               </div>
-               {isEditingDate && !isReadOnly ? (
-                  <FormField
-                    control={control}
-                    name={"receptionDateTime" as any}
-                    render={({ field }) => (
-                      <FormControl>
-                         <Input
-                              type="datetime-local"
-                              value={field.value ? format(new Date(field.value), "yyyy-MM-dd'T'HH:mm") : ''}
-                              onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)}
-                              className="bg-card"
-                          />
-                      </FormControl>
-                    )}
-                  />
-               ) : (
-                  <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center text-sm font-medium h-10">
-                      {formattedReceptionDate || 'Pendiente'}
-                  </div>
-               )}
+              <FormLabel>Fecha y Hora de Ingreso</FormLabel>
+              <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center text-sm font-medium h-10">
+                  {formattedReceptionDate || 'Pendiente'}
+              </div>
           </div>
           <FormField
               control={control}
@@ -183,25 +156,8 @@ export const ReceptionAndDelivery = ({
         </CardHeader>
         <CardContent className="space-y-6">
             <div className="space-y-2">
-                 <div className="flex justify-between items-center">
-                    <FormLabel>Fecha y Hora de Salida</FormLabel>
-                     {!isReadOnly && (
-                        <Button type="button" variant="ghost" size="icon" onClick={() => setIsEditingDate(!isEditingDate)}><Edit className="h-4 w-4" /></Button>
-                     )}
-                 </div>
-                 {isEditingDate && !isReadOnly ? (
-                    <FormField
-                      control={control}
-                      name={"deliveryDateTime" as any}
-                      render={({ field }) => (
-                        <FormControl>
-                           <Input type="datetime-local" value={field.value ? format(new Date(field.value), "yyyy-MM-dd'T'HH:mm") : ''} onChange={(e) => field.onChange(e.target.value ? new Date(e.target.value) : null)} className="bg-card" />
-                        </FormControl>
-                      )}
-                    />
-                 ) : (
-                    <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center text-sm font-medium h-10">{formattedDeliveryDate || 'Pendiente'}</div>
-                 )}
+                <FormLabel>Fecha y Hora de Salida</FormLabel>
+                <div className="p-2 border rounded-md bg-muted/50 flex items-center justify-center text-sm font-medium h-10">{formattedDeliveryDate || 'Pendiente'}</div>
             </div>
             
             <div className="pt-4 border-t">

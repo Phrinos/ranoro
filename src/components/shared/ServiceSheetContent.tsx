@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Vehicle, ServiceRecord, SafetyInspection, SafetyCheckValue } from '@/types';
@@ -19,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { parseDate } from '@/lib/forms';
 import { GARANTIA_CONDICIONES_TEXT, INGRESO_CONDICIONES_TEXT } from "@/lib/constants/legal-text";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ReceptionAndDelivery } from '@/app/(app)/servicios/components/ReceptionAndDelivery';
 
 /** Branding/Ticket settings locales (lee de localStorage 'workshopTicketInfo') */
 const defaultTicketSettings: any = {
@@ -314,9 +316,10 @@ const StatusCard = React.memo((
     return { title: "COTIZACIÓN DE SERVICIO", description: null, badge: null, cardClass: "bg-muted/50", titleClass: "text-foreground", descClass: "text-muted-foreground" };
   }, [status, appointmentStatus, service.subStatus, formattedAppointmentDate, formattedReceptionDate, formattedDeliveryDate]);
 
-  const shouldShowNextService = status === 'entregado'
-    && service.nextServiceInfo?.date
-    && isValid(parseDate(service.nextServiceInfo.date)!);
+  const shouldShowNextService =
+    status === 'entregado' &&
+    service.nextServiceInfo?.date &&
+    isValid(parseDate(service.nextServiceInfo.date)!);
 
   return (
     <>
@@ -457,7 +460,10 @@ interface ServiceSheetContentProps {
   vehicle?: Vehicle | null;
 }
 
-export const ServiceSheetContent = React.forwardRef<HTMLDivElement, ServiceSheetContentProps>(
+export const ServiceSheetContent = React.forwardRef<
+  HTMLDivElement,
+  ServiceSheetContentProps
+>(
   ({ service, onScheduleClick, onConfirmClick, isConfirming, onSignClick, isSigning, onShowTicketClick, vehicle, onCancelAppointment }, ref) => {
     const { toast } = useToast();
     const [currentActiveTab, setActiveTab] = useState('order');
@@ -551,7 +557,7 @@ ServiceSheetContent.displayName = "ServiceSheetContent";
 
 // ---------- Tabs content ----------
 function ServiceOrderTab(
-  { service, vehicle, onSignClick, isSigning, onShowTicketClick }:
+  { service, onSignClick, isSigning, onShowTicketClick }:
   { service: ServiceRecord, vehicle?: Vehicle | null, onSignClick?: (type: 'reception' | 'delivery') => void, isSigning?: boolean, onShowTicketClick?: () => void }
 ) {
   const items = useMemo(
@@ -631,12 +637,13 @@ function ServiceOrderTab(
           <Card>
             <CardHeader><CardTitle>Ingreso del Vehiculo al Taller</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <ReceptionDetails service={service} />
-              <div className="border-t pt-4">
-                <p className="text-xs text-muted-foreground whitespace-pre-line mt-2">{INGRESO_CONDICIONES_TEXT}</p>
-                <h4 className="font-semibold mb-2 mt-4">Firma de Autorización</h4>
-                <SignatureDisplay type="reception" signatureUrl={service.customerSignatureReception} onSignClick={onSignClick} isSigning={isSigning}/>
-              </div>
+              <ReceptionAndDelivery 
+                part="reception"
+                isReadOnly={true}
+                isEnhancingText={null}
+                handleEnhanceText={() => {}}
+                onOpenSignature={(type) => onSignClick && onSignClick(type)}
+              />
             </CardContent>
           </Card>
         )}
@@ -645,70 +652,16 @@ function ServiceOrderTab(
           <Card>
             <CardHeader><CardTitle>Salida del Vehículo del Taller</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="border-t pt-4">
-                <h4 className="font-semibold mb-2">Garantía</h4>
-                <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
-              </div>
-              <h4 className="font-semibold mb-2">Firma de Conformidad</h4>
-              <SignatureDisplay type="delivery" signatureUrl={service.customerSignatureDelivery} onSignClick={onSignClick} isSigning={isSigning} />
+               <ReceptionAndDelivery 
+                part="delivery"
+                isReadOnly={true}
+                isEnhancingText={null}
+                handleEnhanceText={() => {}}
+                onOpenSignature={(type) => onSignClick && onSignClick(type)}
+              />
             </CardContent>
           </Card>
         )}
-      </div>
-    </div>
-  );
-}
-
-function ReceptionDetails({ service }: { service: ServiceRecord }) {
-  const fuelLevelMap: Record<string, number> = { 'Vacío': 0, '1/8': 12.5, '1/4': 25, '3/8': 37.5, '1/2': 50, '5/8': 62.5, '3/4': 75, '7/8': 87.5, 'Lleno': 100 };
-  const fuelPercentage = service.fuelLevel ? fuelLevelMap[service.fuelLevel] ?? 0 : 0;
-  const fuelColor = fuelPercentage <= 25 ? "bg-red-500" : fuelPercentage <= 50 ? "bg-orange-400" : fuelPercentage <= 87.5 ? "bg-yellow-400" : "bg-green-500";
-  return (
-    <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <h4 className="font-semibold">Condiciones del Vehículo</h4>
-          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{service.vehicleConditions || 'No especificado'}</p>
-        </div>
-        <div>
-          <h4 className="font-semibold">Pertenencias del Cliente</h4>
-          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{service.customerItems || 'No especificado'}</p>
-        </div>
-      </div>
-      <div>
-        <h4 className="font-semibold">Nivel de Combustible</h4>
-        <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300 mt-2">
-          <div className={cn("h-full transition-all", fuelColor)} style={{ width: `${fuelPercentage}%` }} />
-        </div>
-        <p className="text-center text-xs mt-1">{service.fuelLevel || 'N/A'}</p>
-      </div>
-    </>
-  );
-}
-
-function SignatureDisplay(
-  { type, signatureUrl, onSignClick, isSigning }:
-  { type: 'reception' | 'delivery', signatureUrl?: string | null, onSignClick?: (type: 'reception' | 'delivery') => void, isSigning?: boolean }
-) {
-  const label = type === 'reception' ? 'CLIENTE (RECEPCIÓN)' : 'CLIENTE (ENTREGA)';
-  return (
-    <div className="text-center">
-      <p className="text-xs font-semibold">{label}</p>
-      <div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">
-        {signatureUrl ? (
-          <Image
-            src={normalizeDataUrl(signatureUrl)}
-            alt={`Firma de ${type}`}
-            width={150}
-            height={75}
-            style={{objectFit:'contain'}}
-            unoptimized
-          />
-        ) : (onSignClick ? (
-          <Button size="sm" onClick={() => onSignClick(type)} disabled={isSigning}>
-            {isSigning ? 'Cargando...' : 'Firmar'}
-          </Button>
-        ) : <p className="text-xs text-muted-foreground">Pendiente</p>)}
       </div>
     </div>
   );
@@ -839,7 +792,7 @@ function PhotoReportContent({ photoReports }: { photoReports: any[] }) {
     <Card>
       <CardHeader><CardTitle>Reporte Fotográfico</CardTitle></CardHeader>
       <CardContent className="space-y-4">
-        {photoReports.map(report => (
+        {photoReports.map((report) => (
           <div key={report.id}>
             <p className="font-semibold">{report.description}</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
@@ -879,5 +832,3 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
     </Card>
   );
 }
-
-    
