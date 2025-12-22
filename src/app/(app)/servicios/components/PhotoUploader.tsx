@@ -40,6 +40,7 @@ export function PhotoUploader({
   const handlePhotoUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     
+    // Reset file input immediately to allow re-uploading the same file
     if (event.target) {
         event.target.value = "";
     }
