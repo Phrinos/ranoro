@@ -8,7 +8,7 @@ import { doc, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebasePublic";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ServiceSheetContent } from "@/components/ServiceSheetContent";
+import { ServiceSheetContent } from "@/components/shared/ServiceSheetContent";
 import { SignatureDialog } from "@/app/(app)/servicios/components/signature-dialog";
 import { AppointmentScheduler } from "@/components/shared/AppointmentScheduler";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
@@ -53,25 +53,36 @@ type PublicServiceDoc = {
   mileage?: number;
 };
 
-// ——— Helpers fecha robustos ———
-const toDate = (v: string | Date | Timestamp | null | undefined): Date | null => {
+// helpers (pueden ir arriba del componente)
+const pickFirst = (...vals: any[]) => vals.find(v => typeof v === "string" && v.trim() && v.trim().toLowerCase() !== "na") as string | undefined;
+
+const extractPlate = (s?: string | null) => {
+  const t = (s ?? "").trim();
+  if (!t) return null;
+  const m = t.toUpperCase().match(/([A-Z0-9-]{5,10})$/);
+  return m?.[1] ?? null;
+};
+
+const normalizeVehicle = (v: any) => {
   if (!v) return null;
-  if (v instanceof Date) return isNaN(v.getTime()) ? null : v;
-  if (typeof (v as any)?.toDate === "function") {
-    const d = (v as any).toDate();
-    return isValid(d) ? d : null;
-  }
-  if (typeof v === "number") {
-    const d = new Date(v > 1e12 ? v : v * 1000);
-    return isValid(d) ? d : null;
-  }
-  if (typeof v === "string") {
-    const isoTry = parseISO(v);
-    if (isValid(isoTry)) return isoTry;
-    const generic = new Date(v);
-    if (isValid(generic)) return generic;
-  }
-  return null;
+
+  // algunos proyectos guardan todo junto en licensePlate (como tu screenshot)
+  const rawPlate = pickFirst(v.licensePlate, v.plates, v.placas);
+  const plate = extractPlate(rawPlate);
+  const titleFromRaw = plate ? rawPlate?.replace(new RegExp(`${plate}$`, "i"), "").trim() : rawPlate;
+
+  return {
+    ...v,
+    // mapea aliases comunes
+    make: pickFirst(v.make, v.brand, v.marca) ?? "",
+    model: pickFirst(v.model, v.subModel, v.modelo, v.version) ?? "",
+    year: pickFirst(String(v.year ?? ""), String(v.anio ?? ""), String(v.año ?? ""), String(v.modelYear ?? "")) || "",
+    licensePlate: plate ?? rawPlate ?? "",
+    // si venía todo junto, guardamos la parte descriptiva por si la ocupas
+    _titleFromRaw: titleFromRaw ?? "",
+    ownerName: pickFirst(v.ownerName, v.customerName, v.owner?.name, v.propietario) ?? "",
+    ownerPhone: pickFirst(v.ownerPhone, v.phone, v.telefono, v.owner?.phone) ?? "",
+  };
 };
 
 export default function PublicServicePage() {
@@ -188,9 +199,20 @@ export default function PublicServicePage() {
     setIsSigning(true);
   };
 
-  const vehicle = service?.vehicle || null;
-  const displayPlate = vehicle?.licensePlate || service?.vehicleIdentifier || vehicle?.plates || null;
-  const patchedService = displayPlate ? { ...service, vehicleIdentifier: displayPlate } : service;
+  const rawVehicle = (service as any)?.vehicle ?? null;
+  const vehicle = normalizeVehicle(rawVehicle);
+
+  const serviceForSheet = {
+    ...service,
+    // intenta rescatar teléfono aunque venga con otro nombre
+    customerPhone: pickFirst(
+      service?.customerPhone,
+      (service as any)?.phone,
+      (service as any)?.telefono,
+      vehicle?.ownerPhone
+    ) ?? service?.customerPhone,
+  };
+
 
   if (service === undefined) {
     return (
@@ -220,7 +242,7 @@ export default function PublicServicePage() {
     <>
       <div className="container mx-auto py-4 sm:py-8">
         <ServiceSheetContent
-          service={patchedService as any}
+          service={serviceForSheet as any}
           vehicle={vehicle}
           onScheduleClick={() => setIsScheduling(true)}
           onConfirmClick={handleConfirmAppointment}
@@ -266,3 +288,5 @@ export default function PublicServicePage() {
     </>
   );
 }
+
+    
