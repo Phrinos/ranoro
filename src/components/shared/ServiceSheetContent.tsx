@@ -20,7 +20,6 @@ import { useToast } from '@/hooks/use-toast';
 import { parseDate } from '@/lib/forms';
 import { GARANTIA_CONDICIONES_TEXT, INGRESO_CONDICIONES_TEXT } from "@/lib/constants/legal-text";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ReceptionAndDelivery } from '@/app/(app)/servicios/components/ReceptionAndDelivery';
 
 /** Branding/Ticket settings locales (lee de localStorage 'workshopTicketInfo') */
 const defaultTicketSettings: any = {
@@ -637,13 +636,45 @@ function ServiceOrderTab(
           <Card>
             <CardHeader><CardTitle>Recepción del Vehículo</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <ReceptionAndDelivery
-                part="reception"
-                isReadOnly={true}
-                isEnhancingText={null}
-                handleEnhanceText={() => {}}
-                onOpenSignature={(type) => onSignClick && onSignClick(type)}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold">Condiciones del Vehículo</h4>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {service.vehicleConditions || "No especificado"}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold">Pertenencias del Cliente</h4>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {service.customerItems || "No especificado"}
+                  </p>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold">Nivel de Combustible</h4>
+                <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300 mt-2">
+                  <div className={cn("h-full transition-all", service.fuelLevel ? {
+                    'bg-red-500': ['Vacío', '1/8', '1/4'].includes(service.fuelLevel),
+                    'bg-yellow-400': ['3/8', '1/2', '5/8'].includes(service.fuelLevel),
+                    'bg-green-500': ['3/4', '7/8', 'Lleno'].includes(service.fuelLevel),
+                  } : 'bg-gray-300')} style={{ width: `${({Vacío:0, "1/8":12.5, "1/4":25, "3/8":37.5, "1/2":50, "5/8":62.5, "3/4":75, "7/8":87.5, Lleno:100}[service.fuelLevel || ''] || 0)}%` }} />
+                </div>
+                <p className="text-center text-xs mt-1">{service.fuelLevel || "N/A"}</p>
+              </div>
+              <div className="border-t pt-4">
+                <p className="text-xs text-muted-foreground whitespace-pre-line mt-2">{INGRESO_CONDICIONES_TEXT}</p>
+                <h4 className="font-semibold mb-2 mt-4">Firma de Autorización</h4>
+                 <div className="text-center">
+                    <p className="text-xs font-semibold">CLIENTE (RECEPCIÓN)</p>
+                    <div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">
+                      {service.customerSignatureReception ? (
+                        <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" width={150} height={75} style={{objectFit:"contain"}} unoptimized />
+                      ) : onSignClick ? (
+                        <Button size="sm" onClick={() => onSignClick('reception')} disabled={isSigning}>{isSigning ? 'Cargando...' : 'Firmar'}</Button>
+                      ) : (<p className="text-xs text-muted-foreground">Pendiente</p>)}
+                    </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -652,13 +683,21 @@ function ServiceOrderTab(
           <Card>
             <CardHeader><CardTitle>Entrega y Conformidad</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-               <ReceptionAndDelivery
-                part="delivery"
-                isReadOnly={true}
-                isEnhancingText={null}
-                handleEnhanceText={() => {}}
-                onOpenSignature={(type) => onSignClick && onSignClick(type)}
-              />
+              <div className="border-t pt-4">
+                <h4 className="font-semibold mb-2">Garantía</h4>
+                <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
+              </div>
+              <h4 className="font-semibold mb-2">Firma de Conformidad</h4>
+              <div className="text-center">
+                  <p className="text-xs font-semibold">CLIENTE (ENTREGA)</p>
+                  <div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">
+                    {service.customerSignatureDelivery ? (
+                      <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de entrega" width={150} height={75} style={{objectFit:"contain"}} unoptimized />
+                    ) : onSignClick ? (
+                      <Button size="sm" onClick={() => onSignClick('delivery')} disabled={isSigning}>{isSigning ? 'Cargando...' : 'Firmar'}</Button>
+                    ) : (<p className="text-xs text-muted-foreground">Pendiente</p>)}
+                  </div>
+              </div>
             </CardContent>
           </Card>
         )}
