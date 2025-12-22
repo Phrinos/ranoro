@@ -113,8 +113,9 @@ function buildPublicData(svc: any) {
       status: svc.status || null,
       subStatus: svc.subStatus ?? null,
       customerName: svc.customerName || null,
-      customerPhone: svc.customerPhone != null ? String(svc.customerPhone) : null,
+      customerPhone: svc.customerPhone != null ? String(svc.customerPhone) : null, // ✅ NUEVO
       serviceAdvisorName: svc.serviceAdvisorName || null,
+      serviceAdvisorSignatureDataUrl: svc.serviceAdvisorSignatureDataUrl || null, // ✅ NUEVO
       vehicleId: svc.vehicleId || null,
       vehicleIdentifier: svc.vehicleIdentifier || null,
       receptionDateTime: svc.receptionDateTime || null,
@@ -213,22 +214,26 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
 };
 
 const updateService = async (id: string, data: Partial<ServiceRecord>) => {
-    if (!db) throw new Error('Database not initialized.');
+    if (!db) throw new Error("Database not initialized.");
     
     const serviceRef = doc(db, 'serviceRecords', id);
     const serviceSnap = await getDoc(serviceRef);
     if (!serviceSnap.exists()) throw new Error("Service to update not found.");
 
+    // 1) Merge + denormalize para tener phone + firma asesor, etc.
+    const merged = { ...(serviceSnap.data() as any), ...data, id };
+    const denormalized = await denormalizeService(merged);
+
     const batch = writeBatch(db);
-    batch.update(serviceRef, data);
-    
-    // Also update the public document if it exists
-    const publicId = serviceSnap.data().publicId || id;
-    if (publicId) {
-      const publicRef = doc(db, 'publicServices', publicId);
-      batch.update(publicRef, data);
-    }
-    
+
+    // 2) Guarda completo (limpio) en el doc privado
+    batch.set(serviceRef, cleanObjectForFirestore(denormalized), { merge: true });
+
+    // 3) Guarda SOLO lo público (curado) en publicServices
+    const publicId = denormalized.publicId || id;
+    const publicRef = doc(db, 'publicServices', publicId);
+    batch.set(publicRef, cleanObjectForFirestore(buildPublicData(denormalized)), { merge: true });
+
     await batch.commit();
 };
 
