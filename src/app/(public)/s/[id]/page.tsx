@@ -53,7 +53,6 @@ type PublicServiceDoc = {
   mileage?: number;
 };
 
-// helpers (pueden ir arriba del componente)
 const pickFirstText = (...vals: any[]) => {
   for (const v of vals) {
     if (v === null || v === undefined) continue;
@@ -78,19 +77,16 @@ const extractPlate = (s?: string | null) => {
 const normalizeVehicle = (v: any) => {
   if (!v) return null;
 
-  // algunos proyectos guardan todo junto en licensePlate (como tu screenshot)
   const rawPlate = pickFirstText(v.licensePlate, v.plates, v.placas);
   const plate = extractPlate(rawPlate);
   const titleFromRaw = plate ? rawPlate?.replace(new RegExp(`${plate}$`, "i"), "").trim() : rawPlate;
 
   return {
     ...v,
-    // mapea aliases comunes
     make: pickFirstText(v.make, v.brand, v.marca) ?? "",
     model: pickFirstText(v.model, v.subModel, v.modelo, v.version) ?? "",
     year: pickFirstText(String(v.year ?? ""), String(v.anio ?? ""), String(v.año ?? ""), String(v.modelYear ?? "")) || "",
     licensePlate: plate ?? rawPlate ?? "",
-    // si venía todo junto, guardamos la parte descriptiva por si la ocupas
     _titleFromRaw: titleFromRaw ?? "",
     ownerName: pickFirstText(v.ownerName, v.customerName, v.owner?.name, v.propietario) ?? "",
     ownerPhone: pickFirstText(v.ownerPhone, v.phone, v.telefono, v.owner?.phone) ?? "",
@@ -113,12 +109,11 @@ export default function PublicServicePage() {
   const [workshopInfo, setWorkshopInfo] = useState<any | null>(null);
 
   useEffect(() => {
-    // Carga info del ticket para el preview (localStorage solo en cliente)
     try {
       const stored = localStorage.getItem("workshopTicketInfo");
       if (stored) setWorkshopInfo(JSON.parse(stored));
     } catch (e) {
-      // Ignore parsing errors
+      console.error("Could not parse workshop info from storage", e);
     }
 
     if (!publicId) {
@@ -216,8 +211,7 @@ export default function PublicServicePage() {
 
   const serviceForSheet = {
     ...service,
-    customerPhone:
-      pickFirstText(
+    customerPhone: pickFirstText(
         service?.customerPhone,
         (service as any)?.customer?.phone,
         (service as any)?.customer?.phoneNumber,
@@ -302,3 +296,5 @@ export default function PublicServicePage() {
     </>
   );
 }
+
+```

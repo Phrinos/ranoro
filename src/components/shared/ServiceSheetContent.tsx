@@ -1,4 +1,3 @@
-
 "use client";
 
 import type {
@@ -116,8 +115,19 @@ const SheetHeader = React.memo(
 );
 SheetHeader.displayName = "SheetHeader";
 
-const pickFirst = (...vals: any[]) =>
-  vals.find(v => typeof v === "string" && v.trim() && v.trim().toLowerCase() !== "na") as string | undefined;
+const pickFirstText = (...vals: any[]) => {
+  for (const v of vals) {
+    if (v === null || v === undefined) continue;
+
+    if (typeof v === "number" && Number.isFinite(v)) return String(v);
+
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (s && s.toLowerCase() !== "na") return s;
+    }
+  }
+  return undefined;
+};
 
 const extractPlate = (s?: string | null) => {
   const t = (s ?? "").trim();
@@ -133,71 +143,121 @@ const splitIdentifier = (identifier?: string) => {
   return { title, plate };
 };
 
-const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, vehicle?: Vehicle | null }) => {
-  const customerName = capitalizeWords(pickFirst(service.customerName, (vehicle as any)?.ownerName, (vehicle as any)?.customerName) ?? "");
-  const customerPhone = pickFirst(
-    service.customerPhone,
-    (service as any).phone,
-    (service as any).telefono,
-    (vehicle as any)?.ownerPhone,
-    (vehicle as any)?.phone,
-    (vehicle as any)?.telefono
-  ) ?? "Teléfono no disponible";
+const ClientInfo = React.memo(
+  ({
+    service,
+    vehicle,
+  }: {
+    service: ServiceRecord;
+    vehicle?: Vehicle | null;
+  }) => {
+    const customerName = capitalizeWords(
+      pickFirstText(
+        service.customerName,
+        (vehicle as any)?.ownerName,
+        (vehicle as any)?.customerName
+      ) ?? ""
+    );
+    const customerPhone =
+      pickFirstText(
+        service.customerPhone,
+        (service as any).phone,
+        (service as any).telefono,
+        (vehicle as any)?.ownerPhone,
+        (vehicle as any)?.phone,
+        (vehicle as any)?.telefono
+      ) ?? "Teléfono no disponible";
 
-  const idSplit = splitIdentifier(service.vehicleIdentifier);
+    const idSplit = splitIdentifier(service.vehicleIdentifier);
 
-  // placa: primero la del vehículo, si viene “rara” la parseamos, si no usamos la del identifier
-  const rawVehiclePlate = pickFirst((vehicle as any)?.licensePlate, (vehicle as any)?.plates, (vehicle as any)?.placas);
-  const plateFromVehicle = extractPlate(rawVehiclePlate) ?? rawVehiclePlate ?? null;
-  const vehicleLicensePlate = plateFromVehicle ?? idSplit.plate ?? "N/A";
+    const rawVehiclePlate = pickFirstText(
+      (vehicle as any)?.licensePlate,
+      (vehicle as any)?.plates,
+      (vehicle as any)?.placas
+    );
+    const plateFromVehicle = extractPlate(rawVehiclePlate) ?? rawVehiclePlate ?? null;
+    const vehicleLicensePlate = plateFromVehicle ?? idSplit.plate ?? "N/A";
 
-  // título: intenta make/model/year; si viene vacío, usa el identifier (sin placa) o “Vehículo no asignado”
-  const make = pickFirst((vehicle as any)?.make, (vehicle as any)?.brand, (vehicle as any)?.marca) ?? "";
-  const model = pickFirst((vehicle as any)?.model, (vehicle as any)?.subModel, (vehicle as any)?.modelo, (vehicle as any)?.version) ?? "";
-  const year = pickFirst(String((vehicle as any)?.year ?? ""), String((vehicle as any)?.anio ?? ""), String((vehicle as any)?.año ?? "")) ?? "";
+    const make = pickFirstText(
+      (vehicle as any)?.make,
+      (vehicle as any)?.brand,
+      (vehicle as any)?.marca
+    ) ?? "";
+    const model =
+      pickFirstText(
+        (vehicle as any)?.model,
+        (vehicle as any)?.subModel,
+        (vehicle as any)?.modelo,
+        (vehicle as any)?.version
+      ) ?? "";
+    const year =
+      pickFirstText(
+        String((vehicle as any)?.year ?? ""),
+        String((vehicle as any)?.anio ?? ""),
+        String((vehicle as any)?.año ?? "")
+      ) ?? "";
 
-  const composedTitle = `${make} ${model}`.trim();
-  const vehicleTitle =
-    (composedTitle ? `${composedTitle}${year ? ` (${year})` : ""}` : "") ||
-    idSplit.title ||
-    "Vehículo no asignado";
+    const composedTitle = `${make} ${model}`.trim();
+    const vehicleTitle =
+      (composedTitle ? `${composedTitle}${year ? ` (${year})` : ""}` : "") ||
+      idSplit.title ||
+      "Vehículo no asignado";
 
-  const mileageOk = typeof service.mileage === "number" && isFinite(service.mileage);
+    const mileageOk =
+      typeof service.mileage === "number" && isFinite(service.mileage);
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center gap-4 p-4">
-          <User className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
-          <CardTitle className="text-base">Cliente</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <p className="font-semibold">{customerName || "Cliente"}</p>
-          <p className="text-sm text-muted-foreground">
-            {customerPhone !== "Teléfono no disponible"
-              ? <a className="hover:underline" href={`tel:${customerPhone.replace(/\D/g, "")}`}>{customerPhone}</a>
-              : customerPhone}
-          </p>
-        </CardContent>
-      </Card>
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-4 p-4">
+            <User className="w-8 h-8 text-muted-foreground flex-shrink-0" />
+            <CardTitle className="text-base">Cliente</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <p className="font-semibold">{customerName || "Cliente"}</p>
+            <p className="text-sm text-muted-foreground">
+              {customerPhone !== "Teléfono no disponible" ? (
+                <a
+                  className="hover:underline"
+                  href={`tel:${customerPhone.replace(/\D/g, "")}`}
+                >
+                  {customerPhone}
+                </a>
+              ) : (
+                customerPhone
+              )}
+            </p>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center gap-4 p-4">
-          <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
-          <CardTitle className="text-base">Vehículo</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <p className="font-semibold">{vehicleTitle}</p>
-          <p className="text-muted-foreground">
-            {vehicleLicensePlate !== "N/A" ? `Placas: ${vehicleLicensePlate}` : "Placas: N/A"}
-          </p>
-          {(vehicle as any)?.color && <p className="text-xs text-muted-foreground">Color: {(vehicle as any).color}</p>}
-          {mileageOk && <p className="text-xs text-muted-foreground">KM: {formatNumber(service.mileage!)}</p>}
-        </CardContent>
-      </Card>
-    </div>
-  );
-});
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-4 p-4">
+            <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0" />
+            <CardTitle className="text-base">Vehículo</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <p className="font-semibold">{vehicleTitle}</p>
+            <p className="text-muted-foreground">
+              {vehicleLicensePlate !== "N/A"
+                ? `Placas: ${vehicleLicensePlate}`
+                : "Placas: N/A"}
+            </p>
+            {(vehicle as any)?.color && (
+              <p className="text-xs text-muted-foreground">
+                Color: {(vehicle as any).color}
+              </p>
+            )}
+            {mileageOk && (
+              <p className="text-xs text-muted-foreground">
+                KM: {formatNumber(service.mileage!)}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+);
 ClientInfo.displayName = "ClientInfo";
 
 const StatusCard = React.memo(
@@ -960,26 +1020,35 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
   ];
 
   const StatusIndicator = ({ status }: { status?: SafetyCheckValue['status'] }) => {
-    const m = {
-      ok: { label: "Bien", color: "bg-green-500", text: "text-green-700" },
-      atencion: { label: "Atención", color: "bg-yellow-400", text: "text-yellow-700" },
-      inmediata: { label: "Inmediata", color: "bg-red-500", text: "text-red-700" },
-      na: { label: "N/A", color: "bg-gray-300", text: "text-gray-500" },
-    } as const;
-    const s = m[status || 'na'];
-    return <div className="flex items-center gap-2"><div className={`h-3 w-3 rounded-full ${s.color}`} /><span className={cn("text-xs font-semibold", s.text)}>{s.label}</span></div>;
+    const statusInfo = {
+      ok: { label: "Bien", color: "bg-green-500", textColor: "text-green-700" },
+      atencion: { label: "Atención", color: "bg-yellow-400", textColor: "text-yellow-700" },
+      inmediata: { label: "Inmediata", color: "bg-red-500", textColor: "text-red-700" },
+      na: { label: "N/A", color: "bg-gray-300", textColor: "text-gray-500" },
+    };
+    const currentStatus = statusInfo[status || "na"];
+    return (
+      <div className="flex items-center gap-2">
+        <div className={`h-3 w-3 rounded-full ${currentStatus.color}`} />
+        <span className={cn("text-xs font-semibold", currentStatus.textColor)}>{currentStatus.label}</span>
+      </div>
+    );
   };
 
   return (
     <Card>
-      <CardHeader><CardTitle>Revisión de Puntos de Seguridad</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>Revisión de Puntos de Seguridad</CardTitle>
+      </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-          {groups.map(group => (
+          {groups.map((group) => (
             <div key={group.title}>
-              <h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">{group.title}</h4>
+              <h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">
+                {group.title}
+              </h4>
               <div className="space-y-1">
-                {group.items.map(item => {
+                {group.items.map((item) => {
                   const keyName = item.name as keyof Omit<SafetyInspection, "inspectionNotes" | "technicianSignature">;
                   const checkItem = (inspectionRecord as any)[keyName];
                   return (
@@ -988,12 +1057,16 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
                         <span className="pr-4">{item.label}</span>
                         <StatusIndicator status={checkItem?.status} />
                       </div>
-                      {checkItem?.notes && <p className="text-xs text-muted-foreground mt-1 pl-2 border-l-2 border-slate-200">Nota: {checkItem.notes}</p>}
+                      {checkItem?.notes && (
+                        <p className="text-xs text-muted-foreground mt-1 pl-2 border-l-2 border-slate-200">
+                          Nota: {checkItem.notes}
+                        </p>
+                      )}
                       {checkItem?.photos && checkItem.photos.length > 0 && (
                         <div className="mt-2 flex gap-2 flex-wrap">
-                          {checkItem.photos.map((p:string, i:number) => (
+                          {checkItem.photos.map((p: string, i: number) => (
                             <div key={i} className="relative w-16 h-16 rounded border bg-slate-100">
-                              <Image src={p} alt={`Foto ${i}`} fill style={{objectFit:"cover"}}/>
+                              <Image src={p} alt={`Foto ${i}`} fill style={{ objectFit: "cover" }} />
                             </div>
                           ))}
                         </div>
@@ -1005,19 +1078,23 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
             </div>
           ))}
         </div>
-
         <div>
           <h4 className="font-semibold">Observaciones Generales</h4>
           <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-            {String(inspectionRecord.inspectionNotes ?? 'Sin observaciones.')}
+            {String(inspectionRecord.inspectionNotes ?? "Sin observaciones.")}
           </p>
         </div>
-
         <div>
           <h4 className="font-semibold">Firma del Técnico</h4>
           <div className="mt-1 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">
             {inspectionRecord.technicianSignature ? (
-              <Image src={normalizeDataUrl(String(inspectionRecord.technicianSignature))} alt="Firma Técnico" width={200} height={80} style={{objectFit: "contain"}}/>
+              <Image
+                src={normalizeDataUrl(String(inspectionRecord.technicianSignature))}
+                alt="Firma Técnico"
+                width={200}
+                height={80}
+                style={{ objectFit: "contain" }}
+              />
             ) : (
               <span className="text-xs text-muted-foreground">Sin firma</span>
             )}
@@ -1031,7 +1108,9 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
 function PhotoReportContent({ photoReports }: { photoReports: any[] }) {
   return (
     <Card>
-      <CardHeader><CardTitle>Reporte Fotográfico</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>Reporte Fotográfico</CardTitle>
+      </CardHeader>
       <CardContent className="space-y-4">
         {photoReports.map((report) => (
           <div key={report.id}>
@@ -1054,7 +1133,9 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
   const total = items.reduce((acc, it) => acc + (Number(it.price) || 0), 0);
   return (
     <Card>
-      <CardHeader><CardTitle>Conceptos de la Cotización Original</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>Conceptos de la Cotización Original</CardTitle>
+      </CardHeader>
       <CardContent>
         <div className="space-y-2">
           {items.map((item, index) => (
@@ -1064,7 +1145,7 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
             </div>
           ))}
         </div>
-        <Separator className="my-4"/>
+        <Separator className="my-4" />
         <div className="flex justify-between items-center font-bold text-lg">
           <span>Total Original:</span>
           <span className="text-primary">{formatCurrency(total)}</span>
