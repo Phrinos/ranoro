@@ -92,7 +92,6 @@ export const metadata: Metadata = {
     address: true,
     email: false,
   },
-  manifest: "/site.webmanifest", // ⚠️ asegura que exista
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "any" },
