@@ -31,7 +31,7 @@ type PublicServiceDoc = {
   status?: string;
   subStatus?: string | null;
   customerName?: string;
-  customerPhone?: string;
+  customerPhone?: string | number;
   vehicleIdentifier?: string;
   receptionDateTime?: string | Date | Timestamp | null;
   deliveryDateTime?: string | Date | Timestamp | null;
@@ -54,7 +54,19 @@ type PublicServiceDoc = {
 };
 
 // helpers (pueden ir arriba del componente)
-const pickFirst = (...vals: any[]) => vals.find(v => typeof v === "string" && v.trim() && v.trim().toLowerCase() !== "na") as string | undefined;
+const pickFirstText = (...vals: any[]) => {
+  for (const v of vals) {
+    if (v === null || v === undefined) continue;
+
+    if (typeof v === "number" && Number.isFinite(v)) return String(v);
+
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (s && s.toLowerCase() !== "na") return s;
+    }
+  }
+  return undefined;
+};
 
 const extractPlate = (s?: string | null) => {
   const t = (s ?? "").trim();
@@ -67,21 +79,21 @@ const normalizeVehicle = (v: any) => {
   if (!v) return null;
 
   // algunos proyectos guardan todo junto en licensePlate (como tu screenshot)
-  const rawPlate = pickFirst(v.licensePlate, v.plates, v.placas);
+  const rawPlate = pickFirstText(v.licensePlate, v.plates, v.placas);
   const plate = extractPlate(rawPlate);
   const titleFromRaw = plate ? rawPlate?.replace(new RegExp(`${plate}$`, "i"), "").trim() : rawPlate;
 
   return {
     ...v,
     // mapea aliases comunes
-    make: pickFirst(v.make, v.brand, v.marca) ?? "",
-    model: pickFirst(v.model, v.subModel, v.modelo, v.version) ?? "",
-    year: pickFirst(String(v.year ?? ""), String(v.anio ?? ""), String(v.año ?? ""), String(v.modelYear ?? "")) || "",
+    make: pickFirstText(v.make, v.brand, v.marca) ?? "",
+    model: pickFirstText(v.model, v.subModel, v.modelo, v.version) ?? "",
+    year: pickFirstText(String(v.year ?? ""), String(v.anio ?? ""), String(v.año ?? ""), String(v.modelYear ?? "")) || "",
     licensePlate: plate ?? rawPlate ?? "",
     // si venía todo junto, guardamos la parte descriptiva por si la ocupas
     _titleFromRaw: titleFromRaw ?? "",
-    ownerName: pickFirst(v.ownerName, v.customerName, v.owner?.name, v.propietario) ?? "",
-    ownerPhone: pickFirst(v.ownerPhone, v.phone, v.telefono, v.owner?.phone) ?? "",
+    ownerName: pickFirstText(v.ownerName, v.customerName, v.owner?.name, v.propietario) ?? "",
+    ownerPhone: pickFirstText(v.ownerPhone, v.phone, v.telefono, v.owner?.phone) ?? "",
   };
 };
 
@@ -204,13 +216,15 @@ export default function PublicServicePage() {
 
   const serviceForSheet = {
     ...service,
-    // intenta rescatar teléfono aunque venga con otro nombre
-    customerPhone: pickFirst(
-      service?.customerPhone,
-      (service as any)?.phone,
-      (service as any)?.telefono,
-      vehicle?.ownerPhone
-    ) ?? service?.customerPhone,
+    customerPhone:
+      pickFirstText(
+        service?.customerPhone,
+        (service as any)?.customer?.phone,
+        (service as any)?.customer?.phoneNumber,
+        (service as any)?.phone,
+        (service as any)?.telefono,
+        vehicle?.ownerPhone
+      ) ?? service?.customerPhone,
   };
 
 
@@ -243,7 +257,7 @@ export default function PublicServicePage() {
       <div className="container mx-auto py-4 sm:py-8">
         <ServiceSheetContent
           service={serviceForSheet as any}
-          vehicle={vehicle}
+          vehicle={vehicle as any}
           onScheduleClick={() => setIsScheduling(true)}
           onConfirmClick={handleConfirmAppointment}
           onCancelAppointment={handleCancelAppointment}
@@ -288,5 +302,3 @@ export default function PublicServicePage() {
     </>
   );
 }
-
-    

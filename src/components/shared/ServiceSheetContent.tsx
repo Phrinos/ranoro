@@ -146,10 +146,12 @@ const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, v
 
   const idSplit = splitIdentifier(service.vehicleIdentifier);
 
+  // placa: primero la del vehículo, si viene “rara” la parseamos, si no usamos la del identifier
   const rawVehiclePlate = pickFirst((vehicle as any)?.licensePlate, (vehicle as any)?.plates, (vehicle as any)?.placas);
   const plateFromVehicle = extractPlate(rawVehiclePlate) ?? rawVehiclePlate ?? null;
   const vehicleLicensePlate = plateFromVehicle ?? idSplit.plate ?? "N/A";
 
+  // título: intenta make/model/year; si viene vacío, usa el identifier (sin placa) o “Vehículo no asignado”
   const make = pickFirst((vehicle as any)?.make, (vehicle as any)?.brand, (vehicle as any)?.marca) ?? "";
   const model = pickFirst((vehicle as any)?.model, (vehicle as any)?.subModel, (vehicle as any)?.modelo, (vehicle as any)?.version) ?? "";
   const year = pickFirst(String((vehicle as any)?.year ?? ""), String((vehicle as any)?.anio ?? ""), String((vehicle as any)?.año ?? "")) ?? "";
@@ -989,9 +991,9 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
                       {checkItem?.notes && <p className="text-xs text-muted-foreground mt-1 pl-2 border-l-2 border-slate-200">Nota: {checkItem.notes}</p>}
                       {checkItem?.photos && checkItem.photos.length > 0 && (
                         <div className="mt-2 flex gap-2 flex-wrap">
-                          {checkItem.photos.map((p: string, i: number) => (
+                          {checkItem.photos.map((p:string, i:number) => (
                             <div key={i} className="relative w-16 h-16 rounded border bg-slate-100">
-                              <Image src={p} alt={`Foto ${i}`} fill style={{ objectFit: "cover" }} />
+                              <Image src={p} alt={`Foto ${i}`} fill style={{objectFit:"cover"}}/>
                             </div>
                           ))}
                         </div>
@@ -1003,23 +1005,19 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
             </div>
           ))}
         </div>
+
         <div>
           <h4 className="font-semibold">Observaciones Generales</h4>
           <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
             {String(inspectionRecord.inspectionNotes ?? 'Sin observaciones.')}
           </p>
         </div>
+
         <div>
           <h4 className="font-semibold">Firma del Técnico</h4>
           <div className="mt-1 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">
             {inspectionRecord.technicianSignature ? (
-              <Image
-                src={normalizeDataUrl(String(inspectionRecord.technicianSignature))}
-                alt="Firma Técnico"
-                width={200}
-                height={80}
-                style={{ objectFit: "contain" }}
-              />
+              <Image src={normalizeDataUrl(String(inspectionRecord.technicianSignature))} alt="Firma Técnico" width={200} height={80} style={{objectFit: "contain"}}/>
             ) : (
               <span className="text-xs text-muted-foreground">Sin firma</span>
             )}
