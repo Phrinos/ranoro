@@ -79,6 +79,21 @@ const coerceDate = (v: unknown): Date | null => {
   return null;
 };
 
+const pickFirstText = (...vals: any[]) => {
+    for (const v of vals) {
+      if (v === null || v === undefined) continue;
+
+      if (typeof v === "number" && Number.isFinite(v)) return String(v);
+
+      if (typeof v === "string") {
+        const s = v.trim();
+        if (s && s.toLowerCase() !== "na") return s;
+      }
+    }
+    return undefined;
+};
+
+
 const SheetHeader = React.memo(
   ({ service, workshopInfo }: { service: ServiceRecord; workshopInfo: any }) => {
     const creationDate = coerceDate(service.serviceDate) || new Date();
@@ -116,9 +131,6 @@ const SheetHeader = React.memo(
 );
 SheetHeader.displayName = "SheetHeader";
 
-const pickFirstText = (...vals: any[]) =>
-  vals.find(v => typeof v === "string" && v.trim() && v.trim().toLowerCase() !== "na") as string | undefined;
-
 const extractPlate = (s?: string | null) => {
   const t = (s ?? "").trim();
   if (!t) return null;
@@ -133,72 +145,80 @@ const splitIdentifier = (identifier?: string) => {
   return { title, plate };
 };
 
-const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, vehicle?: Vehicle | null }) => {
-  const customerName = capitalizeWords(pickFirstText(service.customerName, (vehicle as any)?.ownerName, (vehicle as any)?.customerName) ?? "");
-  const customerPhone =
-    pickFirstText(
-      service.customerPhone,
-      (service as any).phone,
-      (service as any).telefono,
-      (vehicle as any)?.ownerPhone,
-      (vehicle as any)?.phone,
-      (vehicle as any)?.telefono
-    ) ?? "Teléfono no disponible";
+const ClientInfo = React.memo(
+  ({
+    service,
+    vehicle,
+  }: {
+    service: ServiceRecord;
+    vehicle?: Vehicle | null;
+  }) => {
+    const customerName = capitalizeWords(pickFirstText(service.customerName, (vehicle as any)?.ownerName, (vehicle as any)?.customerName) ?? "");
+    const customerPhone =
+      pickFirstText(
+        service.customerPhone,
+        (service as any).phone,
+        (service as any).telefono,
+        (vehicle as any)?.ownerPhone,
+        (vehicle as any)?.phone,
+        (vehicle as any)?.telefono
+      ) ?? "Teléfono no disponible";
 
-  const idSplit = splitIdentifier(service.vehicleIdentifier);
+    const idSplit = splitIdentifier(service.vehicleIdentifier);
 
-  // placa: primero la del vehículo, si viene “rara” la parseamos, si no usamos la del identifier
-  const rawVehiclePlate = pickFirstText((vehicle as any)?.licensePlate, (vehicle as any)?.plates, (vehicle as any)?.placas);
-  const plateFromVehicle = extractPlate(rawVehiclePlate) ?? rawVehiclePlate ?? null;
-  const vehicleLicensePlate = plateFromVehicle ?? idSplit.plate ?? "N/A";
+    // placa: primero la del vehículo, si viene “rara” la parseamos, si no usamos la del identifier
+    const rawVehiclePlate = pickFirstText((vehicle as any)?.licensePlate, (vehicle as any)?.plates, (vehicle as any)?.placas);
+    const plateFromVehicle = extractPlate(rawVehiclePlate) ?? rawVehiclePlate ?? null;
+    const vehicleLicensePlate = plateFromVehicle ?? idSplit.plate ?? "N/A";
 
-  // título: intenta make/model/year; si viene vacío, usa el identifier (sin placa) o “Vehículo no asignado”
-  const make = pickFirstText((vehicle as any)?.make, (vehicle as any)?.brand, (vehicle as any)?.marca) ?? "";
-  const model = pickFirstText((vehicle as any)?.model, (vehicle as any)?.subModel, (vehicle as any)?.modelo, (vehicle as any)?.version) ?? "";
-  const year = pickFirstText(String((vehicle as any)?.year ?? ""), String((vehicle as any)?.anio ?? ""), String((vehicle as any)?.año ?? "")) ?? "";
+    // título: intenta make/model/year; si viene vacío, usa el identifier (sin placa) o “Vehículo no asignado”
+    const make = pickFirstText((vehicle as any)?.make, (vehicle as any)?.brand, (vehicle as any)?.marca) ?? "";
+    const model = pickFirstText((vehicle as any)?.model, (vehicle as any)?.subModel, (vehicle as any)?.modelo, (vehicle as any)?.version) ?? "";
+    const year = pickFirstText(String((vehicle as any)?.year ?? ""), String((vehicle as any)?.anio ?? ""), String((vehicle as any)?.año ?? "")) ?? "";
 
-  const composedTitle = `${make} ${model}`.trim();
-  const vehicleTitle =
-    (composedTitle ? `${composedTitle}${year ? ` (${year})` : ""}` : "") ||
-    idSplit.title ||
-    "Vehículo no asignado";
+    const composedTitle = `${make} ${model}`.trim();
+    const vehicleTitle =
+      (composedTitle ? `${composedTitle}${year ? ` (${year})` : ""}` : "") ||
+      idSplit.title ||
+      "Vehículo no asignado";
 
-  const mileageOk = typeof service.mileage === "number" && isFinite(service.mileage);
+    const mileageOk = typeof service.mileage === "number" && isFinite(service.mileage);
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <Card>
-        <CardHeader className="flex flex-row items-center gap-4 p-4">
-          <User className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
-          <CardTitle className="text-base">Cliente</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <p className="font-semibold">{customerName || "Cliente"}</p>
-          <p className="text-sm text-muted-foreground">
-            {customerPhone !== "Teléfono no disponible"
-              ? <a className="hover:underline" href={`tel:${customerPhone.replace(/\D/g, "")}`}>{customerPhone}</a>
-              : customerPhone}
-          </p>
-        </CardContent>
-      </Card>
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-4 p-4">
+            <User className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
+            <CardTitle className="text-base">Cliente</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <p className="font-semibold">{customerName || "Cliente"}</p>
+            <p className="text-sm text-muted-foreground">
+              {customerPhone !== "Teléfono no disponible"
+                ? <a className="hover:underline" href={`tel:${customerPhone.replace(/\D/g, "")}`}>{customerPhone}</a>
+                : customerPhone}
+            </p>
+          </CardContent>
+        </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center gap-4 p-4">
-          <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
-          <CardTitle className="text-base">Vehículo</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <p className="font-semibold">{vehicleTitle}</p>
-          <p className="text-muted-foreground">
-            {vehicleLicensePlate !== "N/A" ? `Placas: ${vehicleLicensePlate}` : "Placas: N/A"}
-          </p>
-          {(vehicle as any)?.color && <p className="text-xs text-muted-foreground">Color: {(vehicle as any).color}</p>}
-          {mileageOk && <p className="text-xs text-muted-foreground">KM: {formatNumber(service.mileage!)}</p>}
-        </CardContent>
-      </Card>
-    </div>
-  );
-});
+        <Card>
+          <CardHeader className="flex flex-row items-center gap-4 p-4">
+            <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
+            <CardTitle className="text-base">Vehículo</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0">
+            <p className="font-semibold">{vehicleTitle}</p>
+            <p className="text-muted-foreground">
+              {vehicleLicensePlate !== "N/A" ? `Placas: ${vehicleLicensePlate}` : "Placas: N/A"}
+            </p>
+            {(vehicle as any)?.color && <p className="text-xs text-muted-foreground">Color: {(vehicle as any).color}</p>}
+            {mileageOk && <p className="text-xs text-muted-foreground">KM: {formatNumber(service.mileage!)}</p>}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+);
 ClientInfo.displayName = "ClientInfo";
 
 const StatusCard = React.memo(
@@ -332,7 +352,7 @@ const StatusCard = React.memo(
     ]);
 
     const shouldShowNextService =
-      status === "entregado" &&
+      service.status === "Entregado" &&
       service.nextServiceInfo?.date &&
       isValid(parseDate(service.nextServiceInfo.date)!);
 
@@ -839,33 +859,11 @@ function ServiceOrderTab({
               <CardTitle>Ingreso del Vehiculo al Taller</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold">Condiciones del Vehículo</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {service.vehicleConditions || "No especificado"}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Pertenencias del Cliente</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {service.customerItems || "No especificado"}
-                  </p>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold">Nivel de Combustible</h4>
-                <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300 mt-2">
-                  <div className={cn("h-full transition-all", service.fuelLevel ? {
-                    'bg-red-500': ['Vacío', '1/8', '1/4'].includes(service.fuelLevel),
-                    'bg-yellow-400': ['3/8', '1/2', '5/8'].includes(service.fuelLevel),
-                    'bg-green-500': ['3/4', '7/8', 'Lleno'].includes(service.fuelLevel),
-                  } : 'bg-gray-300')} style={{ width: `${({Vacío:0, "1/8":12.5, "1/4":25, "3/8":37.5, "1/2":50, "5/8":62.5, "3/4":75, "7/8":87.5, Lleno:100}[service.fuelLevel || ''] || 0)}%` }} />
-                </div>
-                <p className="text-center text-xs mt-1">{service.fuelLevel || "N/A"}</p>
-              </div>
+              <ReceptionDetails service={service} />
               <div className="border-t pt-4">
-                <p className="text-xs text-muted-foreground whitespace-pre-line mt-2">{INGRESO_CONDICIONES_TEXT}</p>
+                <p className="text-xs text-muted-foreground whitespace-pre-line mt-2">
+                  {INGRESO_CONDICIONES_TEXT}
+                </p>
                 <h4 className="font-semibold mb-2 mt-4">Firma de Autorización</h4>
                  <div className="text-center">
                     <p className="text-xs font-semibold">CLIENTE (RECEPCIÓN)</p>
@@ -888,7 +886,9 @@ function ServiceOrderTab({
             <CardContent className="space-y-4">
               <div className="border-t pt-4">
                 <h4 className="font-semibold mb-2">Garantía</h4>
-                <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
+                <p className="text-xs text-muted-foreground whitespace-pre-line">
+                  {GARANTIA_CONDICIONES_TEXT}
+                </p>
               </div>
               <h4 className="font-semibold mb-2">Firma de Conformidad</h4>
               <div className="text-center">
@@ -903,6 +903,91 @@ function ServiceOrderTab({
               </div>
             </CardContent>
           </Card>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReceptionDetails({ service }: { service: ServiceRecord }) {
+  const fuelLevelMap: Record<string, number> = {
+    Vacío: 0,
+    "1/8": 12.5,
+    "1/4": 25,
+    "3/8": 37.5,
+    "1/2": 50,
+    "5/8": 62.5,
+    "3/4": 75,
+    "7/8": 87.5,
+    Lleno: 100,
+  };
+  const fuelPercentage = service.fuelLevel ? fuelLevelMap[service.fuelLevel] ?? 0 : 0;
+  const fuelColor =
+    fuelPercentage <= 25
+      ? "bg-red-500"
+      : fuelPercentage <= 50
+      ? "bg-orange-400"
+      : fuelPercentage <= 87.5
+      ? "bg-yellow-400"
+      : "bg-green-500";
+  return (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <h4 className="font-semibold">Condiciones del Vehículo</h4>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+            {service.vehicleConditions || "No especificado"}
+          </p>
+        </div>
+        <div>
+          <h4 className="font-semibold">Pertenencias del Cliente</h4>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+            {service.customerItems || "No especificado"}
+          </p>
+        </div>
+      </div>
+      <div>
+        <h4 className="font-semibold">Nivel de Combustible</h4>
+        <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300 mt-2">
+          <div className={cn("h-full transition-all", fuelColor)} style={{ width: `${fuelPercentage}%` }} />
+        </div>
+        <p className="text-center text-xs mt-1">{service.fuelLevel || "N/A"}</p>
+      </div>
+    </>
+  );
+}
+
+function SignatureDisplay({
+  type,
+  signatureUrl,
+  onSignClick,
+  isSigning,
+}: {
+  type: "reception" | "delivery";
+  signatureUrl?: string | null;
+  onSignClick?: (type: "reception" | "delivery") => void;
+  isSigning?: boolean;
+}) {
+  const label = type === "reception" ? "CLIENTE (RECEPCIÓN)" : "CLIENTE (ENTREGA)";
+  return (
+    <div className="text-center">
+      <p className="text-xs font-semibold">{label}</p>
+      <div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">
+        {signatureUrl ? (
+          <Image
+            src={normalizeDataUrl(signatureUrl)}
+            alt={`Firma de ${type}`}
+            width={150}
+            height={75}
+            style={{ objectFit: "contain" }}
+            unoptimized
+          />
+        ) : onSignClick ? (
+          <Button size="sm" onClick={() => onSignClick(type)} disabled={isSigning}>
+            {isSigning ? "Cargando..." : "Firmar"}
+          </Button>
+        ) : (
+          <p className="text-xs text-muted-foreground">Pendiente</p>
         )}
       </div>
     </div>
@@ -981,7 +1066,7 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
     },
   ];
 
-  const StatusIndicator = ({ status }: { status?: SafetyCheckValue['status'] }) => {
+  const StatusIndicator = ({ status }: { status?: SafetyCheckValue["status"] }) => {
     const statusInfo = {
       ok: { label: "Bien", color: "bg-green-500", textColor: "text-green-700" },
       atencion: { label: "Atención", color: "bg-yellow-400", textColor: "text-yellow-700" },
