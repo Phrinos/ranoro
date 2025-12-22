@@ -86,12 +86,27 @@ SheetHeader.displayName = 'SheetHeader';
 
 const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, vehicle?: Vehicle | null }) => {
   const customerName = capitalizeWords(service.customerName || vehicle?.ownerName || '');
-  const customerPhone = vehicle?.ownerPhone || service.customerPhone || 'Teléfono no disponible';
+  const customerPhone = service.customerPhone || vehicle?.ownerPhone || 'Teléfono no disponible';
+  
   const vehicleMake = vehicle?.make || '';
   const vehicleModel = vehicle?.model || '';
   const vehicleYear = vehicle?.year || 'N/A';
-  const vehicleLicensePlate = vehicle?.licensePlate || service.vehicleIdentifier || 'N/A';
   
+  // Lógica mejorada para extraer la placa
+  let vehicleTitle = service.vehicleIdentifier || 'Vehículo no asignado';
+  let vehicleLicensePlate = 'N/A';
+  
+  if (vehicle) {
+    vehicleLicensePlate = vehicle.licensePlate || 'N/A';
+    vehicleTitle = `${vehicleMake} ${vehicleModel} (${vehicleYear})`;
+  } else if (service.vehicleIdentifier) {
+    const plateMatch = service.vehicleIdentifier.match(/([A-Z0-9-]{6,10})$/);
+    if (plateMatch) {
+      vehicleLicensePlate = plateMatch[0];
+      vehicleTitle = service.vehicleIdentifier.replace(plateMatch[0], '').trim();
+    }
+  }
+
   return(
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <Card>
@@ -110,7 +125,7 @@ const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, v
           <CardTitle className="text-base">Vehículo</CardTitle>
         </CardHeader>
         <CardContent className="p-4 pt-0">
-          <p className="font-semibold">{vehicleMake} {vehicleModel} ({vehicleYear})</p>
+          <p className="font-semibold">{vehicleTitle}</p>
           <p className="text-muted-foreground">{vehicleLicensePlate}</p>
           {vehicle?.color && <p className="text-xs text-muted-foreground">Color: {vehicle.color}</p>}
           {service.mileage && <p className="text-xs text-muted-foreground">KM: {formatNumber(service.mileage)}</p>}
@@ -442,7 +457,9 @@ function ServiceOrderTab(
                       </p>
                     )}
                   </div>
-                  <p className="font-bold text-lg">{formatCurrency(item.sellingPrice ?? 0)}</p>
+                  <p className="font-bold text-lg">
+                    {formatCurrency(item.sellingPrice ?? 0)}
+                  </p>
                 </div>
               </div>
             )) : <p className="text-center text-muted-foreground py-4">No hay trabajos detallados.</p>}
@@ -484,7 +501,7 @@ function ServiceOrderTab(
       <div className={cn("grid grid-cols-1 gap-6", service.status === 'Entregado' && "md:grid-cols-2")}>
         {showReceptionCard && (
           <Card>
-            <CardHeader><CardTitle>Ingreso del Vehículo al Taller</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Ingreso del Vehiculo al Taller</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <ReceptionDetails service={service} />
               <div className="border-t pt-4">
@@ -641,7 +658,8 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
               <h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">{group.title}</h4>
               <div className="space-y-1">
                 {group.items.map(item => {
-                  const checkItem = (inspectionRecord as any)[item.name];
+                  const keyName = item.name as keyof Omit<SafetyInspection, "inspectionNotes" | "technicianSignature">;
+                  const checkItem = (inspectionRecord as any)[keyName];
                   return (
                     <div key={item.name} className="py-2 border-b border-dashed last:border-none">
                       <div className="flex justify-between items-center text-sm">
@@ -699,7 +717,7 @@ function PhotoReportContent({ photoReports }: { photoReports: any[] }) {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mt-2">
               {report.photos.map((photo: string, i: number) => (
                 <div key={i} className="relative aspect-square bg-muted rounded">
-                  <Image src={photo} alt="Foto de servicio" fill style={{objectFit: 'cover'}}/>
+                  <Image src={photo} alt="Foto de servicio" fill style={{ objectFit: "cover" }} />
                 </div>
               ))}
             </div>
