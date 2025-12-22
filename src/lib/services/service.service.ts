@@ -1,3 +1,4 @@
+
 // src/lib/services/service.service.ts
 import {
   collection,
@@ -113,7 +114,7 @@ function buildPublicData(svc: any) {
       status: svc.status || null,
       subStatus: svc.subStatus ?? null,
       customerName: svc.customerName || null,
-      customerPhone: svc.customerPhone != null ? String(svc.customerPhone) : null,
+      customerPhone: svc.customerPhone || null,
       serviceAdvisorName: svc.serviceAdvisorName || null,
       serviceAdvisorSignatureDataUrl: svc.serviceAdvisorSignatureDataUrl || null,
       vehicleId: svc.vehicleId || null,

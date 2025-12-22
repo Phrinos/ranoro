@@ -1,3 +1,4 @@
+
 // src/app/(public)/s/actions.ts
 "use server";
 
@@ -69,7 +70,7 @@ export async function getPublicServiceData(publicId: string): Promise<DataResult
     }
 
     return { data: { ...pub, id: publicSnap.id } as ServiceRecord, error: null };
-  } catch (e) {
+  } catch (e: any) {
     console.error("getPublicServiceData error:", e);
     return { data: null, error: "Ocurrió un error al cargar la información del servicio." };
   }
