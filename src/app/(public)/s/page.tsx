@@ -21,7 +21,7 @@ import {
   confirmAppointmentAction,
   cancelAppointmentAction,
   saveSignatureAction,
-} from "../actions";
+} from "./actions";
 import { isValid, parseISO } from "date-fns";
 
 // ——— Tipado público mínimo ———
@@ -34,7 +34,7 @@ type PublicServiceDoc = {
   subStatus?: string | null;
   customerName?: string;
   customerPhone?: string | number;
-  serviceAdvisorSignatureDataUrl?: string | null; // ✅ NUEVO
+  serviceAdvisorSignatureDataUrl?: string | null;
   vehicleIdentifier?: string;
   receptionDateTime?: string | Date | Timestamp | null;
   deliveryDateTime?: string | Date | Timestamp | null;
@@ -132,7 +132,6 @@ export default function PublicServicePage() {
       return;
     }
     
-    // Dispara auto-repair (no bloquea la UI; onSnapshot seguirá funcionando)
     getPublicServiceData(publicId).catch((e) => console.warn("auto-repair failed:", e));
 
     const ref = doc(db, "publicServices", publicId);

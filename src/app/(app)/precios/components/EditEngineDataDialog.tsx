@@ -1,8 +1,8 @@
 // src/app/(app)/precios/components/EditEngineDataDialog.tsx
 "use client";
 
-import React, { useEffect } from "react";
-import { useForm, FormProvider, useFieldArray } from "react-hook-form";
+import React, { useEffect, useState } from "react";
+import { useForm, FormProvider, useFieldArray, Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { engineDataSchema, type EngineDataFormValues } from "@/schemas/engine-data-form-schema";
 import {
