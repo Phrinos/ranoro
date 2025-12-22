@@ -57,20 +57,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-
-const initialWorkshopInfo: any = {
-  name: "RANORO",
-  phone: "4491425323",
-  addressLine1: "Av. de la Convencion de 1914 No. 1421",
-  addressLine2: "Jardines de la Concepcion, C.P. 20267",
-  cityState: "Aguascalientes, Ags.",
-  logoUrl: "/ranoro-logo.png",
-  footerLine1: "¡Gracias por su preferencia!",
-  footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
-  fixedFooterText:
-    "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
-  googleMapsUrl: "https://share.google/7ow83ayhfb2iIOKUX",
-};
+import { defaultTicketSettings } from "@/lib/placeholder-data";
 
 const coerceDate = (v: unknown): Date | null => {
   if (!v) return null;
@@ -159,12 +146,10 @@ const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, v
 
   const idSplit = splitIdentifier(service.vehicleIdentifier);
 
-  // placa: primero la del vehículo, si viene “rara” la parseamos, si no usamos la del identifier
   const rawVehiclePlate = pickFirst((vehicle as any)?.licensePlate, (vehicle as any)?.plates, (vehicle as any)?.placas);
   const plateFromVehicle = extractPlate(rawVehiclePlate) ?? rawVehiclePlate ?? null;
   const vehicleLicensePlate = plateFromVehicle ?? idSplit.plate ?? "N/A";
 
-  // título: intenta make/model/year; si viene vacío, usa el identifier (sin placa) o “Vehículo no asignado”
   const make = pickFirst((vehicle as any)?.make, (vehicle as any)?.brand, (vehicle as any)?.marca) ?? "";
   const model = pickFirst((vehicle as any)?.model, (vehicle as any)?.subModel, (vehicle as any)?.modelo, (vehicle as any)?.version) ?? "";
   const year = pickFirst(String((vehicle as any)?.year ?? ""), String((vehicle as any)?.anio ?? ""), String((vehicle as any)?.año ?? "")) ?? "";
@@ -632,27 +617,54 @@ export const ServiceSheetContent = React.forwardRef<
     };
     
     const tabs = useMemo(() => {
-      const available = [
-        { value: 'order', label: 'Orden de Servicio', content: (
-          <ServiceOrderTab
-            service={service}
-            vehicle={vehicle}
-            onSignClick={onSignClick}
-            isSigning={isSigning}
-            onShowTicketClick={onShowTicketClick}
-          />
-        )},
+      const availableTabs = [
+        {
+          value: "order",
+          label: "Orden de Servicio",
+          content: (
+            <ServiceOrderTab
+              service={service}
+              vehicle={vehicle}
+              onSignClick={onSignClick}
+              isSigning={isSigning}
+              onShowTicketClick={onShowTicketClick}
+            />
+          ),
+        },
       ];
-      if (service.safetyInspection && Object.values(service.safetyInspection).some(v => v && (v as any).status && (v as any).status !== 'na')) {
-        available.push({ value: 'checklist', label: 'Revisión de Seguridad', content: <SafetyChecklistDisplay inspection={service.safetyInspection as SafetyInspection} /> });
+      if (
+        service.safetyInspection &&
+        Object.values(service.safetyInspection).some(
+          (v: any) => v && v.status && v.status !== "na"
+        )
+      ) {
+        availableTabs.push({
+          value: "checklist",
+          label: "Revisión de Seguridad",
+          content: <SafetyChecklistDisplay inspection={service.safetyInspection as SafetyInspection} />,
+        });
       }
-      if (service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0)) {
-        available.push({ value: 'photoreport', label: 'Reporte Fotográfico', content: <PhotoReportContent photoReports={service.photoReports} /> });
+      if (
+        service.photoReports &&
+        service.photoReports.length > 0 &&
+        service.photoReports.some((r) => r.photos.length > 0)
+      ) {
+        availableTabs.push({
+          value: "photoreport",
+          label: "Reporte Fotográfico",
+          content: <PhotoReportContent photoReports={service.photoReports} />,
+        });
       }
       if (service.originalQuoteItems && service.originalQuoteItems.length > 0) {
-        available.push({ value: 'quote', label: 'Cotización Original', content: <OriginalQuoteContent items={service.originalQuoteItems} /> });
+        availableTabs.push({
+          value: "quote",
+          label: "Cotización Original",
+          content: (
+            <OriginalQuoteContent items={service.originalQuoteItems as any[]} />
+          ),
+        });
       }
-      return available;
+      return availableTabs;
     }, [service, vehicle, onSignClick, isSigning, onShowTicketClick]);
 
     return (
@@ -821,7 +833,7 @@ function ServiceOrderTab({
         {showReceptionCard && (
           <Card>
             <CardHeader>
-              <CardTitle>Recepción del Vehículo</CardTitle>
+              <CardTitle>Ingreso del Vehiculo al Taller</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -869,7 +881,7 @@ function ServiceOrderTab({
         
         {service.status === 'Entregado' && (
           <Card>
-            <CardHeader><CardTitle>Entrega y Conformidad</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Salida del Vehículo del Taller</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="border-t pt-4">
                 <h4 className="font-semibold mb-2">Garantía</h4>
@@ -1054,7 +1066,7 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
             </div>
           ))}
         </div>
-        <Separator className="my-4" />
+        <Separator className="my-4"/>
         <div className="flex justify-between items-center font-bold text-lg">
           <span>Total Original:</span>
           <span className="text-primary">{formatCurrency(total)}</span>
@@ -1063,5 +1075,3 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
     </Card>
   );
 }
-
-    

@@ -21,6 +21,57 @@ export const defaultSuperAdmin: User = {
 };
 
 // =======================================
+// ===     DEFAULT TICKET SETTINGS     ===
+// =======================================
+export interface TicketSettings {
+  name?: string; nameBold?: boolean;
+  phone?: string; phoneBold?: boolean;
+  addressLine1?: string; addressLine1Bold?: boolean;
+  addressLine2?: string; addressLine2Bold?: boolean;
+  cityState?: string; cityStateBold?: boolean;
+  logoUrl?: string;
+  logoWidth?: number;
+  headerFontSize?: number;
+  bodyFontSize?: number;
+  itemsFontSize?: number;
+  totalsFontSize?: number;
+  footerFontSize?: number;
+  blankLinesTop?: number;
+  blankLinesBottom?: number;
+  footerLine1?: string; footerLine1Bold?: boolean;
+  footerLine2?: string; footerLine2Bold?: boolean;
+  fixedFooterText?: string; fixedFooterTextBold?: boolean;
+}
+
+export const defaultTicketSettings: Required<Pick<
+  TicketSettings,
+  | 'name' | 'phone' | 'addressLine1' | 'addressLine2' | 'cityState'
+  | 'logoUrl' | 'logoWidth'
+  | 'headerFontSize' | 'bodyFontSize' | 'itemsFontSize' | 'totalsFontSize' | 'footerFontSize'
+  | 'blankLinesTop' | 'blankLinesBottom'
+  | 'footerLine1' | 'footerLine2' | 'fixedFooterText'
+>> & Partial<TicketSettings> = {
+  name: "RANORO",
+  phone: "4491425323",
+  addressLine1: "Av. de la Convencion de 1914 No. 1421",
+  addressLine2: "Jardines de la Concepcion, C.P. 20267",
+  cityState: "Aguascalientes, Ags.",
+  logoUrl: "/ranoro-logo.png",
+  logoWidth: 120,
+  headerFontSize: 10,
+  bodyFontSize: 10,
+  itemsFontSize: 10,
+  totalsFontSize: 10,
+  footerFontSize: 10,
+  blankLinesTop: 0,
+  blankLinesBottom: 0,
+  footerLine1: "¡Gracias por su preferencia!",
+  footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
+  fixedFooterText: "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
+};
+
+
+// =======================================
 // ===        PLACEHOLDER DATA         ===
 // =======================================
 export const placeholderAppRoles: AppRole[] = [
