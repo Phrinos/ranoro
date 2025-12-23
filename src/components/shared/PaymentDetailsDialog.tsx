@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/PaymentDetailsDialog.tsx
 "use client";
 
@@ -33,7 +34,7 @@ const toNumber = (v: any): number =>
 
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
 
-type FormInput = z.input<typeof paymentDetailsSchema>;
+const resolver = zodResolver(paymentDetailsSchema) as unknown as Resolver<PaymentDetailsFormValues>;
 
 export function PaymentDetailsDialog({
   open,
@@ -55,8 +56,7 @@ export function PaymentDetailsDialog({
     return toNumber(svc.totalCost ?? 0);
   }, [record, recordType]);
 
-  const resolver = zodResolver(paymentDetailsSchema) as unknown as Resolver<PaymentDetailsFormValues>;
-  const methods = useForm<FormInput, any, PaymentDetailsFormValues>({
+  const methods = useForm<PaymentDetailsFormValues>({
     resolver,
     defaultValues: {
       payments: [],

@@ -1,107 +1,90 @@
-// src/app/(app)/flotilla/components/OwnerWithdrawalDialog.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import type { Vehicle } from "@/types";
+import { CalendarIcon } from "lucide-react";
+import { format as formatDate } from "date-fns";
+import { es } from "date-fns/locale";
+
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { NewCalendar } from "@/components/ui/calendar";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { cn } from "@/lib/utils";
 
-const withdrawalSchema = z.object({
-  ownerName: z.string().min(1, "Debe seleccionar un propietario."),
-  amount: z.coerce.number().min(0.01, "El monto debe ser positivo."),
-  note: z.string().optional(),
-});
-
-type FormInput = z.input<typeof withdrawalSchema>;
-export type OwnerWithdrawalFormValues = z.output<typeof withdrawalSchema>;
+import { ownerWithdrawalSchema, type OwnerWithdrawalFormValues } from "@/schemas/owner-withdrawal-schema";
 
 interface OwnerWithdrawalDialogProps {
   open: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  vehicles: Vehicle[];
-  onSave: (values: OwnerWithdrawalFormValues) => Promise<void>;
+  onOpenChange: (open: boolean) => void;
+  onSave: (data: OwnerWithdrawalFormValues) => Promise<void> | void;
 }
 
-export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: OwnerWithdrawalDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const buildDefaults = (): OwnerWithdrawalFormValues => ({
+  date: new Date(),
+  amount: 0,
+  note: "",
+});
 
-  const resolver = zodResolver(withdrawalSchema) as unknown as Resolver<OwnerWithdrawalFormValues>;
+export function OwnerWithdrawalDialog({ open, onOpenChange, onSave }: OwnerWithdrawalDialogProps) {
+  const resolver = zodResolver(ownerWithdrawalSchema) as unknown as Resolver<OwnerWithdrawalFormValues>;
 
-  const form = useForm<FormInput, any, OwnerWithdrawalFormValues>({
+  const form = useForm<OwnerWithdrawalFormValues>({
     resolver,
-    defaultValues: { ownerName: "", amount: undefined as any, note: "" },
+    defaultValues: buildDefaults(),
+    mode: "onBlur",
   });
 
-  const owners = useMemo(() => {
-    const ownerNames = vehicles
-      .filter((v) => v.isFleetVehicle)
-      .map((v) => v.ownerName)
-      .filter((name): name is string => typeof name === "string" && name.trim().length > 0);
-
-    return Array.from(new Set(ownerNames));
-  }, [vehicles]);
-
+  const { handleSubmit, reset, formState } = form;
 
   useEffect(() => {
-    if (!open) return;
-    form.reset({ ownerName: "", amount: undefined, note: "" } as FormInput);
-  }, [open, form]);
-
-  const handleFormSubmit = async (values: OwnerWithdrawalFormValues) => {
-    setIsSubmitting(true);
-    try {
-      await onSave(values);
-      onOpenChange(false);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    if (open) reset(buildDefaults());
+  }, [open, reset]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Retiro de Propietario</DialogTitle>
-          <DialogDescription>Registra una salida de dinero de la caja para un propietario.</DialogDescription>
+          <DialogTitle>Retiro del dueño</DialogTitle>
+          <DialogDescription>Registra un retiro (salida) de dinero.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 p-4">
+          <form onSubmit={handleSubmit(async (data) => onSave(data))} className="space-y-4">
             <FormField
               control={form.control}
-              name="ownerName"
+              name="date"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Propietario</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value ?? ""}>
-                    <FormControl>
-                      <SelectTrigger className="bg-white">
-                        <SelectValue placeholder="Seleccionar propietario..." />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {owners.map((owner) => (
-                        <SelectItem key={owner} value={owner}>
-                          {owner}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <FormItem className="flex flex-col">
+                  <FormLabel>Fecha</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {field.value ? formatDate(field.value, "PPP", { locale: es }) : "Selecciona una fecha"}
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <NewCalendar mode="single" selected={field.value} onSelect={(d) => field.onChange(d ?? new Date())} initialFocus />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
@@ -112,14 +95,13 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Monto a Retirar ($)</FormLabel>
+                  <FormLabel>Monto</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      step="0.01"
-                      className="bg-white" 
-                      value={field.value ?? ""} 
-                      onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
+                    <Input
+                      type="number"
+                      className="bg-white"
+                      value={Number.isFinite(field.value) ? field.value : 0}
+                      onChange={(e) => field.onChange(e.target.value === "" ? 0 : e.target.valueAsNumber)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -132,13 +114,9 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
               name="note"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nota o Descripción</FormLabel>
+                  <FormLabel>Nota</FormLabel>
                   <FormControl>
-                    <Textarea
-                      className="bg-white"
-                      value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.value)}
-                    />
+                    <Textarea className="bg-white" {...field} value={field.value ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -146,12 +124,11 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
             />
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={formState.isSubmitting}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Registrar Retiro
+              <Button type="submit" disabled={formState.isSubmitting}>
+                Guardar
               </Button>
             </DialogFooter>
           </form>

@@ -1,272 +1,137 @@
-// src/app/(app)/flotilla/components/GlobalTransactionDialog.tsx
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
-import { useForm, type Resolver } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import type { Driver } from '@/types';
+import React, { useEffect } from "react";
+import { useForm, type Resolver } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { CalendarIcon } from "lucide-react";
+import { format as formatDate } from "date-fns";
+import { es } from "date-fns/locale";
+
 import {
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Form, FormControl, FormField, FormItem, FormLabel, FormMessage
-} from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from '@/components/ui/textarea';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Loader2, ChevronsUpDown, Check } from 'lucide-react';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
-import {
-  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList
-} from '@/components/ui/command';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from "@/components/ui/textarea";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NewCalendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { cn } from "@/lib/utils";
 
-
-const transactionSchema = z.object({
-  driverId: z.string().min(1, "Debe seleccionar un conductor."),
-  date: z.coerce.date({ message: "La fecha es obligatoria." }),
-  amount: z.coerce.number().min(0.01, "El monto debe ser positivo."),
-  note: z.string().min(3, "La descripción es obligatoria."),
-  paymentMethod: z.string().optional(),
-});
-
-type FormInput = z.input<typeof transactionSchema>;
-export type GlobalTransactionFormValues = z.output<typeof transactionSchema>;
+import { globalTransactionSchema, type GlobalTransactionFormValues } from "@/schemas/global-transaction-schema";
+import type { Driver } from "@/types";
 
 interface GlobalTransactionDialogProps {
   open: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  onSave: (values: GlobalTransactionFormValues) => Promise<void>;
-  transactionType: 'payment' | 'charge';
+  onOpenChange: (open: boolean) => void;
   drivers: Driver[];
+  onSave: (data: GlobalTransactionFormValues) => Promise<void> | void;
 }
 
-const toMidday = (d: Date) => {
-  const n = new Date(d);
-  n.setHours(12, 0, 0, 0);
-  return n;
-};
+const buildDefaults = (): GlobalTransactionFormValues => ({
+  driverId: "",
+  date: new Date(),
+  amount: 0,
+  note: "",
+  paymentMethod: undefined,
+});
 
-export function GlobalTransactionDialog({
-  open, onOpenChange, onSave, transactionType, drivers
-}: GlobalTransactionDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDriverPopoverOpen, setIsDriverPopoverOpen] = useState(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+export function GlobalTransactionDialog({ open, onOpenChange, drivers, onSave }: GlobalTransactionDialogProps) {
+  const resolver = zodResolver(globalTransactionSchema) as unknown as Resolver<GlobalTransactionFormValues>;
 
-  const resolver = zodResolver(transactionSchema) as unknown as Resolver<GlobalTransactionFormValues>;
-
-  const form = useForm<FormInput, any, GlobalTransactionFormValues>({
+  const form = useForm<GlobalTransactionFormValues>({
     resolver,
-    defaultValues: {
-      driverId: "",
-      date: toMidday(new Date()),
-      paymentMethod: 'Efectivo',
-      amount: undefined as any,
-      note: '',
-    },
+    defaultValues: buildDefaults(),
+    mode: "onBlur",
   });
 
+  const { handleSubmit, reset, formState } = form;
+
   useEffect(() => {
-    if (open) {
-      form.reset({
-        driverId: "",
-        date: toMidday(new Date()),
-        amount: undefined,
-        note: transactionType === 'payment' ? 'Abono de Renta' : '',
-        paymentMethod: 'Efectivo',
-      } as FormInput);
-    }
-  }, [open, form, transactionType]);
-
-  const handleFormSubmit = async (values: GlobalTransactionFormValues) => {
-    setIsSubmitting(true);
-    await onSave(values);
-    setIsSubmitting(false);
-  };
-
-  const title =
-    transactionType === 'payment' ? 'Registrar Pago Global' : 'Registrar Cargo Global';
-  const description =
-    transactionType === 'payment'
-      ? 'Registra un abono para cualquier conductor.'
-      : 'Registra un cargo para cualquier conductor.';
-
-  const sortedDrivers = useMemo(() => {
-    const collator = new Intl.Collator('es', { sensitivity: 'base', ignorePunctuation: true });
-    return [...drivers].sort((a, b) => collator.compare(a?.name ?? '', b?.name ?? ''));
-  }, [drivers]);
+    if (open) reset(buildDefaults());
+  }, [open, reset]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0">
-        <DialogHeader className="p-6 pb-4">
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Registrar transacción</DialogTitle>
+          <DialogDescription>Asigna la transacción a un chofer y guarda el movimiento.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 p-6">
+          <form onSubmit={handleSubmit(async (data) => onSave(data))} className="space-y-4">
             <FormField
               control={form.control}
               name="driverId"
-              render={({ field }) => {
-                const selectedName =
-                  sortedDrivers.find(d => String(d.id) === String(field.value))?.name;
-
-                return (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Conductor</FormLabel>
-                    <Popover open={isDriverPopoverOpen} onOpenChange={setIsDriverPopoverOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            role="combobox"
-                            className={cn("justify-between bg-white", !field.value && "text-muted-foreground")}
-                          >
-                            {field.value ? selectedName : "Seleccionar conductor"}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-
-                      <PopoverContent
-                        align="start"
-                        className="z-50 w-[var(--radix-popover-trigger-width)] p-0"
-                        onOpenAutoFocus={(e) => e.preventDefault()}
-                      >
-                        <Command filter={(value, search) => 1}>
-                          <CommandInput placeholder="Buscar conductor..." autoFocus />
-                          <CommandList className="max-h-64 overflow-y-auto">
-                            <CommandEmpty>No se encontraron conductores.</CommandEmpty>
-                            <CommandGroup>
-                              {sortedDrivers.map((driver) => {
-                                const label = driver.name || driver.phone || String(driver.id);
-                                const searchValue = `${label} ${driver.phone ?? ""}`;
-                                return (
-                                  <CommandItem
-                                    key={driver.id}
-                                    value={searchValue}
-                                    className="data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
-                                    onSelect={() => {
-                                      form.setValue("driverId", String(driver.id), {
-                                        shouldValidate: true,
-                                        shouldDirty: true,
-                                      });
-                                      setIsDriverPopoverOpen(false);
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        String(driver.id) === String(field.value) ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    <span className="truncate">{label}</span>
-                                    {driver.phone && (
-                                      <span className="ml-2 text-xs text-muted-foreground">
-                                        {driver.phone}
-                                      </span>
-                                    )}
-                                  </CommandItem>
-                                );
-                              })}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                );
-              }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Chofer</FormLabel>
+                  <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Selecciona un chofer" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {drivers.map((d) => (
+                        <SelectItem key={d.id} value={d.id}>
+                          {d.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
 
             <FormField
               control={form.control}
               name="date"
-              render={({ field }) => {
-                const dateValue = field.value instanceof Date ? field.value : undefined;
-                return (
+              render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Fecha</FormLabel>
-                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                  <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
                           type="button"
-                          variant={"outline"}
-                          className={cn("pl-3 text-left font-normal bg-white", !dateValue && "text-muted-foreground")}
+                          variant="outline"
+                          className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")}
                         >
-                          {dateValue ? format(dateValue, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {field.value ? formatDate(field.value, "PPP", { locale: es }) : "Selecciona una fecha"}
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="p-0 w-auto" align="start">
-                        <NewCalendar
-                            onChange={(d: any) => {
-                                if (d) {
-                                    field.onChange(toMidday(d));
-                                    setIsCalendarOpen(false);
-                                }
-                            }}
-                            value={dateValue ?? undefined}
-                            locale="es-MX"
-                        />
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <NewCalendar mode="single" selected={field.value} onSelect={(d) => field.onChange(d ?? new Date())} initialFocus />
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
                 </FormItem>
-              )}}
+              )}
             />
-
-            {transactionType === 'payment' && (
-              <FormField
-                control={form.control}
-                name="paymentMethod"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Método de Pago</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value ?? ""}>
-                      <FormControl>
-                        <SelectTrigger className="bg-white">
-                          <SelectValue placeholder="Selecciona un método" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Efectivo">Efectivo</SelectItem>
-                        <SelectItem value="Transferencia">Transferencia</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
 
             <FormField
               control={form.control}
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Monto ($)</FormLabel>
+                  <FormLabel>Monto</FormLabel>
                   <FormControl>
-                    <Input 
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        inputMode="decimal"
-                        value={field.value ?? ""}
-                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
-                        className="bg-white" 
+                    <Input
+                      type="number"
+                      className="bg-white"
+                      value={Number.isFinite(field.value) ? field.value : 0}
+                      onChange={(e) => field.onChange(e.target.value === "" ? 0 : e.target.valueAsNumber)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -279,25 +144,20 @@ export function GlobalTransactionDialog({
               name="note"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descripción</FormLabel>
+                  <FormLabel>Nota</FormLabel>
                   <FormControl>
-                    <Textarea
-                      className="bg-white"
-                      value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.value)}
-                    />
+                    <Textarea className="bg-white" {...field} value={field.value ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={formState.isSubmitting}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={formState.isSubmitting}>
                 Guardar
               </Button>
             </DialogFooter>

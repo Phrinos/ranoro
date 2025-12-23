@@ -1,118 +1,134 @@
-// src/app/(app)/flotilla/components/EditVehicleInfoDialog.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import type { Vehicle } from "@/types";
+
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2 } from 'lucide-react';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
-const vehicleInfoSchema = z.object({
-  make: z.string().min(1, "La marca es obligatoria."),
-  model: z.string().min(1, "El modelo es obligatorio."),
-  year: z.coerce.number().min(1900, "Año inválido."),
-  color: z.string().optional(),
-  ownerName: z.string().min(1, "El nombre del propietario es obligatorio."),
-  ownerPhone: z.string().optional(),
-  notes: z.string().optional(),
-});
-
-type VehicleInfoFormInput = z.input<typeof vehicleInfoSchema>;
-export type VehicleInfoFormValues = z.output<typeof vehicleInfoSchema>;
+import { vehicleInfoSchema, type VehicleInfoFormValues } from "@/schemas/vehicle-info-schema";
+import type { Vehicle } from "@/types";
 
 interface EditVehicleInfoDialogProps {
   open: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  vehicle: Vehicle;
-  onSave: (values: VehicleInfoFormValues) => Promise<void>;
+  onOpenChange: (open: boolean) => void;
+  vehicle?: Partial<Vehicle> | null;
+  onSave: (data: VehicleInfoFormValues) => Promise<void> | void;
 }
 
+const buildDefaults = (v?: Partial<Vehicle> | null): VehicleInfoFormValues => ({
+  make: v?.make ?? "",
+  model: v?.model ?? "",
+  year: Number(v?.year ?? new Date().getFullYear()),
+  licensePlate: (v as any)?.licensePlate ?? "",
+});
+
 export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: EditVehicleInfoDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const resolver = zodResolver(vehicleInfoSchema) as unknown as Resolver<VehicleInfoFormValues>;
 
-  const defaults = useMemo<VehicleInfoFormInput>(
-    () => ({
-      make: vehicle?.make ?? "",
-      model: vehicle?.model ?? "",
-      year: vehicle?.year,
-      color: vehicle?.color ?? "",
-      ownerName: vehicle?.ownerName ?? "",
-      ownerPhone: vehicle?.ownerPhone ?? "",
-      notes: vehicle?.notes ?? "",
-    }),
-    [vehicle]
-  );
-
-  const form = useForm<VehicleInfoFormInput, any, VehicleInfoFormValues>({
-    resolver: zodResolver(vehicleInfoSchema),
-    defaultValues: defaults,
+  const form = useForm<VehicleInfoFormValues>({
+    resolver,
+    defaultValues: buildDefaults(vehicle),
+    mode: "onBlur",
   });
 
-  useEffect(() => {
-    if (!open) return;
-    form.reset(defaults);
-  }, [open, defaults, form]);
+  const { handleSubmit, reset, formState } = form;
 
-  const handleFormSubmit = async (values: VehicleInfoFormValues) => {
-    setIsSubmitting(true);
-    try {
-      await onSave(values);
-      onOpenChange(false);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  useEffect(() => {
+    if (open) reset(buildDefaults(vehicle));
+  }, [open, vehicle, reset]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Editar Información del Vehículo</DialogTitle>
-          <DialogDescription>Actualiza los detalles generales y del propietario.</DialogDescription>
+          <DialogTitle>Editar vehículo</DialogTitle>
+          <DialogDescription>Actualiza la información del vehículo.</DialogDescription>
         </DialogHeader>
+
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField control={form.control} name="make" render={({ field }) => (
-                  <FormItem><FormLabel>Marca</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
-                )}/>
-                <FormField control={form.control} name="model" render={({ field }) => (
-                  <FormItem><FormLabel>Modelo</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
-                )}/>
-                <FormField control={form.control} name="year" render={({ field }) => (
-                  <FormItem><FormLabel>Año</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
-                )}/>
-                <FormField control={form.control} name="color" render={({ field }) => (
-                  <FormItem><FormLabel>Color</FormLabel><FormControl><Input value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value)} className="bg-white" /></FormControl><FormMessage /></FormItem>
-                )}/>
-                <FormField control={form.control} name="ownerName" render={({ field }) => (
-                  <FormItem><FormLabel>Nombre Propietario</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
-                )}/>
-                <FormField control={form.control} name="ownerPhone" render={({ field }) => (
-                  <FormItem><FormLabel>Teléfono Propietario</FormLabel><FormControl><Input value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value)} className="bg-white" /></FormControl><FormMessage /></FormItem>
-                )}/>
-              </div>
-              <FormField control={form.control} name="notes" render={({ field }) => (
-                <FormItem><FormLabel>Notas</FormLabel><FormControl><Textarea value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value)} className="bg-white" /></FormControl><FormMessage /></FormItem>
-              )}/>
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Guardar Cambios
+          <form onSubmit={handleSubmit(async (data) => onSave(data))} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="make"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Marca</FormLabel>
+                  <FormControl>
+                    <Input className="bg-white" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="model"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Modelo</FormLabel>
+                  <FormControl>
+                    <Input className="bg-white" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* 👇 clave: NO hacer {...field} en number si te viene como unknown; setear value/onChange */}
+            <FormField
+              control={form.control}
+              name="year"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Año</FormLabel>
+                  <FormControl>
+                    <Input
+                      className="bg-white"
+                      type="number"
+                      name={field.name}
+                      ref={field.ref}
+                      onBlur={field.onBlur}
+                      value={typeof field.value === "number" ? field.value : Number(field.value ?? "") || ""}
+                      onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="licensePlate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Placas</FormLabel>
+                  <FormControl>
+                    <Input className="bg-white" {...field} value={field.value ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={formState.isSubmitting}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={formState.isSubmitting}>
+                Guardar cambios
               </Button>
             </DialogFooter>
           </form>

@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/components/view-sale-dialog.tsx
 
 "use client";
@@ -44,7 +45,7 @@ interface ViewSaleDialogProps {
   onSendWhatsapp: (sale: SaleReceipt) => void;
 }
 
-type FormInput = z.input<typeof posFormSchema>;
+const resolver = zodResolver(posFormSchema) as unknown as Resolver<POSFormValues>;
 
 export function ViewSaleDialog({ 
   open, 
@@ -63,8 +64,7 @@ export function ViewSaleDialog({
   const [cancellationReason, setCancellationReason] = useState("");
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
 
-  const resolver = zodResolver(posFormSchema) as unknown as Resolver<POSFormValues>;
-  const methods = useForm<FormInput, any, POSFormValues>({
+  const methods = useForm<POSFormValues>({
     resolver,
     defaultValues: sale as any,
   });

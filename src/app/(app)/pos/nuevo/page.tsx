@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, {
@@ -213,7 +214,7 @@ function QuickAddItemDialog({
   );
 }
 
-type FormInput = z.input<typeof posFormSchema>;
+const resolver = zodResolver(posFormSchema) as unknown as Resolver<POSFormValues>;
 
 export default function NuevaVentaPage() {
   const { toast } = useToast();
@@ -241,8 +242,7 @@ export default function NuevaVentaPage() {
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
 
-  const resolver = zodResolver(posFormSchema) as unknown as Resolver<POSFormValues>;
-  const methods = useForm<FormInput, any, POSFormValues>({
+  const methods = useForm<POSFormValues>({
     resolver,
     defaultValues: {
       items: [],
