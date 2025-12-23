@@ -27,7 +27,7 @@ const expenseSchema = z.object({
   description: z.string().min(3, "La descripción es obligatoria."),
 });
 
-type ExpenseFormInput = z.input<typeof expenseSchema>;
+type VehicleExpenseFormInput = z.input<typeof expenseSchema>;
 export type VehicleExpenseFormValues = z.infer<typeof expenseSchema>;
 
 interface VehicleExpenseDialogProps {
@@ -40,7 +40,7 @@ interface VehicleExpenseDialogProps {
 export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: VehicleExpenseDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<ExpenseFormInput, any, VehicleExpenseFormValues>({
+  const form = useForm<VehicleExpenseFormInput, any, VehicleExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
       vehicleId: "",
@@ -112,9 +112,11 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
                       type="number"
                       step="0.01"
                       className="bg-white"
-                      {...field}
-                      value={field.value ?? ""}
+                      value={(field.value as any) ?? ""}
                       onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
                     />
                   </FormControl>
                   <FormMessage />
@@ -133,7 +135,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
                       {...field}
                       placeholder="Ej: Cambio de aceite, llanta nueva..."
                       className="bg-white"
-                      value={field.value ?? ""}
+                      value={(field.value as any) ?? ""}
                     />
                   </FormControl>
                   <FormMessage />
