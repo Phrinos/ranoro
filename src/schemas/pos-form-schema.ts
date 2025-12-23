@@ -1,4 +1,5 @@
 
+
 // src/schemas/pos-form-schema.ts
 import * as z from 'zod';
 
@@ -52,4 +53,3 @@ export const posFormSchema = z.object({
 });
 
 export type POSFormValues = z.infer<typeof posFormSchema>;
-
