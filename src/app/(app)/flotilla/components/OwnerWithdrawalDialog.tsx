@@ -40,12 +40,13 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
     }
   });
 
-  const owners = useMemo(() => {
+  const owners = useMemo<string[]>(() => {
     const ownerNames = vehicles
         .filter(v => v.isFleetVehicle)
         .map(v => v.ownerName)
-        .filter(Boolean);
-    return [...new Set(ownerNames)];
+        .filter((name): name is string => !!name && name.trim().length > 0);
+  
+    return Array.from(new Set(ownerNames));
   }, [vehicles]);
 
   useEffect(() => {
@@ -72,13 +73,13 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Seleccionar propietario..." /></SelectTrigger></FormControl>
                   <SelectContent>
-                    {owners.map(owner => <SelectItem key={owner} value={owner!}>{owner}</SelectItem>)}
+                    {owners.map(owner => <SelectItem key={owner} value={owner}>{owner}</SelectItem>)}
                   </SelectContent>
                 </Select>
               <FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="amount" render={({ field }) => (
-              <FormItem><FormLabel>Monto a Retirar ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Monto a Retirar ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ''} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="note" render={({ field }) => (
               <FormItem><FormLabel>Nota o Descripción</FormLabel><FormControl><Textarea {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
