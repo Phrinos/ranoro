@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/components/informe-pos-content.tsx
 "use client";
 

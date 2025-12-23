@@ -992,8 +992,8 @@ type SafetyInspectionRecord = SafetyInspection & {
   technicianSignature?: string;
 };
 
-function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }) {
-  const inspectionRecord = (inspection ?? {}) as SafetyInspectionRecord;
+function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection[] }) {
+  const inspectionRecord = (inspection?.[0] ?? {}) as SafetyInspectionRecord;
 
   const inspectionGroups = [
     {

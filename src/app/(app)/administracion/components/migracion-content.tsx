@@ -141,7 +141,7 @@ export function MigracionPageContent() {
             setPastedText('');
         } catch(e) {
              console.error("Error al guardar en DB:", e);
-             toast({ title: 'Error al Guardar', description: `No se pudieron guardar los datos. ${e instanceof Error ? e.message : ''}`, variant: 'destructive' });
+             toast({ title: 'Error al Guardar', description: `No se pudieron guardar los datos. ${e instanceof Error ? e.message : ''}`, variant: "destructive" });
         } finally {
             setIsSaving(false);
         }

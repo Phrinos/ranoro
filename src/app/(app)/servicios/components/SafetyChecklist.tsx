@@ -3,17 +3,18 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useFormContext } from "react-hook-form";
+import { useFormContext, Controller } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { BrainCircuit, Loader2, PlayCircle } from "lucide-react";
-import type { SafetyInspection, SafetyCheckStatus } from '@/types';
+import type { SafetyInspection, SafetyCheckStatus, SafetyCheckValue } from '@/types';
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { GuidedInspectionWizard } from './GuidedInspectionWizard';
+import { PhotoUploader } from './PhotoUploader';
 
 const inspectionGroups = [
   { title: "LUCES", items: [
@@ -92,12 +93,14 @@ const SafetyChecklistReport = ({ inspection, signatureDataUrl, technicianName }:
               <h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">{group.title}</h4>
               <div className="space-y-1">
                 {group.items.map(item => {
-                  const checkItem = inspection[item.name.replace('safetyInspection.', '') as keyof Omit<SafetyInspection, 'inspectionNotes' | 'technicianSignature'>];
+                  const keyName = item.name.replace('safetyInspection.', '') as keyof Omit<SafetyInspection, 'inspectionNotes' | 'technicianSignature'>;
+                  const checkItem = (inspection as any)[keyName];
+                  const val = typeof checkItem === 'string' ? { status: checkItem } : checkItem;
                   return (
                     <div key={item.name} className="py-1 border-b border-dashed last:border-none">
                       <div className="flex justify-between items-center text-sm">
                         <span className="pr-4">{item.label}</span>
-                        <StatusIndicator status={checkItem?.status} />
+                        <StatusIndicator status={val?.status} />
                       </div>
                     </div>
                   );

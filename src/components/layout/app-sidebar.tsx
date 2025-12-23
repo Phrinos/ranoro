@@ -100,6 +100,8 @@ const useNavigation = (): NavigationEntry[] => {
 
   const entriesWithActiveState = filteredNavStructure.map(entry => {
     let isActive = false;
+    if (!entry.path) return { ...entry, isActive };
+
     const cleanPathname = pathname.split('?')[0];
     const cleanEntryPath = entry.path.split('?')[0];
 
@@ -128,7 +130,7 @@ const useNavigation = (): NavigationEntry[] => {
   });
   
   const groupedByTag = entriesWithActiveState.reduce((acc, item) => {
-      const tag = item.groupTag;
+      const tag = item.groupTag ?? 'Otros';
       if (!acc[tag]) acc[tag] = [];
       acc[tag].push(item);
       return acc;
@@ -169,7 +171,7 @@ function AppSidebarInner({
 
   const groupedByTag = React.useMemo(() => {
     return navItems.reduce((acc, item) => {
-      const tag = item.groupTag;
+      const tag = item.groupTag ?? 'Otros';
       if (!acc[tag]) {
         acc[tag] = [];
       }
@@ -222,7 +224,7 @@ function AppSidebarInner({
                       tooltipLabel={entry.label}
                       tooltipClassName="group-data-[collapsible=icon]:block hidden"
                     >
-                      <Link href={entry.path} onClick={() => { if(isMobile) setOpenMobile(false) }}>
+                      <Link href={entry.path!} onClick={() => { if(isMobile) setOpenMobile(false) }}>
                         {React.createElement(entry.icon as any)}
                         <span className="group-data-[collapsible=icon]:hidden">
                           {entry.label}
@@ -249,7 +251,7 @@ function AppSidebarInner({
                       {currentUser?.name || "Mi Cuenta"}
                   </span>
                   <span className="text-xs text-sidebar-foreground/80 leading-none">
-                      {currentUser?.role || 'Rol'}
+                      {String(currentUser?.role ?? 'Rol')}
                   </span>
               </div>
               <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center h-8 w-8 rounded-full bg-sidebar-accent">

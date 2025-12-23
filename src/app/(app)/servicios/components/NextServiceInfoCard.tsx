@@ -36,19 +36,11 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
         : (typeof currentMileage === 'number' ? currentMileage : '')
     );
   }, [nextServiceInfo, currentMileage]);
-  
-  const handleUpdate = () => {
-    onUpdate({
-      date: date ? date.toISOString() : null,
-      mileage: Number(mileage) || null,
-    });
-  };
 
   const handleSetReminder = (months: number) => {
     const newDate = addMonths(new Date(), months);
     setDate(newDate);
-    // Automatically trigger update when a button is clicked
-    onUpdate({ date: newDate.toISOString(), mileage: Number(mileage) || null });
+    onUpdate({ date: newDate.toISOString(), mileage: Number(mileage) || undefined });
   };
   
   const getBaseMileage = () => {
@@ -61,15 +53,14 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
     const base = getBaseMileage();
     const newMileage = base + km;
     setMileage(newMileage);
-    onUpdate({ date: date ? date.toISOString() : null, mileage: newMileage });
+    onUpdate({ date: date ? date.toISOString() : undefined, mileage: newMileage });
   };
   
   const onCalendarChange = (newDate: any) => {
     if (newDate && !Array.isArray(newDate)) {
       setDate(newDate);
       setIsCalendarOpen(false);
-      // Automatically trigger update when a date is picked
-      onUpdate({ date: newDate.toISOString(), mileage: Number(mileage) || null });
+      onUpdate({ date: newDate.toISOString(), mileage: Number(mileage) || undefined });
     }
   };
 
@@ -116,12 +107,12 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
                 const v = e.target.value;
                 if (v === '') {
                   setMileage('');
-                  onUpdate({ date: date ? date.toISOString() : null, mileage: null });
+                  onUpdate({ date: date ? date.toISOString() : undefined, mileage: undefined });
                   return;
                 }
                 const newMileage = Number(v);
                 setMileage(newMileage);
-                onUpdate({ date: date ? date.toISOString() : null, mileage: Number.isFinite(newMileage) ? newMileage : null });
+                onUpdate({ date: date ? date.toISOString() : undefined, mileage: Number.isFinite(newMileage) ? newMileage : undefined });
               }}
             />
             <div className="flex gap-2">
@@ -131,7 +122,6 @@ export function NextServiceInfoCard({ nextServiceInfo, onUpdate, isSubmitting, c
             </div>
           </div>
         </div>
-        {/* El botón de guardar ya no es necesario, los cambios se aplican al interactuar */}
       </CardContent>
     </Card>
   );

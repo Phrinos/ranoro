@@ -28,4 +28,5 @@ export function Calendar({ selected, onSelect, ...props }: CalendarProps) {
   );
 }
 
+// 👇 compat: muchos archivos importan NewCalendar
 export const NewCalendar = Calendar;

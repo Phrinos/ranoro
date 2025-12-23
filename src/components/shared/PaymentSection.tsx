@@ -1,3 +1,4 @@
+
 // src/components/shared/PaymentSection.tsx
 "use client";
 
@@ -10,16 +11,19 @@ import { Wallet, CreditCard, Landmark, CheckCircle } from "lucide-react";
 import type { Payment, PaymentMethod } from "@/types";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
-import { DollarSign, PlusCircle, Trash2 } from "lucide-react";
+import { DollarSign, PlusCircle, Trash2, Minus, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
 const paymentMethods: PaymentMethod[] = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia"];
 
-const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
+const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
   "Tarjeta MSI": CreditCard,
   Transferencia: Landmark,
+  "Efectivo+Transferencia": Wallet,
+  "Tarjeta+Transferencia": CreditCard,
+  "Crédito": CreditCard,
 };
 
 interface PaymentSectionProps {
@@ -128,7 +132,7 @@ export function PaymentSection({
                         </FormControl>
                         <SelectContent>
                           {paymentMethods.map((method) => {
-                            const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons];
+                            const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons] ?? Wallet;
                             const disabled =
                               availablePaymentMethods.indexOf(method) === -1 && method !== selectedMethod;
                             return (
