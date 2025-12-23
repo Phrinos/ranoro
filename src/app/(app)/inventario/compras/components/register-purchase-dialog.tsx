@@ -154,11 +154,11 @@ export function RegisterPurchaseDialog({
 
           <FormProvider {...form}>
             <Form {...form}>
-              <form onSubmit={handleSubmit(onSave)} id="purchase-form" className="space-y-4">
+              <form onSubmit={handleSubmit(onSave as any)} id="purchase-form" className="space-y-4">
                 <div className="max-h-[calc(80vh-150px)] space-y-6 overflow-y-auto px-6 py-4 bg-muted/50">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField
-                      control={control}
+                      control={control as any}
                       name="supplierId"
                       render={({ field }) => (
                         <FormItem>
@@ -184,7 +184,7 @@ export function RegisterPurchaseDialog({
                       )}
                     />
                     <FormField
-                      control={control}
+                      control={control as any}
                       name="invoiceId"
                       render={({ field }) => (
                         <FormItem>
@@ -314,7 +314,7 @@ export function RegisterPurchaseDialog({
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField
-                      control={control}
+                      control={control as any}
                       name="paymentMethod"
                       render={({ field }) => (
                         <FormItem>
@@ -339,7 +339,7 @@ export function RegisterPurchaseDialog({
 
                     {paymentMethod === "Crédito" && (
                       <FormField
-                        control={control}
+                        control={control as any}
                         name="dueDate"
                         render={({ field }) => (
                           <FormItem className="flex flex-col">

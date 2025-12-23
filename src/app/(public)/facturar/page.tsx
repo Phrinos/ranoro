@@ -188,7 +188,7 @@ function PageInner() {
               {!searchResult ? (
                 <FormProvider {...searchForm}>
                   <Form {...searchForm}>
-                    <form onSubmit={searchForm.handleSubmit(onSearchSubmit as SubmitHandler<SearchFormValues>)} className="space-y-4">
+                    <form onSubmit={searchForm.handleSubmit(onSearchSubmit as any)} className="space-y-4">
                       <FormField
                         control={searchForm.control}
                         name="folio"
