@@ -1,4 +1,3 @@
-
 // src/app/(app)/vehiculos/components/vehicles-table.tsx
 "use client";
 
@@ -33,19 +32,25 @@ export function VehiclesTable({ vehicles, onSave, onDelete, onAdd }: VehiclesTab
     searchKeys: ["make", "model", "year", "licensePlate", "ownerName"],
     initialSortOption: 'lastServiceDate_desc',
     itemsPerPage: 10,
-    dateFilterKey: (item: Vehicle) => item.lastServiceDate ? parseDate(item.lastServiceDate) : null,
+    dateFilterKey: 'lastServiceDate',
   });
 
   const handleSort = (key: string) => {
     const isAsc = tableManager.sortOption.startsWith(key) && tableManager.sortOption.endsWith('_asc');
     tableManager.onSortOptionChange(`${key}_${isAsc ? 'desc' : 'asc'}`);
   };
+  
+  const handleSearchChange = (term: string) => {
+    if (term.length >= 3 || term.length === 0) {
+      tableManager.onSearchTermChange(term);
+    }
+  };
 
   return (
     <div className="space-y-4">
       <TableToolbar
         searchTerm={tableManager.searchTerm}
-        onSearchTermChange={tableManager.onSearchTermChange}
+        onSearchTermChange={handleSearchChange}
         searchPlaceholder="Buscar por placa, marca, modelo..."
         actions={
           <Button onClick={onAdd} className="w-full sm:w-auto">

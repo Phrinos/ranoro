@@ -1,4 +1,3 @@
-
 // src/app/(app)/vehiculos/components/database-management-tab.tsx
 "use client";
 
@@ -16,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { VehicleCatalogEditor } from '@/app/(app)/precios/components/VehicleCatalogEditor';
 import { VEHICLE_COLLECTION } from '@/lib/vehicle-constants';
 import { Card, CardContent } from '@/components/ui/card';
+import { Loader2 } from 'lucide-react';
 
 export function DatabaseManagementTab() {
   const { toast } = useToast();
@@ -68,11 +68,17 @@ export function DatabaseManagementTab() {
                     <SelectValue placeholder={isLoading ? "Cargando marcas..." : "Seleccione una marca..."} />
                   </SelectTrigger>
                   <SelectContent>
-                    {makes.map((make) => (
-                      <SelectItem key={make} value={make}>
-                        {make}
-                      </SelectItem>
-                    ))}
+                    {isLoading ? (
+                      <div className="flex items-center justify-center p-4">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      </div>
+                    ) : (
+                      makes.map((make) => (
+                        <SelectItem key={make} value={make}>
+                          {make}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
             </div>

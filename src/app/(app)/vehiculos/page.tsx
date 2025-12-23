@@ -1,4 +1,3 @@
-
 //src/app/(app)/vehiculos/page.tsx
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
@@ -7,12 +6,12 @@ import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'reac
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Car, AlertTriangle, Activity, CalendarX, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Vehicle } from "@/types";
+import type { Vehicle, ServiceRecord } from "@/types";
 import { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VehiclesTable } from './components/vehicles-table';
-import { inventoryService } from '@/lib/services';
+import { inventoryService, serviceService } from '@/lib/services';
 import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { VehicleDialog } from './components/vehicle-dialog';
@@ -27,6 +26,7 @@ function PageInner() {
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [isLoading, setIsLoading] = useState(true);
   const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
+  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Partial<Vehicle> | null>(null);
@@ -35,37 +35,57 @@ function PageInner() {
     setIsLoading(true);
     const unsubscribeVehicles = inventoryService.onVehiclesUpdate((data) => {
       setAllVehicles(data);
-      setIsLoading(false);
+      // We can set loading to false here or wait for services too
+    });
+    
+    const unsubscribeServices = serviceService.onServicesUpdate((data) => {
+        setAllServices(data);
+        setIsLoading(false);
     });
     
     return () => {
       unsubscribeVehicles();
+      unsubscribeServices();
     };
   }, []);
-
+  
   const vehicleSummary = useMemo(() => {
     const now = new Date();
     const total = allVehicles.length;
     let recent = 0;
     let inactive6Months = 0;
     let inactive12Months = 0;
+  
+    // Pre-calculate latest service dates for each vehicle
+    const latestServiceDates = new Map<string, Date>();
+    allServices.forEach(s => {
+      if (s.vehicleId && s.status === 'Entregado') {
+        const serviceDate = parseDate(s.deliveryDateTime);
+        if (serviceDate && isValid(serviceDate)) {
+          const existing = latestServiceDates.get(s.vehicleId);
+          if (!existing || serviceDate > existing) {
+            latestServiceDates.set(s.vehicleId, serviceDate);
+          }
+        }
+      }
+    });
 
     allVehicles.forEach(v => {
-      const lastService = v.lastServiceDate ? parseDate(v.lastServiceDate) : null;
+      const lastService = latestServiceDates.get(v.id) || (v.lastServiceDate ? parseDate(v.lastServiceDate) : null);
       if (lastService && isValid(lastService)) {
         const monthsSinceService = differenceInMonths(now, lastService);
         if (monthsSinceService <= 1) recent++;
         if (monthsSinceService >= 6) inactive6Months++;
         if (monthsSinceService >= 12) inactive12Months++;
       } else {
-        // Treat vehicles with no service date as inactive
         inactive6Months++;
         inactive12Months++;
       }
     });
 
     return { total, recent, inactive6Months, inactive12Months };
-  }, [allVehicles]);
+  }, [allVehicles, allServices]);
+
 
   const handleSaveVehicle = async (data: VehicleFormValues) => {
     try {
@@ -96,6 +116,11 @@ function PageInner() {
     setIsVehicleDialogOpen(true);
   };
 
+  const tabs = [
+    { value: "vehiculos", label: "Lista de Vehículos" },
+    { value: "database", label: "Base de Datos" },
+  ];
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -103,11 +128,6 @@ function PageInner() {
       </div>
     );
   }
-
-  const tabs = [
-    { value: "vehiculos", label: "Lista de Vehículos" },
-    { value: "database", label: "Base de Datos" },
-  ];
 
   return (
     <>
@@ -146,7 +166,7 @@ function PageInner() {
               vehicles={allVehicles}
               onSave={handleSaveVehicle}
               onDelete={handleDeleteVehicle}
-              onAdd={handleOpenVehicleDialog}
+              onAdd={() => handleOpenVehicleDialog()}
             />
           </div>
         </TabsContent>
