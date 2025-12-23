@@ -119,6 +119,7 @@ export type SaleLineItem = {
   quantity: number;
   total: number;
   unitPrice?: number;
+  totalPrice?: number;
 };
 
 export type SaleReceipt = {

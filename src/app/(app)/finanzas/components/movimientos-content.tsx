@@ -352,13 +352,13 @@ function MovimientosTabContent({
                         ? "secondary"
                         : m.type === "Servicio"
                         ? "outline"
-                        : (m.type === "Entrada" || m.type === "in")
+                        : (String(m.type) === "Entrada" || String(m.type) === "in")
                         ? "success"
                         : "destructive";
 
                     const amountClass =
                       m.origin === "ledger"
-                        ? (m.type === "Entrada" || m.type === "in")
+                        ? (String(m.type) === "Entrada" || String(m.type) === "in")
                           ? "text-green-600"
                           : "text-red-600"
                         : m.isRefund
@@ -385,8 +385,8 @@ function MovimientosTabContent({
                           <Badge variant={badgeVariant}>
                             {m.type === "Venta" && <ShoppingCart className="h-3 w-3 mr-1" />}
                             {m.type === "Servicio" && <Wrench className="h-3 w-3 mr-1" />}
-                            {(m.type === "Entrada" || m.type === "in") && <ArrowRight className="h-3 w-3 mr-1" />}
-                            {(m.type === "Salida" || m.type === "out") && <ArrowLeft className="h-3 w-3 mr-1" />}
+                            {(String(m.type) === "Entrada" || String(m.type) === "in") && <ArrowRight className="h-3 w-3 mr-1" />}
+                            {(String(m.type) === "Salida" || String(m.type) === "out") && <ArrowLeft className="h-3 w-3 mr-1" />}
                             {m.type}
                           </Badge>
                         </TableCell>

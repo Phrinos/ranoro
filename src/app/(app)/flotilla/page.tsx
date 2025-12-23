@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Title } from "@/components/Title";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { VehicleCard } from "./components/VehicleCard";
+import { VehicleCard } from "@/app/(app)/flotilla/vehiculos/components/VehicleCard";
 import {
   GlobalTransactionDialog,
   type GlobalTransactionFormValues,

@@ -1,48 +1,37 @@
-"use client";
+"use client"
 
-import * as React from "react";
+import * as React from "react"
 import ReactCalendar, { type CalendarProps as ReactCalendarProps } from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { cn } from "@/lib/utils";
-import { DayPicker } from "react-day-picker";
-import type { Locale } from "date-fns";
-import { es as esLocale } from "date-fns/locale";
 
 type ValuePiece = Date | null;
 export type CalendarValue = ValuePiece | [ValuePiece, ValuePiece];
 
-export type CalendarProps = Omit<React.ComponentProps<typeof DayPicker>, "value" | "onChange"> & {
-  value?: Date | undefined;
-  onChange?: (date: Date | undefined) => void;
-  locale?: Locale | "es" | string;
+export type CalendarProps = Omit<ReactCalendarProps, "value" | "onChange"> & {
+  mode?: "single";
+  selected?: Date;
+  onSelect?: (date?: Date) => void;
+  initialFocus?: boolean;
+  value?: Date | null;
+  onChange?: (date?: Date) => void;
+  locale?: string;
 };
 
-export function Calendar({
-  className,
-  selected,
-  onSelect,
-  value,
-  onChange,
-  locale,
-  ...props
-}: CalendarProps) {
-  const mergedSelected = (selected ?? value) as any;
-
-  const normalizedLocale: Locale | undefined =
-    typeof locale === "string" ? (locale.startsWith("es") ? esLocale : undefined) : locale;
-
-  const handleSelect = (d: any) => {
-    onSelect?.(d);
-    onChange?.(d);
-  };
+export function Calendar({ selected, onSelect, value, onChange, locale, ...props }: CalendarProps) {
+  const v: CalendarValue = (selected ?? value ?? null) as CalendarValue;
 
   return (
-    <DayPicker
-      className={cn("p-3", className)}
-      selected={mergedSelected}
-      onSelect={handleSelect}
-      locale={normalizedLocale as any}
+    <ReactCalendar
       {...props}
+      locale={locale}
+      value={v}
+      onChange={(next: any) => {
+        const d = Array.isArray(next) ? next[0] : next;
+        const date = d ?? undefined;
+        onSelect?.(date);
+        onChange?.(date);
+      }}
     />
   );
 }
