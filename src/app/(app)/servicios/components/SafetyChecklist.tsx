@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useFormContext, Controller } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
-import { FormField, FormItem, FormControl } from "@/components/ui/form";
+import { FormField, FormItem } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { BrainCircuit, Loader2, PlayCircle } from "lucide-react";
@@ -121,13 +121,13 @@ const SafetyChecklistReport = ({ inspection, signatureDataUrl, technicianName }:
                             <span className="ml-2 hidden sm:inline">Mejorar texto</span>
                         </Button>
                     </Label>
-                    <FormControl>
+                    <div>
                         <Textarea
                             placeholder="Anotaciones sobre la inspección, detalles de los puntos que requieren atención, etc."
                             className="min-h-[100px]"
                             {...field}
                         />
-                    </FormControl>
+                    </div>
                 </FormItem>
             )}
         />

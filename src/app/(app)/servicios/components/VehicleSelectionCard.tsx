@@ -248,7 +248,7 @@ export function VehicleSelectionCard({
                 render={({ field }) => (
                   <FormItem>
                     <Label>Kilometraje Actual</Label>
-                    <FormControl>
+                    <div>
                       <Input
                         type="number"
                         placeholder="Ej. 85000"
@@ -262,7 +262,7 @@ export function VehicleSelectionCard({
                         pattern="[0-9]*"
                         className="bg-card"
                       />
-                    </FormControl>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}

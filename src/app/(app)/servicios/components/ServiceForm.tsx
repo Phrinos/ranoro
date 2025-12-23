@@ -2,10 +2,8 @@
 "use client";
 
 import React from 'react';
-import { useFormContext, type FieldErrors, type SubmitErrorHandler } from 'react-hook-form';
-import { Form, FormField, FormItem, FormControl, FormLabel } from '@/components/ui/form';
+import { useFormContext, type FieldErrors, type SubmitErrorHandler, FormField, FormItem } from 'react-hook-form';
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from '@/components/ui/button';
 import { BrainCircuit, Loader2, Signature } from 'lucide-react';
@@ -47,14 +45,14 @@ const ReceptionContent = ({ part, isReadOnly, isEnhancingText, handleEnhanceText
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField control={control} name="vehicleConditions" render={({ field }) => (
                     <FormItem>
-                        <FormLabel className="flex justify-between items-center w-full"><span>Condiciones del Vehículo</span>{!isReadOnly && <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText('vehicleConditions')} disabled={isEnhancingText === 'vehicleConditions' || !watch('vehicleConditions')}><BrainCircuit className="h-4 w-4" /></Button>}</FormLabel>
-                        <FormControl><Textarea placeholder="Describir daños, rayones, etc." {...field} disabled={isReadOnly} className="min-h-[100px] bg-card" /></FormControl>
+                        <Label className="flex justify-between items-center w-full"><span>Condiciones del Vehículo</span>{!isReadOnly && <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText('vehicleConditions')} disabled={isEnhancingText === 'vehicleConditions' || !watch('vehicleConditions')}><BrainCircuit className="h-4 w-4" /></Button>}</Label>
+                        <div><Textarea placeholder="Describir daños, rayones, etc." {...field} disabled={isReadOnly} className="min-h-[100px] bg-card" /></div>
                     </FormItem>
                 )}/>
                 <FormField control={control} name="customerItems" render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Pertenencias del Cliente</FormLabel>
-                        <FormControl><Textarea placeholder="Herramientas, documentos, etc." {...field} disabled={isReadOnly} className="min-h-[100px] bg-card" /></FormControl>
+                        <Label>Pertenencias del Cliente</Label>
+                        <div><Textarea placeholder="Herramientas, documentos, etc." {...field} disabled={isReadOnly} className="min-h-[100px] bg-card" /></div>
                     </FormItem>
                 )}/>
             </div>
@@ -63,19 +61,19 @@ const ReceptionContent = ({ part, isReadOnly, isEnhancingText, handleEnhanceText
                 name="fuelLevel"
                 render={({ field }) => (
                     <FormItem>
-                        <FormLabel>Nivel de Combustible</FormLabel>
-                        <FormControl>
+                        <Label>Nivel de Combustible</Label>
+                        <div>
                             <Input type="range" min="0" max="8" step="1" {...field} disabled={isReadOnly} />
-                        </FormControl>
+                        </div>
                     </FormItem>
                 )}
             />
             <FormField
               control={control}
-              name={signatureFieldName}
+              name={signatureFieldName as any}
               render={({ field }) => (
                 <FormItem>
-                    <FormLabel>{signatureLabel}</FormLabel>
+                    <Label>{signatureLabel}</Label>
                     <div className="p-2 border rounded-md min-h-[100px] flex justify-center items-center bg-muted/50">
                         {signatureUrl ? <Image src={signatureUrl} alt="Firma" width={200} height={100} style={{ objectFit: 'contain' }} /> : <p className="text-sm text-muted-foreground">No hay firma.</p>}
                     </div>

@@ -10,7 +10,7 @@ import type {
   User,
 } from "@/types";
 import { Button } from "@/components/ui/button";
-import { FormField, FormItem, FormControl } from "@/components/ui/form";
+import { FormField, FormItem } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -117,7 +117,7 @@ export function ServiceItemCard({
             <FormField control={control} name={`serviceItems.${serviceIndex}.name`} render={({ field }) => (
                 <FormItem><Label>Tipo de Servicio</Label>
                     <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
-                        <FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione un tipo..." /></SelectTrigger></FormControl>
+                        <div><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione un tipo..." /></SelectTrigger></div>
                         <SelectContent>{sortedServiceTypes.map((t) => (<SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>))}</SelectContent>
                     </Select>
                 </FormItem>
@@ -130,7 +130,7 @@ export function ServiceItemCard({
                     <Label className={cn(serviceItemErrors?.itemName && "text-destructive")}>
                     Nombre del Servicio
                     </Label>
-                    <FormControl>
+                    <div>
                     <Input
                         placeholder="Descripción específica del trabajo..."
                         {...field}
@@ -138,7 +138,7 @@ export function ServiceItemCard({
                         onChange={(e) => field.onChange(capitalizeWords(e.target.value))}
                         className={cn("bg-white", serviceItemErrors?.itemName && "border-destructive focus-visible:ring-destructive")}
                     />
-                    </FormControl>
+                    </div>
                 </FormItem>
                 )}
             />
@@ -150,7 +150,7 @@ export function ServiceItemCard({
                 render={({ field }) => (
                 <FormItem>
                     <Label>Precio Cliente (IVA Inc.)</Label>
-                    <FormControl>
+                    <div>
                     <Input
                         type="number"
                         inputMode="decimal"
@@ -165,7 +165,7 @@ export function ServiceItemCard({
                         onBlur={field.onBlur}
                         className="bg-white"
                     />
-                    </FormControl>
+                    </div>
                 </FormItem>
                 )}
             />

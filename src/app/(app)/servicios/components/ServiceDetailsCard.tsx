@@ -1,10 +1,11 @@
-
+// src/app/(app)/servicios/components/ServiceDetailsCard.tsx
 "use client";
 
 import React from "react";
 import { useFormContext } from "react-hook-form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { FormField, FormItem, FormControl } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Signature } from "lucide-react";
@@ -111,20 +112,20 @@ export function ServiceDetailsCard({
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className={cn(errors.status && "text-destructive")}>Estado</FormLabel>
+                <Label className={cn(errors.status && "text-destructive")}>Estado</Label>
                 <Select
                   key={String(field.value ?? 'status-empty')}
                   onValueChange={(v) => handleStatusChange(v as ServiceFormValues["status"])}
                   value={field.value as string | undefined}
                   disabled={isFinalStatus}
                 >
-                  <FormControl>
+                  <div>
                     <SelectTrigger className={cn("font-bold bg-card", errors.status && "border-destructive focus-visible:ring-destructive")}>
                       <SelectValue placeholder="Seleccione un estado">
                         {statusOptions.find(s => s.value === field.value)?.label}
                       </SelectValue>
                     </SelectTrigger>
-                  </FormControl>
+                  </div>
                   <SelectContent>
                     {statusOptions.map((s) => (
                       <SelectItem key={s.value} value={s.value}>
@@ -143,11 +144,11 @@ export function ServiceDetailsCard({
               name={"subStatus" as any}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sub-estado</FormLabel>
+                  <Label>Sub-estado</Label>
                   <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
-                    <FormControl>
+                    <div>
                       <SelectTrigger><SelectValue placeholder="Seleccione un sub-estado" /></SelectTrigger>
-                    </FormControl>
+                    </div>
                     <SelectContent>
                       {subStatusOptions.map(sub => <SelectItem key={sub} value={sub}>{sub}</SelectItem>)}
                     </SelectContent>
@@ -164,7 +165,7 @@ export function ServiceDetailsCard({
             name="serviceAdvisorId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Asesor de Servicio</FormLabel>
+                <Label>Asesor de Servicio</Label>
                 <div className="flex items-center gap-2">
                   <Select
                     key={advisorId || 'advisor-empty'}
@@ -175,7 +176,7 @@ export function ServiceDetailsCard({
                     value={String(field.value ?? "")}
                     disabled={isReadOnly || safeAdvisors.length === 0}
                   >
-                    <FormControl>
+                    <div>
                       <SelectTrigger className="bg-card">
                         <SelectValue placeholder="Seleccione un asesor">
                           {advisorId
@@ -183,7 +184,7 @@ export function ServiceDetailsCard({
                             : undefined}
                         </SelectValue>
                       </SelectTrigger>
-                    </FormControl>
+                    </div>
                     <SelectContent>
                       {safeAdvisors.map((advisor) => (
                         <SelectItem key={advisor.id} value={advisor.id as any}>
@@ -212,7 +213,7 @@ export function ServiceDetailsCard({
               name="technicianId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Técnico</FormLabel>
+                  <Label>Técnico</Label>
                   <div className="flex items-center gap-2">
                     <Select
                       onValueChange={(value) => {
@@ -222,11 +223,11 @@ export function ServiceDetailsCard({
                       value={field.value ?? ""}
                       disabled={isReadOnly || safeTechnicians.length === 0}
                     >
-                      <FormControl>
+                      <div>
                         <SelectTrigger className="bg-card">
                           <SelectValue placeholder="Seleccione un técnico" />
                         </SelectTrigger>
-                      </FormControl>
+                      </div>
                       <SelectContent>
                         {safeTechnicians.map((technician) => (
                           <SelectItem key={technician.id} value={technician.id as any}>

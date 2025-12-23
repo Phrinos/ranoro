@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { FormField, FormItem, FormControl } from '@/components/ui/form';
+import { FormField, FormItem } from '@/components/ui/form';
 import { Camera, Check, ArrowLeft, ArrowRight, X } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from "@/lib/utils";
@@ -100,14 +100,14 @@ export function GuidedInspectionWizard({ inspectionItems, onClose, serviceId, on
                                     render={({ field: notesField }) => (
                                       <FormItem>
                                         <Label className="text-xs">Notas</Label>
-                                        <FormControl>
+                                        <div>
                                           <Textarea
                                             placeholder="Detalles sobre este punto..."
                                             rows={2}
                                             className="text-sm bg-white"
                                             {...notesField}
                                           />
-                                        </FormControl>
+                                        </div>
                                       </FormItem>
                                     )}
                                   />

@@ -1,4 +1,4 @@
-
+// src/app/(app)/servicios/components/ServiceItemsList.tsx
 "use client";
 
 import React, { useEffect, useMemo } from "react";
@@ -10,7 +10,7 @@ import type { InventoryItem, InventoryCategory, Supplier, ServiceTypeRecord, Use
 import { ServiceItemCard } from "./ServiceItemCard";
 import type { ServiceFormValues, ServiceItem } from "@/schemas/service-form";
 import { nanoid } from "nanoid";
-import { FormField, FormItem, FormControl } from "@/components/ui/form";
+import { FormField, FormItem } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -181,7 +181,7 @@ export function ServiceItemsList({
                     </Button>
                   )}
                 </Label>
-                <FormControl>
+                <div>
                   <Textarea
                     placeholder="Observaciones generales sobre el servicio..."
                     {...field}
@@ -189,7 +189,7 @@ export function ServiceItemsList({
                     disabled={isReadOnly}
                     value={typeof field.value === 'string' ? field.value : ""}
                   />
-                </FormControl>
+                </div>
               </FormItem>
             )}
           />
