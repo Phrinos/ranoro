@@ -17,14 +17,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NewCalendar } from "@/components/ui/calendar";
-import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
 const paperworkSchema = z.object({
   name: z.string().min(3, "El nombre del trámite es obligatorio."),
-  dueDate: z.date({ required_error: "La fecha de vencimiento es obligatoria." }),
+  dueDate: z.coerce.date({ message: "La fecha de vencimiento es obligatoria." }),
 });
 export type PaperworkFormValues = z.infer<typeof paperworkSchema>;
 
@@ -116,13 +116,13 @@ export function PaperworkDialog({
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
                       <NewCalendar
-                        value={field.value}
                         onChange={(d: any) => {
                             if (d) {
                                 field.onChange(d);
                                 setIsCalendarOpen(false);
                             }
                         }}
+                        value={field.value}
                       />
                     </PopoverContent>
                   </Popover>
@@ -142,5 +142,3 @@ export function PaperworkDialog({
     </Dialog>
   );
 }
-
-    

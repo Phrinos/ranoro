@@ -42,21 +42,21 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
 
   const form = useForm<WithdrawalFormInput, any, OwnerWithdrawalFormValues>({
     resolver: zodResolver(withdrawalSchema),
-    defaultValues: { ownerName: "", amount: "", note: "" } as any,
+    defaultValues: { ownerName: "", amount: undefined, note: "" },
   });
 
-  const owners = useMemo(() => {
+  const owners = useMemo<string[]>(() => {
     const ownerNames = vehicles
-      .filter((v) => v.isFleetVehicle)
-      .map((v) => v.ownerName)
-      .filter((name): name is string => typeof name === "string" && name.trim().length > 0);
+      .filter(v => v.isFleetVehicle)
+      .map(v => v.ownerName)
+      .filter((name): name is string => !!name && name.trim().length > 0);
 
     return Array.from(new Set(ownerNames));
   }, [vehicles]);
 
   useEffect(() => {
     if (!open) return;
-    form.reset({ ownerName: "", amount: "", note: "" } as any);
+    form.reset({ ownerName: "", amount: undefined, note: "" });
   }, [open, form]);
 
   const handleFormSubmit = async (values: OwnerWithdrawalFormValues) => {
@@ -85,7 +85,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Propietario</FormLabel>
-                  <Select onValueChange={field.onChange} value={(field.value as any) ?? ""}>
+                  <Select onValueChange={field.onChange} value={field.value ?? ""}>
                     <FormControl>
                       <SelectTrigger className="bg-white">
                         <SelectValue placeholder="Seleccionar propietario..." />
@@ -105,13 +105,20 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
             />
 
             <FormField
-              control={form.control as any}
+              control={form.control}
               name="amount"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Monto a Retirar ($)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} className="bg-white" value={(field.value as any) ?? ""} />
+                    <Input 
+                      type="number" 
+                      step="0.01" 
+                      {...field} 
+                      className="bg-white" 
+                      value={field.value ?? ""} 
+                      onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -119,13 +126,13 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
             />
 
             <FormField
-              control={form.control as any}
+              control={form.control}
               name="note"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nota o Descripción</FormLabel>
                   <FormControl>
-                    <Textarea {...field} className="bg-white" value={(field.value as any) ?? ""} />
+                    <Textarea {...field} className="bg-white" value={field.value ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

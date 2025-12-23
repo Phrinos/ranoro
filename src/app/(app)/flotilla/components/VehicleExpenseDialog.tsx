@@ -1,8 +1,8 @@
 // src/app/(app)/flotilla/components/VehicleExpenseDialog.tsx
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
-import { useForm, type Resolver } from "react-hook-form";
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import type { Vehicle } from "@/types";
@@ -41,17 +41,17 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ExpenseFormInput, any, VehicleExpenseFormValues>({
-    resolver: zodResolver(expenseSchema) as Resolver<ExpenseFormInput, any, VehicleExpenseFormValues>,
+    resolver: zodResolver(expenseSchema),
     defaultValues: {
       vehicleId: "",
-      amount: "",
+      amount: undefined,
       description: "",
     },
   });
 
   useEffect(() => {
     if (!open) return;
-    form.reset({ vehicleId: "", amount: "", description: "" });
+    form.reset({ vehicleId: "", amount: undefined, description: "" });
   }, [open, form]);
 
   const handleFormSubmit = async (values: VehicleExpenseFormValues) => {
@@ -77,7 +77,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 p-4">
             <FormField
-              control={form.control as any}
+              control={form.control}
               name="vehicleId"
               render={({ field }) => (
                 <FormItem>
@@ -102,7 +102,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
             />
 
             <FormField
-              control={form.control as any}
+              control={form.control}
               name="amount"
               render={({ field }) => (
                 <FormItem>
@@ -114,6 +114,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
                       className="bg-white"
                       {...field}
                       value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -122,7 +123,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
             />
 
             <FormField
-              control={form.control as any}
+              control={form.control}
               name="description"
               render={({ field }) => (
                 <FormItem>

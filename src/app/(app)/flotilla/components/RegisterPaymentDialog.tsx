@@ -1,4 +1,3 @@
-
 // src/app/(app)/flotilla/components/RegisterPaymentDialog.tsx
 "use client";
 
@@ -6,6 +5,8 @@ import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import type { RentalPayment } from "@/types";
+
 import {
   Dialog,
   DialogContent,
@@ -15,12 +16,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,17 +25,18 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { NewCalendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { RentalPayment } from "@/types";
-import { NewCalendar } from "@/components/ui/calendar";
+
 
 const paymentSchema = z.object({
-  paymentDate: z.date({ required_error: "La fecha es obligatoria." }),
+  paymentDate: z.coerce.date({ message: "La fecha es obligatoria." }),
   amount: z.coerce.number().min(0.01, "El monto debe ser positivo."),
   note: z.string().optional(),
   paymentMethod: z.string().optional(),
 });
+type PaymentFormInput = z.input<typeof paymentSchema>;
 export type PaymentFormValues = z.infer<typeof paymentSchema>;
 
 interface RegisterPaymentDialogProps {
@@ -64,10 +61,10 @@ export function RegisterPaymentDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  const form = useForm<PaymentFormValues>({
+  const form = useForm<PaymentFormInput, any, PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
-      paymentDate: toMidday(new Date()),
+      paymentDate: undefined,
       amount: undefined,
       note: "Abono de Renta",
       paymentMethod: "Efectivo",
@@ -194,6 +191,8 @@ export function RegisterPaymentDialog({
                       {...field}
                       className="bg-white"
                       placeholder="0.00"
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -208,7 +207,7 @@ export function RegisterPaymentDialog({
                 <FormItem>
                   <FormLabel>Descripción</FormLabel>
                   <FormControl>
-                    <Textarea {...field} className="bg-white" placeholder="Abono de Renta" />
+                    <Textarea {...field} className="bg-white" placeholder="Abono de Renta" value={field.value ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -230,5 +229,3 @@ export function RegisterPaymentDialog({
     </Dialog>
   );
 }
-
-    
