@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/PaymentDetailsDialog.tsx
 "use client";
 
@@ -61,7 +62,7 @@ export function PaymentDetailsDialog({
     mode: 'onChange'
   });
 
-  const { handleSubmit, formState: { isSubmitting }, reset, setValue } = methods;
+  const { handleSubmit, formState: { isSubmitting }, reset } = methods;
 
   useEffect(() => {
     if (open && record) {
@@ -102,7 +103,7 @@ export function PaymentDetailsDialog({
       ...values,
       payments: (values.payments || []).map(p => ({
         ...p,
-        amount: toNumber(p.amount),
+        amount: toNumber(p?.amount),
       })),
     };
 
@@ -132,7 +133,7 @@ export function PaymentDetailsDialog({
           </DialogDescription>
         </DialogHeader>
         <FormProvider {...methods}>
-          <form onSubmit={handleSubmit(processSubmit)}>
+          <form onSubmit={handleSubmit(processSubmit as any)}>
             <ScrollArea className="max-h-[65vh] p-1">
               <div className="space-y-6 p-4">
                 <PaymentSection totalAmount={toNumber(totalAmount)} />

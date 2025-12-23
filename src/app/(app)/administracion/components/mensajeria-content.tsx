@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Save, Bot, Send, Loader2 } from 'lucide-react';
+import { Save, Send, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { messagingService } from '@/lib/services/messaging.service';
 

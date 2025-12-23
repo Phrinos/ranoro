@@ -1,7 +1,7 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, Payment, PaymentMethod } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
@@ -87,9 +87,8 @@ type FlowRow = {
 };
 
 export default function CajaContent() {
-  const { toast } = useToast();
-  const router = useRouter();
-
+  const { toast: show } = useToast();
+  
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
     const now = new Date();
     return { from: startOfMonth(now), to: endOfMonth(now) };
@@ -224,7 +223,7 @@ export default function CajaContent() {
   // registrar manual
   const form = useForm<CashTransactionFormValues>({ resolver: zodResolver(cashTransactionSchema) });
   const handleOpenDialog = (type: 'Entrada' | 'Salida') => { setDialogType(type); form.reset(); setIsDialogOpen(true); };
-  const { toast: show } = useToast();
+  
   const handleTransactionSubmit = async (values: CashTransactionFormValues) => {
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
     const currentUser = authUserString ? JSON.parse(authUserString) : null;

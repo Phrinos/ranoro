@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
@@ -87,7 +88,7 @@ export function RegisterPurchaseDialog({
   });
 
   const { control, handleSubmit, watch, setValue, getValues } = form;
-  const { fields, append, remove } = useFieldArray({ control, name: "items" });
+  const { fields, append, remove } = useFieldArray({ control, name: "items" as const });
   const paymentMethod = watch("paymentMethod");
   const itemsWatch = useWatch({ control, name: "items" });
 
@@ -154,11 +155,11 @@ export function RegisterPurchaseDialog({
 
           <FormProvider {...form}>
             <Form {...form}>
-              <form onSubmit={handleSubmit(onSave as any)} id="purchase-form" className="space-y-4">
+              <form onSubmit={handleSubmit(onSave)} id="purchase-form" className="space-y-4">
                 <div className="max-h-[calc(80vh-150px)] space-y-6 overflow-y-auto px-6 py-4 bg-muted/50">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField
-                      control={control as any}
+                      control={control}
                       name="supplierId"
                       render={({ field }) => (
                         <FormItem>
@@ -184,7 +185,7 @@ export function RegisterPurchaseDialog({
                       )}
                     />
                     <FormField
-                      control={control as any}
+                      control={control}
                       name="invoiceId"
                       render={({ field }) => (
                         <FormItem>

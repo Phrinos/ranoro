@@ -1,3 +1,4 @@
+
 // src/app/(public)/landing/AnimatedDiv.tsx
 "use client";
 import React, { useRef, type RefObject } from 'react';
