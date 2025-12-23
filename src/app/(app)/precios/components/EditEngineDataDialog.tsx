@@ -235,28 +235,28 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                           <h4 className="font-semibold text-sm">Filtros</h4>{last(watch("insumos.filtroAceite.lastUpdated"))}
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                          <FormField control={control} name="insumos.filtroAceite.sku" render={({ field }) => (
+                          <FormField control={control as any} name="insumos.filtroAceite.sku" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">SKU Filtro Aceite</FormLabel>
                               <FormControl><Input {...field} value={field.value ?? ""} placeholder="W-123" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="insumos.filtroAceite.costoUnitario" render={({ field }) => (
+                          <FormField control={control as any} name="insumos.filtroAceite.costoUnitario" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Costo Filtro Aceite</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="120" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="insumos.filtroAire.sku" render={({ field }) => (
+                          <FormField control={control as any} name="insumos.filtroAire.sku" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">SKU Filtro Aire</FormLabel>
                               <FormControl><Input {...field} value={field.value ?? ""} placeholder="A-456" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="insumos.filtroAire.costoUnitario" render={({ field }) => (
+                          <FormField control={control as any} name="insumos.filtroAire.costoUnitario" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Costo Filtro Aire</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="180" /></FormControl>
@@ -344,28 +344,28 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                           <h4 className="font-semibold text-sm">Bujías</h4>{last(watch("insumos.bujias.lastUpdated"))}
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-                          <FormField control={control} name="insumos.bujias.cantidad" render={({ field }) => (
+                          <FormField control={control as any} name="insumos.bujias.cantidad" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Cantidad</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="4" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="insumos.bujias.modelos.cobre" render={({ field }) => (
+                          <FormField control={control as any} name="insumos.bujias.modelos.cobre" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">SKU Cobre</FormLabel>
                               <FormControl><Input {...field} value={field.value ?? ""} placeholder="BKR5E-11" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="insumos.bujias.modelos.platino" render={({ field }) => (
+                          <FormField control={control as any} name="insumos.bujias.modelos.platino" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">SKU Platino</FormLabel>
                               <FormControl><Input {...field} value={field.value ?? ""} placeholder="PFR5G-11" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="insumos.bujias.modelos.iridio" render={({ field }) => (
+                          <FormField control={control as any} name="insumos.bujias.modelos.iridio" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">SKU Iridio</FormLabel>
                               <FormControl><Input {...field} value={field.value ?? ""} placeholder="IK16" /></FormControl>
