@@ -1,4 +1,3 @@
-
 import * as admin from "firebase-admin"; // Necesario para admin.auth() y admin.firestore.FieldValue
 import * as logger from "firebase-functions/logger";
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
@@ -41,7 +40,7 @@ export const onStockExit = onDocumentUpdated("serviceRecords/{serviceId}", async
     return;
   }
 
-  const items = dataAfter.items;
+  const items = dataAfter.serviceItems; // Changed from dataAfter.items to dataAfter.serviceItems
   if (!items || items.length === 0) {
     logger.info(`[Inventory] El servicio ${serviceId} no tiene items para procesar. Saliendo.`);
     return;
@@ -81,6 +80,7 @@ export const onStockExit = onDocumentUpdated("serviceRecords/{serviceId}", async
     logger.error(`[Inventory] Falló la transacción para el servicio ${serviceId}:`, error);
   }
 });
+
 
 /**
  * Lógica centralizada para incrementar el stock. Reutilizable para creación y actualización.

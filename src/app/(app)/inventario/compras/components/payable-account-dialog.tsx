@@ -1,7 +1,5 @@
 // src/app/(app)/inventario/compras/components/payable-account-dialog.tsx
 
-"use client";
-
 import React, { useState } from 'react';
 import { FormDialog } from '@/components/shared/form-dialog';
 import { PayableAccountForm } from "./payable-account-form";

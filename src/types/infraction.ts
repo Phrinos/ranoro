@@ -11,8 +11,7 @@ export type Payment = {
 export type Infraction = {
   id: string;
   date: string;
-  amount: number;
-  description: string;
   totalAmount: number;
   paidAmount: number;
+  description: string;
 };

@@ -1,4 +1,3 @@
-
 // src/lib/services/inventory.service.ts
 
 import {
@@ -381,5 +380,3 @@ export const inventoryService = {
   onVehicleDataUpdate,
   deleteCollectionDoc,
 };
-
-    

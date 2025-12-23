@@ -156,7 +156,7 @@ export default function SupplierDetailPage() {
                             <TableCell>{acc.invoiceId}</TableCell>
                             <TableCell>{acc.invoiceDate ? format(parseISO(acc.invoiceDate), 'dd/MM/yyyy') : '—'}</TableCell>
                             <TableCell>{acc.dueDate ? format(parseISO(acc.dueDate), 'dd/MM/yyyy') : '—'}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(acc.totalAmount)}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(acc.totalAmount ?? 0)}</TableCell>
                             <TableCell className="text-right text-green-600">{formatCurrency(acc.paidAmount || 0)}</TableCell>
                             <TableCell className="text-right font-bold">{formatCurrency((acc.totalAmount ?? 0) - (acc.paidAmount || 0))}</TableCell>
                             <TableCell className="text-center"><Badge variant={acc.status === 'Pagado' ? 'success' : acc.status === 'Pagado Parcialmente' ? 'secondary' : 'destructive'}>{acc.status}</Badge></TableCell>

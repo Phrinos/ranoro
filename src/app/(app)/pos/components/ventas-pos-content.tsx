@@ -192,7 +192,7 @@ export function VentasPosContent({
                       ? [<Badge key="cancelled" variant="destructive" className="font-bold">CANCELADO</Badge>]
                       : (sale.payments && sale.payments.length > 0)
                           ? sale.payments.map((p, index) => {
-                              const Icon = paymentMethodIcons[p.method as PaymentMethod] ?? Wallet;
+                              const Icon = paymentMethodIcons[p.method] ?? Wallet;
                               return (
                                 <Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
                                   <Icon className="h-3 w-3 mr-1"/>{p.method} <span className="font-normal ml-1 opacity-80">{formatCurrency(p.amount)}</span>
@@ -220,7 +220,7 @@ export function VentasPosContent({
                                      <div className="flex items-center gap-2 text-muted-foreground text-xs"><UserIcon className="h-3 w-3" /><span>{sale.customerName || 'Cliente Mostrador'}</span></div>
                                   </div>
                                   <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-48 flex-shrink-0 space-y-1 border-b md:border-b-0 md:border-r">
-                                       <div><p className="text-xs text-muted-foreground mb-1 text-right">Costo Cliente</p><p className="font-bold text-xl text-primary text-right">{formatCurrency(sale.totalAmount)}</p></div>
+                                       <div><p className="text-xs text-muted-foreground mb-1 text-right">Costo Cliente</p><p className="font-bold text-xl text-primary text-right">{formatCurrency(sale.totalAmount ?? 0)}</p></div>
                                        <div><p className="text-xs text-muted-foreground">Ganancia</p><p className="font-semibold text-base text-green-600 flex items-center gap-1 justify-end"><TrendingUp className="h-4 w-4" /> {formatCurrency(profit)}</p></div>
                                        <div className="flex flex-wrap gap-1 justify-end pt-1">{paymentBadges}</div>
                                   </div>

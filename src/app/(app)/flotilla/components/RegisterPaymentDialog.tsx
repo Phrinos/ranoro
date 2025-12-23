@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarIcon } from "lucide-react";
@@ -23,40 +23,74 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { cn } from "@/lib/utils";
+import { cn, CURRENCY_FORMATTER, getToday } from "@/lib/utils";
 
 import { registerPaymentSchema, type RegisterPaymentFormValues } from "@/schemas/register-payment-schema";
-import type { Infraction, Payment } from "@/types/infraction";
-import { CURRENCY_FORMATTER, getToday } from "@/lib/utils";
+import type { Infraction } from "@/types/infraction";
+
+export type PaymentFormValues = RegisterPaymentFormValues;
+
+type AnyPaymentLike = {
+  id?: string;
+  amount?: number;
+  paymentMethod?: string;
+  note?: string;
+  paymentDate?: string | Date;
+  date?: string | Date;
+  infractionId?: string;
+};
 
 interface RegisterPaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (data: RegisterPaymentFormValues) => Promise<void> | void;
-  infraction: Infraction;
+
+  // si viene, habilita validación vs “restante”
+  infraction?: Infraction;
+
+  // edición (lo usa HistoryTabContent)
+  paymentToEdit?: AnyPaymentLike | null;
 }
 
-const buildDefaults = (infraction: Infraction, payment?: Payment): RegisterPaymentFormValues => ({
-  id: payment?.id,
-  date: payment?.date ? new Date(payment.date) : getToday(),
-  amount: payment?.amount ?? Math.max(infraction.totalAmount - infraction.paidAmount, 0),
-  paymentMethod: payment?.paymentMethod,
-  note: payment?.note ?? "",
-  infractionId: infraction.id,
-});
+const toDateSafe = (v: unknown): Date | undefined => {
+  if (!v) return undefined;
+  if (v instanceof Date) return v;
+  const d = new Date(String(v));
+  return Number.isFinite(d.getTime()) ? d : undefined;
+};
 
-export function RegisterPaymentDialog({ open, onOpenChange, onSave, infraction }: RegisterPaymentDialogProps) {
-  const [payment, setPayment] = useState<Payment | undefined>(undefined);
+const buildDefaults = (infraction?: Infraction, payment?: AnyPaymentLike | null): RegisterPaymentFormValues => {
+  const paymentDate = toDateSafe(payment?.paymentDate ?? payment?.date) ?? getToday();
+
+  return {
+    id: payment?.id,
+    paymentDate,
+    amount:
+      payment?.amount ??
+      (infraction ? Math.max(infraction.totalAmount - infraction.paidAmount, 0) : 0),
+    paymentMethod: (payment?.paymentMethod as any) ?? undefined,
+    note: payment?.note ?? "",
+    infractionId: infraction?.id ?? payment?.infractionId,
+  };
+};
+
+export function RegisterPaymentDialog({
+  open,
+  onOpenChange,
+  onSave,
+  infraction,
+  paymentToEdit,
+}: RegisterPaymentDialogProps) {
   const resolver = zodResolver(registerPaymentSchema) as unknown as Resolver<RegisterPaymentFormValues>;
 
-  const remainingAmount = useMemo(
-    () => infraction.totalAmount - infraction.paidAmount,
-    [infraction.totalAmount, infraction.paidAmount],
-  );
+  const remainingAmount = useMemo(() => {
+    if (!infraction) return 0;
+    return Math.max(infraction.totalAmount - infraction.paidAmount, 0);
+  }, [infraction]);
 
   const form = useForm<RegisterPaymentFormValues>({
     resolver,
-    defaultValues: buildDefaults(infraction, payment),
+    defaultValues: buildDefaults(infraction, paymentToEdit ?? null),
     mode: "onBlur",
   });
 
@@ -64,18 +98,17 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave, infraction }
   const amount = watch("amount");
 
   useEffect(() => {
-    if (open) reset(buildDefaults(infraction, payment));
-  }, [open, reset, infraction, payment]);
+    if (open) reset(buildDefaults(infraction, paymentToEdit ?? null));
+  }, [open, reset, infraction, paymentToEdit]);
 
   const handleSave = async (data: RegisterPaymentFormValues) => {
     try {
-      if (data.amount > remainingAmount) {
+      if (infraction && data.amount > remainingAmount) {
         toast.error("El monto a pagar no puede ser mayor al monto restante");
         return;
       }
-
       await onSave(data);
-    } catch (error) {
+    } catch {
       toast.error("Error al registrar el pago");
     }
   };
@@ -84,18 +117,23 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave, infraction }
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Registrar pago</DialogTitle>
-          <DialogDescription>
-            Deuda total: {CURRENCY_FORMATTER.format(infraction.totalAmount)} | Deuda restante:{" "}
-            {CURRENCY_FORMATTER.format(remainingAmount)}
-          </DialogDescription>
+          <DialogTitle>{paymentToEdit ? "Editar pago" : "Registrar pago"}</DialogTitle>
+
+          {infraction ? (
+            <DialogDescription>
+              Deuda total: {CURRENCY_FORMATTER.format(infraction.totalAmount)} | Deuda restante:{" "}
+              {CURRENCY_FORMATTER.format(remainingAmount)}
+            </DialogDescription>
+          ) : (
+            <DialogDescription>Completa los datos del pago.</DialogDescription>
+          )}
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={handleSubmit(handleSave)} className="space-y-4">
             <FormField
               control={form.control}
-              name="date"
+              name="paymentDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
                   <FormLabel>Fecha</FormLabel>
@@ -116,7 +154,7 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave, infraction }
                       <Calendar
                         mode="single"
                         selected={field.value}
-                        onSelect={(d) => field.onChange(d ?? new Date())}
+                        onSelect={(d: Date | undefined) => field.onChange(d ?? new Date())}
                         initialFocus
                       />
                     </PopoverContent>
@@ -161,6 +199,7 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave, infraction }
                       <SelectItem value="Efectivo">Efectivo</SelectItem>
                       <SelectItem value="Tarjeta">Tarjeta</SelectItem>
                       <SelectItem value="Transferencia">Transferencia</SelectItem>
+                      <SelectItem value="Crédito">Crédito</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -184,7 +223,9 @@ export function RegisterPaymentDialog({ open, onOpenChange, onSave, infraction }
 
             <DialogFooter>
               <p className="text-sm text-muted-foreground">
-                {amount > remainingAmount && <span className="text-red-500">El monto a pagar es mayor al restante</span>}
+                {infraction && amount > remainingAmount ? (
+                  <span className="text-red-500">El monto a pagar es mayor al restante</span>
+                ) : null}
               </p>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={formState.isSubmitting}>
                 Cancelar

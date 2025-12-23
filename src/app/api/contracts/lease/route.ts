@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 function toDate(x: unknown, fallback?: Date | null): Date | null {
   if (!x && fallback !== undefined) return fallback ?? null;
   const d = x instanceof Date ? x : new Date(String(x));
-  return isNaN(d.getTime()) ? (fallback ?? null) : d;
+  return Number.isNaN(d.getTime()) ? (fallback ?? null) : d;
 }
 
 function coerce(input: any): LeaseContractInput {

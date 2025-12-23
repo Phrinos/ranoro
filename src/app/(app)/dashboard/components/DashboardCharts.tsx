@@ -1,4 +1,3 @@
-
 // src/app/(app)/dashboard/components/DashboardCharts.tsx
 "use client";
 
@@ -49,9 +48,9 @@ const processFinancialChartData = (
         if (service.status !== 'Entregado') return;
 
         const completionDate =
-            parseDate(service.deliveryDateTime || '') ??
+            parseDate((service as any).deliveryDateTime || '') ??
             parseDate(service.serviceDate) ??
-            parseDate(service.receptionDateTime || '');
+            parseDate((service as any).receptionDateTime || '');
 
         if (completionDate && isValid(completionDate)) {
             const monthKey = format(completionDate, 'yyyy-MM');
@@ -61,8 +60,8 @@ const processFinancialChartData = (
                         ? service.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)
                         : Number(service.totalCost) || 0);
                 
-                const costOfGoods = service.serviceItems?.reduce((totalCost, item) => {
-                    const itemSuppliesCost = item.suppliesUsed?.reduce((supplySum, supply) => {
+                const costOfGoods = (service as any).serviceItems?.reduce((totalCost: any, item: any) => {
+                    const itemSuppliesCost = item.suppliesUsed?.reduce((supplySum: any, supply: any) => {
                         return supplySum + ((supply.unitPrice || 0) * (supply.quantity || 0));
                     }, 0) || 0;
                     return totalCost + itemSuppliesCost;
@@ -81,12 +80,12 @@ const processFinancialChartData = (
         if (saleDate && isValid(saleDate)) {
             const monthKey = format(saleDate, 'yyyy-MM');
             if (dataByMonth[monthKey]) {
-                const income = sale.totalAmount || 0;
-                const costOfGoods = sale.items.reduce((sum, item: any) => {
+                const income = (sale.totalAmount || 0) as number;
+                const costOfGoods = sale.items?.reduce((sum: number, item: any) => {
                     const inventoryItem = inventoryMap.get(item.inventoryItemId || '');
                     const itemUnitCost = inventoryItem?.unitPrice ?? 0;
                     return sum + (itemUnitCost * item.quantity);
-                }, 0);
+                }, 0) ?? 0;
                 
                 if (income)
                     dataByMonth[monthKey].ingresos += income;
@@ -141,11 +140,11 @@ const processOperationalChartData = (services: ServiceRecord[], sales: SaleRecei
 
     services.forEach(s => {
         if (s.status !== 'Entregado') return;
-        const opDate = parseDate(s.deliveryDateTime || '') ?? parseDate(s.serviceDate);
+        const opDate = parseDate((s as any).deliveryDateTime || '') ?? parseDate(s.serviceDate);
         if (opDate && isValid(opDate)) {
             const monthKey = format(opDate, 'yyyy-MM');
             if (dataByMonth[monthKey]) {
-                const type = s.serviceType || 'Servicio General';
+                const type = (s as any).serviceType || 'Servicio General';
                 dataByMonth[monthKey][type] = (dataByMonth[monthKey][type] || 0) + 1;
                 serviceTypeCounts[type] = (serviceTypeCounts[type] || 0) + 1;
             }

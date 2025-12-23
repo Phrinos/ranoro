@@ -1,4 +1,3 @@
-
 // src/app/(app)/finanzas/components/movimientos-content.tsx
 
 "use client";
@@ -132,7 +131,7 @@ function MovimientosTabContent({
             const d = getPaymentDate(p) || parseDate(s.deliveryDateTime || new Date().toISOString()) || parseDate(s.serviceDate || new Date().toISOString());
             const amt = Number(p.amount) || 0;
             const isRefund = amt < 0;
-            const folio = s.folio || s.id.slice(-6);
+            const folio = (s as any).folio || s.id.slice(-6);
             return {
               id: `${s.id}-svc-pay-${idx}`,
               origin: "payment",
@@ -353,13 +352,13 @@ function MovimientosTabContent({
                         ? "secondary"
                         : m.type === "Servicio"
                         ? "outline"
-                        : m.type === "Entrada"
+                        : (m.type === "Entrada" || m.type === "in")
                         ? "success"
                         : "destructive";
 
                     const amountClass =
                       m.origin === "ledger"
-                        ? m.type === "Entrada"
+                        ? (m.type === "Entrada" || m.type === "in")
                           ? "text-green-600"
                           : "text-red-600"
                         : m.isRefund
@@ -386,8 +385,8 @@ function MovimientosTabContent({
                           <Badge variant={badgeVariant}>
                             {m.type === "Venta" && <ShoppingCart className="h-3 w-3 mr-1" />}
                             {m.type === "Servicio" && <Wrench className="h-3 w-3 mr-1" />}
-                            {m.type === "Entrada" && <ArrowRight className="h-3 w-3 mr-1" />}
-                            {m.type === "Salida" && <ArrowLeft className="h-3 w-3 mr-1" />}
+                            {(m.type === "Entrada" || m.type === "in") && <ArrowRight className="h-3 w-3 mr-1" />}
+                            {(m.type === "Salida" || m.type === "out") && <ArrowLeft className="h-3 w-3 mr-1" />}
                             {m.type}
                           </Badge>
                         </TableCell>

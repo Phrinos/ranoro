@@ -1,4 +1,3 @@
-
 // src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
@@ -24,7 +23,7 @@ import { formatCurrency, cn } from "@/lib/utils";
 import { InventoryItemDialog } from "@/app/(app)/inventario/components/inventory-item-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { NewCalendar } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import { format as formatDate } from "date-fns";
 import { es } from "date-fns/locale";
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
@@ -79,8 +78,10 @@ export function RegisterPurchaseDialog({
   onSave,
   onInventoryItemCreated,
 }: RegisterPurchaseDialogProps) {
-  const form = useForm<PurchaseFormValues>({
-    resolver: zodResolver(purchaseFormSchema) as unknown as Resolver<PurchaseFormValues>,
+  const resolver = zodResolver(purchaseFormSchema) as unknown as Resolver<PurchaseFormValues>;
+
+  const methods = useForm<PurchaseFormValues>({
+    resolver,
     defaultValues: {
       supplierId: "",
       items: [],
@@ -90,7 +91,7 @@ export function RegisterPurchaseDialog({
     mode: "onBlur",
   });
 
-  const { control, handleSubmit, watch, setValue, getValues } = form;
+  const { control, handleSubmit, watch, setValue, getValues } = methods;
   const { fields, append, remove } = useFieldArray({ control: control as any, name: "items" });
   const paymentMethod = watch("paymentMethod");
   const itemsWatch = useWatch({ control, name: "items" });
@@ -157,7 +158,6 @@ export function RegisterPurchaseDialog({
           </DialogHeader>
 
           <FormProvider {...methods}>
-            <Form {...methods}>
               <form onSubmit={handleSubmit(onSave)} id="purchase-form" className="space-y-4">
                 <div className="max-h-[calc(80vh-150px)] space-y-6 overflow-y-auto px-6 py-4 bg-muted/50">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -309,9 +309,9 @@ export function RegisterPurchaseDialog({
                         </Button>
                       </div>
                     </div>
-                    {!!(form.formState.errors as any).items && (
+                    {!!(methods.formState.errors as any).items && (
                       <p className="mt-2 text-sm text-destructive">
-                        {((form.formState.errors as any).items?.message as any)}
+                        {((methods.formState.errors as any).items?.message as any)}
                       </p>
                     )}
                   </div>
@@ -368,10 +368,10 @@ export function RegisterPurchaseDialog({
                                 </FormControl>
                               </PopoverTrigger>
                               <PopoverContent className="w-auto p-0" align="start">
-                                <NewCalendar
-                                  onChange={field.onChange as CalendarProps["onChange"]}
-                                  value={field.value}
-                                  locale={"es"}
+                                <Calendar
+                                  mode="single"
+                                  onSelect={(d: Date | undefined) => field.onChange(d)}
+                                  selected={field.value}
                                 />
                               </PopoverContent>
                             </Popover>
@@ -397,7 +397,6 @@ export function RegisterPurchaseDialog({
                     </div>
                 </DialogFooter>
               </form>
-            </Form>
           </FormProvider>
         </DialogContent>
       </Dialog>
@@ -427,7 +426,7 @@ interface SearchItemDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   inventoryItems: InventoryItem[];
-  onItemSelected: (item: InventoryItem) => void;
+  onItemSelected: (item: InventoryItem, quantity: number) => void;
   onNewItemRequest: (searchTerm: string) => void;
 }
 
@@ -481,7 +480,7 @@ function SearchItemDialog({
                   key={item.id}
                   variant="ghost"
                   className="h-auto w-full justify-start px-2 py-1.5 text-left"
-                  onClick={() => onItemSelected(item)}
+                  onClick={() => onItemSelected(item, 1)}
                 >
                   <div>
                     <p className="font-medium">{item.name}</p>

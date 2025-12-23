@@ -1,4 +1,3 @@
-
 // src/app/(app)/flotilla/conductores/components/HistoryTabContent.tsx
 "use client";
 
@@ -103,11 +102,17 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
         type: 'charge' as const,
         note: (c as any).note || `Renta Diaria (${c.vehicleLicensePlate})`
       })),
-      ...payments.map(p => ({
-        ...p,
-        type: 'payment' as const,
-        date: p.paymentDate
-      })),
+      ...payments.map(p => {
+        const raw = (p as any).date ?? (p as any).paymentDate;
+        const dateStr =
+          raw instanceof Date ? raw.toISOString() : (typeof raw === "string" ? raw : undefined);
+
+        return ({
+          ...p,
+          type: 'payment' as const,
+          date: dateStr ?? new Date().toISOString(),
+        });
+      }),
       ...manualDebts.map(d => ({ ...d, type: 'debt' as const })),
     ];
 
@@ -133,11 +138,15 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
 
   const handleSavePayment = async (data: PaymentFormValues) => {
     if (!driver || !vehicle) return;
+
+    const paymentDateIso =
+      data.paymentDate instanceof Date ? data.paymentDate.toISOString() : new Date(data.paymentDate).toISOString();
+
     const savedPayment = await rentalService.addRentalPayment(
       driver,
       vehicle,
       data.amount,
-      data.note,
+      data.note ?? "",
       data.paymentDate,
       data.paymentMethod as any,
       editingPayment?.id
@@ -362,7 +371,7 @@ export function HistoryTabContent({ driver, vehicle }: HistoryTabContentProps) {
                               onClick={() => {
                                 if (t.type === 'debt') { setEditingDebt(t); setIsChargeDialogOpen(true); }
                                 if (t.type === 'charge') { setEditingCharge(t); setIsEditDialogOpen(true); }
-                                if (t.type === 'payment') { setEditingPayment(t); setIsPaymentDialogOpen(true); }
+                                if (t.type === 'payment') { setEditingPayment(t as RentalPayment); setIsPaymentDialogOpen(true); }
                               }}
                               aria-label="Editar"
                             >

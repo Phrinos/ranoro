@@ -108,7 +108,7 @@ export function HistorialSummary({ filteredServices }: HistorialSummaryProps) {
           {Array.from(summaryData.paymentsSummary.entries()).length > 0 ? (
             <div className="flex flex-wrap gap-x-4 gap-y-2">
               {Array.from(summaryData.paymentsSummary.entries()).map(([method, data]) => {
-                const Icon = paymentMethodIcons[method] || Wallet;
+                const Icon = paymentMethodIcons[method] ?? Wallet;
                 let variant: "lightGreen" | "lightPurple" | "blue" | "secondary" = "secondary";
                 if (method === "Efectivo") variant = "lightGreen";
                 if (method.includes("Tarjeta")) variant = "lightPurple";
