@@ -9,4 +9,5 @@ export const payableAccountFormSchema = (maxAmount: number) => z.object({
   paymentMethod: z.enum(paymentMethods),
 });
 
+export type PayableAccountFormInput = z.input<ReturnType<typeof payableAccountFormSchema>>;
 export type PayableAccountFormValues = z.infer<ReturnType<typeof payableAccountFormSchema>>;

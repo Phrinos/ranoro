@@ -1,4 +1,3 @@
-
 // src/app/(app)/flotilla/components/AddManualChargeDialog.tsx
 "use client";
 
@@ -35,6 +34,8 @@ const chargeSchema = z.object({
   amount: z.coerce.number().min(0.01, "El monto debe ser positivo."),
   note: z.string().optional(),
 });
+
+type ChargeFormInput = z.input<typeof chargeSchema>;
 export type ManualChargeFormValues = z.infer<typeof chargeSchema>;
 
 interface AddManualChargeDialogProps {
@@ -68,13 +69,13 @@ export function AddManualChargeDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  const form = useForm<ManualChargeFormValues>({
+  const form = useForm<ChargeFormInput, any, ManualChargeFormValues>({
     resolver: zodResolver(chargeSchema),
     defaultValues: {
       date: toMidday(new Date()),
       amount: debtToEdit?.amount ?? undefined,
       note: debtToEdit?.note ?? "",
-    },
+    } as any,
   });
 
   useEffect(() => {
@@ -83,7 +84,7 @@ export function AddManualChargeDialog({
       date: base,
       amount: debtToEdit?.amount ?? undefined,
       note: debtToEdit?.note ?? "",
-    });
+    } as any);
   }, [open, debtToEdit, form]);
 
   const handleSubmit = async (values: ManualChargeFormValues) => {
@@ -128,10 +129,10 @@ export function AddManualChargeDialog({
                             !field.value && "text-muted-foreground"
                           )}
                         >
-                          {field.value ? (
+                          {field.value instanceof Date ? (
                             format(field.value, "PPP", { locale: es })
                           ) : (
-                            <span>Seleccionar fecha</span>
+                            <span>Seleccione fecha</span>
                           )}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
@@ -145,7 +146,7 @@ export function AddManualChargeDialog({
                                 setIsCalendarOpen(false);
                             }
                         }}
-                        value={field.value}
+                        value={field.value instanceof Date ? field.value : undefined}
                         locale="es-MX"
                       />
                     </PopoverContent>
@@ -168,6 +169,8 @@ export function AddManualChargeDialog({
                       min="0.01"
                       inputMode="decimal"
                       {...field}
+                      value={(field.value as number | undefined) ?? ""}
+                      onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)}
                       className="bg-white"
                       placeholder="0.00"
                     />
@@ -184,7 +187,7 @@ export function AddManualChargeDialog({
                 <FormItem>
                   <FormLabel>Descripción</FormLabel>
                   <FormControl>
-                    <Textarea {...field} className="bg-white" placeholder="Ej: Multa, reparación, etc." />
+                    <Textarea {...field} value={field.value ?? ""} className="bg-white" placeholder="Ej: Multa, reparación, etc." />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -206,5 +209,3 @@ export function AddManualChargeDialog({
     </Dialog>
   );
 }
-
-    

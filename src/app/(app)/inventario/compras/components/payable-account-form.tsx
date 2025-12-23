@@ -7,7 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { DollarSign } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import { payableAccountFormSchema, type PayableAccountFormValues } from '@/schemas/payable-account-form-schema';
+import { payableAccountFormSchema, type PayableAccountFormValues, type PayableAccountFormInput } from '@/schemas/payable-account-form-schema';
 import type { PayableAccount } from "@/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -20,13 +20,13 @@ interface PayableAccountFormProps {
 }
 
 export function PayableAccountForm({ id, onSubmit, account }: PayableAccountFormProps) {
-  const form = useForm<PayableAccountFormValues, any, PayableAccountFormValues>({
-    resolver: zodResolver(payableAccountFormSchema((account.totalAmount ?? 0) - (account.paidAmount || 0))) as Resolver<PayableAccountFormValues, any, PayableAccountFormValues>,
+  const form = useForm<PayableAccountFormInput, any, PayableAccountFormValues>({
+    resolver: zodResolver(payableAccountFormSchema((account.totalAmount ?? 0) - (account.paidAmount || 0))),
     defaultValues: {
       amount: (account.totalAmount ?? 0) - (account.paidAmount || 0),
       note: "",
       paymentMethod: 'Efectivo',
-    },
+    } as any,
   });
 
   return (
@@ -41,14 +41,21 @@ export function PayableAccountForm({ id, onSubmit, account }: PayableAccountForm
               <FormControl>
                   <div className="relative">
                       <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input type="number" step="0.01" {...field} value={field.value ?? ''} className="pl-8" />
+                      <Input
+                        type="number"
+                        step="0.01"
+                        {...field}
+                        value={(field.value as any) ?? ''}
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
+                        className="pl-8"
+                      />
                   </div>
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <FormField control={form.control} name="paymentMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Pago</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+        <FormField control={form.control} name="paymentMethod" render={({ field }) => ( <FormItem><FormLabel>Método de Pago</FormLabel><Select onValueChange={field.onChange} value={field.value as string}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent>{paymentMethods.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
         <FormField
           control={form.control}
           name="note"
