@@ -189,7 +189,7 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
 
         <FormProvider {...methods}>
           <Form {...methods}>
-            <form id="edit-engine-form" onSubmit={handleSubmit(processSubmit as any)}>
+            <form id="edit-engine-form" onSubmit={handleSubmit(processSubmit)}>
               <ScrollArea className="h-[70vh] md:h-[72vh] px-6 py-5">
                 <Accordion type="multiple" defaultValue={["insumos", "servicios"]} className="w-full space-y-3">
                   <AccordionItem value="insumos" className="border rounded-md px-4 bg-card">
@@ -479,14 +479,14 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                       ].map((service) => (
                         <div key={service.name} className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-b pb-3 last:border-b-0 last:pb-0">
                           <div className="sm:col-span-2"><h4 className="font-semibold text-sm">{service.label}</h4></div>
-                          <FormField control={control as any} name={`servicios.${service.name}.costoInsumos` as any} render={({ field }) => (
+                          <FormField control={control} name={`servicios.${service.name}.costoInsumos` as any} render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Costo Insumos</FormLabel>
                               <FormControl><Input type="number" value={field.value as any} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="0.00" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control as any} name={`servicios.${service.name}.precioPublico` as any} render={({ field }) => (
+                          <FormField control={control} name={`servicios.${service.name}.precioPublico` as any} render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Precio Público</FormLabel>
                               <FormControl><Input type="number" value={field.value as any} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="0.00" /></FormControl>
