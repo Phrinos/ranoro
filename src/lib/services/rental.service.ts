@@ -88,7 +88,6 @@ const addRentalPayment = async (
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
     const currentUser = authUserString ? JSON.parse(authUserString) : null;
     
-    // ✅ FIX: “raw” data tipado con los campos requeridos
     const rawPaymentData: Omit<RentalPayment, "id"> = {
         driverId: String(driver.id),
         driverName: driver.name,
@@ -99,7 +98,6 @@ const addRentalPayment = async (
         note: note || "Abono de Renta",
         paymentMethod,
         registeredByName: currentUser?.name || 'Sistema',
-        // si tu app usa `date` como fecha genérica para timeline/unificación
         date: paymentDateIso,
     };
     
@@ -128,7 +126,13 @@ const addRentalPayment = async (
         });
     }
     
-    const result: RentalPayment = { id: savedPaymentId, ...rawPaymentData };
+    const result: RentalPayment = { 
+        id: savedPaymentId, 
+        driverId: rawPaymentData.driverId,
+        amount: rawPaymentData.amount,
+        date: rawPaymentData.date,
+        ...rawPaymentData 
+    };
     return result;
 };
 
@@ -176,7 +180,14 @@ const addVehicleExpense = async (data: Partial<Omit<VehicleExpense, 'id' | 'date
     };
     
     const docRef = await addDoc(collection(db, 'vehicleExpenses'), cleanObjectForFirestore(newExpense));
-    return { id: docRef.id, ...newExpense } as VehicleExpense;
+    const result: VehicleExpense = { 
+        id: docRef.id, 
+        vehicleId: newExpense.vehicleId,
+        description: newExpense.description,
+        amount: newExpense.amount,
+        ...newExpense 
+    };
+    return result;
 };
 
 export const rentalService = {
