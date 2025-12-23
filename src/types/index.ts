@@ -1,3 +1,4 @@
+
 // src/types/index.ts
 import { type ReactNode } from "react";
 
@@ -335,11 +336,11 @@ export type Paperwork = {
 
 export type FineCheck = {
   id: string;
-  checkDate: string;          // ISO
-  status?: "ok" | "warn" | "error" | string;
+  checkDate: string; // ISO
+  status: "Sin Multas" | "Con Multas" | "Pendiente";
   note?: string;
-  checkedByName?: string;
   fines?: Fine[];
+  checkedByName?: string;
   [k: string]: any;
 };
 
@@ -478,3 +479,5 @@ export interface SimplifiedSale {
 }
 
 export interface LegacySale {}
+
+    

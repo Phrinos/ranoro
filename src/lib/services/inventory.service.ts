@@ -1,3 +1,4 @@
+
 // src/lib/services/inventory.service.ts
 
 import {
@@ -278,9 +279,9 @@ const savePaperwork = async (vehicleId: string, paperwork: Omit<Paperwork, 'id'>
     const existingPaperwork: Paperwork[] = (vehicleDoc.data() as any).paperwork || [];
     if (id) {
         const index = existingPaperwork.findIndex(p => p.id === id);
-        existingPaperwork[index] = { ...paperwork, id };
+        existingPaperwork[index] = { ...(paperwork as Paperwork), id };
     } else {
-        existingPaperwork.push({ ...paperwork, id: nanoid() });
+        existingPaperwork.push({ ...(paperwork as Paperwork), id: nanoid() });
     }
     await updateDoc(vehicleRef, { paperwork: existingPaperwork });
 };
@@ -303,9 +304,9 @@ const saveFineCheck = async (vehicleId: string, fineCheck: Omit<FineCheck, 'id'>
     const existingFineChecks: FineCheck[] = (vehicleDoc.data() as any).fineChecks || [];
     if (id) {
         const index = existingFineChecks.findIndex(f => f.id === id);
-        existingFineChecks[index] = { ...fineCheck, id };
+        existingFineChecks[index] = { ...(fineCheck as FineCheck), id };
     } else {
-        existingFineChecks.push({ ...fineCheck, id: nanoid() });
+        existingFineChecks.push({ ...(fineCheck as FineCheck), id: nanoid() });
     }
     await updateDoc(vehicleRef, { fineChecks: existingFineChecks });
 };
@@ -380,3 +381,5 @@ export const inventoryService = {
   onVehicleDataUpdate,
   deleteCollectionDoc,
 };
+
+    
