@@ -59,9 +59,11 @@ function PageInner() {
 
   const vehicleOwners = React.useMemo(() => {
     const ownerSet = new Set<string>();
-    vehicles.forEach(v => {
-      if (v.ownerName) ownerSet.add(v.ownerName);
-    });
+    vehicles
+      .filter(v => v.isFleetVehicle) // Filtra solo vehículos de la flotilla
+      .forEach(v => {
+        if (v.ownerName) ownerSet.add(v.ownerName);
+      });
     return Array.from(ownerSet).sort();
   }, [vehicles]);
 
