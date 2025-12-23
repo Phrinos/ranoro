@@ -18,13 +18,13 @@ import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './compone
 import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/VehicleExpenseDialog';
 import { DriverDialog } from './conductores/components/DriverDialog';
 import type { DriverFormValues } from '@/schemas/driver-form-schema';
-
-import { FlotillaVehiculosTab } from './vehiculos/components/FlotillaVehiculosTab';
-import { FlotillaConductoresTab } from './conductores/components/FlotillaConductoresTab';
-import { FlotillaBalanceTab } from './balance/components/FlotillaBalanceTab';
-import { FlotillaCajaTab } from './caja/components/FlotillaCajaTab';
-import { VehicleSelectionDialog } from '@/app/(app)/servicios/components/VehicleSelectionDialog';
 import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
+import { VehicleSelectionDialog } from '@/app/(app)/servicios/components/VehicleSelectionDialog';
+
+const FlotillaVehiculosTab = lazy(() => import('./vehiculos/components/FlotillaVehiculosTab').then(m => ({ default: m.FlotillaVehiculosTab })));
+const FlotillaConductoresTab = lazy(() => import('./conductores/components/FlotillaConductoresTab').then(m => ({ default: m.FlotillaConductoresTab })));
+const FlotillaBalanceTab = lazy(() => import('./balance/components/FlotillaBalanceTab').then(m => ({ default: m.FlotillaBalanceTab })));
+const FlotillaCajaTab = lazy(() => import('./caja/components/FlotillaCajaTab').then(m => ({ default: m.FlotillaCajaTab })));
 
 
 function PageInner() {
@@ -47,9 +47,9 @@ function PageInner() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'balance');
 
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [isChargeDialogOpen, setIsChargeDialogOpen] = useState(false);
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
+  
   const [isDriverDialogOpen, setIsDriverDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   
@@ -69,17 +69,16 @@ function PageInner() {
     if (!vehicle) return toast({ title: "Error", description: "El conductor no tiene un vehículo asignado.", variant: "destructive" });
 
     try {
-        await rentalService.addRentalPayment(driver, vehicle, data.amount, data.note, data.paymentDate, data.paymentMethod as PaymentMethod);
+        await rentalService.addRentalPayment(driver, vehicle, data.amount, data.note, data.date, data.paymentMethod as PaymentMethod);
         toast({ title: "Pago Registrado" });
         setIsPaymentDialogOpen(false);
-        setIsChargeDialogOpen(false);
     } catch(e) {
         toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
     }
   };
 
   const handleSaveWithdrawal = async (data: OwnerWithdrawalFormValues) => {
-    const ownerName = "Socio";
+    const ownerName = "Socio"; // O obtener del usuario actual si es necesario
     try {
         await rentalService.addOwnerWithdrawal({ ...data, ownerName });
         toast({ title: "Retiro Registrado" });
@@ -157,10 +156,10 @@ function PageInner() {
   );
 
   const tabs = [
-    { value: 'balance', label: 'Balance', content: <FlotillaBalanceTab drivers={drivers} vehicles={vehicles} dailyCharges={dailyCharges} payments={payments} manualDebts={manualDebts} /> },
-    { value: 'caja', label: 'Caja', content: <FlotillaCajaTab payments={payments} withdrawals={withdrawals} expenses={expenses} drivers={drivers} vehicles={vehicles} allManualDebts={manualDebts} allDailyCharges={dailyCharges} onAddWithdrawal={() => setIsWithdrawalDialogOpen(true)} onAddExpense={() => setIsExpenseDialogOpen(true)} handleShowTicket={handleShowTicket} /> },
-    { value: 'conductores', label: 'Conductores', content: <FlotillaConductoresTab drivers={drivers} onAddDriver={handleAddDriver} /> },
-    { value: 'vehiculos', label: 'Vehículos', content: <FlotillaVehiculosTab vehicles={vehicles} onAddVehicle={() => setIsAddVehicleDialogOpen(true)} /> },
+    { value: 'balance', label: 'Balance', content: <Suspense fallback={<Loader2 className="animate-spin m-auto"/>}><FlotillaBalanceTab drivers={drivers} vehicles={vehicles} dailyCharges={dailyCharges} payments={payments} manualDebts={manualDebts} /></Suspense> },
+    { value: 'caja', label: 'Caja', content: <Suspense fallback={<Loader2 className="animate-spin m-auto"/>}><FlotillaCajaTab payments={payments} withdrawals={withdrawals} expenses={expenses} drivers={drivers} vehicles={vehicles} allManualDebts={manualDebts} allDailyCharges={dailyCharges} onAddWithdrawal={() => setIsWithdrawalDialogOpen(true)} onAddExpense={() => setIsExpenseDialogOpen(true)} handleShowTicket={handleShowTicket} /></Suspense> },
+    { value: 'conductores', label: 'Conductores', content: <Suspense fallback={<Loader2 className="animate-spin m-auto"/>}><FlotillaConductoresTab drivers={drivers} onAddDriver={handleAddDriver} /></Suspense> },
+    { value: 'vehiculos', label: 'Vehículos', content: <Suspense fallback={<Loader2 className="animate-spin m-auto"/>}><FlotillaVehiculosTab vehicles={vehicles} onAddVehicle={() => setIsAddVehicleDialogOpen(true)} /></Suspense> },
   ];
 
   return (

@@ -7,7 +7,7 @@ import type { Vehicle } from '@/types';
 import { Loader2 } from 'lucide-react';
 import { FlotillaVehiculosTab } from './components/FlotillaVehiculosTab';
 import { VehicleSelectionDialog } from '@/app/(app)/servicios/components/VehicleSelectionDialog';
-import { VehicleDialog } from './components/vehicle-dialog';
+import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
 import { useToast } from '@/hooks/use-toast';
 
 export default function VehiculosPage() {
