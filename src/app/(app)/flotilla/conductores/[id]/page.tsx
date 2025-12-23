@@ -1,4 +1,3 @@
-
 // src/app/(app)/flotilla/conductores/[id]/page.tsx
 "use client";
 
@@ -11,7 +10,7 @@ import { ArrowLeft, Trash2, Archive, ArchiveRestore } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { useFlotillaData } from '../../../useFlotillaData';
+import { useFlotillaData } from '../../useFlotillaData';
 
 import type { Driver, Vehicle } from '@/types';
 import type { DriverFormValues } from '@/schemas/driver-form-schema';
