@@ -10,7 +10,8 @@ import type { InventoryItem, InventoryCategory, Supplier, ServiceTypeRecord, Use
 import { ServiceItemCard } from "./ServiceItemCard";
 import type { ServiceFormValues, ServiceItem } from "@/schemas/service-form";
 import { nanoid } from "nanoid";
-import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { FormField, FormItem, FormControl } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 interface ServiceItemsListProps {
@@ -162,7 +163,7 @@ export function ServiceItemsList({
             name="notes"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="flex justify-between items-center w-full">
+                <Label className="flex justify-between items-center w-full">
                   <span>Notas Adicionales del Servicio (Opcional)</span>
                   {!isReadOnly && handleEnhanceText && (
                     <Button
@@ -179,7 +180,7 @@ export function ServiceItemsList({
                       )}
                     </Button>
                   )}
-                </FormLabel>
+                </Label>
                 <FormControl>
                   <Textarea
                     placeholder="Observaciones generales sobre el servicio..."

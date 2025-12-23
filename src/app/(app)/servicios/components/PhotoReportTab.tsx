@@ -5,7 +5,8 @@ import React from 'react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { FormField, FormItem, FormControl } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle, Trash2, Eye } from 'lucide-react';
 import Image from 'next/image';
@@ -68,7 +69,7 @@ export default function PhotoReportTab() {
                   name={`photoReports.${index}.title`}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Descripción</FormLabel>
+                      <Label>Descripción</Label>
                       <FormControl>
                         <Textarea placeholder="Describa el propósito de estas fotos..." {...field} />
                       </FormControl>

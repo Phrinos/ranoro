@@ -12,6 +12,7 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import type { Vehicle } from "@/types";
@@ -109,7 +110,7 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
           render={({ field }) => (
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-muted/50">
               <div className="space-y-0.5">
-                <FormLabel className="text-base">¿Es un Vehículo de Flotilla?</FormLabel>
+                <Label className="text-base">¿Es un Vehículo de Flotilla?</Label>
                 <FormDescription>Marque si el vehículo pertenece a su flotilla de renta.</FormDescription>
               </div>
               <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
@@ -118,16 +119,16 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
         />
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <FormField control={control} name="make" render={({ field }) => ( <FormItem><FormLabel>Marca</FormLabel><Select onValueChange={(value) => { field.onChange(value); setValue("model", ""); setValue("year", undefined as any); setValue("engine", ""); }} value={field.value ?? ''} disabled={isLoadingDb}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder={isLoadingDb ? "Cargando..." : "Seleccione..."} /></SelectTrigger></FormControl><SelectContent>{makes.map(make => <SelectItem key={make} value={make}>{make}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
-            <FormField control={control} name="model" render={({ field }) => ( <FormItem><FormLabel>Modelo</FormLabel><Select onValueChange={(value) => { field.onChange(value); setValue("year", undefined as any); setValue("engine", ""); }} value={field.value ?? ''} disabled={!watchedMake}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl><SelectContent>{models.map(model => <SelectItem key={model} value={model}>{model}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
-            <FormField control={control} name="year" render={({ field }) => ( <FormItem><FormLabel>Año</FormLabel><Select onValueChange={(val) => { field.onChange(parseInt(val, 10)); setValue("engine", ""); }} value={String(field.value || '')} disabled={!watchedModel}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl><SelectContent>{years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
-            <FormField control={control} name="engine" render={({ field }) => ( <FormItem><FormLabel>Motor (Opcional)</FormLabel><Select onValueChange={field.onChange} value={field.value ?? ''} disabled={!watchedYear || engines.length === 0}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder={engines.length === 0 ? "No disponible" : "Seleccione..."} /></SelectTrigger></FormControl><SelectContent>{engines.map((engine, index) => <SelectItem key={`${engine.name}-${index}`} value={engine.name}>{engine.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={control} name="make" render={({ field }) => ( <FormItem><Label>Marca</Label><Select onValueChange={(value) => { field.onChange(value); setValue("model", ""); setValue("year", undefined as any); setValue("engine", ""); }} value={field.value ?? ''} disabled={isLoadingDb}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder={isLoadingDb ? "Cargando..." : "Seleccione..."} /></SelectTrigger></FormControl><SelectContent>{makes.map(make => <SelectItem key={make} value={make}>{make}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={control} name="model" render={({ field }) => ( <FormItem><Label>Modelo</Label><Select onValueChange={(value) => { field.onChange(value); setValue("year", undefined as any); setValue("engine", ""); }} value={field.value ?? ''} disabled={!watchedMake}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl><SelectContent>{models.map(model => <SelectItem key={model} value={model}>{model}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={control} name="year" render={({ field }) => ( <FormItem><Label>Año</Label><Select onValueChange={(val) => { field.onChange(parseInt(val, 10)); setValue("engine", ""); }} value={String(field.value || '')} disabled={!watchedModel}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl><SelectContent>{years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={control} name="engine" render={({ field }) => ( <FormItem><Label>Motor (Opcional)</Label><Select onValueChange={field.onChange} value={field.value ?? ''} disabled={!watchedYear || engines.length === 0}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder={engines.length === 0 ? "No disponible" : "Seleccione..."} /></SelectTrigger></FormControl><SelectContent>{engines.map((engine, index) => <SelectItem key={`${engine.name}-${index}`} value={engine.name}>{engine.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <FormField control={control} name="licensePlate" render={({ field }) => ( <FormItem><FormLabel>Placa</FormLabel><FormControl><Input placeholder="Ej: ABC-123" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value.toUpperCase())} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
-          <FormField control={control} name="vin" render={({ field }) => ( <FormItem><FormLabel>VIN (Opcional)</FormLabel><FormControl><Input placeholder="Número de Serie" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value.toUpperCase())} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
-          <FormField control={control} name="color" render={({ field }) => ( <FormItem><FormLabel>Color (Opcional)</FormLabel><FormControl><Input placeholder="Ej: Blanco" {...field} value={field.value ?? ''} onChange={e => field.onChange(capitalizeWords(e.target.value))} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
+          <FormField control={control} name="licensePlate" render={({ field }) => ( <FormItem><Label>Placa</Label><FormControl><Input placeholder="Ej: ABC-123" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value.toUpperCase())} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
+          <FormField control={control} name="vin" render={({ field }) => ( <FormItem><Label>VIN (Opcional)</Label><FormControl><Input placeholder="Número de Serie" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value.toUpperCase())} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
+          <FormField control={control} name="color" render={({ field }) => ( <FormItem><Label>Color (Opcional)</Label><FormControl><Input placeholder="Ej: Blanco" {...field} value={field.value ?? ''} onChange={e => field.onChange(capitalizeWords(e.target.value))} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -136,7 +137,7 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
             name="ownerName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nombre del Propietario</FormLabel>
+                <Label>Nombre del Propietario</Label>
                 <FormControl>
                   <Input
                     placeholder="Ej: Juan Pérez"
@@ -149,17 +150,17 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
               </FormItem>
             )}
           />
-          <FormField control={control} name="ownerPhone" render={({ field }) => ( <FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input placeholder="Ej: 449-123-4567" {...field} value={field.value ?? ''} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
+          <FormField control={control} name="ownerPhone" render={({ field }) => ( <FormItem><Label>Teléfono (Opcional)</Label><FormControl><Input placeholder="Ej: 449-123-4567" {...field} value={field.value ?? ''} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
         </div>
 
-        <FormField control={control} name="chatMetaLink" render={({ field }) => ( <FormItem><FormLabel>Chat Meta (Opcional)</FormLabel><FormControl><Input placeholder="https://wa.me/..." {...field} value={field.value ?? ''} className="bg-card"/></FormControl><FormMessage /></FormItem> )}/>
+        <FormField control={control} name="chatMetaLink" render={({ field }) => ( <FormItem><Label>Chat Meta (Opcional)</Label><FormControl><Input placeholder="https://wa.me/..." {...field} value={field.value ?? ''} className="bg-card"/></FormControl><FormMessage /></FormItem> )}/>
         
         <FormField
           control={control}
           name="notes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Notas Adicionales (Opcional)</FormLabel>
+              <Label>Notas Adicionales (Opcional)</Label>
               <FormControl>
                 <Textarea
                   placeholder="Detalles importantes..."

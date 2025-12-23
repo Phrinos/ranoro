@@ -1,4 +1,3 @@
-
 //src/app/(app)/vehiculos/page.tsx
 "use client";
 import { withSuspense } from "@/lib/withSuspense";

@@ -10,7 +10,8 @@ import type {
   User,
 } from "@/types";
 import { Button } from "@/components/ui/button";
-import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { FormField, FormItem, FormControl } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { PlusCircle, Trash2, Wrench, Tags } from "lucide-react";
@@ -114,7 +115,7 @@ export function ServiceItemCard({
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField control={control} name={`serviceItems.${serviceIndex}.name`} render={({ field }) => (
-                <FormItem><FormLabel>Tipo de Servicio</FormLabel>
+                <FormItem><Label>Tipo de Servicio</Label>
                     <Select onValueChange={field.onChange} value={field.value} disabled={isReadOnly}>
                         <FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione un tipo..." /></SelectTrigger></FormControl>
                         <SelectContent>{sortedServiceTypes.map((t) => (<SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>))}</SelectContent>
@@ -126,9 +127,9 @@ export function ServiceItemCard({
                 name={`serviceItems.${serviceIndex}.itemName`}
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel className={cn(serviceItemErrors?.itemName && "text-destructive")}>
+                    <Label className={cn(serviceItemErrors?.itemName && "text-destructive")}>
                     Nombre del Servicio
-                    </FormLabel>
+                    </Label>
                     <FormControl>
                     <Input
                         placeholder="Descripción específica del trabajo..."
@@ -148,7 +149,7 @@ export function ServiceItemCard({
                 name={`serviceItems.${serviceIndex}.sellingPrice`}
                 render={({ field }) => (
                 <FormItem>
-                    <FormLabel>Precio Cliente (IVA Inc.)</FormLabel>
+                    <Label>Precio Cliente (IVA Inc.)</Label>
                     <FormControl>
                     <Input
                         type="number"

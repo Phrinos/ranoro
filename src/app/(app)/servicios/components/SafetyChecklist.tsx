@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/SafetyChecklist.tsx
 "use client";
 
@@ -6,7 +5,8 @@ import React, { useState, useEffect } from 'react';
 import { useFormContext, Controller } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
-import { FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
+import { FormField, FormItem, FormControl } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { BrainCircuit, Loader2, PlayCircle } from "lucide-react";
 import type { SafetyInspection, SafetyCheckStatus, SafetyCheckValue } from '@/types';
@@ -114,13 +114,13 @@ const SafetyChecklistReport = ({ inspection, signatureDataUrl, technicianName }:
             name="safetyInspection.inspectionNotes"
             render={({ field }) => (
                 <FormItem className="pt-4">
-                    <FormLabel className="text-base font-semibold flex justify-between items-center w-full">
+                    <Label className="text-base font-semibold flex justify-between items-center w-full">
                       <span>Observaciones Generales de la Inspección</span>
                         <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText()} disabled={isEnhancingText === 'safetyInspection.inspectionNotes' || !getValues('safetyInspection.inspectionNotes')}>
                             {isEnhancingText === 'safetyInspection.inspectionNotes' ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
                             <span className="ml-2 hidden sm:inline">Mejorar texto</span>
                         </Button>
-                    </FormLabel>
+                    </Label>
                     <FormControl>
                         <Textarea
                             placeholder="Anotaciones sobre la inspección, detalles de los puntos que requieren atención, etc."
@@ -132,7 +132,7 @@ const SafetyChecklistReport = ({ inspection, signatureDataUrl, technicianName }:
             )}
         />
         <div>
-            <FormLabel className="text-base font-semibold">Firma del Técnico</FormLabel>
+            <Label className="text-base font-semibold">Firma del Técnico</Label>
             <div className="mt-2 p-2 min-h-[100px] border rounded-md bg-muted/50 flex flex-col items-center justify-center">
                 {signatureDataUrl ? (
                     <div className="relative w-full max-w-[200px] aspect-[2/1]">

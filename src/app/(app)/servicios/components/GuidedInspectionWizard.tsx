@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import { useFormContext, Controller } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { FormField, FormItem, FormControl } from '@/components/ui/form';
 import { Camera, Check, ArrowLeft, ArrowRight, X } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from "@/lib/utils";
@@ -13,6 +13,7 @@ import Image from "next/image";
 import { PhotoUploader } from './PhotoUploader'; 
 import { Card, CardContent } from '@/components/ui/card';
 import type { SafetyCheckValue } from '@/types';
+import { Label } from '@/components/ui/label';
 
 
 interface GuidedInspectionWizardProps {
@@ -98,7 +99,7 @@ export function GuidedInspectionWizard({ inspectionItems, onClose, serviceId, on
                                     name={`${currentItem.name}.notes` as any}
                                     render={({ field: notesField }) => (
                                       <FormItem>
-                                        <FormLabel className="text-xs">Notas</FormLabel>
+                                        <Label className="text-xs">Notas</Label>
                                         <FormControl>
                                           <Textarea
                                             placeholder="Detalles sobre este punto..."
@@ -112,7 +113,7 @@ export function GuidedInspectionWizard({ inspectionItems, onClose, serviceId, on
                                   />
                                   
                                    <div>
-                                      <FormLabel className="text-xs">Fotos</FormLabel>
+                                      <Label className="text-xs">Fotos</Label>
                                        <p className="text-xs text-muted-foreground">Sube hasta 2 fotos como evidencia.</p>
                                         <div className="mt-2 grid grid-cols-2 gap-2">
                                             {(watch(currentItem.name as any)?.photos || []).map((photoUrl: string, pIndex: number) => (

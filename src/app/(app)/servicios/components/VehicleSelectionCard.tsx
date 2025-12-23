@@ -20,7 +20,8 @@ import {
 import { VehicleSelectionDialog } from "./VehicleSelectionDialog";
 import type { Vehicle, ServiceRecord } from "@/types";
 import type { VehicleFormValues } from "@/app/(app)/vehiculos/components/vehicle-form";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { inventoryService } from "@/lib/services";
 import { VehiclePricingCard } from "../../precios/components/VehiclePricingCard";
@@ -246,7 +247,7 @@ export function VehicleSelectionCard({
                 name="mileage"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Kilometraje Actual</FormLabel>
+                    <Label>Kilometraje Actual</Label>
                     <FormControl>
                       <Input
                         type="number"
