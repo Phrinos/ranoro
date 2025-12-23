@@ -1,4 +1,3 @@
-
 // src/components/shared/ServiceSheetContent.tsx
 
 "use client";
@@ -657,13 +656,13 @@ export const ServiceSheetContent = React.forwardRef<
         availableTabs.push({
           value: "checklist",
           label: "Revisión de Seguridad",
-          content: <SafetyChecklistDisplay inspection={service.safetyInspection} />,
+          content: <SafetyChecklistDisplay inspection={Array.isArray(service.safetyInspection) ? service.safetyInspection : [service.safetyInspection]} />,
         });
       }
       if (
         service.photoReports &&
         service.photoReports.length > 0 &&
-        service.photoReports.some((r) => r.photos.length > 0)
+        service.photoReports.some((r: { photos?: any[] }) => (r?.photos?.length ?? 0) > 0)
       ) {
         availableTabs.push({
           value: "photoreport",

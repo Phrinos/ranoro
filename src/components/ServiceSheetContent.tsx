@@ -57,19 +57,20 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import { defaultTicketSettings } from "@/lib/placeholder-data";
 
-const initialWorkshopInfo: any = {
-  name: "RANORO",
-  phone: "4491425323",
-  addressLine1: "Av. de la Convencion de 1914 No. 1421",
-  addressLine2: "Jardines de la Concepcion, C.P. 20267",
-  cityState: "Aguascalientes, Ags.",
-  logoUrl: "/ranoro-logo.png",
-  footerLine1: "¡Gracias por su preferencia!",
-  footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
-  fixedFooterText:
-    "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
-  googleMapsUrl: "https://share.google/7ow83ayhfb2iIOKUX",
+const pickFirstText = (...vals: any[]) => {
+    for (const v of vals) {
+      if (v === null || v === undefined) continue;
+
+      if (typeof v === "number" && Number.isFinite(v)) return String(v);
+
+      if (typeof v === "string") {
+        const s = v.trim();
+        if (s && s.toLowerCase() !== "na") return s;
+      }
+    }
+    return undefined;
 };
 
 const coerceDate = (v: unknown): Date | null => {
@@ -103,14 +104,16 @@ const SheetHeader = React.memo(
       <Card>
         <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <div className="relative w-[150px] h-[50px] mb-4 sm:mb-0">
-            <Image
-              src={workshopInfo.logoUrl!}
-              alt={`${workshopInfo.name} Logo`}
-              fill
-              style={{ objectFit: "contain" }}
-              data-ai-hint="workshop logo"
-              sizes="150px"
-            />
+            {workshopInfo?.logoUrl && (
+              <Image
+                src={workshopInfo.logoUrl}
+                alt={`${workshopInfo.name} Logo`}
+                fill
+                style={{ objectFit: "contain" }}
+                data-ai-hint="workshop logo"
+                sizes="150px"
+              />
+            )}
           </div>
           <div className="text-left sm:text-right">
             <p className="font-bold text-lg">
@@ -127,6 +130,20 @@ const SheetHeader = React.memo(
 );
 SheetHeader.displayName = "SheetHeader";
 
+const extractPlate = (s?: string | null) => {
+  const t = (s ?? "").trim();
+  if (!t) return null;
+  const m = t.toUpperCase().match(/([A-Z0-9-]{5,10})$/);
+  return m?.[1] ?? null;
+};
+
+const splitIdentifier = (identifier?: string) => {
+  const plate = extractPlate(identifier);
+  if (!identifier || !plate) return { title: identifier?.trim() ?? "", plate: null as string | null };
+  const title = identifier.replace(new RegExp(`${plate}$`, "i"), "").trim();
+  return { title, plate };
+};
+
 const ClientInfo = React.memo(
   ({
     service,
@@ -135,49 +152,58 @@ const ClientInfo = React.memo(
     service: ServiceRecord;
     vehicle?: Vehicle | null;
   }) => {
-    const customerName = capitalizeWords(
-      service.customerName || vehicle?.ownerName || ""
-    );
-    const customerPhone =
-      vehicle?.ownerPhone || service.customerPhone || "Teléfono no disponible";
-    const vehicleMake = vehicle?.make || "";
-    const vehicleModel = vehicle?.model || "";
-    const vehicleYear = vehicle?.year || "N/A";
-    const vehicleLicensePlate =
-      vehicle?.licensePlate || service.vehicleIdentifier || "N/A";
+    const customerName = capitalizeWords(pickFirstText(service.customerName, (vehicle as any)?.ownerName, (vehicle as any)?.customerName) ?? "");
+    const customerPhone = pickFirstText(service.customerPhone, (service as any).phone, (service as any).telefono, (vehicle as any)?.ownerPhone, (vehicle as any)?.phone, (vehicle as any)?.telefono) ?? "Teléfono no disponible";
+
+    const idSplit = splitIdentifier(service.vehicleIdentifier);
+
+    // placa: primero la del vehículo, si viene “rara” la parseamos, si no usamos la del identifier
+    const rawVehiclePlate = pickFirstText((vehicle as any)?.licensePlate, (vehicle as any)?.plates, (vehicle as any)?.placas);
+    const plateFromVehicle = extractPlate(rawVehiclePlate) ?? rawVehiclePlate ?? null;
+    const vehicleLicensePlate = plateFromVehicle ?? idSplit.plate ?? "N/A";
+
+    // título: intenta make/model/year; si viene vacío, usa el identifier (sin placa) o “Vehículo no asignado”
+    const make = pickFirstText((vehicle as any)?.make, (vehicle as any)?.brand, (vehicle as any)?.marca) ?? "";
+    const model = pickFirstText((vehicle as any)?.model, (vehicle as any)?.subModel, (vehicle as any)?.modelo, (vehicle as any)?.version) ?? "";
+    const year = pickFirstText(String((vehicle as any)?.year ?? ""), String((vehicle as any)?.anio ?? ""), String((vehicle as any)?.año ?? "")) ?? "";
+
+    const composedTitle = `${make} ${model}`.trim();
+    const vehicleTitle =
+      (composedTitle ? `${composedTitle}${year ? ` (${year})` : ""}` : "") ||
+      idSplit.title ||
+      "Vehículo no asignado";
+
+    const mileageOk = typeof service.mileage === "number" && isFinite(service.mileage);
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center gap-4 p-4">
-            <User className="w-8 h-8 text-muted-foreground flex-shrink-0" />
+            <User className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
             <CardTitle className="text-base">Cliente</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="font-semibold">{customerName}</p>
-            <p className="text-sm text-muted-foreground">{customerPhone}</p>
+            <p className="font-semibold">{customerName || "Cliente"}</p>
+            <p className="text-sm text-muted-foreground">
+              {customerPhone !== "Teléfono no disponible"
+                ? <a className="hover:underline" href={`tel:${customerPhone.replace(/\D/g, "")}`}>{customerPhone}</a>
+                : customerPhone}
+            </p>
           </CardContent>
         </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center gap-4 p-4">
-            <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0" />
+            <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
             <CardTitle className="text-base">Vehículo</CardTitle>
           </CardHeader>
           <CardContent className="p-4 pt-0">
-            <p className="font-semibold">
-              {vehicleMake} {vehicleModel} ({vehicleYear})
+            <p className="font-semibold">{vehicleTitle}</p>
+            <p className="text-muted-foreground">
+              {vehicleLicensePlate !== "N/A" ? `Placas: ${vehicleLicensePlate}` : "Placas: N/A"}
             </p>
-            <p className="text-muted-foreground">{vehicleLicensePlate}</p>
-            {vehicle?.color && (
-              <p className="text-xs text-muted-foreground">
-                Color: {vehicle.color}
-              </p>
-            )}
-            {service.mileage && (
-              <p className="text-xs text-muted-foreground">
-                KM: {formatNumber(service.mileage)}
-              </p>
-            )}
+            {(vehicle as any)?.color && <p className="text-xs text-muted-foreground">Color: {(vehicle as any).color}</p>}
+            {mileageOk && <p className="text-xs text-muted-foreground">KM: {formatNumber(service.mileage!)}</p>}
           </CardContent>
         </Card>
       </div>
@@ -385,11 +411,9 @@ const StatusCard = React.memo(
                 {format(parseDate(service.nextServiceInfo!.date)!, "dd 'de' MMMM 'de' yyyy", {
                   locale: es,
                 })}
-                {service.nextServiceInfo!.mileage &&
-                  typeof service.nextServiceInfo!.mileage === "number" &&
-                  isFinite(service.nextServiceInfo!.mileage) && (
-                    <> / KM: {formatNumber(service.nextServiceInfo!.mileage)}</>
-                  )}
+                {service.nextServiceInfo!.mileage && typeof service.nextServiceInfo!.mileage === "number" && isFinite(service.nextServiceInfo!.mileage) && (
+                  <> / KM: {formatNumber(service.nextServiceInfo!.mileage)}</>
+                )}
               </CardDescription>
             </CardHeader>
           </Card>
@@ -440,19 +464,21 @@ const SheetFooter = React.memo(
               {workshopInfo.footerLine2 ||
                 "Para dudas o aclaraciones, no dude en contactarnos."}
             </p>
-            <a
-              href={`https://wa.me/${(workshopInfo.phone || "").replace(/\D/g, "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button
-                variant="link"
-                className="text-base px-0 h-auto py-1 mt-1 bg-green-100 text-green-700 hover:bg-green-200"
+            {workshopInfo?.phone && (
+              <a
+                href={`https://wa.me/${(workshopInfo.phone || "").replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                <Icon icon="logos:whatsapp-icon" className="h-5 w-5 mr-2" />{" "}
-                {workshopInfo.phone}
-              </Button>
-            </a>
+                <Button
+                  variant="link"
+                  className="text-base px-0 h-auto py-1 mt-1 bg-green-100 text-green-700 hover:bg-green-200"
+                >
+                  <Icon icon="logos:whatsapp-icon" className="h-5 w-5 mr-2" />{" "}
+                  {workshopInfo.phone}
+                </Button>
+              </a>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -467,14 +493,16 @@ const SheetFooter = React.memo(
             >
               <Icon icon="logos:google-maps" className="h-6 w-6" />
             </a>
-            <a
-              href={`https://wa.me/${(workshopInfo.phone || "").replace(/\D/g, "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2 rounded-full hover:bg-muted"
-            >
-              <Icon icon="logos:whatsapp-icon" className="h-6 w-6" />
-            </a>
+            {workshopInfo?.phone && (
+              <a
+                href={`https://wa.me/${(workshopInfo.phone || "").replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 rounded-full hover:bg-muted"
+              >
+                <Icon icon="logos:whatsapp-icon" className="h-6 w-6" />
+              </a>
+            )}
             <a
               href="https://www.facebook.com/ranoromx"
               target="_blank"
@@ -563,29 +591,18 @@ export const ServiceSheetContent = React.forwardRef<
     ref
   ) => {
     const { toast } = useToast();
-    const [, setIsCancelling] = useState(false);
     const [currentActiveTab, setActiveTab] = useState("order");
-
-    // TIPO EXPLÍCITO PARA EVITAR 'prev' implícito any
-    const [localWorkshopInfo, setLocalWorkshopInfo] =
-      useState<typeof initialWorkshopInfo>(initialWorkshopInfo);
+    const [branding, setBranding] = useState<any>(defaultTicketSettings);
 
     useEffect(() => {
-      const storedInfo = localStorage.getItem("workshopTicketInfo");
-      if (storedInfo) {
-        try {
-          setLocalWorkshopInfo((prev: typeof initialWorkshopInfo) => ({
-            ...prev,
-            ...JSON.parse(storedInfo),
-          }));
-        } catch (e) {
-          console.error("Could not parse workshop info from storage", e);
-        }
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('workshopTicketInfo') : null;
+      if (stored) {
+        try { setBranding((prev: any) => ({ ...prev, ...JSON.parse(stored) })); }
+        catch (e) { console.error("Could not parse workshop info from storage", e); }
       }
     }, []);
-
+    
     const status = (service.status || "").toLowerCase();
-
     const showSignatureAction =
       onSignClick &&
       ((status === "en taller" && !service.customerSignatureReception) ||
@@ -594,7 +611,6 @@ export const ServiceSheetContent = React.forwardRef<
       status === "entregado" ? "delivery" : "reception";
 
     const handleCancelAppointment = async () => {
-      setIsCancelling(true);
       try {
         const result = await cancelAppointmentAction(service.id);
         if (result.success) {
@@ -608,14 +624,12 @@ export const ServiceSheetContent = React.forwardRef<
       } catch (e: any) {
         toast({
           title: "Error",
-          description: e.message || "No se pudo cancelar la cita.",
+          description: e?.message ?? "No se pudo cancelar la cita.",
           variant: "destructive",
         });
-      } finally {
-        setIsCancelling(false);
       }
     };
-
+    
     const tabs = useMemo(() => {
       const availableTabs = [
         {
@@ -641,13 +655,19 @@ export const ServiceSheetContent = React.forwardRef<
         availableTabs.push({
           value: "checklist",
           label: "Revisión de Seguridad",
-          content: <SafetyChecklistDisplay inspection={service.safetyInspection} />,
+          content: <SafetyChecklistDisplay inspection={
+              Array.isArray(service.safetyInspection)
+                ? service.safetyInspection
+                : service.safetyInspection
+                ? [service.safetyInspection]
+                : []
+            } />,
         });
       }
       if (
         service.photoReports &&
         service.photoReports.length > 0 &&
-        service.photoReports.some((r) => r.photos.length > 0)
+        service.photoReports.some((r: { photos?: any[] }) => (r.photos?.length ?? 0) > 0)
       ) {
         availableTabs.push({
           value: "photoreport",
@@ -674,7 +694,7 @@ export const ServiceSheetContent = React.forwardRef<
             onSignClick={() => onSignClick!(signatureActionType)}
           />
         )}
-        <SheetHeader service={service} workshopInfo={localWorkshopInfo} />
+        <SheetHeader service={service} workshopInfo={branding} />
         <ClientInfo service={service} vehicle={vehicle ?? undefined} />
         <StatusCard
           service={service}
@@ -709,7 +729,7 @@ export const ServiceSheetContent = React.forwardRef<
         </div>
 
         <SheetFooter
-          workshopInfo={localWorkshopInfo}
+          workshopInfo={branding}
           advisorName={service.serviceAdvisorName}
           advisorSignature={service.serviceAdvisorSignatureDataUrl}
         />
@@ -747,10 +767,10 @@ function ServiceOrderTab({
     return { subTotal: sub, taxAmount: tax, totalCost: total };
   }, [items]);
 
-  const showReceptionCard =
-    service.status === "En Taller" ||
-    service.status === "Entregado" ||
-    (service as any).status === "Completado";
+  const statusLower = (service.status || "").toLowerCase();
+  const showReceptionCard = ["en taller", "entregado", "completado"].includes(
+    statusLower
+  );
 
   return (
     <div className="space-y-6">
@@ -813,7 +833,7 @@ function ServiceOrderTab({
             )}
             <Button asChild variant="outline">
               <Link
-                href={`/facturar?folio=${service.folio || service.id}&total=${service.totalCost}`}
+                href={`/facturar?folio=${service.folio || service.id}&total=${totalCost}`}
                 target="_blank"
               >
                 <FileJson className="mr-2 h-4 w-4" />
@@ -842,22 +862,24 @@ function ServiceOrderTab({
                   {INGRESO_CONDICIONES_TEXT}
                 </p>
                 <h4 className="font-semibold mb-2 mt-4">Firma de Autorización</h4>
-                <SignatureDisplay
-                  type="reception"
-                  signatureUrl={service.customerSignatureReception}
-                  onSignClick={onSignClick}
-                  isSigning={isSigning}
-                />
+                <div className="text-center">
+                    <p className="text-xs font-semibold">CLIENTE (RECEPCIÓN)</p>
+                    <div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">
+                      {service.customerSignatureReception ? (
+                        <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" width={150} height={75} style={{objectFit:"contain"}} unoptimized />
+                      ) : onSignClick ? (
+                        <Button size="sm" onClick={() => onSignClick('reception')} disabled={isSigning}>{isSigning ? 'Cargando...' : 'Firmar'}</Button>
+                      ) : (<p className="text-xs text-muted-foreground">Pendiente</p>)}
+                    </div>
+                </div>
               </div>
             </CardContent>
           </Card>
         )}
-
-        {service.status === "Entregado" && (
+        
+        {service.status === 'Entregado' && (
           <Card>
-            <CardHeader>
-              <CardTitle>Salida del Vehículo del Taller</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle>Salida del Vehículo del Taller</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="border-t pt-4">
                 <h4 className="font-semibold mb-2">Garantía</h4>
@@ -866,12 +888,16 @@ function ServiceOrderTab({
                 </p>
               </div>
               <h4 className="font-semibold mb-2">Firma de Conformidad</h4>
-              <SignatureDisplay
-                type="delivery"
-                signatureUrl={service.customerSignatureDelivery}
-                onSignClick={onSignClick}
-                isSigning={isSigning}
-              />
+              <div className="text-center">
+                  <p className="text-xs font-semibold">CLIENTE (ENTREGA)</p>
+                  <div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">
+                    {service.customerSignatureDelivery ? (
+                      <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de entrega" width={150} height={75} style={{objectFit:"contain"}} unoptimized />
+                    ) : onSignClick ? (
+                      <Button size="sm" onClick={() => onSignClick('delivery')} disabled={isSigning}>{isSigning ? 'Cargando...' : 'Firmar'}</Button>
+                    ) : (<p className="text-xs text-muted-foreground">Pendiente</p>)}
+                  </div>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -970,8 +996,8 @@ type SafetyInspectionRecord = SafetyInspection & {
   technicianSignature?: string;
 };
 
-function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }) {
-  const inspectionRecord = (inspection ?? {}) as SafetyInspectionRecord;
+function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection[] }) {
+  const inspectionRecord = (inspection?.[0] ?? {}) as SafetyInspectionRecord;
 
   const inspectionGroups = [
     {
@@ -1172,4 +1198,3 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
     </Card>
   );
 }
-

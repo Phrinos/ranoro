@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ReceptionAndDelivery.tsx
 "use client";
 
@@ -463,7 +462,7 @@ export const ServiceSheetContent = React.forwardRef<
   ({ service, onScheduleClick, onConfirmClick, isConfirming, onSignClick, isSigning, onShowTicketClick, vehicle, onCancelAppointment }, ref) => {
     const { toast } = useToast();
     const [currentActiveTab, setActiveTab] = useState('order');
-    const [branding, setBranding] = useState<any>(defaultTicketSettings);
+    const [branding, setBranding] = useState<any>(initialWorkshopInfo);
 
     useEffect(() => {
       const stored = typeof window !== 'undefined' ? localStorage.getItem('workshopTicketInfo') : null;
@@ -522,7 +521,7 @@ export const ServiceSheetContent = React.forwardRef<
           ),
         });
       }
-      if (service.photoReports && service.photoReports.length > 0 && service.photoReports.some((r: { photos?: any[] }) => (r.photos?.length ?? 0) > 0)) {
+      if (service.photoReports && service.photoReports.length > 0 && service.photoReports.some((r: { photos: string | any[]; }) => r.photos.length > 0)) {
         available.push({ value: 'photoreport', label: 'Reporte Fotográfico', content: <PhotoReportContent photoReports={service.photoReports} /> });
       }
       if (service.originalQuoteItems && service.originalQuoteItems.length > 0) {
@@ -676,11 +675,11 @@ function ServiceOrderTab(
 }
 
 function ReceptionDetails({ service }: { service: ServiceRecord }) {
-  const fuelMap: Record<string, number> = {
+  const fuelLevelMap: Record<string, number> = {
     'Vacío': 0, '1/8': 12.5, '1/4': 25, '3/8': 37.5, '1/2': 50, '5/8': 62.5, '3/4': 75, '7/8': 87.5, 'Lleno': 100
   };
   const fuelKey = String(service.fuelLevel || "");
-  const fuelPercentage = fuelMap[fuelKey] ?? 0;
+  const fuelPercentage = fuelLevelMap[fuelKey] ?? 0;
   const fuelColor =
     fuelPercentage <= 25 ? "bg-red-500" :
     fuelPercentage <= 50 ? "bg-orange-400" :

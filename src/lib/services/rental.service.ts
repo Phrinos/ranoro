@@ -172,7 +172,7 @@ const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'veh
     };
     
     const docRef = await addDoc(collection(db, 'vehicleExpenses'), cleanObjectForFirestore(newExpense));
-    return { id: docRef.id, ...newExpense };
+    return { id: docRef.id, ...newExpense } as VehicleExpense;
 };
 
 export const rentalService = {

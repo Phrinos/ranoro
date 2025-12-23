@@ -192,7 +192,7 @@ export function VentasPosContent({
                       ? [<Badge key="cancelled" variant="destructive" className="font-bold">CANCELADO</Badge>]
                       : (sale.payments && sale.payments.length > 0)
                           ? sale.payments.map((p, index) => {
-                              const Icon = paymentMethodIcons[p.method] ?? Wallet;
+                              const Icon = paymentMethodIcons[p.method as PaymentMethod] ?? Wallet;
                               return (
                                 <Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
                                   <Icon className="h-3 w-3 mr-1"/>{p.method} <span className="font-normal ml-1 opacity-80">{formatCurrency(p.amount)}</span>
