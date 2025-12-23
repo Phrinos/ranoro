@@ -53,7 +53,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
         functions: initialData.functions || [],
         monthlySalary: initialData.monthlySalary,
         commissionRate: initialData.commissionRate,
-        hireDate: initialData.hireDate ? parseDate(initialData.hireDate) : undefined,
+        hireDate: initialData.hireDate ? (parseDate(initialData.hireDate) ?? undefined) : undefined,
         isArchived: initialData.isArchived ?? false,
     } : {
       name: "",

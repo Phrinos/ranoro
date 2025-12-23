@@ -34,6 +34,7 @@ const individualServiceSchema = z.object({
 type FormValues = z.infer<typeof individualServiceSchema>;
 
 const paymentMethods: PaymentMethod[] = ['Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia'];
+const resolver = zodResolver(individualServiceSchema) as unknown as Resolver<FormValues>;
 
 export function RegistroIndividualContent() {
   const { toast } = useToast();
@@ -43,8 +44,6 @@ export function RegistroIndividualContent() {
   const [vehicleNotFound, setVehicleNotFound] = useState(false);
   const [searchResults, setSearchResults] = useState<Vehicle[]>([]);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  
-  const resolver = zodResolver(individualServiceSchema) as unknown as Resolver<FormValues>;
 
   const form = useForm<FormValues>({
     resolver,
