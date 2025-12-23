@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -8,17 +7,17 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, cn } from "@/lib/utils";
-import { format, isValid, startOfDay, endOfDay, subDays, startOfWeek, endOfMonth, isWithinInterval, startOfMonth } from 'date-fns';
+import { format, isValid, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, isWithinInterval, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { DollarSign, ArrowDown, ArrowUp, Loader2, Wallet, CreditCard, Landmark, ArrowLeft, ArrowRight } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import * as z from "zod";
 import { cashService, saleService, serviceService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -228,8 +227,8 @@ export default function CajaContent() {
     resolver: zodResolver(cashTransactionSchema),
     defaultValues: {
       description: "",
-      amount: undefined,
-    } as any,
+      amount: "" as any,
+    },
   });
 
   const handleOpenDialog = (type: 'Entrada' | 'Salida') => { setDialogType(type); form.reset(); setIsDialogOpen(true); };

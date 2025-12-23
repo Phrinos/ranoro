@@ -1,4 +1,3 @@
-
 // src/app/(app)/finanzas/components/fixed-expense-form.tsx
 
 "use client";
@@ -199,5 +198,3 @@ export function FixedExpenseForm({
     </Form>
   );
 }
-
-    
