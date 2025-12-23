@@ -2,8 +2,7 @@
 "use client";
 
 import React from 'react';
-import { useFormContext, type FieldErrors, type SubmitErrorHandler } from 'react-hook-form';
-import { FormField, FormLabel, FormControl, FormItem } from '@/components/ui/form';
+import { useFormContext, type FieldErrors, type SubmitErrorHandler, FormField, FormLabel, FormControl, FormItem } from 'react-hook-form';
 import type {
   ServiceRecord,
   Vehicle,
@@ -59,7 +58,9 @@ const ReceptionContent = ({ part, isReadOnly, isEnhancingText, handleEnhanceText
             <FormField control={control} name="fuelLevel" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Nivel de Combustible</FormLabel>
-                    <Input type="range" min="0" max="8" step="1" {...field} disabled={isReadOnly} />
+                    <FormControl>
+                        <Input type="range" min="0" max="8" step="1" {...field} disabled={isReadOnly} />
+                    </FormControl>
                 </FormItem>
             )}/>
             <FormField
