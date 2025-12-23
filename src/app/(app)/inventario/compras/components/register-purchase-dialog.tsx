@@ -98,7 +98,7 @@ export function RegisterPurchaseDialog({
   const [newItemSearchTerm, setNewItemSearchTerm] = useState("");
 
   useEffect(() => {
-    const total = (itemsWatch ?? []).reduce((sum, i: any) => {
+    const total = (itemsWatch ?? []).reduce((sum: number, i: any) => {
       const qty = Number(i?.quantity) || 0;
       const unit = Number(i?.purchasePrice) || 0;
       return sum + qty * unit;

@@ -29,10 +29,9 @@ const FormFieldContext = React.createContext<FormFieldContextValue | null>(null)
 
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
-  TTransformedValues extends FieldValues | undefined = undefined,
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
 >(
-  props: ControllerProps<TFieldValues, TName, TTransformedValues>
+  props: ControllerProps<TFieldValues, TName>
 ) => {
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>
@@ -42,12 +41,16 @@ const FormField = <
 }
 
 
-type FormItemContextValue = { id: string }
+type FormItemContextValue = {
+  id: string
+}
+
 const FormItemContext = React.createContext<FormItemContextValue | null>(null)
 
 const FormItem = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => {
     const id = React.useId()
+
     return (
       <FormItemContext.Provider value={{ id }}>
         <div ref={ref} className={cn("space-y-2", className)} {...props} />
@@ -62,10 +65,10 @@ const useFormField = () => {
   const itemContext = React.useContext(FormItemContext)
   const { getFieldState, formState } = useFormContext()
 
-  if (!fieldContext?.name) {
+  if (!fieldContext) {
     throw new Error("useFormField should be used within <FormField>")
   }
-  if (!itemContext?.id) {
+  if (!itemContext) {
     throw new Error("useFormField should be used within <FormItem>")
   }
 
@@ -87,6 +90,7 @@ const FormLabel = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof LabelPrimitive.Root>
 >(({ className, ...props }, ref) => {
   const { error, formItemId } = useFormField()
+
   return (
     <Label
       ref={ref}
@@ -119,6 +123,7 @@ FormControl.displayName = "FormControl"
 const FormDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
   ({ className, ...props }, ref) => {
     const { formDescriptionId } = useFormField()
+
     return (
       <p
         ref={ref}
@@ -162,5 +167,3 @@ export {
   FormMessage,
   FormField,
 }
-
-    

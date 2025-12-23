@@ -196,5 +196,3 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
     </Form>
   );
 }
-
-    

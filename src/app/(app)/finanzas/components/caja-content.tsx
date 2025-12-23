@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, cn } from "@/lib/utils";
-import { format, isValid, startOfDay, endOfDay, subDays, startOfWeek, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, isValid, startOfDay, endOfDay, subDays, startOfWeek, endOfMonth, isWithinInterval, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { DollarSign, ArrowDown, ArrowUp, Loader2, Wallet, CreditCard, Landmark, ArrowLeft, ArrowRight } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
@@ -224,12 +224,12 @@ export default function CajaContent() {
   };
 
   // registrar manual
-  const form = useForm<CashTransactionFormInput, any, CashTransactionFormValues>({ 
+  const form = useForm<CashTransactionFormInput, any, CashTransactionFormValues>({
     resolver: zodResolver(cashTransactionSchema),
     defaultValues: {
       description: "",
       amount: undefined,
-    }
+    } as any,
   });
 
   const handleOpenDialog = (type: 'Entrada' | 'Salida') => { setDialogType(type); form.reset(); setIsDialogOpen(true); };
@@ -445,5 +445,3 @@ export default function CajaContent() {
     </div>
   );
 }
-
-    
