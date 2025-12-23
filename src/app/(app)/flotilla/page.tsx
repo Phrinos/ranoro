@@ -1,4 +1,3 @@
-
 // src/app/(app)/flotilla/page.tsx
 "use client";
 
@@ -10,13 +9,15 @@ import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { Button } from '@/components/ui/button';
 import { withSuspense } from '@/lib/withSuspense';
 
-import type { Vehicle, Driver, DailyRentalCharge, RentalPayment, ManualDebtEntry, OwnerWithdrawal, VehicleExpense, PaymentMethod } from '@/types';
-import { inventoryService, personnelService, rentalService } from '@/lib/services';
+import type { Vehicle, Driver, PaymentMethod } from '@/types';
+import { personnelService, rentalService } from '@/lib/services';
 import { useFlotillaData } from './useFlotillaData';
 
 import { GlobalTransactionDialog, type GlobalTransactionFormValues } from './components/GlobalTransactionDialog';
 import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './components/OwnerWithdrawalDialog';
 import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/VehicleExpenseDialog';
+import { DriverDialog } from './conductores/components/DriverDialog';
+import type { DriverFormValues } from '@/schemas/driver-form-schema';
 
 import { FlotillaVehiculosTab } from './vehiculos/components/FlotillaVehiculosTab';
 import { FlotillaConductoresTab } from './conductores/components/FlotillaConductoresTab';
@@ -46,6 +47,8 @@ function PageInner() {
   const [isChargeDialogOpen, setIsChargeDialogOpen] = useState(false);
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
+  const [isDriverDialogOpen, setIsDriverDialogOpen] = useState(false);
+  const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
 
   const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab);
@@ -91,8 +94,15 @@ function PageInner() {
   };
 
   const handleAddDriver = () => {
-    router.push('/personal?tab=usuarios');
+    setEditingDriver(null);
+    setIsDriverDialogOpen(true);
   };
+  
+  const handleSaveDriver = async (data: DriverFormValues) => {
+    await personnelService.saveDriver(data, editingDriver?.id);
+    toast({ title: `Conductor ${editingDriver ? 'actualizado' : 'creado'}.`});
+    setIsDriverDialogOpen(false);
+  }
 
   const handleAddVehicle = () => {
     router.push('/vehiculos?tab=vehiculos');
@@ -154,6 +164,13 @@ function PageInner() {
         onOpenChange={setIsExpenseDialogOpen}
         vehicles={vehicles}
         onSave={handleSaveExpense}
+      />
+
+      <DriverDialog
+        open={isDriverDialogOpen}
+        onOpenChange={setIsDriverDialogOpen}
+        onSave={handleSaveDriver}
+        driver={editingDriver}
       />
     </>
   );
