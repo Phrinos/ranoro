@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/conductores/[id]/page.tsx
 "use client";
 
@@ -18,10 +19,10 @@ import type { DriverFormValues } from '@/schemas/driver-form-schema';
 import { personnelService } from '@/lib/services';
 import { DriverDialog } from '../components/DriverDialog';
 
-import { ContactInfoCard } from '../../../components/ContactInfoCard';
-import { AssignedVehicleCard } from '../../../components/AssignedVehicleCard';
-import { FinancialInfoCard } from '../../../components/FinancialInfoCard';
-import { DocumentsCard } from '../../../components/DocumentsCard';
+import { ContactInfoCard } from '../../components/ContactInfoCard';
+import { AssignedVehicleCard } from '../../components/AssignedVehicleCard';
+import { FinancialInfoCard } from '../../components/FinancialInfoCard';
+import { DocumentsCard } from '../../components/DocumentsCard';
 import { HistoryTabContent } from '../components/HistoryTabContent';
 
 function DriverProfilePage() {
