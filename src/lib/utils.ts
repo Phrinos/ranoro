@@ -182,3 +182,14 @@ export function getMonthName(monthNumber: number): string {
     date.setMonth(monthNumber - 1);
     return formatFns(date, 'MMMM', { locale: es });
 }
+
+export const CURRENCY_FORMATTER = new Intl.NumberFormat("es-MX", {
+  style: "currency",
+  currency: "MXN",
+});
+
+export const getToday = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+};

@@ -1,4 +1,3 @@
-
 // src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
@@ -29,6 +28,7 @@ import { format as formatDate } from "date-fns";
 import { es } from "date-fns/locale";
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 import type { CalendarProps } from "react-calendar";
+import { Separator } from "@/components/ui/separator";
 
 const purchaseItemSchema = z.object({
   inventoryItemId: z.string(),
@@ -78,7 +78,7 @@ export function RegisterPurchaseDialog({
   onInventoryItemCreated,
 }: RegisterPurchaseDialogProps) {
   const form = useForm<PurchaseFormInput, any, PurchaseFormValues>({
-    resolver: zodResolver(purchaseFormSchema),
+    resolver: zodResolver(purchaseFormSchema) as unknown as Resolver<PurchaseFormValues>,
     defaultValues: {
       supplierId: "",
       items: [],
@@ -154,8 +154,8 @@ export function RegisterPurchaseDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <FormProvider {...form}>
-            <Form {...form}>
+          <FormProvider {...methods}>
+            <Form {...methods}>
               <form onSubmit={handleSubmit(onSave)} id="purchase-form" className="space-y-4">
                 <div className="max-h-[calc(80vh-150px)] space-y-6 overflow-y-auto px-6 py-4 bg-muted/50">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -407,7 +407,7 @@ export function RegisterPurchaseDialog({
         onItemSelected={handleAddItem}
         onNewItemRequest={handleNewItemRequest}
       />
-
+      
       <InventoryItemDialog
         open={isNewItemDialogOpen}
         onOpenChange={setIsNewItemDialogOpen}

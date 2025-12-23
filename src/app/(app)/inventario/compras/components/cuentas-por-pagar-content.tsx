@@ -97,7 +97,7 @@ export function CuentasPorPagarContent({ accounts, onRegisterPayment }: CuentasP
                       <TableCell>{account.dueDate ? format(parseISO(account.dueDate), 'dd/MM/yyyy') : ''}</TableCell>
                       <TableCell className="text-right">{formatCurrency(account.totalAmount)}</TableCell>
                       <TableCell className="text-right text-green-600">{formatCurrency(account.paidAmount || 0)}</TableCell>
-                      <TableCell className="text-right font-bold">{formatCurrency(account.totalAmount - (account.paidAmount || 0))}</TableCell>
+                      <TableCell className="text-right font-bold">{formatCurrency((account.totalAmount ?? 0) - (account.paidAmount || 0))}</TableCell>
                       <TableCell className="text-center">
                         <Badge variant={getStatusVariant(account.status)}>{account.status}</Badge>
                       </TableCell>

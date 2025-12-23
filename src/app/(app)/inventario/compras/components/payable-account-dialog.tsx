@@ -1,3 +1,4 @@
+// src/app/(app)/inventario/compras/components/payable-account-dialog.tsx
 
 "use client";
 
@@ -37,7 +38,7 @@ export function PayableAccountDialog({ open, onOpenChange, onSave, account }: Pa
       open={open}
       onOpenChange={onOpenChange}
       title={`Registrar Pago a Factura`}
-      description={`Folio: ${account.invoiceId} - Saldo: ${account.totalAmount - (account.paidAmount || 0)}`}
+      description={`Folio: ${account.invoiceId} - Saldo: ${(account.totalAmount ?? 0) - (account.paidAmount || 0)}`}
       formId="payable-account-form"
       isSubmitting={isSubmitting}
       submitButtonText="Registrar Pago"
