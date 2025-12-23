@@ -1,10 +1,9 @@
-
 // src/app/(public)/facturar/page.tsx
 "use client";
 
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter } from "next/navigation";
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +23,7 @@ import { parseDate } from '@/lib/forms';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { z } from "zod";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 
@@ -188,7 +187,7 @@ function PageInner() {
               {!searchResult ? (
                 <FormProvider {...searchForm}>
                   <Form {...searchForm}>
-                    <form onSubmit={searchForm.handleSubmit(onSearchSubmit)} className="space-y-4">
+                    <form onSubmit={searchForm.handleSubmit(onSearchSubmit as SubmitHandler<SearchFormValues>)} className="space-y-4">
                       <FormField
                         control={searchForm.control}
                         name="folio"

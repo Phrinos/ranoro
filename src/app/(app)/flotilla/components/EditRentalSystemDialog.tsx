@@ -1,11 +1,11 @@
 // src/app/(app)/flotilla/components/EditRentalSystemDialog.tsx
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import type { Vehicle } from '@/types';
+import React, { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import type { Vehicle } from "@/types";
 import {
   Dialog,
   DialogContent,
@@ -17,7 +17,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from "lucide-react";
 
 const rentalSystemSchema = z.object({
   dailyRentalCost: z.coerce.number().min(0, "El costo debe ser positivo."),
@@ -26,6 +26,7 @@ const rentalSystemSchema = z.object({
   adminCost: z.coerce.number().min(0, "El costo debe ser positivo."),
 });
 
+type RentalFormInput = z.input<typeof rentalSystemSchema>;
 export type RentalSystemFormValues = z.infer<typeof rentalSystemSchema>;
 
 interface EditRentalSystemDialogProps {
@@ -37,25 +38,35 @@ interface EditRentalSystemDialogProps {
 
 export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: EditRentalSystemDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const form = useForm<RentalSystemFormValues>({
+
+  const form = useForm<RentalFormInput, any, RentalSystemFormValues>({
     resolver: zodResolver(rentalSystemSchema),
+    defaultValues: {
+      dailyRentalCost: 0,
+      gpsCost: 0,
+      insuranceCost: 0,
+      adminCost: 0,
+    } as any,
   });
 
   useEffect(() => {
-    if (vehicle) {
-      form.reset({
-        dailyRentalCost: vehicle.dailyRentalCost || 0,
-        gpsCost: vehicle.gpsCost || 0,
-        insuranceCost: vehicle.insuranceCost || 0,
-        adminCost: vehicle.adminCost || 0,
-      });
-    }
-  }, [vehicle, form, open]);
+    if (!open) return;
+    form.reset({
+      dailyRentalCost: vehicle.dailyRentalCost || 0,
+      gpsCost: vehicle.gpsCost || 0,
+      insuranceCost: vehicle.insuranceCost || 0,
+      adminCost: vehicle.adminCost || 0,
+    } as any);
+  }, [open, vehicle, form]);
 
   const handleFormSubmit = async (values: RentalSystemFormValues) => {
     setIsSubmitting(true);
-    await onSave(values);
-    setIsSubmitting(false);
+    try {
+      await onSave(values);
+      onOpenChange(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -63,26 +74,68 @@ export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: 
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Editar Sistema de Renta</DialogTitle>
-          <DialogDescription>
-            Actualiza los costos fijos y de operación del vehículo.
-          </DialogDescription>
+          <DialogDescription>Actualiza los costos fijos y de operación del vehículo.</DialogDescription>
         </DialogHeader>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
-              <FormField control={form.control} name="dailyRentalCost" render={({ field }) => (
-                <FormItem><FormLabel>Renta Diaria ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
-              )}/>
-              <FormField control={form.control} name="gpsCost" render={({ field }) => (
-                <FormItem><FormLabel>GPS Mensual ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
-              )}/>
-              <FormField control={form.control} name="insuranceCost" render={({ field }) => (
-                <FormItem><FormLabel>Seguro Mensual ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
-              )}/>
-              <FormField control={form.control} name="adminCost" render={({ field }) => (
-                <FormItem><FormLabel>Administración Mensual ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
-              )}/>
+            <FormField
+              control={form.control}
+              name="dailyRentalCost"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Renta Diaria ($)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" {...field} className="bg-white" value={(field.value as any) ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="gpsCost"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>GPS Mensual ($)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" {...field} className="bg-white" value={(field.value as any) ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="insuranceCost"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Seguro Mensual ($)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" {...field} className="bg-white" value={(field.value as any) ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="adminCost"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Administración Mensual ($)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" {...field} className="bg-white" value={(field.value as any) ?? ""} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <DialogFooter className="pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancelar
+              </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Guardar Cambios

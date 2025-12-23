@@ -162,7 +162,7 @@ export function ConfigTallerPageContent() {
           <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
             <InfoGeneralCard
               watchedLogoUrl={watchedLogoUrl}
-              fileInputRef={fileInputRef}
+              fileInputRef={fileInputRef as any}
               isUploading={isUploading}
               onFileChange={onFileChange}
             />

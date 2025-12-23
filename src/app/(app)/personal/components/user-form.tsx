@@ -75,7 +75,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
           <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Ej: Juan Pérez" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} className="bg-card text-foreground" /></FormControl><FormMessage /></FormItem>
         )}/>
         <FormField control={form.control as any} name="email" render={({ field }) => (
-          <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="usuario@ranoro.mx" {...field} value={field.value ?? ''} disabled={!!initialData} className="bg-card text-foreground" /></FormControl><FormDescription>El email se usa para iniciar sesión y no se puede cambiar.</FormDescription><FormMessage /></FormItem>
+          <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="usuario@ranoro.mx" {...field} value={field.value ?? ''} disabled={!!initialData} className="bg-card text-foreground" /></FormControl><FormDescription>El email se usa para iniciar sesión y no se puede cambiar.</FormDescription></FormItem>
         )}/>
         <FormField control={form.control as any} name="phone" render={({ field }) => (
           <FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="4491234567" {...field} value={field.value ?? ''} className="bg-card text-foreground" /></FormControl><FormMessage /></FormItem>
@@ -85,7 +85,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
               <FormItem><FormLabel>Rol de Permisos</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-card text-foreground"><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => (<SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
             )}/>
              <FormField
-              control={form.control}
+              control={form.control as any}
               name="functions"
               render={() => (
                 <FormItem>
@@ -120,7 +120,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
             />
         </div>
          <FormField
-          control={form.control as any}
+          control={form.control}
           name="hireDate"
           render={({ field }) => {
             const valueAsDate = field.value instanceof Date ? field.value : field.value ? new Date(field.value as any) : null;
