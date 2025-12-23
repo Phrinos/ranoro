@@ -1,14 +1,11 @@
-
 "use client";
 
 import React, { useMemo, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FormProvider, useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-
 import { ServiceForm } from "./ServiceForm";
-import { serviceFormSchema } from "@/schemas/service-form";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { serviceFormSchema, type ServiceFormValues } from "@/schemas/service-form";
 import type {
   ServiceRecord,
   Vehicle,
@@ -19,17 +16,16 @@ import type {
   Supplier,
 } from "@/types";
 import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
 import type { VehicleFormValues } from "@/schemas/vehicle-form-schema";
+import { useToast } from "@/hooks/use-toast";
+import { z } from "zod";
 
 type ServiceFormInput = z.input<typeof serviceFormSchema>;
-type ServiceFormValues = z.infer<typeof serviceFormSchema>;
 
 interface ServiceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialData: ServiceRecord | null;
-
   vehicles: Vehicle[];
   users: User[];
   inventoryItems: InventoryItem[];
@@ -37,11 +33,9 @@ interface ServiceDialogProps {
   categories: InventoryCategory[];
   suppliers: Supplier[];
   serviceHistory: ServiceRecord[];
-
   onSave: (data: ServiceFormValues) => Promise<ServiceRecord | void>;
   onSaveSuccess?: (service: ServiceRecord) => void;
   onVehicleCreated?: (newVehicle: VehicleFormValues) => Promise<Vehicle>;
-
   mode: "service" | "quote";
   activeTab: string;
   onTabChange: (tab: string) => void;
@@ -61,32 +55,30 @@ export function ServiceDialog({
 }: ServiceDialogProps) {
   const { toast } = useToast();
 
-  const defaultValues = useMemo(() => {
-    if (initialData) {
-      return {
-        ...(initialData as any),
-        status: initialData.status || "Cotizacion",
-      };
-    }
-    return {
-      status: "Cotizacion",
-      serviceDate: new Date().toISOString(),
-      serviceItems: [],
-      payments: [],
-    } as any;
-  }, [initialData]);
+  const defaultValues = useMemo(
+    () =>
+      initialData
+        ? { ...initialData, status: initialData.status || "Cotizacion" }
+        : {
+            status: "Cotizacion",
+            serviceDate: new Date().toISOString(),
+            serviceItems: [],
+            payments: [],
+          },
+    [initialData]
+  );
 
   const methods = useForm<ServiceFormInput, any, ServiceFormValues>({
     resolver: zodResolver(serviceFormSchema),
-    defaultValues,
+    defaultValues: defaultValues as any,
     mode: "onBlur",
     reValidateMode: "onChange",
   });
 
   const { reset } = methods;
 
-  useEffect(() => {
-    if (open) reset(defaultValues);
+  React.useEffect(() => {
+    if (open) reset(defaultValues as any);
   }, [open, defaultValues, reset]);
 
   const onValidationErrors = (errors: any) => {
@@ -113,7 +105,7 @@ export function ServiceDialog({
         <FormProvider {...methods}>
           <ServiceForm
             initialData={initialData}
-            onSave={onSave as any}
+            onSave={onSave}
             onSaveSuccess={onSaveSuccess}
             onCancel={() => onOpenChange(false)}
             onValidationErrors={onValidationErrors}

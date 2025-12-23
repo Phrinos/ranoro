@@ -1,32 +1,29 @@
-
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-
 import { FormDialog } from "@/components/shared/form-dialog";
-import { VehicleForm } from "./vehicle-form";
+import { VehicleForm, type VehicleFormValues } from "./vehicle-form";
 import type { Vehicle } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { vehicleFormSchema } from "@/schemas/vehicle-form-schema";
+import { z } from "zod";
 
 type VehicleFormInput = z.input<typeof vehicleFormSchema>;
-type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
 
 interface VehicleDialogProps {
   trigger?: React.ReactNode;
   vehicle?: Partial<Vehicle> | null;
   onSave: (data: VehicleFormValues) => Promise<void>;
-  open: boolean;
-  onOpenChange: (isOpen: boolean) => void;
+  open?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
-const buildDefaults = (v?: Partial<Vehicle> | null): VehicleFormInput => ({
+const buildDefaults = (v?: Partial<Vehicle> | null): Partial<VehicleFormInput> => ({
   make: v?.make ?? "",
   model: v?.model ?? "",
-  year: Number(v?.year ?? new Date().getFullYear()),
+  year: v?.year ? Number(v.year) : undefined,
   engine: (v as any)?.engine ?? "",
   licensePlate: v?.licensePlate ?? "",
   vin: v?.vin ?? "",
@@ -36,26 +33,29 @@ const buildDefaults = (v?: Partial<Vehicle> | null): VehicleFormInput => ({
   chatMetaLink: (v as any)?.chatMetaLink ?? "",
   notes: v?.notes ?? "",
   isFleetVehicle: v?.isFleetVehicle ?? false,
-
-  purchasePrice: (v as any)?.purchasePrice ?? undefined,
-  dailyRentalCost: (v as any)?.dailyRentalCost ?? undefined,
-  gpsCost: (v as any)?.gpsCost ?? undefined,
-  insuranceCost: (v as any)?.insuranceCost ?? undefined,
-  adminCost: (v as any)?.adminCost ?? undefined,
-
-  currentMileage: (v as any)?.currentMileage ?? undefined,
-  assignedDriverId: (v as any)?.assignedDriverId ?? "",
+  purchasePrice: v?.purchasePrice,
+  dailyRentalCost: v?.dailyRentalCost,
+  gpsCost: v?.gpsCost,
+  insuranceCost: v?.insuranceCost,
+  adminCost: v?.adminCost,
+  currentMileage: v?.currentMileage,
+  assignedDriverId: v?.assignedDriverId,
 });
 
 export function VehicleDialog({
   trigger,
   vehicle,
   onSave,
-  open,
+  open: openProp,
   onOpenChange,
 }: VehicleDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const { toast } = useToast();
+
+  const isControlled = typeof openProp === "boolean" && typeof onOpenChange === "function";
+  const open = isControlled ? openProp : uncontrolledOpen;
+  const setOpen = isControlled ? onOpenChange : setUncontrolledOpen;
 
   const methods = useForm<VehicleFormInput, any, VehicleFormValues>({
     resolver: zodResolver(vehicleFormSchema),
@@ -73,7 +73,7 @@ export function VehicleDialog({
     setIsSubmitting(true);
     try {
       await onSave(values);
-      onOpenChange(false);
+      setOpen(false);
     } catch (error) {
       console.error("Error saving vehicle:", error);
       toast({
@@ -86,26 +86,25 @@ export function VehicleDialog({
     }
   };
 
-  const hasId = !!(vehicle && "id" in vehicle && vehicle.id);
-  const dialogTitle = hasId ? "Editar Vehículo" : "Nuevo Vehículo";
-  const dialogDescription = hasId
+  const isEdit = Boolean(vehicle && (vehicle as any).id);
+  const dialogTitle = isEdit ? "Editar Vehículo" : "Nuevo Vehículo";
+  const dialogDescription = isEdit
     ? "Actualiza los detalles del vehículo."
     : "Completa la información para un nuevo vehículo.";
+
+  const triggerNode =
+    trigger && !isControlled ? <div onClick={() => setOpen(true)}>{trigger}</div> : undefined;
 
   return (
     <FormDialog
       open={open}
-      onOpenChange={onOpenChange}
-      trigger={
-        trigger ? (
-          <div onClick={() => onOpenChange(true)}>{trigger}</div>
-        ) : undefined
-      }
+      onOpenChange={setOpen}
+      trigger={triggerNode}
       title={dialogTitle}
       description={dialogDescription}
       formId="vehicle-form"
       isSubmitting={isSubmitting}
-      submitButtonText={hasId ? "Actualizar Vehículo" : "Crear Vehículo"}
+      submitButtonText={isEdit ? "Actualizar Vehículo" : "Crear Vehículo"}
       dialogContentClassName="sm:max-w-2xl"
     >
       <FormProvider {...methods}>
