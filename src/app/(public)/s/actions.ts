@@ -1,4 +1,3 @@
-
 // src/app/(public)/s/actions.ts
 "use server";
 

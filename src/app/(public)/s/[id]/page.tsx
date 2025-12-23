@@ -24,7 +24,6 @@ import {
 } from "../actions";
 import { isValid, parseISO } from "date-fns";
 
-// ——— Tipado público mínimo ———
 type PublicServiceDoc = {
   id?: string;
   serviceId?: string;
@@ -56,18 +55,18 @@ type PublicServiceDoc = {
   mileage?: number;
 };
 
-const pickFirstText = (...vals: any[]) => {
-  for (const v of vals) {
-    if (v === null || v === undefined) continue;
-
-    if (typeof v === "number" && Number.isFinite(v)) return String(v);
-
-    if (typeof v === "string") {
-      const s = v.trim();
-      if (s && s.toLowerCase() !== "na") return s;
+const pickFirstText = (...vals: any[]): string | undefined => {
+    for (const v of vals) {
+      if (v === null || v === undefined) continue;
+  
+      if (typeof v === "number" && Number.isFinite(v)) return String(v);
+  
+      if (typeof v === "string") {
+        const s = v.trim();
+        if (s && s.toLowerCase() !== "na") return s;
+      }
     }
-  }
-  return undefined;
+    return undefined;
 };
 
 
@@ -132,7 +131,6 @@ export default function PublicServicePage() {
       return;
     }
     
-    // Dispara auto-repair (no bloquea la UI; onSnapshot seguirá funcionando)
     getPublicServiceData(publicId).catch((e) => console.warn("auto-repair failed:", e));
 
     const ref = doc(db, "publicServices", publicId);

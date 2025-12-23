@@ -1,7 +1,7 @@
 // src/app/(app)/precios/components/EditEngineDataDialog.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useForm, FormProvider, useFieldArray, Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { engineDataSchema, type EngineDataFormValues } from "@/schemas/engine-data-form-schema";
@@ -276,10 +276,10 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                           <h5 className="text-xs font-bold text-muted-foreground">DELANTERAS</h5>
                           {fieldsDel.map((item, index) => (
                             <div key={item.id} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-center">
-                              <FormField control={control} name={`insumos.balatas.delanteras.${index}.modelo`} render={({ field }) => (
+                              <FormField control={control as any} name={`insumos.balatas.delanteras.${index}.modelo`} render={({ field }) => (
                                 <FormItem><FormControl><Input {...field} value={field.value ?? ""} placeholder="D1234" /></FormControl></FormItem>
                               )}/>
-                              <FormField control={control} name={`insumos.balatas.delanteras.${index}.tipo`} render={({ field }) => (
+                              <FormField control={control as any} name={`insumos.balatas.delanteras.${index}.tipo`} render={({ field }) => (
                                 <FormItem>
                                   <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Tipo..." /></SelectTrigger></FormControl>
@@ -291,7 +291,7 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                                   </Select>
                                 </FormItem>
                               )}/>
-                              <FormField control={control} name={`insumos.balatas.delanteras.${index}.costoJuego`} render={({ field }) => (
+                              <FormField control={control as any} name={`insumos.balatas.delanteras.${index}.costoJuego`} render={({ field }) => (
                                 <FormItem><FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="Costo" /></FormControl></FormItem>
                               )}/>
                               <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeDel(index)}>
@@ -308,10 +308,10 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                           <h5 className="text-xs font-bold text-muted-foreground">TRASERAS</h5>
                           {fieldsTra.map((item, index) => (
                             <div key={item.id} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-center">
-                              <FormField control={control} name={`insumos.balatas.traseras.${index}.modelo`} render={({ field }) => (
+                              <FormField control={control as any} name={`insumos.balatas.traseras.${index}.modelo`} render={({ field }) => (
                                 <FormItem><FormControl><Input {...field} value={field.value ?? ""} placeholder="D5678" /></FormControl></FormItem>
                               )}/>
-                              <FormField control={control} name={`insumos.balatas.traseras.${index}.tipo`} render={({ field }) => (
+                              <FormField control={control as any} name={`insumos.balatas.traseras.${index}.tipo`} render={({ field }) => (
                                 <FormItem>
                                   <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Tipo..." /></SelectTrigger></FormControl>
@@ -323,7 +323,7 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                                   </Select>
                                 </FormItem>
                               )}/>
-                              <FormField control={control} name={`insumos.balatas.traseras.${index}.costoJuego`} render={({ field }) => (
+                              <FormField control={control as any} name={`insumos.balatas.traseras.${index}.costoJuego`} render={({ field }) => (
                                 <FormItem><FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="Costo" /></FormControl></FormItem>
                               )}/>
                               <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeTra(index)}>
@@ -374,21 +374,21 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                           )}/>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <FormField control={control} name="insumos.bujias.costoUnitario.cobre" render={({ field }) => (
+                          <FormField control={control as any} name="insumos.bujias.costoUnitario.cobre" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Costo Unit. Cobre</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="80" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="insumos.bujias.costoUnitario.platino" render={({ field }) => (
+                          <FormField control={control as any} name="insumos.bujias.costoUnitario.platino" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Costo Unit. Platino</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="180" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="insumos.bujias.costoUnitario.iridio" render={({ field }) => (
+                          <FormField control={control as any} name="insumos.bujias.costoUnitario.iridio" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Costo Unit. Iridio</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="250" /></FormControl>
@@ -401,7 +401,7 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                       <Separator />
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <FormField control={control} name="insumos.inyector.tipo" render={({ field }) => (
+                        <FormField control={control as any} name="insumos.inyector.tipo" render={({ field }) => (
                           <FormItem className="space-y-1">
                             <FormLabel className="text-xs">Tipo de Inyector</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value ?? undefined}>
@@ -423,14 +423,14 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                       <div className="space-y-3 border-b pb-4">
                         <h4 className="font-semibold text-sm">Afinación Integral</h4>
                         <div className="grid grid-cols-2 gap-3">
-                          <FormField control={control} name="servicios.afinacionIntegral.costoInsumos" render={({ field }) => (
+                          <FormField control={control as any} name="servicios.afinacionIntegral.costoInsumos" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Costo Insumos</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="850.00" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="servicios.afinacionIntegral.precioPublico" render={({ field }) => (
+                          <FormField control={control as any} name="servicios.afinacionIntegral.precioPublico" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Precio Público</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="1200.00" /></FormControl>
@@ -441,28 +441,28 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                         <Separator className="my-3" />
                         <h5 className="font-semibold text-xs text-muted-foreground">Actualizaciones (Costo Adicional)</h5>
                         <div className="grid grid-cols-2 gap-3">
-                          <FormField control={control} name="servicios.afinacionIntegral.upgrades.conAceiteSintetico" render={({ field }) => (
+                          <FormField control={control as any} name="servicios.afinacionIntegral.upgrades.conAceiteSintetico" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Aceite Sintético</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="350" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="servicios.afinacionIntegral.upgrades.conAceiteMobil" render={({ field }) => (
+                          <FormField control={control as any} name="servicios.afinacionIntegral.upgrades.conAceiteMobil" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Aceite Mobil</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="550" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="servicios.afinacionIntegral.upgrades.conBujiasPlatino" render={({ field }) => (
+                          <FormField control={control as any} name="servicios.afinacionIntegral.upgrades.conBujiasPlatino" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Bujías de Platino</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="400" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="servicios.afinacionIntegral.upgrades.conBujiasIridio" render={({ field }) => (
+                          <FormField control={control as any} name="servicios.afinacionIntegral.upgrades.conBujiasIridio" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Bujías de Iridio</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="700" /></FormControl>

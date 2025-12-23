@@ -28,7 +28,7 @@ const toNumber = (v: any): number =>
   typeof v === 'number'
     ? (Number.isFinite(v) ? v : 0)
     : typeof v === 'string'
-      ? (Number(v.replace(/[^\\d.-]/g, '')) || 0)
+      ? (Number(v.replace(/[^\d.-]/g, '')) || 0)
       : 0;
 
 const pickTotal = (o: any): number => {
@@ -221,16 +221,13 @@ const updateService = async (id: string, data: Partial<ServiceRecord>) => {
     const serviceSnap = await getDoc(serviceRef);
     if (!serviceSnap.exists()) throw new Error("Service to update not found.");
 
-    // 1) Merge + denormalize para tener phone + firma asesor, etc.
     const merged = { ...(serviceSnap.data() as any), ...data, id };
     const denormalized = await denormalizeService(merged);
 
     const batch = writeBatch(db);
 
-    // 2) Guarda completo (limpio) en el doc privado
     batch.set(serviceRef, cleanObjectForFirestore(denormalized), { merge: true });
 
-    // 3) Guarda SOLO lo público (curado) en publicServices
     const publicId = denormalized.publicId || id;
     const publicRef = doc(db, 'publicServices', publicId);
     batch.set(publicRef, cleanObjectForFirestore(buildPublicData(denormalized)), { merge: true });

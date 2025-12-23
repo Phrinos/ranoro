@@ -1,5 +1,6 @@
 
 
+// src/app/(app)/servicios/[id]/page.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -23,7 +24,7 @@ import { serviceFormSchema, type ServiceFormValues } from '@/schemas/service-for
 import { PageHeader } from '@/components/page-header';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
-import { FormProvider, useForm, type SubmitErrorHandler } from 'react-hook-form';
+import { FormProvider, useForm, type SubmitErrorHandler, FieldValues, Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { doc, collection, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
@@ -125,7 +126,7 @@ export default function ServicioPage() {
   const isEditMode = serviceId !== 'nuevo';
 
   const methods = useForm<ServiceFormValues>({
-    resolver: zodResolver(serviceFormSchema),
+    resolver: zodResolver(serviceFormSchema) as Resolver<ServiceFormValues, any>,
     mode: "onSubmit",
     reValidateMode: "onChange",
     shouldUnregister: false,
