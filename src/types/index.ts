@@ -103,7 +103,7 @@ export type ServiceRecord = {
   vehicleId?: string;
   vehicle?: any; // si tu Vehicle ya está tipado, cambia any por Vehicle
 
-  safetyInspection?: SafetyInspection;
+  safetyInspection?: SafetyInspection[]; // <-- tu UI lo pasa como array
 
   totalAmount?: number;
   totalCost?: number;
@@ -476,8 +476,7 @@ export interface Infraction {
 
 export interface SimplifiedSale {
   totalAmount: number;
+  items: { itemId: string; itemName: string; quantity: number; total: number }[];
 }
 
 export interface LegacySale {}
-
-    

@@ -120,7 +120,7 @@ export default function DashboardPage() {
     }, 0);
 
     const profitFromSales = salesToday.reduce(
-      (sum, s) => sum + calculateSaleProfit(s as LegacySale | SimplifiedSale, allInventory),
+      (sum, s) => sum + calculateSaleProfit(s, allInventory),
       0
     );
 
