@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -7,8 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Car, Package, BrainCircuit, Loader2, CheckCircle, Database, Wrench, Briefcase, FileUp, FileText } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { migrateProducts, type ExtractedProduct } from '@/ai/flows/product-migration-flow';
-import { migrateData, type MigrateDataOutput } from '@/ai/flows/data-migration-flow';
 import { useToast } from '@/hooks/use-toast';
 import { inventoryService, serviceService } from '@/lib/services';
 import { formatCurrency } from '@/lib/utils';
@@ -17,7 +14,12 @@ import { Textarea } from '@/components/ui/textarea';
 import type { Vehicle, InventoryItem, ServiceRecord } from '@/types';
 
 type MigrationType = 'operaciones' | 'productos';
-type AnalysisResult = MigrateDataOutput & { products?: ExtractedProduct[] } & { type: MigrationType };
+type AnalysisResult = {
+    type: MigrationType;
+    vehicles: Vehicle[];
+    services: ServiceRecord[];
+    products?: InventoryItem[];
+}
 
 export function MigracionPageContent() {
     const [pastedText, setPastedText] = useState<string>('');
@@ -59,24 +61,7 @@ export function MigracionPageContent() {
         setAnalysisResult(null);
 
         try {
-            let result;
-            if (migrationType === 'operaciones') {
-                const existingPlates = existingVehicles.map(v => v.licensePlate);
-                const rawResult = await migrateData({ 
-                    csvContent: csvContent,
-                    existingLicensePlates: existingPlates,
-                });
-                result = { ...rawResult, type: 'operaciones' as const };
-            } else { // productos
-                const existingProductNames = existingInventory.map(p => p.name);
-                const rawResult = await migrateProducts({ 
-                    csvContent: csvContent,
-                    existingProductNames: existingProductNames,
-                });
-                result = { products: rawResult.products, vehicles: [], services: [], type: 'productos' as const };
-            }
-            setAnalysisResult(result);
-            toast({ title: "¡Análisis Completo!", description: "Revisa los datos nuevos extraídos por la IA antes de guardarlos." });
+            toast({ title: "Análisis no disponible", description: "La funcionalidad de migración de datos con IA ha sido deshabilitada.", variant: "destructive" });
         } catch (e) {
             console.error("Error en el análisis:", e);
             toast({ title: 'Error en Análisis', description: `La IA no pudo procesar los datos. ${e instanceof Error ? e.message : ''}`, variant: 'destructive' });
