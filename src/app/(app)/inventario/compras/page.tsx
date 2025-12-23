@@ -25,29 +25,19 @@ import { TableToolbar } from "@/components/shared/table-toolbar";
 import { useTableManager } from "@/hooks/useTableManager";
 
 const ComprasContent = lazy(() => import("./components/compras-content"));
-const CuentasPorPagarContent = lazy(
-  () =>
-    import("./components/cuentas-por-pagar-content").then(
-      (m) => m.CuentasPorPagarContent
-    )
+const CuentasPorPagarContent = lazy(() =>
+    import("./components/cuentas-por-pagar-content").then((m) => ({ default: m.CuentasPorPagarContent }))
 );
-const RegisterPurchaseDialog = lazy(
-  () =>
-    import("./components/register-purchase-dialog").then(
-      (m) => m.RegisterPurchaseDialog
-    )
+const RegisterPurchaseDialog = lazy(() =>
+  import("./components/register-purchase-dialog").then((m) => ({ default: m.RegisterPurchaseDialog }))
 );
-const PayableAccountDialog = lazy(
-  () =>
-    import("./components/payable-account-dialog").then(
-      (m) => m.PayableAccountDialog
-    ),
-  { ssr: false }
+const PayableAccountDialog = lazy(() =>
+    import("./components/payable-account-dialog").then((m) => ({ default: m.PayableAccountDialog })),
+    { ssr: false }
 );
-const SupplierDialog = lazy(
-  () =>
-    import("./components/supplier-dialog").then((m) => m.SupplierDialog),
-  { ssr: false }
+const SupplierDialog = lazy(() =>
+    import("./components/supplier-dialog").then((m) => ({ default: m.SupplierDialog })),
+    { ssr: false }
 );
 
 const sortOptionsProveedores = [

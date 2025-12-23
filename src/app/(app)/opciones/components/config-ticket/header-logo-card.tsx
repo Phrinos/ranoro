@@ -9,7 +9,7 @@ import { Slider } from '@/components/ui/slider';
 import { Upload, Loader2 } from 'lucide-react';
 
 interface HeaderLogoCardProps {
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   isUploading: boolean;
   handleImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   defaultLogoWidth: number;

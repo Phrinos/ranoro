@@ -187,7 +187,7 @@ export function MigracionPageContent() {
                          <div className="mb-4">
                             <h3 className="font-semibold mb-2">Servicios Detectados</h3>
                             <div className="rounded-md border h-48 overflow-auto">
-                               <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>Placa</TableHead><TableHead>Fecha</TableHead><TableHead>Descripción</TableHead><TableHead className="text-right">Costo</TableHead></TableRow></TableHeader><TableBody>{analysisResult.services.map((s, i) => ( <TableRow key={i}><TableCell>{s.vehicleLicensePlate}</TableCell><TableCell>{renderDate(s.serviceDate)}</TableCell><TableCell>{s.description}</TableCell><TableCell className="text-right">{formatCurrency(s.totalCost || 0)}</TableCell></TableRow> ))}</TableBody></Table>
+                               <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>Placa</TableHead><TableHead>Fecha</TableHead><TableHead>Descripción</TableHead><TableHead className="text-right">Costo</TableHead></TableRow></TableHeader><TableBody>{analysisResult.services.map((s, i) => ( <TableRow key={i}><TableCell>{(s as any).licensePlate ?? ''}</TableCell><TableCell>{renderDate(s.serviceDate)}</TableCell><TableCell>{s.description}</TableCell><TableCell className="text-right">{formatCurrency(s.totalCost || 0)}</TableCell></TableRow> ))}</TableBody></Table>
                             </div>
                         </div>
                     )}
