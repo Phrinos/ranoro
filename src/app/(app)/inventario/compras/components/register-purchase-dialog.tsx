@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, PackagePlus, DollarSign, PlusCircle, Trash2, CalendarIcon, Minus, Plus } from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency, cn, getToday, CURRENCY_FORMATTER } from "@/lib/utils";
 import { InventoryItemDialog } from "@/app/(app)/inventario/components/inventory-item-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -30,6 +30,7 @@ import { es } from "date-fns/locale";
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 import type { CalendarProps } from "react-calendar";
 import { Separator } from "@/components/ui/separator";
+import { registerPurchaseSchema, type RegisterPurchaseFormValues } from "@/schemas/register-purchase-schema";
 
 const purchaseItemSchema = z.object({
   inventoryItemId: z.string(),
@@ -39,36 +40,27 @@ const purchaseItemSchema = z.object({
   totalPrice: z.coerce.number().optional(),
 });
 
-const purchaseFormSchema = z
-  .object({
-    supplierId: z.string().min(1, "Debe seleccionar un proveedor."),
-    invoiceId: z.string().optional(),
-    purchaseDate: z.coerce.date({ message: "La fecha es obligatoria." }),
-    items: z.array(purchaseItemSchema).min(1, "Debe añadir al menos un artículo a la compra."),
-    paymentMethod: z.enum(["Efectivo", "Tarjeta", "Transferencia", "Crédito"]),
-    dueDate: z.date().optional(),
-    invoiceTotal: z.coerce.number().nonnegative("El total no puede ser negativo.").optional(),
-    subtotal: z.coerce.number().optional(),
-    taxes: z.coerce.number().optional(),
-    discounts: z.coerce.number().optional(),
-  })
-  .refine((data) => (data.paymentMethod === "Crédito" ? !!data.dueDate : true), {
-    message: "La fecha de vencimiento es obligatoria para compras a crédito.",
-    path: ["dueDate"],
-  });
-
-type PurchaseFormInput = z.input<typeof purchaseFormSchema>;
-export type PurchaseFormValues = z.output<typeof purchaseFormSchema>;
-
 interface RegisterPurchaseDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   suppliers: Supplier[];
   inventoryItems: InventoryItem[];
   categories: InventoryCategory[];
-  onSave: (data: PurchaseFormValues) => void;
+  onSave: (data: RegisterPurchaseFormValues) => void;
   onInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
 }
+
+const buildDefaults = (): RegisterPurchaseFormValues => ({
+  supplierId: "",
+  purchaseDate: getToday(),
+  paymentMethod: "Efectivo",
+  items: [],
+  invoiceTotal: 0,
+  subtotal: 0,
+  discounts: 0,
+  note: "",
+});
+
 
 export function RegisterPurchaseDialog({
   open,
@@ -79,20 +71,15 @@ export function RegisterPurchaseDialog({
   onSave,
   onInventoryItemCreated,
 }: RegisterPurchaseDialogProps) {
-  const resolver = zodResolver(purchaseFormSchema) as unknown as Resolver<PurchaseFormValues>;
+  const resolver = zodResolver(registerPurchaseSchema) as unknown as Resolver<RegisterPurchaseFormValues>;
 
-  const form = useForm<PurchaseFormValues>({
+  const form = useForm<RegisterPurchaseFormValues>({
     resolver,
-    defaultValues: {
-      supplierId: "",
-      items: [],
-      paymentMethod: "Efectivo",
-      invoiceTotal: 0,
-    },
+    defaultValues: buildDefaults(),
     mode: "onBlur",
   });
 
-  const { control, handleSubmit, watch, setValue, getValues } = form;
+  const { control, handleSubmit, watch, setValue, getValues, reset } = form;
   const { fields, append, remove } = useFieldArray({ control: control as any, name: "items" });
   const paymentMethod = watch("paymentMethod");
   const itemsWatch = useWatch({ control, name: "items" });
@@ -113,6 +100,10 @@ export function RegisterPurchaseDialog({
       shouldValidate: false,
     });
   }, [itemsWatch, setValue]);
+
+  useEffect(() => {
+    if (open) reset(buildDefaults());
+  }, [open, reset]);
 
   const handleAddItem = (item: InventoryItem) => {
     const price = Number(item.unitPrice || 0);
@@ -203,42 +194,45 @@ export function RegisterPurchaseDialog({
                       />
                     </div>
 
-                    <div>
-                      <FormLabel>Artículos Comprados</FormLabel>
-                      <div className="mt-2 space-y-2 rounded-md border bg-card p-4">
-                        {fields.length > 0 && (
-                          <div className="hidden sm:grid sm:grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground pr-10">
-                            <span className="sm:col-span-5">Artículo</span>
-                            <span className="sm:col-span-3 text-center">Cantidad</span>
-                            <span className="sm:col-span-2 text-right">Costo Unitario</span>
-                            <span className="sm:col-span-2 text-right">Costo Total</span>
-                          </div>
-                        )}
-                        <ScrollArea className="max-h-48 pr-3">
-                          <div className="space-y-3">
-                            {fields.map((field, index) => {
-                               const itemValues = watch(`items.${index}`);
-                               const qty = Number(itemValues?.quantity || 1);
-                               const unitPrice = Number(itemValues?.purchasePrice || 0);
-                               const lineTotal = qty * unitPrice;
-                              return (
-                              <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
-                                <span
-                                  className="col-span-12 sm:col-span-5 truncate text-sm font-medium"
-                                  title={itemValues.itemName}
-                                >
-                                  {itemValues.itemName}
-                                </span>
-
-                                <div className="col-span-6 sm:col-span-3 flex items-center gap-1">
-                                  <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQty(index, qty - 1)} disabled={qty <= 1}>
-                                      <Minus className="h-4 w-4"/>
-                                  </Button>
-                                  <FormField
-                                      control={control as any}
-                                      name={`items.${index}.quantity`}
-                                      render={({ field }) => (
-                                          <Input
+                    <FormField
+                      control={control as any}
+                      name="items"
+                      render={() => (
+                        <FormItem>
+                          <FormLabel>Artículos Comprados</FormLabel>
+                          <div className="mt-2 space-y-2 rounded-md border bg-card p-4">
+                            {fields.length > 0 && (
+                              <div className="hidden sm:grid sm:grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground pr-10">
+                                <span className="sm:col-span-5">Artículo</span>
+                                <span className="sm:col-span-3 text-center">Cantidad</span>
+                                <span className="sm:col-span-2 text-right">Costo Unitario</span>
+                                <span className="sm:col-span-2 text-right">Costo Total</span>
+                              </div>
+                            )}
+                            <ScrollArea className="max-h-48 pr-3">
+                              <div className="space-y-3">
+                                {fields.map((field, index) => {
+                                  const itemValues = watch(`items.${index}`);
+                                  const qty = Number(itemValues?.quantity || 1);
+                                  const unitPrice = Number(itemValues?.purchasePrice || 0);
+                                  const lineTotal = qty * unitPrice;
+                                  return (
+                                    <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
+                                      <span
+                                        className="col-span-12 sm:col-span-5 truncate text-sm font-medium"
+                                        title={itemValues.itemName}
+                                      >
+                                        {itemValues.itemName}
+                                      </span>
+                                      <div className="col-span-6 sm:col-span-3 flex items-center gap-1">
+                                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQty(index, qty - 1)} disabled={qty <= 1}>
+                                          <Minus className="h-4 w-4" />
+                                        </Button>
+                                        <FormField
+                                          control={control as any}
+                                          name={`items.${index}.quantity`}
+                                          render={({ field }) => (
+                                            <Input
                                               type="number"
                                               step="0.01"
                                               min="0.01"
@@ -248,75 +242,70 @@ export function RegisterPurchaseDialog({
                                               value={(field.value as any) ?? ""}
                                               onChange={(e) => updateQty(index, parseFloat(e.target.value))}
                                               onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
-                                          />
-                                      )}
-                                  />
-                                  <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQty(index, qty + 1)}>
-                                      <Plus className="h-4 w-4"/>
-                                  </Button>
-                                </div>
-
-                                <div className="col-span-3 sm:col-span-2">
-                                  <FormField
-                                    control={control as any}
-                                    name={`items.${index}.purchasePrice`}
-                                    render={({ field }) => (
-                                      <div className="relative">
-                                        <DollarSign className="text-muted-foreground absolute left-2.5 top-1.5 h-4 w-4" />
-                                        <Input
-                                          type="number"
-                                          step="0.01"
-                                          min="0"
-                                          inputMode="decimal"
-                                          className="h-8 pl-8 text-right bg-white"
-                                          {...field}
-                                          value={(field.value as any) ?? ""}
-                                          onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
+                                            />
+                                          )}
+                                        />
+                                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQty(index, qty + 1)}>
+                                          <Plus className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                      <div className="col-span-3 sm:col-span-2">
+                                        <FormField
+                                          control={control as any}
+                                          name={`items.${index}.purchasePrice`}
+                                          render={({ field }) => (
+                                            <div className="relative">
+                                              <DollarSign className="text-muted-foreground absolute left-2.5 top-1.5 h-4 w-4" />
+                                              <Input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                inputMode="decimal"
+                                                className="h-8 pl-8 text-right bg-white"
+                                                {...field}
+                                                value={(field.value as any) ?? ""}
+                                                onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
+                                              />
+                                            </div>
+                                          )}
                                         />
                                       </div>
-                                    )}
-                                  />
-                                </div>
-
-                                <div className="col-span-2 sm:col-span-2 text-right font-semibold">
-                                    {formatCurrency(lineTotal)}
-                                </div>
-                                
-                                <div className="col-span-1 text-right">
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="icon"
-                                      onClick={() => remove(index)}
-                                    >
-                                      <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                </div>
-
+                                      <div className="col-span-2 sm:col-span-2 text-right font-semibold">
+                                        {formatCurrency(lineTotal)}
+                                      </div>
+                                      <div className="col-span-1 text-right">
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="icon"
+                                          onClick={() => remove(index)}
+                                        >
+                                          <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
                               </div>
-                            )})}
+                            </ScrollArea>
+                            <div className="border-t pt-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setIsItemSearchOpen(true)}
+                                className="bg-white"
+                              >
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Añadir Artículo
+                              </Button>
+                            </div>
                           </div>
-                        </ScrollArea>
-
-                        <div className="border-t pt-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsItemSearchOpen(true)}
-                            className="bg-white"
-                          >
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Añadir Artículo
-                          </Button>
-                        </div>
-                      </div>
-                      {!!(form.formState.errors as any).items && (
-                        <p className="mt-2 text-sm text-destructive">
-                          {((form.formState.errors as any).items?.message as any)}
-                        </p>
+                          <FormMessage />
+                        </FormItem>
                       )}
-                    </div>
+                    />
+
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <FormField
@@ -509,5 +498,3 @@ function SearchItemDialog({
     </Dialog>
   );
 }
-
-    
