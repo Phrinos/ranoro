@@ -44,14 +44,14 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
     resolver: zodResolver(expenseSchema),
     defaultValues: {
       vehicleId: "",
-      amount: "", // 👈 importante: input “vacío” (coerce lo convierte al validar)
+      amount: undefined,
       description: "",
-    } as any,
+    },
   });
 
   useEffect(() => {
     if (!open) return;
-    form.reset({ vehicleId: "", amount: "", description: "" } as any);
+    form.reset({ vehicleId: "", amount: undefined, description: "" });
   }, [open, form]);
 
   const handleFormSubmit = async (values: VehicleExpenseFormValues) => {
@@ -82,7 +82,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Vehículo</FormLabel>
-                  <Select onValueChange={field.onChange} value={(field.value as any) ?? ""}>
+                  <Select onValueChange={field.onChange} value={field.value ?? ""}>
                     <FormControl>
                       <SelectTrigger className="bg-white">
                         <SelectValue placeholder="Seleccionar vehículo..." />
@@ -113,7 +113,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
                       step="0.01"
                       className="bg-white"
                       {...field}
-                      value={(field.value as any) ?? ""}
+                      value={field.value ?? ""}
                     />
                   </FormControl>
                   <FormMessage />
@@ -132,7 +132,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
                       {...field}
                       placeholder="Ej: Cambio de aceite, llanta nueva..."
                       className="bg-white"
-                      value={(field.value as any) ?? ""}
+                      value={field.value ?? ""}
                     />
                   </FormControl>
                   <FormMessage />

@@ -25,7 +25,7 @@ import { es } from 'date-fns/locale';
 import { parseDate } from "@/lib/forms";
 import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { userFormSchema, type UserFormValues } from '@/schemas/user-form-schema';
+import { userFormSchema, type UserFormValues, type UserFormInput } from '@/schemas/user-form-schema';
 import { NewCalendar } from "@/components/ui/calendar";
 import type { CalendarProps } from "react-calendar";
 
@@ -43,7 +43,7 @@ const OPERATIVE_FUNCTIONS = [
 
 export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const form = useForm<UserFormValues>({
+  const form = useForm<UserFormInput, any, UserFormValues>({
     resolver: zodResolver(userFormSchema),
     defaultValues: initialData ? {
         name: initialData.name,
@@ -51,8 +51,8 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
         phone: initialData.phone || '',
         role: initialData.role || '',
         functions: initialData.functions || [],
-        monthlySalary: initialData.monthlySalary || 0,
-        commissionRate: initialData.commissionRate || 0,
+        monthlySalary: initialData.monthlySalary || undefined,
+        commissionRate: initialData.commissionRate || undefined,
         hireDate: initialData.hireDate ? parseDate(initialData.hireDate) : undefined,
         isArchived: initialData.isArchived ?? false,
     } : {
@@ -61,8 +61,8 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
       phone: "",
       role: "",
       functions: [],
-      monthlySalary: 0,
-      commissionRate: 0,
+      monthlySalary: undefined,
+      commissionRate: undefined,
       hireDate: new Date(),
       isArchived: false,
     },
@@ -71,21 +71,21 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
   return (
     <Form {...form}>
       <form id={id} onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6 pt-4 pb-4">
-        <FormField control={form.control as any} name="name" render={({ field }) => (
+        <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Ej: Juan Pérez" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} className="bg-card text-foreground" /></FormControl><FormMessage /></FormItem>
         )}/>
-        <FormField control={form.control as any} name="email" render={({ field }) => (
+        <FormField control={form.control} name="email" render={({ field }) => (
           <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="usuario@ranoro.mx" {...field} value={field.value ?? ''} disabled={!!initialData} className="bg-card text-foreground" /></FormControl><FormDescription>El email se usa para iniciar sesión y no se puede cambiar.</FormDescription></FormItem>
         )}/>
-        <FormField control={form.control as any} name="phone" render={({ field }) => (
+        <FormField control={form.control} name="phone" render={({ field }) => (
           <FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="4491234567" {...field} value={field.value ?? ''} className="bg-card text-foreground" /></FormControl><FormMessage /></FormItem>
         )}/>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField control={form.control as any} name="role" render={({ field }) => (
+            <FormField control={form.control} name="role" render={({ field }) => (
               <FormItem><FormLabel>Rol de Permisos</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-card text-foreground"><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => (<SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
             )}/>
              <FormField
-              control={form.control as any}
+              control={form.control}
               name="functions"
               render={() => (
                 <FormItem>
@@ -94,7 +94,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                         {OPERATIVE_FUNCTIONS.map((item) => (
                             <FormField
                                 key={item.id}
-                                control={form.control as any}
+                                control={form.control}
                                 name="functions"
                                 render={({ field }) => {
                                     return (
@@ -169,7 +169,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                 <FormItem><FormLabel>Sueldo Base Mensual</FormLabel><FormControl>
                     <Input
                         type="number"
-                        value={typeof field.value === 'number' || typeof field.value === 'string' ? field.value : ''}
+                        value={field.value ?? ''}
                         onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                         className="bg-card text-foreground"
                         placeholder="0.00"
@@ -183,7 +183,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                 <FormItem><FormLabel>% Comisión</FormLabel><FormControl>
                     <Input
                         type="number"
-                        value={typeof field.value === 'number' || typeof field.value === 'string' ? field.value : ''}
+                        value={field.value ?? ''}
                         onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                         className="bg-card text-foreground"
                         placeholder="Ej: 5 para 5%"

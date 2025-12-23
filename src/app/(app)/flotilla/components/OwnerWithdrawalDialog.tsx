@@ -42,7 +42,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
 
   const form = useForm<WithdrawalFormInput, any, OwnerWithdrawalFormValues>({
     resolver: zodResolver(withdrawalSchema),
-    defaultValues: { ownerName: "", amount: "", note: "" } as any,
+    defaultValues: { ownerName: "", amount: undefined, note: "" },
   });
 
   const owners = useMemo(() => {
@@ -56,7 +56,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
 
   useEffect(() => {
     if (!open) return;
-    form.reset({ ownerName: "", amount: "", note: "" } as any);
+    form.reset({ ownerName: "", amount: undefined, note: "" });
   }, [open, form]);
 
   const handleFormSubmit = async (values: OwnerWithdrawalFormValues) => {
@@ -85,7 +85,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Propietario</FormLabel>
-                  <Select onValueChange={field.onChange} value={(field.value as any) ?? ""}>
+                  <Select onValueChange={field.onChange} value={field.value ?? ""}>
                     <FormControl>
                       <SelectTrigger className="bg-white">
                         <SelectValue placeholder="Seleccionar propietario..." />
@@ -111,7 +111,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
                 <FormItem>
                   <FormLabel>Monto a Retirar ($)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} className="bg-white" value={(field.value as any) ?? ""} />
+                    <Input type="number" step="0.01" {...field} className="bg-white" value={field.value ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -125,7 +125,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
                 <FormItem>
                   <FormLabel>Nota o Descripción</FormLabel>
                   <FormControl>
-                    <Textarea {...field} className="bg-white" value={(field.value as any) ?? ""} />
+                    <Textarea {...field} className="bg-white" value={field.value ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

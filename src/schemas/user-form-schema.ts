@@ -6,7 +6,7 @@ export const userFormSchema = z.object({
   email: z.string().email("Ingrese un correo electrónico válido."),
   phone: z.string().optional(),
   role: z.string().min(1, "Debe seleccionar un rol."),
-  functions: z.array(z.string()).default([]), // Aseguramos que sea un array
+  functions: z.array(z.string()).default([]),
   monthlySalary: z.coerce.number().optional(),
   commissionRate: z.coerce.number().optional(),
   hireDate: z.date().optional(),
@@ -14,3 +14,4 @@ export const userFormSchema = z.object({
 });
 
 export type UserFormValues = z.infer<typeof userFormSchema>;
+export type UserFormInput = z.input<typeof userFormSchema>;
