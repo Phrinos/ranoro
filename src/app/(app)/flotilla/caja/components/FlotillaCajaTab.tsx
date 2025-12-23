@@ -33,7 +33,7 @@ interface FlotillaCajaTabProps {
   handleShowTicket: (payment: RentalPayment) => void;
 }
 
-const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
+const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   "Efectivo": Wallet,
   "Tarjeta": CreditCard,
   "Tarjeta MSI": CreditCard,
@@ -122,7 +122,7 @@ export function FlotillaCajaTab({
   const getTransactionDetails = (t: CashBoxTransaction) => {
     switch (t.transactionType) {
       case 'income': {
-        const Icon = paymentMethodIcons[t.paymentMethod as PaymentMethod] || Wallet;
+        const Icon = paymentMethodIcons[t.paymentMethod as PaymentMethod] ?? Wallet;
         return { variant: t.paymentMethod === 'Transferencia' ? 'info' : 'success', label: 'Ingreso', description: `Pago de ${t.driverName}`, note: t.note, methodIcon: <Icon className="h-4 w-4" />, methodName: t.paymentMethod };
       }
       case 'withdrawal': {

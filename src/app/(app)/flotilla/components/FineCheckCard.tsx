@@ -11,6 +11,8 @@ import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
+const toTime = (d?: string | Date) => (d ? new Date(d).getTime() : 0);
+
 interface FineCheckCardProps {
   vehicle: Vehicle;
   onAdd: () => void;
@@ -18,7 +20,7 @@ interface FineCheckCardProps {
 }
 
 export function FineCheckCard({ vehicle, onAdd, onView }: FineCheckCardProps) {
-  const sortedChecks = (vehicle.fineChecks || []).sort((a, b) => new Date(b.checkDate).getTime() - new Date(a.checkDate).getTime());
+  const sortedChecks = (vehicle.fineChecks || []).sort((a, b) => toTime(b.checkDate) - toTime(a.checkDate));
 
   return (
     <Card>
@@ -41,7 +43,7 @@ export function FineCheckCard({ vehicle, onAdd, onView }: FineCheckCardProps) {
                   {item.hasFines ? <AlertCircle className="h-5 w-5 text-destructive" /> : <CheckCircle className="h-5 w-5 text-green-600" />}
                   <div>
                     <p className="font-semibold text-sm">
-                      Revisión del {format(new Date(item.checkDate), "dd MMM yyyy", { locale: es })}
+                      Revisión del {item.checkDate ? format(new Date(item.checkDate), "dd MMM yyyy", { locale: es }) : "Sin fecha"}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {item.hasFines ? `${item.fines?.length || 0} multa(s) encontrada(s)` : 'Sin multas'}

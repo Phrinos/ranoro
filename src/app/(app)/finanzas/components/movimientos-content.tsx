@@ -1,4 +1,4 @@
-
+// src/app/(app)/finanzas/components/movimientos-content.tsx
 
 "use client";
 
@@ -67,11 +67,13 @@ const sortOptions = [
   { value: "total_asc", label: "Monto (Menor a Mayor)" },
 ];
 
-const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
+const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
+  "Tarjeta MSI": CreditCard,
   Transferencia: Landmark,
-  Crédito: CreditCard
+  "Efectivo+Transferencia": Wallet,
+  "Tarjeta+Transferencia": CreditCard,
 };
 
 // === Helpers ===
@@ -181,7 +183,7 @@ function MovimientosTabContent({
         origin: "ledger",
         date: parseDate((t as any).date || (t as any).createdAt) || null,
         folio: t.id,
-        type: t.type === "in" ? "Entrada" : "Salida",
+        type: t.type === "in" || t.type === "Entrada" ? "Entrada" : "Salida",
         client: (t as any).userName || (t as any).user || "Sistema",
         total: Math.abs(Number(t.amount) || 0),
         description: (t as any).description || (t as any).concept || "",
@@ -216,7 +218,7 @@ function MovimientosTabContent({
       .reduce((sum, m) => sum + (m.total || 0), 0);
       
     const egresosCaja = rows
-      .filter((m) => m.origin === "ledger" && m.type === "Salida")
+      .filter((m) => m.origin === "ledger" && (m.type === "Salida" || m.type === "out"))
       .reduce((sum, m) => sum + (m.total || 0), 0);
 
     const neto = ingresos - egresosCaja;
@@ -439,5 +441,3 @@ function MovimientosTabContent({
 }
 
 export default MovimientosTabContent;
-
-    

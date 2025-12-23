@@ -15,6 +15,7 @@ import { rentalService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 
+const toTime = (d?: string | Date) => (d ? new Date(d).getTime() : 0);
 
 interface FlotillaBalanceTabProps {
   drivers: Driver[];
@@ -45,7 +46,7 @@ export function FlotillaBalanceTab({ drivers, vehicles, dailyCharges, payments, 
 
       const lastPayment = driverPayments.length > 0 
         ? driverPayments.reduce((latest, current) => 
-            new Date(current.paymentDate) > new Date(latest.paymentDate) ? current : latest
+            toTime(current.paymentDate) > toTime(latest.paymentDate) ? current : latest
           ) 
         : null;
       
@@ -70,11 +71,9 @@ export function FlotillaBalanceTab({ drivers, vehicles, dailyCharges, payments, 
             comparison = valA - valB;
         } else if (typeof valA === 'string' && typeof valB === 'string') {
             if (sortConfig.key === 'lastPaymentDate') {
-                 const dateA = parseISO(valA);
-                 const dateB = parseISO(valB);
-                 if (isValid(dateA) && isValid(dateB)) {
-                    comparison = dateA.getTime() - dateB.getTime();
-                 }
+                 const dateA = toTime(valA);
+                 const dateB = toTime(valB);
+                 comparison = dateA - dateB;
             } else {
                  comparison = valA.localeCompare(valB, 'es', { numeric: true });
             }

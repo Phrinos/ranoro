@@ -1,12 +1,12 @@
 // src/app/(app)/servicios/components/HistorialSummary.tsx
 "use client";
 
-import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Wrench, DollarSign, TrendingUp, Wallet, CreditCard, Landmark } from 'lucide-react';
-import { formatCurrency, getPaymentMethodVariant } from '@/lib/utils';
-import { calcEffectiveProfit } from '@/lib/money-helpers';
+import { formatCurrency, getPaymentMethodVariant } from "@/lib/utils";
+import { calcEffectiveProfit } from "@/lib/money-helpers";
 import type { ServiceRecord, Payment, PaymentMethod } from '@/types';
 
 const toNumber = (v: unknown): number => {
@@ -58,13 +58,14 @@ function useHistorialSummary(filteredServices: ServiceRecord[]) {
     }, [filteredServices]);
 }
 
-const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
+const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
   "Tarjeta MSI": CreditCard,
   Transferencia: Landmark,
   "Efectivo+Transferencia": Wallet,
   "Tarjeta+Transferencia": CreditCard,
+  "Crédito": CreditCard,
 };
 
 interface HistorialSummaryProps {

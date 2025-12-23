@@ -9,7 +9,7 @@ export type AppRoleName =
   | "Técnico"
   | "Cajero"
   | "Usuario"
-  // legacy si existe en algún lugar:
+  // legacy si existe en data vieja:
   | "Admin"
   | "superadmin"
   | "admin"
@@ -21,8 +21,15 @@ export type AppRole = {
   permissions: string[];
 };
 
-// ✅ Métodos de pago: tu UI usa "Tarjeta MSI"
-export type PaymentMethod = "Efectivo" | "Tarjeta" | "Tarjeta MSI" | "Transferencia" | "Crédito" | "Efectivo+Transferencia" | "Tarjeta+Transferencia";
+// ✅ Métodos de pago: incluye Crédito + combos
+export type PaymentMethod =
+  | "Efectivo"
+  | "Tarjeta"
+  | "Tarjeta MSI"
+  | "Transferencia"
+  | "Crédito"
+  | "Efectivo+Transferencia"
+  | "Tarjeta+Transferencia";
 export const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Crédito"] as const;
 
 // ✅ Sub-estatus: tu UI compara estos literales
@@ -47,9 +54,10 @@ export type SafetyCheckValue = {
 };
 
 export type SafetyInspection = {
-  [key: string]: SafetyCheckValue;
+  id: string;
+  name: string;
+  value: SafetyCheckValue;
 };
-
 
 // ✅ Items/Payments: tu ticket usa sellingPrice y folio
 export type ServiceItem = {
@@ -94,7 +102,7 @@ export type ServiceRecord = {
   vehicleId?: string;
   vehicle?: any; // si tu Vehicle ya está tipado, cambia any por Vehicle
 
-  safetyInspection?: SafetyInspection;
+  safetyInspection?: SafetyInspection[]; // <-- tu UI lo pasa como array
 
   totalAmount?: number;
   totalCost?: number;
@@ -103,76 +111,49 @@ export type ServiceRecord = {
   [k: string]: any;
 };
 
-// ✅ Tickets: facturar/page.tsx usa totalAmount o totalCost
+// ✅ SaleReceipt.items: pos profit espera itemId,itemName,quantity,total
+export type SaleLineItem = {
+  itemId: string;
+  itemName: string;
+  quantity: number;
+  total: number;
+  unitPrice?: number;
+};
+
 export type SaleReceipt = {
   id: string;
   totalAmount: number;
   totalCost?: number;
-  items: ServiceItem[];
+  items: SaleLineItem[];
   payments?: Payment[];
   [k: string]: any;
 };
 
 export type TicketType = ServiceRecord | SaleReceipt;
 
-// ✅ Cash drawer: tu código usa 'Entrada'/'Salida' en algunos lados
-export type CashDrawerTransactionType = "in" | "out" | "Entrada" | "Salida";
+// ✅ Cash drawer types: tus pantallas usan Entrada/Salida/Venta/Servicio y también hay código con "in"/"out"
+export type CashDrawerTransactionType =
+  | "Entrada"
+  | "Salida"
+  | "Venta"
+  | "Servicio"
+  | "in"
+  | "out";
 
-
-export interface Vehicle {
+// ✅ Cash drawer transaction: rental.service manda userId, así que agréguelo
+export type CashDrawerTransaction = {
   id: string;
-  name: string;
-  ownerName?: string;
-  ownerLicence?: string;
-  ownerAddress?: string;
-  licensePlate: string;
-  make: string;
-  model: string;
-  year: number;
-  ownerPhone?: string;
-  color?: string;
-  vin?: string;
-  notes?: string;
-  isFleetVehicle?: boolean;
-  purchasePrice?: number;
-  dailyRentalCost?: number;
-  gpsCost?: number;
-  insuranceCost?: number;
-  adminCost?: number;
-  currentMileage?: number;
-  assignedDriverId?: string | null;
-  lastServiceDate?: string;
-  fineChecks?: FineCheck[];
-  paperwork?: Paperwork[];
-  engine?: string;
-  chatMetaLink?: string;
-  assignedDriverName?: string;
-}
+  date: string;
+  type: CashDrawerTransactionType;
+  amount: number;
+  note?: string;
+  userId?: string;
+  userName?: string;
+  [k: string]: any;
+};
 
-export interface Driver {
-  id: string;
-  name: string;
-  hasNotaryPower?: boolean;
-  notaryPowerRegistrationDate?: string;
-  notaryPowerExpirationDate?: string;
-  contractDate?: string;
-  assignedVehicleId?: string;
-  isArchived?: boolean;
-  phone?: string;
-  emergencyPhone?: string;
-  address?: string;
-  requiredDepositAmount?: number;
-  depositAmount?: number;
-  documents?: any[];
-  assignedVehicleLicensePlate?: string;
-}
 
-export interface FinancialInfo {
-  hasNotaryPower?: boolean;
-  notaryPowerRegistrationDate?: string;
-  notaryPowerExpirationDate?: string;
-}
-
+// ✅ AuditLog: estás mandando entityType/entityId/userId/userName en logAudit
 export type AuditLogAction =
   | "Crear"
   | "Editar"
@@ -182,7 +163,6 @@ export type AuditLogAction =
   | "Pagar"
   | "Archivar"
   | "Restaurar"
-  // si ya existían en inglés en tu sistema:
   | "CREATE"
   | "EDIT"
   | "DELETE"
@@ -192,24 +172,22 @@ export type AuditLogAction =
   | "ARCHIVE"
   | "RESTORE";
 
-export interface AuditLog {
+export type AuditLog = {
   id: string;
-  user: User;
-  action: AuditLogAction;
-  timestamp: string;
-  details: any;
+  actionType: AuditLogAction;
+  description: string;
+  createdAt: string;
+  entityType?: string;
+  entityId?: string;
+  userId?: string;
   userName?: string;
-  description?: string;
-  actionType?: string;
-  date?: string;
-}
-
+  [k: string]: any;
+};
 
 export type InventoryCategory = {
   id: string;
   name: string;
 };
-
 
 export interface Supplier {
   id: string;
@@ -228,7 +206,7 @@ export interface InventoryItem {
   id: string;
   name: string;
   category: string;
-  supplier: string;
+  supplier: string; // ID del proveedor
   purchasePrice?: number;
   salePrice?: number;
   quantity: number;
@@ -244,7 +222,6 @@ export interface InventoryItem {
   itemName?: string;
   inventoryItemId?: string;
 }
-
 
 
 export interface MonthlyFixedExpense {
@@ -285,18 +262,6 @@ export interface Personnel {
   monthlySalary?: number;
 }
 
-export interface CashDrawerTransaction {
-  id: string;
-  type: CashDrawerTransactionType;
-  amount: number;
-  reason: string;
-  timestamp: string;
-  userName?: string;
-  concept?: string;
-  paymentMethod?: PaymentMethod;
-  relatedType?: string;
-}
-
 export interface OwnerWithdrawal {
   id: string;
   vehicleId: string;
@@ -311,8 +276,11 @@ export interface VehicleExpense {
   vehicleId: string;
   description: string;
   amount: number;
-  date: string;
+  date?: string;
+  vehicleLicensePlate?: string;
+  [k: string]: any;
 }
+
 
 export interface DailyRentalCharge {
   id: string;
@@ -322,18 +290,20 @@ export interface DailyRentalCharge {
   vehicleLicensePlate?: string;
 }
 
-export interface RentalPayment {
+// ✅ RentalPayment: rental.service debe regresar date, así que mantenlo required
+export type RentalPayment = {
   id: string;
+  date: string;
   driverId: string;
   amount: number;
-  date: string;
-  paymentMethod: PaymentMethod;
-  driverName?: string;
-  paymentDate?: string;
+  paymentMethod?: PaymentMethod;
   note?: string;
   vehicleLicensePlate?: string;
   registeredByName?: string;
-}
+  driverName?: string;
+  paymentDate?: string;
+  [k: string]: any;
+};
 
 export interface ManualDebtEntry {
   id: string;
@@ -344,28 +314,76 @@ export interface ManualDebtEntry {
   note?: string;
 }
 
-export interface FineCheck {
+// ✅ Fines: tu UI está creando un Fine sin description -> dale required pero crea con ""
+export type Fine = {
   id: string;
   date: string;
-  hasFines: boolean;
-  fines: Fine[];
-  checkDate?: string;
-}
-
-export interface Fine {
-  id: string;
-  description: string;
+  type: string;
   amount: number;
-  date?: string;
-  type?: string;
-}
+  description: string;
+};
 
-export interface Paperwork {
+// ✅ Paperwork: en flotilla/vehiculos estás guardando {dueDate,name} sin expirationDate.
+// Haz expirationDate opcional para no pelearte con todos los forms.
+export type Paperwork = {
   id: string;
   name: string;
-  expirationDate: string;
   dueDate?: string;
+  expirationDate?: string;
+  [k: string]: any;
+};
+
+// ✅ Driver.documents NO es array; lo usas como map { [docType]: url }
+export interface Driver {
+  id: string;
+  name: string;
+  hasNotaryPower?: boolean;
+  notaryPowerRegistrationDate?: string;
+  notaryPowerExpirationDate?: string;
+  contractDate?: string;
+  assignedVehicleId?: string;
+  isArchived?: boolean;
+  phone?: string;
+  emergencyPhone?: string;
+  address?: string;
+  requiredDepositAmount?: number;
+  depositAmount?: number;
+  documents?: Record<string, string>;
+  assignedVehicleLicensePlate?: string;
+  [k: string]: any;
 }
+
+export interface Vehicle {
+  id: string;
+  name: string;
+  ownerName?: string;
+  ownerLicence?: string;
+  ownerAddress?: string;
+  licensePlate: string;
+  make: string;
+  model: string;
+  year: number;
+  ownerPhone?: string;
+  color?: string;
+  vin?: string;
+  notes?: string;
+  isFleetVehicle?: boolean;
+  purchasePrice?: number;
+  dailyRentalCost?: number;
+  gpsCost?: number;
+  insuranceCost?: number;
+  adminCost?: number;
+  currentMileage?: number;
+  assignedDriverId?: string | null;
+  lastServiceDate?: string;
+  fineChecks?: FineCheck[];
+  paperwork?: Paperwork[];
+  engine?: string;
+  chatMetaLink?: string;
+  assignedDriverName?: string;
+}
+
+
 
 export interface NextServiceInfo {
   date?: string;
@@ -385,19 +403,20 @@ export interface ServiceTypeRecord {
   estimatedHours?: number;
 }
 
-export interface PayableAccount {
+// ✅ PayableAccount: agrega supplierId (purchase.service lo usa así)
+export type PayableAccount = {
   id: string;
   supplierId: string;
-  supplier: Supplier;
+  supplierName?: string;
   amount: number;
   dueDate: string;
   status?: string;
-  supplierName?: string;
   invoiceId?: string;
   invoiceDate?: string;
   totalAmount?: number;
   paidAmount?: number;
-}
+  supplier?: Supplier;
+};
 
 export interface NavigationEntry {
   path?: string;

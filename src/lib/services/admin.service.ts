@@ -37,7 +37,7 @@ export const logAudit = async (
     ...details,
     actionType: actionType,
     description,
-    createdAt: serverTimestamp(),
+    createdAt: new Date().toISOString(),
   } as any;
   try {
     await addDoc(collection(db, 'auditLogs'), newLog as any);
@@ -224,7 +224,7 @@ const updateUserProfile = async (user: Partial<User> & { id: string | number }):
         await updateDoc(userRef, cleanObjectForFirestore(userData));
         const updatedDoc = await getDoc(userRef);
         if (!updatedDoc.exists()) throw new Error("User document disappeared after update.");
-        return { id, ...updatedDoc.data() } as User;
+        return { id: String(id), ...updatedDoc.data() } as User;
     } catch (error) {
         console.error(`Error updating profile for user ${id}:`, error instanceof Error ? error.message : String(error));
         throw new Error(`Failed to update profile. ${error instanceof Error ? error.message : ''}`);

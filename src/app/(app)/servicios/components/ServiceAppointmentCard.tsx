@@ -2,8 +2,8 @@
 "use client";
 
 import React, { useMemo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import type { ServiceRecord, Vehicle, User, Payment, ServiceSubStatus, PaymentMethod } from '@/types';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import type { ServiceRecord, Vehicle, Technician, User, Payment, ServiceSubStatus, PaymentMethod } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { serviceService } from '@/lib/services';
@@ -34,13 +34,14 @@ const noop = () => {};
 
 const IVA_RATE = 0.16;
 
-const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
+const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   "Efectivo": Wallet,
   "Tarjeta": CreditCard,
   "Tarjeta MSI": CreditCard,
   "Transferencia": Landmark,
   "Efectivo+Transferencia": Wallet,
   "Tarjeta+Transferencia": CreditCard,
+  "Crédito": CreditCard,
 };
 
 export function ServiceAppointmentCard({
@@ -83,7 +84,7 @@ export function ServiceAppointmentCard({
 
   const getServiceDescriptionText = (service: ServiceRecord) => {
     if (service.serviceItems && service.serviceItems.length > 0) {
-      return service.serviceItems.map(item => item.itemName).join(', ');
+      return service.serviceItems.map(item => item.name).join(', ');
     }
     return service.description || 'Servicio sin descripción';
   };
@@ -146,7 +147,7 @@ export function ServiceAppointmentCard({
             </div>
             {primaryPayment && (
               <Badge variant={getPaymentMethodVariant(primaryPayment.method)} className="mt-1">
-                 {React.createElement(paymentMethodIcons[primaryPayment.method] || Wallet, { className: "h-3 w-3 mr-1" })}
+                 {React.createElement(paymentMethodIcons[primaryPayment.method as keyof typeof paymentMethodIcons] ?? Wallet, { className: "h-3 w-3 mr-1" })}
                 {primaryPayment.method} {service.payments && service.payments.length > 1 ? `(+${service.payments.length - 1})` : ''}
               </Badge>
             )}

@@ -36,13 +36,14 @@ const paymentMethodOptions: { value: PaymentMethod | 'all', label: string }[] = 
     { value: 'Tarjeta+Transferencia', label: 'Tarjeta+Transferencia' },
 ];
 
-const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
+const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   "Efectivo": Wallet,
   "Tarjeta": CreditCard,
   "Tarjeta MSI": CreditCard,
   "Transferencia": Landmark,
   "Efectivo+Transferencia": Wallet,
   "Tarjeta+Transferencia": CreditCard,
+  "Crédito": CreditCard,
 };
 
 interface VentasPosContentProps {
@@ -145,7 +146,7 @@ export function VentasPosContent({
                 {Array.from(summaryData.paymentsSummary.entries()).length > 0 ? (
                   <div className="flex flex-wrap gap-x-4 gap-y-2">
                     {Array.from(summaryData.paymentsSummary.entries()).map(([method, data]) => {
-                      const Icon = paymentMethodIcons[method] || Wallet;
+                      const Icon = paymentMethodIcons[method] ?? Wallet;
                       return (
                         <div key={method} className="flex items-center gap-2 text-sm">
                            <Icon className="h-4 w-4 text-muted-foreground" />
@@ -184,14 +185,14 @@ export function VentasPosContent({
                   const isCancelled = sale.status === 'Cancelado';
                   const profit = calculateSaleProfit(sale, allInventory);
                   const itemsDescription = sale.items
-                      .filter((item: any) => item.inventoryItemId !== 'COMMISSION_FEE' && item.itemId !== 'COMMISSION_FEE')
+                      ?.filter((item: any) => item.inventoryItemId !== 'COMMISSION_FEE' && item.itemId !== 'COMMISSION_FEE')
                       .map(item => `${item.quantity}x ${item.itemName}`)
                       .join(', ');
                   const paymentBadges = (isCancelled
                       ? [<Badge key="cancelled" variant="destructive" className="font-bold">CANCELADO</Badge>]
                       : (sale.payments && sale.payments.length > 0)
                           ? sale.payments.map((p, index) => {
-                              const Icon = paymentMethodIcons[p.method] || Wallet;
+                              const Icon = paymentMethodIcons[p.method as PaymentMethod] ?? Wallet;
                               return (
                                 <Badge key={index} variant={getPaymentMethodVariant(p.method)} className="text-xs">
                                   <Icon className="h-3 w-3 mr-1"/>{p.method} <span className="font-normal ml-1 opacity-80">{formatCurrency(p.amount)}</span>

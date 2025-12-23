@@ -16,7 +16,7 @@ export interface ApiResponse {
   success?: boolean;
 }
 
-const onlyDigits = (s?: string) => (s ?? "").replace(/\D/g, "");
+const onlyDigits = (s?: string | number) => String(s ?? "").replace(/\D/g, "");
 
 // Carga config del taller (id fijo: "main")
 const getWorkshopInfo = async (): Promise<WorkshopConfig | null> => {
