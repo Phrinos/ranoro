@@ -5,7 +5,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { z } from 'genkit';
 
 const SupplyInputSchema = z.object({
   supplyName: z.string().describe("The name of the supply/part used."),

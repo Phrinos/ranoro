@@ -7,8 +7,9 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { z } from 'genkit';
 import { serviceService } from '@/lib/services';
+import type { ServiceRecord } from '@/types';
 
 // --- Main Input Schemas (from UI) ---
 const InventoryItemInputSchema = z.object({
@@ -96,7 +97,7 @@ const analyzeInventoryFlow = ai.defineFlow(
   },
   async (input) => {
     // Step 1: Fetch service records from Firestore on the server.
-    const serviceRecords = await serviceService.onServicesUpdatePromise();
+    const serviceRecords = (await serviceService.onServicesUpdatePromise()) as ServiceRecord[];
 
     // Step 2: Calculate historical usage on the server.
     const usageMap: Record<string, { totalUsed: number; dates: Date[] }> = {};

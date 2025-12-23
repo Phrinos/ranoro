@@ -1,11 +1,8 @@
 
 'use server';
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
-import type { SaleReceipt, ServiceRecord } from '@/types';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebaseClient.js';
-// import Facturapi from 'facturapi';
+import { z } from 'genkit';
+import { getAdminDb } from '@/lib/firebaseAdmin';
 
 // --- Zod Schemas ---
 const billingFormSchema = z.object({
@@ -36,10 +33,10 @@ const CreateInvoiceOutputSchema = z.object({
 
 // --- Utility to get Factura.com API credentials ---
 const getFacturaComInstance = async () => {
-  if (!db) return null;
-  const configSnap = await getDoc(doc(db, 'workshopConfig', 'main'));
-  if (!configSnap.exists()) return null;
-  
+  const db = getAdminDb();
+  const configSnap = await db.collection('workshopConfig').doc('main').get();
+  if (!configSnap.exists) return null;
+
   const workshopConfig = configSnap.data() as any;
   
   const apiKey = (workshopConfig.facturaComApiKey || '').trim();

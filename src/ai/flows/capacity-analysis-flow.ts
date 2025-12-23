@@ -1,10 +1,11 @@
+
 'use server';
 /**
  * @fileOverview AI flow to analyze the daily capacity of the workshop.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { z } from 'genkit';
 import { differenceInMinutes, parseISO, isValid } from 'date-fns';
 
 // -------- Schemas --------
