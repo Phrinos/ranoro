@@ -23,7 +23,7 @@ import { FlotillaVehiculosTab } from './vehiculos/components/FlotillaVehiculosTa
 import { FlotillaConductoresTab } from './conductores/components/FlotillaConductoresTab';
 import { FlotillaBalanceTab } from './balance/components/FlotillaBalanceTab';
 import { FlotillaCajaTab } from './caja/components/FlotillaCajaTab';
-import { InventorySearchDialog } from '@/components/shared/InventorySearchDialog';
+import { VehicleSelectionDialog } from '@/app/(app)/servicios/components/VehicleSelectionDialog';
 import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
 
 
@@ -44,12 +44,6 @@ function PageInner() {
     handleShowTicket,
   } = useFlotillaData();
   
-  const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
-  useEffect(() => {
-    const unsub = inventoryService.onItemsUpdate(setAllInventory);
-    return () => unsub();
-  }, []);
-
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'balance');
 
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -116,10 +110,12 @@ function PageInner() {
     setIsDriverDialogOpen(false);
   }
 
-  const handleAddVehicleToFleet = async (item: InventoryItem) => {
+  const handleAddVehicleToFleet = async (vehicleId: string) => {
     try {
-      await inventoryService.saveVehicle({ isFleetVehicle: true }, item.id);
-      toast({ title: 'Vehículo Añadido', description: `${item.name} ahora es parte de la flotilla.` });
+      const vehicle = vehicles.find(v => v.id === vehicleId);
+      if (!vehicle) throw new Error('Vehicle not found');
+      await inventoryService.saveVehicle({ isFleetVehicle: true }, vehicle.id);
+      toast({ title: 'Vehículo Añadido', description: `${vehicle.make} ${vehicle.model} ahora es parte de la flotilla.` });
       setIsAddVehicleDialogOpen(false);
     } catch (error) {
       toast({ title: 'Error', description: 'No se pudo añadir el vehículo a la flotilla.', variant: 'destructive'});
@@ -207,13 +203,12 @@ function PageInner() {
         driver={editingDriver}
       />
       
-      <InventorySearchDialog
+      <VehicleSelectionDialog
         open={isAddVehicleDialogOpen}
         onOpenChange={setIsAddVehicleDialogOpen}
-        inventoryItems={allInventory.filter(i => i.category === 'Vehiculos')}
-        onItemSelected={(item) => handleAddVehicleToFleet(item)}
-        onNewItemRequest={handleCreateAndAddVehicle}
-        includeServices={false}
+        vehicles={vehicles.filter(v => !v.isFleetVehicle)}
+        onSelectVehicle={handleAddVehicleToFleet}
+        onNewVehicle={handleCreateAndAddVehicle}
       />
 
       <VehicleDialog 
