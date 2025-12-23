@@ -2,7 +2,8 @@
 "use client";
 
 import React from 'react';
-import { useFormContext, type FieldErrors, type SubmitErrorHandler, FormField, FormLabel, FormControl } from 'react-hook-form';
+import { useFormContext, type FieldErrors, type SubmitErrorHandler } from 'react-hook-form';
+import { FormField, FormLabel, FormControl, FormItem } from '@/components/ui/form';
 import type {
   ServiceRecord,
   Vehicle,
