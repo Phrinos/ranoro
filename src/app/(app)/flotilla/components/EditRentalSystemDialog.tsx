@@ -42,21 +42,21 @@ export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: 
   const form = useForm<RentalFormInput, any, RentalSystemFormValues>({
     resolver: zodResolver(rentalSystemSchema),
     defaultValues: {
-      dailyRentalCost: undefined,
-      gpsCost: undefined,
-      insuranceCost: undefined,
-      adminCost: undefined,
-    },
+      dailyRentalCost: 0,
+      gpsCost: 0,
+      insuranceCost: 0,
+      adminCost: 0,
+    } as any,
   });
 
   useEffect(() => {
     if (!open) return;
     form.reset({
-      dailyRentalCost: vehicle.dailyRentalCost || undefined,
-      gpsCost: vehicle.gpsCost || undefined,
-      insuranceCost: vehicle.insuranceCost || undefined,
-      adminCost: vehicle.adminCost || undefined,
-    });
+      dailyRentalCost: vehicle.dailyRentalCost || 0,
+      gpsCost: vehicle.gpsCost || 0,
+      insuranceCost: vehicle.insuranceCost || 0,
+      adminCost: vehicle.adminCost || 0,
+    } as any);
   }, [open, vehicle, form]);
 
   const handleFormSubmit = async (values: RentalSystemFormValues) => {
@@ -86,7 +86,7 @@ export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: 
                 <FormItem>
                   <FormLabel>Renta Diaria ($)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} className="bg-white" value={field.value ?? ""} />
+                    <Input type="number" step="0.01" {...field} className="bg-white" value={(field.value as any) ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -99,7 +99,7 @@ export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: 
                 <FormItem>
                   <FormLabel>GPS Mensual ($)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} className="bg-white" value={field.value ?? ""} />
+                    <Input type="number" step="0.01" {...field} className="bg-white" value={(field.value as any) ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -112,7 +112,7 @@ export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: 
                 <FormItem>
                   <FormLabel>Seguro Mensual ($)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} className="bg-white" value={field.value ?? ""} />
+                    <Input type="number" step="0.01" {...field} className="bg-white" value={(field.value as any) ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -125,7 +125,7 @@ export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: 
                 <FormItem>
                   <FormLabel>Administración Mensual ($)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} className="bg-white" value={field.value ?? ""} />
+                    <Input type="number" step="0.01" {...field} className="bg-white" value={(field.value as any) ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
