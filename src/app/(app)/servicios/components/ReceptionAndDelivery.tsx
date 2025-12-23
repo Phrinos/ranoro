@@ -1,4 +1,5 @@
 
+// src/app/(app)/servicios/components/ReceptionAndDelivery.tsx
 "use client";
 
 import type { Vehicle, ServiceRecord, SafetyInspection, SafetyCheckValue } from '@/types';
@@ -504,10 +505,24 @@ export const ServiceSheetContent = React.forwardRef<
           />
         )},
       ];
-      if (service.safetyInspection && Object.values(service.safetyInspection).some(v => v && (v as any).status && (v as any).status !== 'na')) {
-        available.push({ value: 'checklist', label: 'Revisión de Seguridad', content: <SafetyChecklistDisplay inspection={service.safetyInspection as SafetyInspection} /> });
+      if (service.safetyInspection && Object.values(service.safetyInspection).some((v: any) => v && (v as any).status && (v as any).status !== 'na')) {
+        available.push({
+          value: "checklist",
+          label: "Revisión de Seguridad",
+          content: (
+            <SafetyChecklistDisplay
+              inspection={
+                Array.isArray(service.safetyInspection)
+                  ? service.safetyInspection
+                  : service.safetyInspection
+                    ? [service.safetyInspection]
+                    : []
+              }
+            />
+          ),
+        });
       }
-      if (service.photoReports && service.photoReports.length > 0 && service.photoReports.some((r: { photos: string | any[]; }) => r.photos.length > 0)) {
+      if (service.photoReports && service.photoReports.length > 0 && service.photoReports.some((r: { photos?: any[] }) => (r.photos?.length ?? 0) > 0)) {
         available.push({ value: 'photoreport', label: 'Reporte Fotográfico', content: <PhotoReportContent photoReports={service.photoReports} /> });
       }
       if (service.originalQuoteItems && service.originalQuoteItems.length > 0) {
@@ -661,7 +676,7 @@ function ServiceOrderTab(
 }
 
 function ReceptionDetails({ service }: { service: ServiceRecord }) {
-  const fuelLevelMap: Record<string, number> = {
+  const fuelMap: Record<string, number> = {
     'Vacío': 0, '1/8': 12.5, '1/4': 25, '3/8': 37.5, '1/2': 50, '5/8': 62.5, '3/4': 75, '7/8': 87.5, 'Lleno': 100
   };
   const fuelKey = String(service.fuelLevel || "");
@@ -741,73 +756,103 @@ type SafetyInspectionRecord = SafetyInspection & {
   technicianSignature?: string;
 };
 
-function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }) {
-  const inspectionRecord = (inspection ?? {}) as SafetyInspectionRecord;
+function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection[] }) {
+  const inspectionRecord = (inspection?.[0] ?? {}) as SafetyInspectionRecord;
 
   const inspectionGroups = [
-    { title: "LUCES", items: [
-      { name: "luces_altas_bajas_niebla", label: "ALTAS, BAJAS Y NIEBLA" },
-      { name: "luces_cuartos", label: "CUARTOS" },
-      { name: "luces_direccionales", label: "DIRECCIONALES" },
-      { name: "luces_frenos_reversa", label: "FRENOS Y REVERSA" },
-      { name: "luces_interiores", label: "INTERIORES" },
-    ]},
-    { title: "NIVELES Y FUGAS", items: [
-      { name: "fugas_refrigerante", label: "REFRIGERANTE" },
-      { name: "fugas_limpiaparabrisas", label: "LIMPIAPARABRISAS" },
-      { name: "fugas_frenos_embrague", label: "FRENOS Y EMBRAGUE" },
-      { name: "fugas_transmision", label: "TRANSMISIÓN" },
-      { name: "fugas_direccion_hidraulica", label: "DIRECCIÓN HIDRÁULICA" },
-    ]},
-    { title: "CARROCERÍA", items: [
-      { name: "carroceria_cristales_espejos", label: "CRISTALES/ESPEJOS" },
-      { name: "carroceria_puertas_cofre", label: "PUERTAS/COFRE/CAJUELA" },
-      { name: "carroceria_asientos_tablero", label: "ASIENTOS/TABLERO" },
-      { name: "carroceria_plumas", label: "PLUMAS LIMPIAPARABRISAS" },
-    ]},
-    { title: "SUSPENSIÓN", items: [
-      { name: "suspension_rotulas", label: "RÓTULAS" },
-      { name: "suspension_amortiguadores", label: "AMORTIGUADORES" },
-      { name: "suspension_caja_direccion", label: "CAJA DE DIRECCIÓN" },
-      { name: "suspension_terminales", label: "TERMINALES" },
-    ]},
-    { title: "LLANTAS", items: [
-      { name: "llantas_delanteras_traseras", label: "DELANTERAS/TRASERAS" },
-      { name: "llantas_refaccion", label: "REFACCIÓN" },
-    ]},
-    { title: "FRENOS", items: [
-      { name: "frenos_discos_delanteros", label: "FRENOS DELANTEROS" },
-      { name: "frenos_discos_traseros", label: "FRENOS TRASEROS" },
-    ]},
-    { title: "OTROS", items: [
-      { name: "otros_tuberia_escape", label: "SISTEMA DE ESCAPE" },
-      { name: "otros_soportes_motor", label: "SOPORTES DE MOTOR" },
-      { name: "otros_claxon", label: "CLAXON" },
-      { name: "otros_inspeccion_sdb", label: "INSPECCIÓN SDB" },
-    ]},
+    {
+      title: "LUCES",
+      items: [
+        { name: "luces_altas_bajas_niebla", label: "ALTAS, BAJAS Y NIEBLA" },
+        { name: "luces_cuartos", label: "CUARTOS" },
+        { name: "luces_direccionales", label: "DIRECCIONALES" },
+        { name: "luces_frenos_reversa", label: "FRENOS Y REVERSA" },
+        { name: "luces_interiores", label: "INTERIORES" },
+      ],
+    },
+    {
+      title: "NIVELES Y FUGAS",
+      items: [
+        { name: "fugas_refrigerante", label: "REFRIGERANTE" },
+        { name: "fugas_limpiaparabrisas", label: "LIMPIAPARABRISAS" },
+        { name: "fugas_frenos_embrague", label: "FRENOS Y EMBRAGUE" },
+        { name: "fugas_transmision", label: "TRANSMISIÓN" },
+        { name: "fugas_direccion_hidraulica", label: "DIRECCIÓN HIDRÁULICA" },
+      ],
+    },
+    {
+      title: "CARROCERÍA",
+      items: [
+        { name: "carroceria_cristales_espejos", label: "CRISTALES/ESPEJOS" },
+        { name: "carroceria_puertas_cofre", label: "PUERTAS/COFRE/CAJUELA" },
+        { name: "carroceria_asientos_tablero", label: "ASIENTOS/TABLERO" },
+        { name: "carroceria_plumas", label: "PLUMAS LIMPIAPARABRISAS" },
+      ],
+    },
+    {
+      title: "SUSPENSIÓN",
+      items: [
+        { name: "suspension_rotulas", label: "RÓTULAS" },
+        { name: "suspension_amortiguadores", label: "AMORTIGUADORES" },
+        { name: "suspension_caja_direccion", label: "CAJA DE DIRECCIÓN" },
+        { name: "suspension_terminales", label: "TERMINALES" },
+      ],
+    },
+    {
+      title: "LLANTAS",
+      items: [
+        { name: "llantas_delanteras_traseras", label: "DELANTERAS/TRASERAS" },
+        { name: "llantas_refaccion", label: "REFACCIÓN" },
+      ],
+    },
+    {
+      title: "FRENOS",
+      items: [
+        { name: "frenos_discos_delanteros", label: "FRENOS DELANTEROS" },
+        { name: "frenos_discos_traseros", label: "FRENOS TRASEROS" },
+      ],
+    },
+    {
+      title: "OTROS",
+      items: [
+        { name: "otros_tuberia_escape", label: "SISTEMA DE ESCAPE" },
+        { name: "otros_soportes_motor", label: "SOPORTES DE MOTOR" },
+        { name: "otros_claxon", label: "CLAXON" },
+        { name: "otros_inspeccion_sdb", label: "INSPECCIÓN SDB" },
+      ],
+    },
   ];
 
-  const StatusIndicator = ({ status }: { status?: SafetyCheckValue['status'] }) => {
+  const StatusIndicator = ({ status }: { status?: SafetyCheckValue["status"] }) => {
     const statusInfo = {
       ok: { label: "Bien", color: "bg-green-500", textColor: "text-green-700" },
       atencion: { label: "Atención", color: "bg-yellow-400", textColor: "text-yellow-700" },
       inmediata: { label: "Inmediata", color: "bg-red-500", textColor: "text-red-700" },
       na: { label: "N/A", color: "bg-gray-300", textColor: "text-gray-500" },
-    } as const;
-    const currentStatus = statusInfo[status || 'na'];
-    return <div className="flex items-center gap-2"><div className={`h-3 w-3 rounded-full ${currentStatus.color}`} /><span className={cn("text-xs font-semibold", currentStatus.textColor)}>{currentStatus.label}</span></div>;
+    };
+    const currentStatus = statusInfo[status || "na"];
+    return (
+      <div className="flex items-center gap-2">
+        <div className={`h-3 w-3 rounded-full ${currentStatus.color}`} />
+        <span className={cn("text-xs font-semibold", currentStatus.textColor)}>{currentStatus.label}</span>
+      </div>
+    );
   };
 
   return (
     <Card>
-      <CardHeader><CardTitle>Revisión de Puntos de Seguridad</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>Revisión de Puntos de Seguridad</CardTitle>
+      </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-          {inspectionGroups.map(group => (
+          {inspectionGroups.map((group) => (
             <div key={group.title}>
-              <h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">{group.title}</h4>
+              <h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">
+                {group.title}
+              </h4>
               <div className="space-y-1">
-                {group.items.map(item => {
+                {group.items.map((item) => {
                   const keyName = item.name as keyof Omit<SafetyInspection, "inspectionNotes" | "technicianSignature">;
                   const checkItem = (inspectionRecord as any)[keyName];
                   return (
@@ -816,12 +861,16 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
                         <span className="pr-4">{item.label}</span>
                         <StatusIndicator status={checkItem?.status} />
                       </div>
-                      {checkItem?.notes && <p className="text-xs text-muted-foreground mt-1 pl-2 border-l-2 border-slate-200">Nota: {checkItem.notes}</p>}
+                      {checkItem?.notes && (
+                        <p className="text-xs text-muted-foreground mt-1 pl-2 border-l-2 border-slate-200">
+                          Nota: {checkItem.notes}
+                        </p>
+                      )}
                       {checkItem?.photos && checkItem.photos.length > 0 && (
                         <div className="mt-2 flex gap-2 flex-wrap">
-                          {checkItem.photos.map((p:string, i:number) => (
+                          {checkItem.photos.map((p: string, i: number) => (
                             <div key={i} className="relative w-16 h-16 rounded border bg-slate-100">
-                              <Image src={p} alt={`Foto ${i}`} fill style={{objectFit:"cover"}}/>
+                              <Image src={p} alt={`Foto ${i}`} fill style={{ objectFit: "cover" }} />
                             </div>
                           ))}
                         </div>
@@ -833,19 +882,23 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
             </div>
           ))}
         </div>
-
         <div>
           <h4 className="font-semibold">Observaciones Generales</h4>
           <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
-            {String(inspectionRecord.inspectionNotes ?? 'Sin observaciones.')}
+            {String(inspectionRecord.inspectionNotes ?? "Sin observaciones.")}
           </p>
         </div>
-
         <div>
           <h4 className="font-semibold">Firma del Técnico</h4>
           <div className="mt-1 p-2 h-24 border rounded-md bg-muted/50 flex items-center justify-center">
             {inspectionRecord.technicianSignature ? (
-              <Image src={normalizeDataUrl(String(inspectionRecord.technicianSignature))} alt="Firma Técnico" width={200} height={80} style={{objectFit: "contain"}}/>
+              <Image
+                src={normalizeDataUrl(String(inspectionRecord.technicianSignature))}
+                alt="Firma Técnico"
+                width={200}
+                height={80}
+                style={{ objectFit: "contain" }}
+              />
             ) : (
               <span className="text-xs text-muted-foreground">Sin firma</span>
             )}
@@ -859,7 +912,9 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
 function PhotoReportContent({ photoReports }: { photoReports: any[] }) {
   return (
     <Card>
-      <CardHeader><CardTitle>Reporte Fotográfico</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>Reporte Fotográfico</CardTitle>
+      </CardHeader>
       <CardContent className="space-y-4">
         {photoReports.map((report) => (
           <div key={report.id}>
@@ -882,7 +937,9 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
   const total = items.reduce((acc, it) => acc + (Number(it.price) || 0), 0);
   return (
     <Card>
-      <CardHeader><CardTitle>Conceptos de la Cotización Original</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle>Conceptos de la Cotización Original</CardTitle>
+      </CardHeader>
       <CardContent>
         <div className="space-y-2">
           {items.map((item, index) => (
@@ -892,7 +949,7 @@ function OriginalQuoteContent({ items }: { items: any[] }) {
             </div>
           ))}
         </div>
-        <Separator className="my-4"/>
+        <Separator className="my-4" />
         <div className="flex justify-between items-center font-bold text-lg">
           <span>Total Original:</span>
           <span className="text-primary">{formatCurrency(total)}</span>

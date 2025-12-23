@@ -22,7 +22,7 @@ export type AppRole = {
   permissions: string[];
 };
 
-// ✅ Métodos de pago: incluye Crédito + combos
+// ✅ Payment methods: incluye Crédito + combos
 export type PaymentMethod =
   | "Efectivo"
   | "Tarjeta"
@@ -127,7 +127,7 @@ export type SaleReceipt = {
   totalAmount: number;
   totalCost?: number;
   items: SaleLineItem[];
-  payments?: Payment[];
+  payments?: any[];
   [k: string]: any;
 };
 
@@ -149,8 +149,10 @@ export type CashDrawerTransaction = {
   type: CashDrawerTransactionType;
   amount: number;
   note?: string;
+
   userId?: string;
   userName?: string;
+
   [k: string]: any;
 };
 
@@ -179,10 +181,12 @@ export type AuditLog = {
   actionType: AuditLogAction;
   description: string;
   createdAt: string;
+
   entityType?: string;
   entityId?: string;
   userId?: string;
   userName?: string;
+
   [k: string]: any;
 };
 
@@ -476,8 +480,15 @@ export interface Infraction {
 }
 
 export interface SimplifiedSale {
+  id: string;
   totalAmount: number;
   items: { itemId: string; itemName: string; quantity: number; total: number }[];
+  [k: string]: any;
 }
 
-export interface LegacySale {}
+export interface LegacySale {
+    id: string;
+    totalAmount: number;
+    items: { itemId: string; itemName: string; quantity: number; total: number }[];
+    [k: string]: any;
+}

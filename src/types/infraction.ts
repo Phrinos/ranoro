@@ -1,3 +1,4 @@
+
 import type { PaymentMethod } from "./index";
 
 export type Payment = {

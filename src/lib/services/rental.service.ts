@@ -1,3 +1,4 @@
+
 // src/lib/services/rental.service.ts
 
 import {
@@ -16,6 +17,7 @@ import {
   limit,
   Timestamp,
   runTransaction,
+  serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { RentalPayment, DailyRentalCharge, Driver, Vehicle, OwnerWithdrawal, VehicleExpense, PaymentMethod } from "@/types";
@@ -72,11 +74,14 @@ const addRentalPayment = async (
   vehicle: Vehicle,
   amount: number,
   note?: string,
-  paymentDate: Date = new Date(),
+  paymentDateParam?: Date | string,
   paymentMethod?: PaymentMethod,
   paymentId?: string,
 ): Promise<RentalPayment> => {
     if (!db) throw new Error("Database not initialized.");
+
+    const paymentDate = paymentDateParam ? (paymentDateParam instanceof Date ? paymentDateParam : new Date(paymentDateParam)) : new Date();
+    const paymentDateIso = paymentDate.toISOString();
 
     const dailyRate = vehicle.dailyRentalCost || 0;
     
@@ -87,13 +92,13 @@ const addRentalPayment = async (
         driverId: driver.id,
         driverName: driver.name,
         vehicleLicensePlate: vehicle.licensePlate,
-        paymentDate: paymentDate.toISOString(),
+        paymentDate: paymentDateIso,
         amount,
         daysCovered: dailyRate > 0 ? amount / dailyRate : 0,
         note: note || `Abono de Renta`,
         paymentMethod: paymentMethod,
         registeredByName: currentUser?.name || 'Sistema',
-        date: paymentDate.toISOString(),
+        date: paymentDateIso,
     };
 
     let savedPaymentId: string;
@@ -153,10 +158,19 @@ const onVehicleExpensesUpdate = (callback: (expenses: VehicleExpense[]) => void)
 
 const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'vehicleLicensePlate'>): Promise<VehicleExpense> => {
     if (!db) throw new Error("Database not initialized.");
-    const vehicle = await inventoryService.getVehicleById(data.vehicleId as string);
+    if (!data.vehicleId) throw new Error("Vehicle ID is missing");
+    const vehicle = await inventoryService.getVehicleById(data.vehicleId);
     if (!vehicle) throw new Error("Vehicle not found");
 
-    const newExpense = { ...data, date: new Date().toISOString(), vehicleLicensePlate: vehicle.licensePlate };
+    const newExpense: Omit<VehicleExpense, 'id'> = {
+      ...data,
+      date: new Date().toISOString(),
+      vehicleLicensePlate: vehicle.licensePlate,
+      vehicleId: vehicle.id,
+      description: data.description ?? "",
+      amount: Number(data.amount ?? 0),
+    };
+    
     const docRef = await addDoc(collection(db, 'vehicleExpenses'), cleanObjectForFirestore(newExpense));
     return { id: docRef.id, ...newExpense };
 };

@@ -1,3 +1,4 @@
+
 // src/app/(app)/finanzas/components/movimientos-content.tsx
 
 "use client";
