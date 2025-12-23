@@ -1,8 +1,8 @@
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
-import React, { useEffect } from 'react';
-import { useFormContext, type FieldErrors, type SubmitErrorHandler } from 'react-hook-form';
+import React from 'react';
+import { useFormContext, type FieldErrors, type SubmitErrorHandler, FormField, FormLabel, FormControl } from 'react-hook-form';
 import type {
   ServiceRecord,
   Vehicle,
@@ -14,7 +14,7 @@ import type {
   NextServiceInfo
 } from '@/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ServiceItemsList } from './ServiceItemsList';
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { ServiceDetailsCard } from './ServiceDetailsCard';
@@ -27,11 +27,10 @@ import { SignatureDialog } from './signature-dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { ServiceFormValues } from '@/schemas/service-form';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
-import { FormField, FormLabel, FormControl, FormItem } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { BrainCircuit, Loader2 } from 'lucide-react';
+import { BrainCircuit, Loader2, Signature } from 'lucide-react';
 import Image from 'next/image';
 
 const ReceptionContent = ({ part, isReadOnly, isEnhancingText, handleEnhanceText, onOpenSignature }: any) => {
@@ -143,7 +142,7 @@ export function ServiceForm({
     return (serviceItems || []).reduce((sum, item: any) => sum + (Number(item?.sellingPrice) || 0), 0);
   }, [serviceItems]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     setValue("totalCost", totalCost, { shouldDirty: true, shouldValidate: false });
   }, [totalCost, setValue]);
 
@@ -219,7 +218,7 @@ export function ServiceForm({
             </TabsContent>
 
             <TabsContent value="reception-delivery" className="mt-4">
-              <ReceptionContent
+              <ReceptionContent 
                 part="reception"
                 isReadOnly={isReadOnly}
                 isEnhancingText={null}
