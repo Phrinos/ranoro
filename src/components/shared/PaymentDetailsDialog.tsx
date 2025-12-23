@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/PaymentDetailsDialog.tsx
 "use client";
 
@@ -7,13 +6,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { PaymentSection } from "./PaymentSection";
 import type { ServiceRecord, SaleReceipt } from "@/types";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { paymentDetailsSchema, PaymentDetailsFormValues } from "@/schemas/payment-details-form-schema";
 import { useToast } from "@/hooks/use-toast";
 import { NextServiceInfoCard } from '@/app/(app)/servicios/components/NextServiceInfoCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { parseISO } from 'date-fns';
+import { z } from 'zod';
 
 interface PaymentDetailsDialogProps {
   open: boolean;
@@ -32,6 +32,8 @@ const toNumber = (v: any): number =>
       : 0;
 
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+
+type FormInput = z.input<typeof paymentDetailsSchema>;
 
 export function PaymentDetailsDialog({
   open,
@@ -53,8 +55,9 @@ export function PaymentDetailsDialog({
     return toNumber(svc.totalCost ?? 0);
   }, [record, recordType]);
 
-  const methods = useForm<PaymentDetailsFormValues>({
-    resolver: zodResolver(paymentDetailsSchema),
+  const resolver = zodResolver(paymentDetailsSchema) as unknown as Resolver<PaymentDetailsFormValues>;
+  const methods = useForm<FormInput, any, PaymentDetailsFormValues>({
+    resolver,
     defaultValues: {
       payments: [],
       nextServiceInfo: { date: null, mileage: null },

@@ -1,8 +1,8 @@
 // src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
-import { useForm, FormProvider, useFieldArray, type Resolver, useWatch } from "react-hook-form";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { useForm, FormProvider, useFieldArray, type Resolver, useWatch, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
@@ -20,7 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, PackagePlus, DollarSign, PlusCircle, Trash2, CalendarIcon, Minus, Plus } from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
 import { formatCurrency, cn } from "@/lib/utils";
-import { InventoryItemDialog } from "./inventory-item-dialog";
+import { InventoryItemDialog } from "@/app/(app)/inventario/components/inventory-item-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NewCalendar } from "@/components/ui/calendar";
@@ -34,7 +34,7 @@ const purchaseItemSchema = z.object({
   itemName: z.string(),
   quantity: z.coerce.number().min(0.01, "La cantidad debe ser mayor a 0."),
   purchasePrice: z.coerce.number().min(0, "El costo debe ser un número positivo."),
-  totalPrice: z.coerce.number().optional(), // Añadido para consistencia
+  totalPrice: z.coerce.number().optional(),
 });
 
 const purchaseFormSchema = z
@@ -54,7 +54,8 @@ const purchaseFormSchema = z
     path: ["dueDate"],
   });
 
-export type PurchaseFormValues = z.infer<typeof purchaseFormSchema>;
+type FormInput = z.input<typeof purchaseFormSchema>;
+export type PurchaseFormValues = z.output<typeof purchaseFormSchema>;
 
 interface RegisterPurchaseDialogProps {
   open: boolean;
@@ -75,8 +76,9 @@ export function RegisterPurchaseDialog({
   onSave,
   onInventoryItemCreated,
 }: RegisterPurchaseDialogProps) {
-  const form = useForm<PurchaseFormValues>({
-    resolver: zodResolver(purchaseFormSchema),
+  const resolver = zodResolver(purchaseFormSchema) as unknown as Resolver<PurchaseFormValues>;
+  const form = useForm<FormInput, any, PurchaseFormValues>({
+    resolver,
     defaultValues: {
       supplierId: "",
       items: [],
@@ -87,7 +89,7 @@ export function RegisterPurchaseDialog({
   });
 
   const { control, handleSubmit, watch, setValue, getValues } = form;
-  const { fields, append, remove } = useFieldArray({ control, name: "items" as const });
+  const { fields, append, remove } = useFieldArray({ control: control as any, name: "items" });
   const paymentMethod = watch("paymentMethod");
   const itemsWatch = useWatch({ control, name: "items" });
 
@@ -96,7 +98,7 @@ export function RegisterPurchaseDialog({
   const [newItemSearchTerm, setNewItemSearchTerm] = useState("");
 
   useEffect(() => {
-    const total = (itemsWatch ?? []).reduce((sum, i) => {
+    const total = (itemsWatch ?? []).reduce((sum: number, i: any) => {
       const qty = Number(i?.quantity) || 0;
       const unit = Number(i?.purchasePrice) || 0;
       return sum + qty * unit;
@@ -158,7 +160,7 @@ export function RegisterPurchaseDialog({
                 <div className="max-h-[calc(80vh-150px)] space-y-6 overflow-y-auto px-6 py-4 bg-muted/50">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField
-                      control={control}
+                      control={control as any}
                       name="supplierId"
                       render={({ field }) => (
                         <FormItem>
@@ -184,7 +186,7 @@ export function RegisterPurchaseDialog({
                       )}
                     />
                     <FormField
-                      control={control}
+                      control={control as any}
                       name="invoiceId"
                       render={({ field }) => (
                         <FormItem>
@@ -219,9 +221,9 @@ export function RegisterPurchaseDialog({
                             <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
                               <span
                                 className="col-span-12 sm:col-span-5 truncate text-sm font-medium"
-                                title={(field as any).itemName}
+                                title={itemValues.itemName}
                               >
-                                {(field as any).itemName}
+                                {itemValues.itemName}
                               </span>
 
                               <div className="col-span-6 sm:col-span-3 flex items-center gap-1">
@@ -239,7 +241,7 @@ export function RegisterPurchaseDialog({
                                             inputMode="decimal"
                                             className="h-8 w-16 text-center bg-white"
                                             {...field}
-                                            value={field.value ?? ""}
+                                            value={(field.value as any) ?? ""}
                                             onChange={(e) => updateQty(index, parseFloat(e.target.value))}
                                             onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
                                         />
@@ -264,7 +266,7 @@ export function RegisterPurchaseDialog({
                                         inputMode="decimal"
                                         className="h-8 pl-8 text-right bg-white"
                                         {...field}
-                                        value={field.value ?? ""}
+                                        value={(field.value as any) ?? ""}
                                         onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
                                       />
                                     </div>

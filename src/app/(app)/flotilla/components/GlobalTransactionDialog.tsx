@@ -35,8 +35,8 @@ const transactionSchema = z.object({
   paymentMethod: z.string().optional(),
 });
 
-type GlobalTransactionFormInput = z.input<typeof transactionSchema>;
-export type GlobalTransactionFormValues = z.infer<typeof transactionSchema>;
+type FormInput = z.input<typeof transactionSchema>;
+export type GlobalTransactionFormValues = z.output<typeof transactionSchema>;
 
 interface GlobalTransactionDialogProps {
   open: boolean;
@@ -59,13 +59,15 @@ export function GlobalTransactionDialog({
   const [isDriverPopoverOpen, setIsDriverPopoverOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  const form = useForm<GlobalTransactionFormInput, any, GlobalTransactionFormValues>({
-    resolver: zodResolver(transactionSchema),
+  const resolver = zodResolver(transactionSchema) as unknown as Resolver<GlobalTransactionFormValues>;
+
+  const form = useForm<FormInput, any, GlobalTransactionFormValues>({
+    resolver,
     defaultValues: {
       driverId: "",
       date: toMidday(new Date()),
       paymentMethod: 'Efectivo',
-      amount: undefined,
+      amount: undefined as any,
       note: '',
     },
   });
@@ -78,7 +80,7 @@ export function GlobalTransactionDialog({
         amount: undefined,
         note: transactionType === 'payment' ? 'Abono de Renta' : '',
         paymentMethod: 'Efectivo',
-      });
+      } as FormInput);
     }
   }, [open, form, transactionType]);
 
@@ -216,7 +218,7 @@ export function GlobalTransactionDialog({
                                     setIsCalendarOpen(false);
                                 }
                             }}
-                            value={dateValue ?? null}
+                            value={dateValue ?? undefined}
                             locale="es-MX"
                         />
                     </PopoverContent>

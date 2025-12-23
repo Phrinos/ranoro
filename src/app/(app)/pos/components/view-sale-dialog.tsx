@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
@@ -27,6 +27,7 @@ import { saleService } from "@/lib/services";
 import { PaymentDetailsDialog } from "@/components/shared/PaymentDetailsDialog";
 import { PaymentDetailsFormValues } from "@/schemas/payment-details-form-schema";
 import { Textarea } from "@/components/ui/textarea";
+import { z } from "zod";
 
 
 interface ViewSaleDialogProps {
@@ -42,6 +43,8 @@ interface ViewSaleDialogProps {
   onPaymentUpdate: (saleId: string, paymentDetails: PaymentDetailsFormValues) => Promise<void>;
   onSendWhatsapp: (sale: SaleReceipt) => void;
 }
+
+type FormInput = z.input<typeof posFormSchema>;
 
 export function ViewSaleDialog({ 
   open, 
@@ -60,8 +63,9 @@ export function ViewSaleDialog({
   const [cancellationReason, setCancellationReason] = useState("");
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
 
-  const methods = useForm<POSFormValues>({
-    resolver: zodResolver(posFormSchema),
+  const resolver = zodResolver(posFormSchema) as unknown as Resolver<POSFormValues>;
+  const methods = useForm<FormInput, any, POSFormValues>({
+    resolver,
     defaultValues: sale as any,
   });
 
@@ -75,7 +79,7 @@ export function ViewSaleDialog({
 
   const isCancelled = sale.status === 'Cancelado';
   const saleDate = typeof sale.saleDate === 'string' ? parseISO(sale.saleDate) : sale.saleDate;
-  const formattedDate = saleDate ? format(saleDate, "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es }) : '';
+  const formattedDate = saleDate && isValid(saleDate) ? format(saleDate as Date, "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es }) : '';
   
   const handleOpenValidateDialog = (index: number) => {
     console.log("Validation requested for payment index:", index);

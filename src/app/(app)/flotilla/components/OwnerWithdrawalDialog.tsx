@@ -27,7 +27,7 @@ const withdrawalSchema = z.object({
   note: z.string().optional(),
 });
 
-type WithdrawalFormInput = z.input<typeof withdrawalSchema>;
+type FormInput = z.input<typeof withdrawalSchema>;
 export type OwnerWithdrawalFormValues = z.output<typeof withdrawalSchema>;
 
 interface OwnerWithdrawalDialogProps {
@@ -40,9 +40,11 @@ interface OwnerWithdrawalDialogProps {
 export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: OwnerWithdrawalDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<WithdrawalFormInput, any, OwnerWithdrawalFormValues>({
-    resolver: zodResolver(withdrawalSchema),
-    defaultValues: { ownerName: "", amount: undefined, note: "" },
+  const resolver = zodResolver(withdrawalSchema) as unknown as Resolver<OwnerWithdrawalFormValues>;
+
+  const form = useForm<FormInput, any, OwnerWithdrawalFormValues>({
+    resolver,
+    defaultValues: { ownerName: "", amount: undefined as any, note: "" },
   });
 
   const owners = useMemo(() => {
@@ -57,7 +59,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
 
   useEffect(() => {
     if (!open) return;
-    form.reset({ ownerName: "", amount: undefined, note: "" });
+    form.reset({ ownerName: "", amount: undefined, note: "" } as FormInput);
   }, [open, form]);
 
   const handleFormSubmit = async (values: OwnerWithdrawalFormValues) => {

@@ -1,21 +1,8 @@
 // src/app/api/services/[id]/confirm/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getAdminDb } from '@/lib/firebaseAdmin';
 
-// --- Firebase Admin SDK Initialization ---
-try {
-  if (!getApps().length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!);
-    initializeApp({
-      credential: cert(serviceAccount),
-    });
-  }
-} catch (error) {
-  console.error('Firebase Admin initialization error:', error);
-}
-
-const db = getFirestore();
+const db = getAdminDb();
 
 /**
  * Handles the POST request to confirm a service appointment.
@@ -24,10 +11,10 @@ const db = getFirestore();
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id: publicId } = await params;
+    const publicId = params.id;
 
     // 1. Validate the incoming data
     if (!publicId) {

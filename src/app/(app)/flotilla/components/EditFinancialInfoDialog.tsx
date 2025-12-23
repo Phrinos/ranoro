@@ -30,7 +30,7 @@ const financialInfoSchema = z.object({
   depositAmount: z.coerce.number().min(0, "El monto debe ser positivo."),
 });
 
-type FinancialInfoFormInput = z.input<typeof financialInfoSchema>;
+type FormInput = z.input<typeof financialInfoSchema>;
 export type FinancialInfoFormValues = z.output<typeof financialInfoSchema>;
 
 interface EditFinancialInfoDialogProps {
@@ -67,7 +67,7 @@ export function EditFinancialInfoDialog({ open, onOpenChange, driver, onSave }: 
     [driver]
   );
 
-  const form = useForm<FinancialInfoFormInput, any, FinancialInfoFormValues>({
+  const form = useForm<FormInput, any, FinancialInfoFormValues>({
     resolver: zodResolver(financialInfoSchema),
     defaultValues: defaults,
   });

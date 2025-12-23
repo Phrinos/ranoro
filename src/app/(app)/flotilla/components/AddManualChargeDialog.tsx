@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import type { ManualDebtEntry } from "@/types";
@@ -35,7 +35,7 @@ const chargeSchema = z.object({
   note: z.string().optional(),
 });
 
-type ChargeFormInput = z.input<typeof chargeSchema>;
+type FormInput = z.input<typeof chargeSchema>;
 export type ManualChargeFormValues = z.infer<typeof chargeSchema>;
 
 interface AddManualChargeDialogProps {
@@ -69,7 +69,7 @@ export function AddManualChargeDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  const form = useForm<ChargeFormInput, any, ManualChargeFormValues>({
+  const form = useForm<FormInput, any, ManualChargeFormValues>({
     resolver: zodResolver(chargeSchema),
     defaultValues: {
       date: toMidday(new Date()),
@@ -116,24 +116,23 @@ export function AddManualChargeDialog({
             <FormField
               control={form.control}
               name="date"
-              render={({ field }) => (
+              render={({ field }) => {
+                const dateValue = field.value instanceof Date ? field.value : undefined;
+                return (
                 <FormItem className="flex flex-col">
                   <FormLabel>Fecha del Cargo</FormLabel>
                   <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
+                          type="button"
                           variant={"outline"}
                           className={cn(
                             "w-full pl-3 text-left font-normal bg-white",
-                            !field.value && "text-muted-foreground"
+                            !dateValue && "text-muted-foreground"
                           )}
                         >
-                          {field.value instanceof Date ? (
-                            format(field.value, "PPP", { locale: es })
-                          ) : (
-                            <span>Seleccione fecha</span>
-                          )}
+                          {dateValue ? format(dateValue, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
@@ -146,14 +145,14 @@ export function AddManualChargeDialog({
                                 setIsCalendarOpen(false);
                             }
                         }}
-                        value={field.value instanceof Date ? field.value : undefined}
+                        value={dateValue ?? undefined}
                         locale="es-MX"
                       />
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
                 </FormItem>
-              )}
+              )}}
             />
 
             <FormField

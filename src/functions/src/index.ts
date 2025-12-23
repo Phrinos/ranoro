@@ -18,12 +18,16 @@ export const generateDailyRentalCharges = onSchedule(
   },
   async () => {
     logger.info('Starting daily rental charge generation...');
+    
+    const nowInMexico = toZonedTime(new Date(), TZ);
+    
+    const startOfTodayInMexico = startOfDay(nowInMexico);
+    const endOfTodayInMexico = endOfDay(nowInMexico);
 
-    const nowUtc = new Date();
-    const nowZoned = toZonedTime(nowUtc, TZ);
-    const dayStartUtc = toZonedTime(startOfDay(nowZoned), TZ);
-    const dayEndUtc = toZonedTime(endOfDay(nowZoned), TZ);
-    const dateKey = formatInTimeZone(nowUtc, TZ, 'yyyy-MM-dd');
+    const startOfTodayUtc = toZonedTime(startOfTodayInMexico, TZ);
+    const endOfTodayUtc = toZonedTime(endOfTodayInMexico, TZ);
+    
+    const dateKey = formatInTimeZone(nowInMexico, TZ, 'yyyy-MM-dd');
 
     const activeDriversSnap = await db
       .collection('drivers')
@@ -46,7 +50,9 @@ export const generateDailyRentalCharges = onSchedule(
 
       const dailyRentalCost = vehicle?.dailyRentalCost;
       if (!vehicleDoc.exists || !dailyRentalCost) {
-        logger.warn(`Vehicle ${vehicleId} for driver ${driver.name} not found or has no daily rental cost.`);
+        logger.warn(
+          `Vehicle ${vehicleId} for driver ${driver.name} not found or has no daily rental cost.`
+        );
         return;
       }
 
@@ -61,8 +67,8 @@ export const generateDailyRentalCharges = onSchedule(
           vehicleLicensePlate: vehicle?.licensePlate || '',
           date: serverTimestamp(),
           dateKey,
-          dayStartUtc: dayStartUtc,
-          dayEndUtc: dayEndUtc,
+          dayStartUtc: startOfTodayUtc,
+          dayEndUtc: endOfTodayUtc,
         });
         logger.info(`Created daily charge for ${driver.name} (${dateKey}).`);
       } catch (err: any) {
@@ -78,6 +84,7 @@ export const generateDailyRentalCharges = onSchedule(
     logger.info('Daily rental charge generation finished successfully.');
   }
 );
+
 
 // --- Inventory Functions ---
 export { onStockExit, onPurchaseCreated, onPurchaseUpdated, adjustStock };

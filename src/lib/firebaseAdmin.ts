@@ -1,6 +1,6 @@
 // src/lib/firebaseAdmin.ts
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
-import { getFirestore, Firestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 import admin from 'firebase-admin';
 
 let app: App | null = null;
@@ -19,7 +19,7 @@ export function getAdminDb(): Firestore {
   if (db) return db;
 
   // Find an existing app instance to prevent re-initialization errors.
-  const existingApp = getApps().find(a => a.name === 'admin-app');
+  const existingApp = getApps().length > 0 ? getApps()[0] : null;
   if (existingApp) {
     app = existingApp;
   } else {
@@ -35,7 +35,7 @@ export function getAdminDb(): Firestore {
       const serviceAccount = JSON.parse(serviceAccountString);
       app = initializeApp({
         credential: cert(serviceAccount)
-      }, 'admin-app');
+      });
     } catch (e) {
       console.error("Error al parsear o inicializar las credenciales de Firebase Admin:", e);
       throw new Error("Las credenciales de Firebase Admin no son un JSON válido.");

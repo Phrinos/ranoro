@@ -7,7 +7,7 @@ import React, {
   useRef,
   useMemo,
 } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PosForm } from "../components/pos-form";
 import type {
@@ -66,6 +66,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { z } from "zod";
 
 const normalize = (s?: string) =>
   (s ?? "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
@@ -212,6 +213,8 @@ function QuickAddItemDialog({
   );
 }
 
+type FormInput = z.input<typeof posFormSchema>;
+
 export default function NuevaVentaPage() {
   const { toast } = useToast();
   const router = useRouter();
@@ -238,13 +241,14 @@ export default function NuevaVentaPage() {
   const [isAddItemDialogOpen, setIsAddItemDialogOpen] = useState(false);
   const [isAddingItem, setIsAddingItem] = useState(false);
 
-  const methods = useForm<POSFormValues>({
-    resolver: zodResolver(posFormSchema),
+  const resolver = zodResolver(posFormSchema) as unknown as Resolver<POSFormValues>;
+  const methods = useForm<FormInput, any, POSFormValues>({
+    resolver,
     defaultValues: {
       items: [],
       customerName: "Cliente Mostrador",
       payments: [{ method: "Efectivo", amount: undefined }],
-    },
+    } as any,
     mode: "onChange",
   });
 
