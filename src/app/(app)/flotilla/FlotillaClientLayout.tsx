@@ -1,3 +1,4 @@
+
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams } from "next/navigation";
@@ -45,9 +46,6 @@ export const FlotillaContext = React.createContext<{
     handleShowTicket: () => {},
 });
 
-// 2. Eliminar el hook duplicado de aquí
-// export const useFlotillaData = () => React.useContext(FlotillaContext);
-
 function FlotillaLayout({ children }: PropsWithChildren) {
     const { toast } = useToast();
     const [vehicles, setVehicles] = useState<Vehicle[]>([]);
@@ -61,11 +59,9 @@ function FlotillaLayout({ children }: PropsWithChildren) {
     const [selectedPayment, setSelectedPayment] = useState<RentalPayment | null>(null);
     const [isTicketOpen, setIsTicketOpen] = useState(false);
     const [selectedDriverBalance, setSelectedDriverBalance] = useState(0);
-    const { drivers: contextDrivers, vehicles: contextVehicles } = React.useContext(FlotillaContext);
-
 
     const handleShowTicket = (payment: RentalPayment) => {
-        const driver = contextDrivers.find(d => d.id === payment.driverId);
+        const driver = drivers.find(d => d.id === payment.driverId);
         if (!driver) return;
 
         const driverPayments = payments.filter(p => p.driverId === driver.id);
@@ -92,10 +88,11 @@ function FlotillaLayout({ children }: PropsWithChildren) {
             rentalService.onRentalPaymentsUpdate(setPayments),
             personnelService.onManualDebtsUpdate(setManualDebts),
             rentalService.onOwnerWithdrawalsUpdate(setWithdrawals),
-            rentalService.onVehicleExpensesUpdate(setExpenses),
+            rentalService.onVehicleExpensesUpdate((data) => {
+                setExpenses(data);
+                setIsLoading(false);
+            }),
         ];
-
-        setIsLoading(false);
 
         return () => unsubs.forEach(unsub => unsub());
     }, []);
