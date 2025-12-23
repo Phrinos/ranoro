@@ -128,7 +128,6 @@ const addRentalPayment = async (
         });
     }
     
-    // ✅ FIX: retorno garantizado con campos requeridos
     const result: RentalPayment = { id: savedPaymentId, ...rawPaymentData };
     return result;
 };
