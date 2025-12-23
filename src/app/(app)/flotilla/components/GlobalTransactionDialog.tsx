@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { Driver } from '@/types';
@@ -34,9 +34,9 @@ const transactionSchema = z.object({
   note: z.string().min(3, "La descripción es obligatoria."),
   paymentMethod: z.string().optional(),
 });
-export type GlobalTransactionFormValues = z.infer<typeof transactionSchema>;
-type GlobalTransactionFormInput = z.input<typeof transactionSchema>;
 
+type GlobalTransactionFormInput = z.input<typeof transactionSchema>;
+export type GlobalTransactionFormValues = z.infer<typeof transactionSchema>;
 
 interface GlobalTransactionDialogProps {
   open: boolean;
@@ -62,7 +62,7 @@ export function GlobalTransactionDialog({
   const form = useForm<GlobalTransactionFormInput, any, GlobalTransactionFormValues>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
-      driverId: undefined as any,
+      driverId: "",
       date: toMidday(new Date()),
       paymentMethod: 'Efectivo',
       amount: undefined,
@@ -73,7 +73,7 @@ export function GlobalTransactionDialog({
   useEffect(() => {
     if (open) {
       form.reset({
-        driverId: undefined as any,
+        driverId: "",
         date: toMidday(new Date()),
         amount: undefined,
         note: transactionType === 'payment' ? 'Abono de Renta' : '',
@@ -124,6 +124,7 @@ export function GlobalTransactionDialog({
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
+                            type="button"
                             variant="outline"
                             role="combobox"
                             className={cn("justify-between bg-white", !field.value && "text-muted-foreground")}
@@ -189,17 +190,20 @@ export function GlobalTransactionDialog({
             <FormField
               control={form.control}
               name="date"
-              render={({ field }) => (
+              render={({ field }) => {
+                const dateValue = field.value instanceof Date ? field.value : undefined;
+                return (
                 <FormItem className="flex flex-col">
                   <FormLabel>Fecha</FormLabel>
                   <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
+                          type="button"
                           variant={"outline"}
-                          className={cn("pl-3 text-left font-normal bg-white", !field.value && "text-muted-foreground")}
+                          className={cn("pl-3 text-left font-normal bg-white", !dateValue && "text-muted-foreground")}
                         >
-                          {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
+                          {dateValue ? format(dateValue, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
@@ -208,18 +212,18 @@ export function GlobalTransactionDialog({
                         <NewCalendar
                             onChange={(d: any) => {
                                 if (d) {
-                                    field.onChange(d);
+                                    field.onChange(toMidday(d));
                                     setIsCalendarOpen(false);
                                 }
                             }}
-                            value={field.value}
+                            value={dateValue ?? null}
                             locale="es-MX"
                         />
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
                 </FormItem>
-              )}
+              )}}
             />
 
             {transactionType === 'payment' && (
@@ -229,10 +233,10 @@ export function GlobalTransactionDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Método de Pago</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value ?? ""}>
                       <FormControl>
                         <SelectTrigger className="bg-white">
-                          <SelectValue />
+                          <SelectValue placeholder="Selecciona un método" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -247,7 +251,7 @@ export function GlobalTransactionDialog({
             )}
 
             <FormField
-              control={form.control as any}
+              control={form.control}
               name="amount"
               render={({ field }) => (
                 <FormItem>
@@ -256,7 +260,8 @@ export function GlobalTransactionDialog({
                     <Input 
                         type="number"
                         step="0.01"
-                        {...field}
+                        min="0.01"
+                        inputMode="decimal"
                         value={field.value ?? ""}
                         onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
                         className="bg-white" 
@@ -274,7 +279,11 @@ export function GlobalTransactionDialog({
                 <FormItem>
                   <FormLabel>Descripción</FormLabel>
                   <FormControl>
-                    <Textarea {...field} className="bg-white" />
+                    <Textarea
+                      className="bg-white"
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

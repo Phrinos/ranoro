@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import type { Vehicle } from "@/types";
@@ -28,7 +28,7 @@ const withdrawalSchema = z.object({
 });
 
 type WithdrawalFormInput = z.input<typeof withdrawalSchema>;
-export type OwnerWithdrawalFormValues = z.infer<typeof withdrawalSchema>;
+export type OwnerWithdrawalFormValues = z.output<typeof withdrawalSchema>;
 
 interface OwnerWithdrawalDialogProps {
   open: boolean;
@@ -114,8 +114,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
                   <FormControl>
                     <Input 
                       type="number" 
-                      step="0.01" 
-                      {...field} 
+                      step="0.01"
                       className="bg-white" 
                       value={field.value ?? ""} 
                       onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
@@ -133,7 +132,11 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
                 <FormItem>
                   <FormLabel>Nota o Descripción</FormLabel>
                   <FormControl>
-                    <Textarea {...field} className="bg-white" value={field.value ?? ""} />
+                    <Textarea
+                      className="bg-white"
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

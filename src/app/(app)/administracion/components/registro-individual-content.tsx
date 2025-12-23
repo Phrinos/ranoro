@@ -1,7 +1,8 @@
+// src/app/(app)/administracion/components/registro-individual-content.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,10 +52,10 @@ export function RegistroIndividualContent() {
       licensePlate: '',
       vehicleId: '',
       description: '',
-      totalCost: 0,
-      suppliesCost: 0,
+      totalCost: undefined,
+      suppliesCost: undefined,
       paymentMethod: 'Efectivo',
-    } as FormInput,
+    },
   });
 
   const { watch, setValue } = form;
@@ -115,8 +116,8 @@ export function RegistroIndividualContent() {
         licensePlate: '', 
         vehicleId: '', 
         description: '', 
-        totalCost: 0, 
-        suppliesCost: 0 
+        totalCost: undefined,
+        suppliesCost: undefined,
       });
       setSearchedVehicle(null);
     } catch (e) {
@@ -224,6 +225,7 @@ export function RegistroIndividualContent() {
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
+                              type="button"
                               variant="outline"
                               className={cn("pl-3 text-left font-normal", !dateValue && "text-muted-foreground")}
                             >
@@ -309,7 +311,7 @@ export function RegistroIndividualContent() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Método de Pago</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value ?? ""}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Seleccione método" />

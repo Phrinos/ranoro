@@ -1,9 +1,8 @@
-
 // src/app/(app)/flotilla/components/EditFinancialInfoDialog.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import React, { useEffect, useMemo, useState } from "react";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import type { Driver } from "@/types";
@@ -15,14 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -33,12 +25,13 @@ import { cn } from "@/lib/utils";
 import { NewCalendar } from "@/components/ui/calendar";
 
 const financialInfoSchema = z.object({
-  contractDate: z.date().optional(),
+  contractDate: z.coerce.date().optional(),
   requiredDepositAmount: z.coerce.number().min(0, "El monto debe ser positivo."),
   depositAmount: z.coerce.number().min(0, "El monto debe ser positivo."),
 });
 
-export type FinancialInfoFormValues = z.infer<typeof financialInfoSchema>;
+type FinancialInfoFormInput = z.input<typeof financialInfoSchema>;
+export type FinancialInfoFormValues = z.output<typeof financialInfoSchema>;
 
 interface EditFinancialInfoDialogProps {
   open: boolean;
@@ -47,33 +40,51 @@ interface EditFinancialInfoDialogProps {
   onSave: (values: FinancialInfoFormValues) => Promise<void>;
 }
 
-export function EditFinancialInfoDialog({
-  open,
-  onOpenChange,
-  driver,
-  onSave,
-}: EditFinancialInfoDialogProps) {
+const toMidday = (d: Date) => {
+  const n = new Date(d);
+  n.setHours(12, 0, 0, 0);
+  return n;
+};
+
+const toDateSafe = (v: any): Date | undefined => {
+  if (!v) return undefined;
+  if (v instanceof Date) return v;
+  if (typeof v?.toDate === "function") return v.toDate();
+  const d = new Date(v);
+  return isNaN(d.getTime()) ? undefined : d;
+};
+
+export function EditFinancialInfoDialog({ open, onOpenChange, driver, onSave }: EditFinancialInfoDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  const form = useForm<FinancialInfoFormValues>({
+  const defaults = useMemo(
+    () => ({
+      contractDate: driver?.contractDate ? toMidday(toDateSafe((driver as any).contractDate) ?? new Date()) : undefined,
+      requiredDepositAmount: Number(driver?.requiredDepositAmount ?? 0),
+      depositAmount: Number(driver?.depositAmount ?? 0),
+    }),
+    [driver]
+  );
+
+  const form = useForm<FinancialInfoFormInput, any, FinancialInfoFormValues>({
     resolver: zodResolver(financialInfoSchema),
+    defaultValues: defaults,
   });
 
   useEffect(() => {
-    if (driver) {
-      form.reset({
-        contractDate: driver?.contractDate ? new Date(driver.contractDate) : undefined,
-        requiredDepositAmount: driver?.requiredDepositAmount || 0,
-        depositAmount: driver?.depositAmount || 0,
-      });
-    }
-  }, [driver, form, open]);
+    if (!open) return;
+    form.reset(defaults);
+  }, [open, defaults, form]);
 
   const handleFormSubmit = async (values: FinancialInfoFormValues) => {
     setIsSubmitting(true);
-    await onSave(values);
-    setIsSubmitting(false);
+    try {
+      await onSave(values);
+      onOpenChange(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -81,9 +92,7 @@ export function EditFinancialInfoDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Editar Información Financiera</DialogTitle>
-          <DialogDescription>
-            Actualiza los detalles del contrato y los depósitos.
-          </DialogDescription>
+          <DialogDescription>Actualiza los detalles del contrato y los depósitos.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -91,24 +100,20 @@ export function EditFinancialInfoDialog({
             <FormField
               control={form.control}
               name="contractDate"
-              render={({ field }) => (
+              render={({ field }) => {
+                const dateValue = field.value instanceof Date ? field.value : undefined;
+                return (
                 <FormItem className="flex flex-col">
                   <FormLabel>Fecha de Contrato</FormLabel>
                   <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
+                          type="button"
                           variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal bg-white",
-                            !field.value && "text-muted-foreground"
-                          )}
+                          className={cn("w-full pl-3 text-left font-normal bg-white", !dateValue && "text-muted-foreground")}
                         >
-                          {field.value ? (
-                            format(field.value, "PPP", { locale: es })
-                          ) : (
-                            <span>Seleccionar fecha</span>
-                          )}
+                          {dateValue ? format(dateValue, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
@@ -116,19 +121,19 @@ export function EditFinancialInfoDialog({
                     <PopoverContent className="w-auto p-0" align="start">
                       <NewCalendar
                         onChange={(d: any) => {
-                            if(d) {
-                                field.onChange(d);
+                            if (d) {
+                                field.onChange(toMidday(d));
                                 setIsCalendarOpen(false);
                             }
                         }}
-                        value={field.value}
+                        value={dateValue ?? undefined}
                         locale="es-MX"
                       />
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
                 </FormItem>
-              )}
+              )}}
             />
 
             <FormField
@@ -141,9 +146,10 @@ export function EditFinancialInfoDialog({
                     <Input
                       type="number"
                       step="0.01"
-                      {...field}
+                      inputMode="decimal"
                       className="bg-white"
-                      value={field.value ?? ""}
+                      value={field.value ?? 0}
+                      onChange={(e) => field.onChange(e.target.value === "" ? 0 : e.target.valueAsNumber)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -161,9 +167,10 @@ export function EditFinancialInfoDialog({
                     <Input
                       type="number"
                       step="0.01"
-                      {...field}
+                      inputMode="decimal"
                       className="bg-white"
-                      value={field.value ?? ""}
+                      value={field.value ?? 0}
+                      onChange={(e) => field.onChange(e.target.value === "" ? 0 : e.target.valueAsNumber)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -184,5 +191,3 @@ export function EditFinancialInfoDialog({
     </Dialog>
   );
 }
-
-    

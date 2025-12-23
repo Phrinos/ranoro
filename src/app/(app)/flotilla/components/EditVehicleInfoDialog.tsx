@@ -1,11 +1,11 @@
 // src/app/(app)/flotilla/components/EditVehicleInfoDialog.tsx
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import type { Vehicle } from '@/types';
+import React, { useEffect, useMemo, useState } from "react";
+import { useForm, type Resolver } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import type { Vehicle } from "@/types";
 import {
   Dialog,
   DialogContent,
@@ -30,7 +30,8 @@ const vehicleInfoSchema = z.object({
   notes: z.string().optional(),
 });
 
-export type VehicleInfoFormValues = z.infer<typeof vehicleInfoSchema>;
+type VehicleInfoFormInput = z.input<typeof vehicleInfoSchema>;
+export type VehicleInfoFormValues = z.output<typeof vehicleInfoSchema>;
 
 interface EditVehicleInfoDialogProps {
   open: boolean;
@@ -41,28 +42,38 @@ interface EditVehicleInfoDialogProps {
 
 export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: EditVehicleInfoDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const form = useForm<VehicleInfoFormValues>({
+
+  const defaults = useMemo<VehicleInfoFormInput>(
+    () => ({
+      make: vehicle?.make ?? "",
+      model: vehicle?.model ?? "",
+      year: vehicle?.year,
+      color: vehicle?.color ?? "",
+      ownerName: vehicle?.ownerName ?? "",
+      ownerPhone: vehicle?.ownerPhone ?? "",
+      notes: vehicle?.notes ?? "",
+    }),
+    [vehicle]
+  );
+
+  const form = useForm<VehicleInfoFormInput, any, VehicleInfoFormValues>({
     resolver: zodResolver(vehicleInfoSchema),
+    defaultValues: defaults,
   });
 
   useEffect(() => {
-    if (vehicle) {
-      form.reset({
-        make: vehicle.make,
-        model: vehicle.model,
-        year: vehicle.year,
-        color: vehicle.color || '',
-        ownerName: vehicle.ownerName,
-        ownerPhone: vehicle.ownerPhone || '',
-        notes: vehicle.notes || '',
-      });
-    }
-  }, [vehicle, form, open]);
+    if (!open) return;
+    form.reset(defaults);
+  }, [open, defaults, form]);
 
   const handleFormSubmit = async (values: VehicleInfoFormValues) => {
     setIsSubmitting(true);
-    await onSave(values);
-    setIsSubmitting(false);
+    try {
+      await onSave(values);
+      onOpenChange(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -70,9 +81,7 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Editar Información del Vehículo</DialogTitle>
-          <DialogDescription>
-            Actualiza los detalles generales y del propietario.
-          </DialogDescription>
+          <DialogDescription>Actualiza los detalles generales y del propietario.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
@@ -87,17 +96,17 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
                   <FormItem><FormLabel>Año</FormLabel><FormControl><Input type="number" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="color" render={({ field }) => (
-                  <FormItem><FormLabel>Color</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Color</FormLabel><FormControl><Input value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value)} className="bg-white" /></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="ownerName" render={({ field }) => (
                   <FormItem><FormLabel>Nombre Propietario</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
                 )}/>
                 <FormField control={form.control} name="ownerPhone" render={({ field }) => (
-                  <FormItem><FormLabel>Teléfono Propietario</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Teléfono Propietario</FormLabel><FormControl><Input value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value)} className="bg-white" /></FormControl><FormMessage /></FormItem>
                 )}/>
               </div>
               <FormField control={form.control} name="notes" render={({ field }) => (
-                <FormItem><FormLabel>Notas</FormLabel><FormControl><Textarea {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
+                <FormItem><FormLabel>Notas</FormLabel><FormControl><Textarea value={field.value ?? ""} onChange={(e) => field.onChange(e.target.value)} className="bg-white" /></FormControl><FormMessage /></FormItem>
               )}/>
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

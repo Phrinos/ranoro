@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import type { RentalPayment } from "@/types";
@@ -16,7 +16,12 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,15 +34,15 @@ import { NewCalendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-
 const paymentSchema = z.object({
   paymentDate: z.coerce.date({ message: "La fecha es obligatoria." }),
   amount: z.coerce.number().min(0.01, "El monto debe ser positivo."),
   note: z.string().optional(),
   paymentMethod: z.string().optional(),
 });
-type PaymentFormInput = z.input<typeof paymentSchema>;
+
 export type PaymentFormValues = z.infer<typeof paymentSchema>;
+type PaymentFormInput = z.input<typeof paymentSchema>;
 
 interface RegisterPaymentDialogProps {
   open: boolean;
@@ -64,17 +69,18 @@ export function RegisterPaymentDialog({
   const form = useForm<PaymentFormInput, any, PaymentFormValues>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
-      paymentDate: undefined,
-      amount: undefined,
+      paymentDate: toMidday(new Date()),
       note: "Abono de Renta",
       paymentMethod: "Efectivo",
+      // amount: (se deja sin default para que el input inicie vacío)
     },
   });
 
   useEffect(() => {
     if (!open) return;
+
     if (paymentToEdit) {
-      const base = toMidday(new Date(paymentToEdit.paymentDate));
+      const base = toMidday(new Date((paymentToEdit as any).paymentDate));
       form.reset({
         paymentDate: base,
         amount: paymentToEdit.amount,
@@ -84,17 +90,21 @@ export function RegisterPaymentDialog({
     } else {
       form.reset({
         paymentDate: toMidday(new Date()),
-        amount: undefined,
         note: "Abono de Renta",
         paymentMethod: "Efectivo",
+        amount: undefined,
       });
     }
   }, [open, paymentToEdit, form]);
 
   const handleFormSubmit = async (values: PaymentFormValues) => {
     setIsSubmitting(true);
-    await onSave(values);
-    setIsSubmitting(false);
+    try {
+      await onSave(values);
+      onOpenChange(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -103,9 +113,7 @@ export function RegisterPaymentDialog({
         <DialogHeader className="p-6 pb-4">
           <DialogTitle>{paymentToEdit ? "Editar Pago" : "Registrar Pago"}</DialogTitle>
           <DialogDescription>
-            {paymentToEdit
-              ? "Actualiza los detalles del pago."
-              : "Registra un nuevo abono a la cuenta del conductor."}
+            {paymentToEdit ? "Actualiza los detalles del pago." : "Registra un nuevo abono a la cuenta del conductor."}
           </DialogDescription>
         </DialogHeader>
 
@@ -114,7 +122,9 @@ export function RegisterPaymentDialog({
             <FormField
               control={form.control}
               name="paymentDate"
-              render={({ field }) => (
+              render={({ field }) => {
+                const dateValue = field.value instanceof Date ? field.value : undefined;
+                return (
                 <FormItem className="flex flex-col">
                   <FormLabel>Fecha del Pago</FormLabel>
                   <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
@@ -123,35 +133,31 @@ export function RegisterPaymentDialog({
                         <Button
                           type="button"
                           variant={"outline"}
-                          className={cn(
-                            "pl-3 text-left font-normal bg-white",
-                            !field.value && "text-muted-foreground"
-                          )}
+                          className={cn("pl-3 text-left font-normal bg-white", !dateValue && "text-muted-foreground")}
                           onClick={() => setIsCalendarOpen(true)}
                         >
-                          {field.value
-                            ? format(field.value, "PPP", { locale: es })
-                            : "Seleccionar fecha"}
+                          {dateValue ? format(dateValue, "PPP", { locale: es }) : "Seleccionar fecha"}
                           <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
+
                     <PopoverContent className="w-auto p-0" align="start">
                       <NewCalendar
                         onChange={(d: any) => {
-                            if(d) {
-                                field.onChange(d);
-                                setIsCalendarOpen(false);
-                            }
+                          if (d) {
+                            field.onChange(toMidday(d));
+                            setIsCalendarOpen(false);
+                          }
                         }}
-                        value={field.value}
+                        value={dateValue ?? null}
                         locale="es-MX"
                       />
                     </PopoverContent>
                   </Popover>
                   <FormMessage />
                 </FormItem>
-              )}
+              )}}
             />
             
             <FormField
@@ -160,7 +166,7 @@ export function RegisterPaymentDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Método de Pago</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value ?? ""}>
                     <FormControl>
                       <SelectTrigger className="bg-white">
                         <SelectValue placeholder="Selecciona un método" />
@@ -188,11 +194,10 @@ export function RegisterPaymentDialog({
                       step="0.01"
                       min="0.01"
                       inputMode="decimal"
-                      {...field}
                       className="bg-white"
                       placeholder="0.00"
                       value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
+                      onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -207,7 +212,12 @@ export function RegisterPaymentDialog({
                 <FormItem>
                   <FormLabel>Descripción</FormLabel>
                   <FormControl>
-                    <Textarea {...field} className="bg-white" placeholder="Abono de Renta" value={field.value ?? ""} />
+                    <Textarea
+                      className="bg-white"
+                      placeholder="Abono de Renta"
+                      value={field.value ?? ""}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
