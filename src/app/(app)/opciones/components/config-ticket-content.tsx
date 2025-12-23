@@ -1,16 +1,11 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Save, Printer } from "lucide-react";
@@ -30,6 +25,17 @@ import { useDebouncedCallback } from "use-debounce";
 
 const LOCALSTORAGE_KEY = "workshopTicketInfo";
 
+const isValidLogoUrl = (v: string) => {
+  if (!v) return false;
+  if (v.startsWith("/")) return true; // ✅ permitido (ruta local)
+  try {
+    const u = new URL(v);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 const ticketSchema = z.object({
   name: z.string().min(1, "El nombre es obligatorio"),
   nameBold: z.boolean().optional(),
@@ -41,7 +47,11 @@ const ticketSchema = z.object({
   addressLine2Bold: z.boolean().optional(),
   cityState: z.string().min(3),
   cityStateBold: z.boolean().optional(),
-  logoUrl: z.string().url("Ingresa una URL válida o sube una imagen."),
+
+  logoUrl: z.string().min(1, "Ingresa una URL o sube una imagen.").refine(isValidLogoUrl, {
+    message: "Ingresa una URL válida o sube una imagen.",
+  }),
+
   logoWidth: z.coerce.number().min(20).max(300).optional(),
   headerFontSize: z.coerce.number().min(8).max(16).optional(),
   bodyFontSize: z.coerce.number().min(8).max(16).optional(),
@@ -58,7 +68,9 @@ const ticketSchema = z.object({
   fixedFooterTextBold: z.boolean().optional(),
 });
 
-type TicketForm = z.infer<typeof ticketSchema>;
+type TicketFormInput = z.input<typeof ticketSchema>;
+type TicketFormValues = z.output<typeof ticketSchema>;
+
 
 const sampleSale: SaleReceipt = {
   id: "PREVIEW-001",
@@ -86,7 +98,7 @@ const sampleSale: SaleReceipt = {
   customerName: "Cliente Demo",
 };
 
-const defaultWorkshopInfo: Partial<TicketForm> = {
+const defaultWorkshopInfo: Partial<TicketFormValues> = {
   name: "RANORO",
   nameBold: true,
   phone: "4491425323",
@@ -117,12 +129,12 @@ const defaultWorkshopInfo: Partial<TicketForm> = {
 
 export function ConfiguracionTicketPageContent() {
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const methods = useForm<TicketForm>({
+  const methods = useForm<TicketFormInput, any, TicketFormValues>({
     resolver: zodResolver(ticketSchema),
-    defaultValues: defaultWorkshopInfo as TicketForm,
+    defaultValues: defaultWorkshopInfo as any,
     mode: "onChange",
   });
   const watchedValues = methods.watch();
@@ -132,9 +144,9 @@ export function ConfiguracionTicketPageContent() {
       const stored = localStorage.getItem(LOCALSTORAGE_KEY);
       if (stored) {
         try {
-          methods.reset(JSON.parse(stored) as TicketForm);
+          methods.reset(JSON.parse(stored) as any);
         } catch {
-          methods.reset(defaultWorkshopInfo as TicketForm);
+          methods.reset(defaultWorkshopInfo as any);
         }
       }
     };
@@ -149,7 +161,7 @@ export function ConfiguracionTicketPageContent() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, [methods]);
 
-  const debouncedSave = useDebouncedCallback((data: TicketForm) => {
+  const debouncedSave = useDebouncedCallback((data: TicketFormValues) => {
     try {
       localStorage.setItem(LOCALSTORAGE_KEY, JSON.stringify(data));
       toast({
@@ -163,7 +175,7 @@ export function ConfiguracionTicketPageContent() {
   }, 300);
 
   const onSubmit = useCallback(
-    (data: TicketForm) => debouncedSave(data),
+    (data: TicketFormValues) => debouncedSave(data),
     [debouncedSave]
   );
 

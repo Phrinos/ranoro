@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -14,14 +14,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -38,7 +31,9 @@ const chargeSchema = z.object({
   amount: z.coerce.number().min(0, "El monto no puede ser negativo."),
   note: z.string().optional(),
 });
-export type DailyChargeFormValues = z.infer<typeof chargeSchema>;
+
+type DailyChargeFormInput = z.input<typeof chargeSchema>;
+export type DailyChargeFormValues = z.output<typeof chargeSchema>;
 
 // --- helpers ---
 const toMidday = (d: Date) => {
@@ -79,7 +74,7 @@ export function EditDailyChargeDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  const form = useForm<DailyChargeFormValues>({
+  const form = useForm<DailyChargeFormInput, any, DailyChargeFormValues>({
     resolver: zodResolver(chargeSchema),
     defaultValues: {
       date: new Date(),
@@ -91,7 +86,7 @@ export function EditDailyChargeDialog({
   useEffect(() => {
     if(open && charge) {
         form.reset({
-            date: toMidday(normalizeToDate(charge.date) ?? new Date()),
+            date: toMidday(normalizeToDate((charge as any).date) ?? new Date()),
             amount: charge.amount,
             note: (charge as any).note || '',
         });
@@ -123,44 +118,49 @@ export function EditDailyChargeDialog({
             <FormField
               control={form.control}
               name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Fecha del Cargo</FormLabel>
-                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          type="button"
-                          variant={"outline"}
-                          className={cn(
-                            "pl-3 text-left font-normal bg-white",
-                            !field.value && "text-muted-foreground"
-                          )}
-                          onClick={() => setIsCalendarOpen(true)}
-                        >
-                          {field.value
-                            ? format(field.value, "PPP", { locale: es })
-                            : "Seleccionar fecha"}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <NewCalendar
-                        onChange={(d: any) => {
+              render={({ field }) => {
+                const dateValue = normalizeToDate(field.value) ?? undefined;
+
+                return (
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Fecha del Cargo</FormLabel>
+
+                    <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            type="button"
+                            variant={"outline"}
+                            className={cn(
+                              "pl-3 text-left font-normal bg-white",
+                              !dateValue && "text-muted-foreground"
+                            )}
+                            onClick={() => setIsCalendarOpen(true)}
+                          >
+                            {dateValue ? format(dateValue, "PPP", { locale: es }) : "Seleccionar fecha"}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <NewCalendar
+                          onChange={(d: any) => {
                             if (d && !Array.isArray(d)) {
                                 field.onChange(toMidday(d));
                                 setIsCalendarOpen(false);
                             }
-                        }}
-                        value={field.value}
-                        locale="es-MX"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
+                          }}
+                          value={dateValue ?? null}
+                          locale="es-MX"
+                        />
+                      </PopoverContent>
+                    </Popover>
+
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField
@@ -170,7 +170,17 @@ export function EditDailyChargeDialog({
                 <FormItem>
                   <FormLabel>Monto del Cargo ($)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" min={0} {...field} className="bg-white" />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      className="bg-white"
+                      value={typeof field.value === "number" ? field.value : field.value ? Number(field.value as any) : 0}
+                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                      onBlur={field.onBlur}
+                      name={field.name}
+                      ref={field.ref}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -184,7 +194,7 @@ export function EditDailyChargeDialog({
                 <FormItem>
                   <FormLabel>Descripción</FormLabel>
                   <FormControl>
-                    <Textarea {...field} className="bg-white" placeholder="Ej: Renta diaria" />
+                    <Textarea {...field} value={(field.value as any) ?? ""} className="bg-white" placeholder="Ej: Renta diaria" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -206,5 +216,3 @@ export function EditDailyChargeDialog({
     </Dialog>
   );
 }
-
-    

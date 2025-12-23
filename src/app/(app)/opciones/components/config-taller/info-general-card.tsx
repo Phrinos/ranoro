@@ -11,7 +11,7 @@ import { capitalizeWords } from '@/lib/utils';
 
 interface InfoGeneralCardProps {
   watchedLogoUrl: string;
-  fileInputRef: React.RefObject<HTMLInputElement>;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
   isUploading: boolean;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }

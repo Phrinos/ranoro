@@ -28,7 +28,6 @@ import {
 
 const expenseCategories = ["Renta", "Servicios", "Otros"] as const;
 
-// Preprocesa el monto: '' -> undefined (obliga a capturar un número), string/number -> Number
 const fixedExpenseFormSchema = z.object({
   name: z
     .string()
@@ -40,23 +39,25 @@ const fixedExpenseFormSchema = z.object({
       return typeof v === "string" ? Number(v) : v;
     },
     z
-      .number({
-        required_error: "El monto es requerido.",
-        invalid_type_error: "Captura un número válido.",
-      })
-      .positive("El monto debe ser mayor a 0.")
+      .union([
+        z.number({ message: "Captura un número válido." })
+          .finite("Captura un número válido.")
+          .positive("El monto debe ser mayor a 0."),
+        z.undefined(),
+      ])
+      .refine((v) => typeof v === "number", { message: "El monto es requerido." })
+      .transform((v) => v as number)
   ),
-  category: z.enum(expenseCategories, {
-    errorMap: () => ({ message: "Debe seleccionar una categoría." }),
-  }),
+  category: z.enum(expenseCategories, { message: "Debe seleccionar una categoría." }),
   notes: z.string().optional(),
 });
 
-export type FixedExpenseFormValues = z.infer<typeof fixedExpenseFormSchema>;
+type FixedExpenseFormInput = z.input<typeof fixedExpenseFormSchema>;
+export type FixedExpenseFormValues = z.output<typeof fixedExpenseFormSchema>;
 
 interface FixedExpenseFormProps {
   initialData?: MonthlyFixedExpense | null;
-  onSubmit: (values: FixedExpenseFormValues) => void; // sincrónico
+  onSubmit: (values: FixedExpenseFormValues) => void;
   onClose: () => void;
 }
 
@@ -65,8 +66,8 @@ export function FixedExpenseForm({
   onSubmit,
   onClose,
 }: FixedExpenseFormProps) {
-  const form = useForm<FixedExpenseFormValues, any, FixedExpenseFormValues>({
-    resolver: zodResolver(fixedExpenseFormSchema) as Resolver<FixedExpenseFormValues, any, FixedExpenseFormValues>,
+  const form = useForm<FixedExpenseFormInput, any, FixedExpenseFormValues>({
+    resolver: zodResolver(fixedExpenseFormSchema),
     defaultValues: initialData
       ? {
           name: initialData.name ?? "",
@@ -88,6 +89,7 @@ export function FixedExpenseForm({
           category: "Otros",
           notes: "",
         },
+    mode: "onSubmit",
   });
 
   const handleFormSubmit = (values: FixedExpenseFormValues) => {
@@ -104,11 +106,7 @@ export function FixedExpenseForm({
             <FormItem>
               <FormLabel>Nombre del Gasto</FormLabel>
               <FormControl>
-                <Input
-                  placeholder="Ej: Renta del Local"
-                  {...field}
-                  value={field.value ?? ""}
-                />
+                <Input placeholder="Ej: Renta del Local" {...field} value={(field.value as any) ?? ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -121,7 +119,7 @@ export function FixedExpenseForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Categoría</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select onValueChange={field.onChange} value={(field.value as any) ?? "Otros"}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccione una categoría" />
@@ -141,7 +139,7 @@ export function FixedExpenseForm({
         />
 
         <FormField
-          control={form.control as any}
+          control={form.control}
           name="amount"
           render={({ field }) => (
             <FormItem>
@@ -155,7 +153,6 @@ export function FixedExpenseForm({
                     step="0.01"
                     min="0"
                     placeholder="15000.00"
-                    // Permitimos string vacío mientras escribe; el schema valida al enviar
                     value={field.value === undefined || field.value === null ? "" : String(field.value)}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -183,7 +180,7 @@ export function FixedExpenseForm({
                 <Textarea
                   placeholder="Detalles adicionales (ej: contrato #123, CFE, mantenimiento, etc.)"
                   {...field}
-                  value={field.value ?? ""}
+                  value={(field.value as any) ?? ""}
                 />
               </FormControl>
               <FormMessage />
@@ -195,9 +192,7 @@ export function FixedExpenseForm({
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit">
-            {initialData ? "Actualizar Gasto" : "Crear Gasto"}
-          </Button>
+          <Button type="submit">{initialData ? "Actualizar Gasto" : "Crear Gasto"}</Button>
         </div>
       </form>
     </Form>

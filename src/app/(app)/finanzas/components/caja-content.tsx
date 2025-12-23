@@ -33,12 +33,12 @@ const cashTransactionSchema = z.object({
 });
 
 type CashTransactionFormInput = z.input<typeof cashTransactionSchema>;
-type CashTransactionFormValues = z.infer<typeof cashTransactionSchema>;
+type CashTransactionFormValues = z.output<typeof cashTransactionSchema>;
 
 
 type EnhancedCashDrawerTransaction = CashDrawerTransaction & { fullDescription?: string; };
 
-const methodIcon: Record<PaymentMethod, React.ElementType> = {
+const methodIcon: Partial<Record<PaymentMethod, React.ElementType>> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
   "Tarjeta MSI": CreditCard,
@@ -445,5 +445,3 @@ export default function CajaContent() {
     </div>
   );
 }
-
-    

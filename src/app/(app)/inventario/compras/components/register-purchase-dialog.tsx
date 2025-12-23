@@ -2,8 +2,8 @@
 // src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
-import { useForm, FormProvider, useFieldArray, type Resolver, useWatch } from "react-hook-form";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
+import { useForm, FormProvider, useFieldArray, type Resolver, useWatch, type Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
@@ -56,7 +56,7 @@ const purchaseFormSchema = z
   });
 
 type PurchaseFormInput = z.input<typeof purchaseFormSchema>;
-export type PurchaseFormValues = z.infer<typeof purchaseFormSchema>;
+export type PurchaseFormValues = z.output<typeof purchaseFormSchema>;
 
 interface RegisterPurchaseDialogProps {
   open: boolean;
@@ -98,7 +98,7 @@ export function RegisterPurchaseDialog({
   const [newItemSearchTerm, setNewItemSearchTerm] = useState("");
 
   useEffect(() => {
-    const total = (itemsWatch ?? []).reduce((sum, i) => {
+    const total = (itemsWatch ?? []).reduce((sum, i: any) => {
       const qty = Number(i?.quantity) || 0;
       const unit = Number(i?.purchasePrice) || 0;
       return sum + qty * unit;
@@ -231,7 +231,7 @@ export function RegisterPurchaseDialog({
                                     <Minus className="h-4 w-4"/>
                                 </Button>
                                 <FormField
-                                    control={control}
+                                    control={control as any}
                                     name={`items.${index}.quantity`}
                                     render={({ field }) => (
                                         <Input
@@ -254,7 +254,7 @@ export function RegisterPurchaseDialog({
 
                               <div className="col-span-3 sm:col-span-2">
                                 <FormField
-                                  control={control}
+                                  control={control as any}
                                   name={`items.${index}.purchasePrice`}
                                   render={({ field }) => (
                                     <div className="relative">
@@ -505,5 +505,3 @@ function SearchItemDialog({
     </Dialog>
   );
 }
-
-    

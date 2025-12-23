@@ -2,8 +2,7 @@
 // src/app/(app)/inventario/compras/page.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import dynamic from "next/dynamic";
+import React, { useState, useEffect, useCallback, Suspense, lazy } from "react";
 import { PlusCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
@@ -25,36 +24,27 @@ import { SuppliersTable } from "./components/suppliers-table";
 import { TableToolbar } from "@/components/shared/table-toolbar";
 import { useTableManager } from "@/hooks/useTableManager";
 
-const ComprasContent = dynamic(() => import("./components/compras-content"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-64 items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin" />
-    </div>
-  ),
-});
-const CuentasPorPagarContent = dynamic(
+const ComprasContent = lazy(() => import("./components/compras-content"));
+const CuentasPorPagarContent = lazy(
   () =>
     import("./components/cuentas-por-pagar-content").then(
       (m) => m.CuentasPorPagarContent
-    ),
-  { ssr: false, loading: () => <div className="p-6"><Loader2 className="h-5 w-5 animate-spin" /></div> }
+    )
 );
-const RegisterPurchaseDialog = dynamic(
+const RegisterPurchaseDialog = lazy(
   () =>
     import("./components/register-purchase-dialog").then(
       (m) => m.RegisterPurchaseDialog
-    ),
-  { ssr: false }
+    )
 );
-const PayableAccountDialog = dynamic(
+const PayableAccountDialog = lazy(
   () =>
     import("./components/payable-account-dialog").then(
       (m) => m.PayableAccountDialog
     ),
   { ssr: false }
 );
-const SupplierDialog = dynamic(
+const SupplierDialog = lazy(
   () =>
     import("./components/supplier-dialog").then((m) => m.SupplierDialog),
   { ssr: false }
@@ -327,5 +317,3 @@ export default function ComprasUnificadasPage() {
     </>
   );
 }
-
-    
