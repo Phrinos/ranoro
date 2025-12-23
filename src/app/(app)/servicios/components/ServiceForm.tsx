@@ -3,7 +3,13 @@
 
 import React from 'react';
 import { useFormContext, type FieldErrors, type SubmitErrorHandler } from 'react-hook-form';
-import { Form, FormField, FormLabel, FormControl, FormItem } from '@/components/ui/form';
+import { Form, FormField, FormItem, FormControl, FormLabel } from '@/components/ui/form';
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from '@/components/ui/button';
+import { BrainCircuit, Loader2, Signature } from 'lucide-react';
+import Image from 'next/image';
 import type {
   ServiceRecord,
   Vehicle,
@@ -20,7 +26,6 @@ import { ServiceItemsList } from './ServiceItemsList';
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { ServiceDetailsCard } from './ServiceDetailsCard';
 import { NextServiceInfoCard } from './NextServiceInfoCard';
-import { ReceptionAndDelivery } from './ReceptionAndDelivery';
 import { SafetyChecklist } from './SafetyChecklist';
 import PhotoReportTab from './PhotoReportTab';
 import { ServiceSummary } from './ServiceSummary';
@@ -29,11 +34,6 @@ import { SignatureDialog } from './signature-dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { ServiceFormValues } from '@/schemas/service-form';
 import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { BrainCircuit, Loader2, Signature } from 'lucide-react';
-import Image from 'next/image';
 
 
 const ReceptionContent = ({ part, isReadOnly, isEnhancingText, handleEnhanceText, onOpenSignature }: any) => {
@@ -58,14 +58,18 @@ const ReceptionContent = ({ part, isReadOnly, isEnhancingText, handleEnhanceText
                     </FormItem>
                 )}/>
             </div>
-            <FormField control={control} name="fuelLevel" render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Nivel de Combustible</FormLabel>
-                    <FormControl>
-                        <Input type="range" min="0" max="8" step="1" {...field} disabled={isReadOnly} />
-                    </FormControl>
-                </FormItem>
-            )}/>
+            <FormField
+                control={control}
+                name="fuelLevel"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Nivel de Combustible</FormLabel>
+                        <FormControl>
+                            <Input type="range" min="0" max="8" step="1" {...field} disabled={isReadOnly} />
+                        </FormControl>
+                    </FormItem>
+                )}
+            />
             <FormField
               control={control}
               name={signatureFieldName}
