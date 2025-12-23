@@ -127,7 +127,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
             const valueAsDate = field.value instanceof Date ? field.value : field.value ? new Date(field.value as any) : null;
             const onCalendarChange: CalendarProps['onChange'] = (value, event) => {
                 const picked = Array.isArray(value) ? (value[0] as Date | null) : (value as Date | null);
-                field.onChange(picked ?? null);
+                field.onChange(picked ?? undefined);
                 setIsCalendarOpen(false);
             };
             return (
@@ -196,3 +196,5 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
     </Form>
   );
 }
+
+    

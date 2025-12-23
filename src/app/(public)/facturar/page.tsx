@@ -1,9 +1,10 @@
+
 // src/app/(public)/facturar/page.tsx
 "use client";
 
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter } from "next/navigation";
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,9 +63,10 @@ function PageInner() {
     defaultValues: { folio: '', total: undefined },
   });
 
-  const billingMethods = useForm<BillingFormValues>({
+  const billingMethods = useForm<z.input<typeof billingFormSchema>, any, BillingFormValues>({
     resolver: zodResolver(billingFormSchema),
   });
+
 
   const onSearchSubmit = useCallback(async (data: SearchFormValues) => {
     setIsLoading(true);
@@ -190,7 +192,7 @@ function PageInner() {
                   <Form {...searchForm}>
                     <form onSubmit={searchForm.handleSubmit(onSearchSubmit)} className="space-y-4">
                       <FormField
-                        control={searchForm.control as any}
+                        control={searchForm.control}
                         name="folio"
                         render={({ field }) => (
                           <FormItem>
@@ -203,13 +205,20 @@ function PageInner() {
                         )}
                       />
                       <FormField
-                        control={searchForm.control as any}
+                        control={searchForm.control}
                         name="total"
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Monto Total (con IVA)</FormLabel>
                             <FormControl>
-                              <Input type="number" step="0.01" placeholder="Ej: 1599.00" {...field} value={field.value ?? ''} />
+                              <Input
+                                type="number"
+                                step="0.01"
+                                placeholder="Ej: 1599.00"
+                                {...field}
+                                value={(field.value as any) ?? ""}
+                                onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -258,3 +267,5 @@ function PageInner() {
 }
 
 export default withSuspense(PageInner, null);
+
+    

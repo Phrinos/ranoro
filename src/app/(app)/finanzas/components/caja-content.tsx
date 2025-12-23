@@ -415,15 +415,15 @@ export default function CajaContent() {
                       <FormLabel>Monto</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                           <Input
                             type="number"
                             step="0.01"
                             placeholder="0.00"
+                            className="pl-8"
                             {...field}
                             value={(field.value as any) ?? ''}
                             onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
-                            className="pl-8"
                           />
                         </div>
                       </FormControl>
@@ -445,3 +445,5 @@ export default function CajaContent() {
     </div>
   );
 }
+
+    

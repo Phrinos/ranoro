@@ -25,12 +25,25 @@ import { FacturacionCard } from './config-taller/facturacion-card';
 
 const FIRESTORE_DOC_ID = 'main';
 
+const isValidLogoUrl = (v: string) => {
+  if (!v) return false;
+  if (v.startsWith("/")) return true;
+  try {
+    const u = new URL(v);
+    return u.protocol === "http:" || u.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
 const tallerSchema = z.object({
   name: z.string().min(1, 'El nombre del taller es obligatorio'),
   phone: z.string().min(7, 'Mínimo 7 dígitos'),
   addressLine1: z.string().min(5, 'La dirección es obligatoria'),
   googleMapsUrl: z.string().url('Ingrese una URL válida de Google Maps.').optional().or(z.literal('')),
-  logoUrl: z.string().url('Debe proporcionar una URL del logo o subir una imagen.'),
+  logoUrl: z.string().min(1, "Ingresa una URL o sube una imagen.").refine(isValidLogoUrl, {
+    message: "Ingresa una URL válida o sube una imagen.",
+  }),
   contactPersonName: z.string().optional(),
   contactPersonPhone: z.string().optional(),
   contactPersonRole: z.string().optional(),
@@ -39,7 +52,8 @@ const tallerSchema = z.object({
   facturaComBillingMode: z.enum(['live', 'test']).optional(),
 });
 
-type TallerFormValues = z.infer<typeof tallerSchema>;
+type TallerFormInput = z.input<typeof tallerSchema>;
+type TallerFormValues = z.output<typeof tallerSchema>;
 
 const cleanObjectForFirestore = (obj: any) => {
     return Object.entries(obj).reduce((acc, [key, value]) => {
@@ -61,7 +75,7 @@ export function ConfigTallerPageContent() {
   const imgRef = useRef<HTMLImageElement>(null);
   const previewCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  const methods = useForm<TallerFormValues>({
+  const methods = useForm<TallerFormInput, any, TallerFormValues>({
     resolver: zodResolver(tallerSchema),
     defaultValues: { name: 'RANORO', phone: '', addressLine1: '', logoUrl: '/ranoro-logo.png'},
   });
@@ -217,3 +231,5 @@ export function ConfigTallerPageContent() {
     </>
   );
 }
+
+    

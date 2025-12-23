@@ -206,7 +206,7 @@ const FinancialChart = React.memo(({ data }: { data: any[] }) => (
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
           <YAxis tickFormatter={(value) => new Intl.NumberFormat('es-MX', { notation: 'compact', compactDisplay: 'short', style: 'currency', currency: 'MXN' }).format(value)} width={80} tick={{ fontSize: 12 }} />
-          <Tooltip formatter={(value?: number) => formatCurrency(value ?? 0)} />
+          <Tooltip formatter={(value?: number | string) => formatCurrency(value ?? 0)} />
           <Legend />
           <Line type="monotone" dataKey="ingresos" stroke="#3b82f6" strokeWidth={2} name="Ingresos Totales" />
           <Line type="monotone" dataKey="costoInsumos" stroke="#f97316" strokeWidth={2} name="Costo de Insumos" />
@@ -347,3 +347,5 @@ export const DashboardCharts = React.memo(function DashboardCharts({ services, s
 });
 
 DashboardCharts.displayName = 'DashboardCharts';
+
+    
