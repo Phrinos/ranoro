@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -11,7 +10,7 @@ import { CalendarIcon, PlusCircle, Trash2 } from "lucide-react";
 import { format, parseISO, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import type { FineCheck, Fine } from "@/types";
+import type { Fine } from "@/types";
 
 interface FineCheckDialogProps {
   open: boolean;
@@ -20,27 +19,35 @@ interface FineCheckDialogProps {
   onSave: (fines: Fine[]) => void;
 }
 
+type RCValue = Date | Date[] | null;
+
 export function FineCheckDialog({ open, onOpenChange, fines, onSave }: FineCheckDialogProps) {
   const [localFines, setLocalFines] = useState<Fine[]>(fines || []);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [openCalendarFor, setOpenCalendarFor] = useState<string | null>(null);
 
   useEffect(() => {
     setLocalFines(fines || []);
   }, [fines]);
 
   const handleAddFine = () => {
-    setLocalFines(prev => [
+    setLocalFines((prev) => [
       ...prev,
-      { id: crypto.randomUUID?.() ?? String(Date.now()), date: new Date().toISOString(), type: "", amount: 0 },
+      {
+        id: globalThis.crypto?.randomUUID?.() ?? String(Date.now()),
+        date: new Date().toISOString(),
+        type: "",
+        amount: 0,
+        description: "", // ✅ REQUIRED por tu tipo Fine
+      },
     ]);
   };
 
   const handleRemoveFine = (index: number) => {
-    setLocalFines(prev => prev.filter((_, i) => i !== index));
+    setLocalFines((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleFineChange = (index: number, field: keyof Fine, value: any) => {
-    setLocalFines(prev => {
+  const handleFineChange = <K extends keyof Fine>(index: number, field: K, value: Fine[K]) => {
+    setLocalFines((prev) => {
       const next = [...prev];
       next[index] = { ...next[index], [field]: value };
       return next;
@@ -54,7 +61,7 @@ export function FineCheckDialog({ open, onOpenChange, fines, onSave }: FineCheck
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Revisión de Multas</DialogTitle>
         </DialogHeader>
@@ -63,12 +70,14 @@ export function FineCheckDialog({ open, onOpenChange, fines, onSave }: FineCheck
           {localFines.map((fine, index) => {
             const parsed = fine.date ? parseISO(fine.date) : undefined;
             const label = parsed && isValid(parsed) ? format(parsed, "PPP", { locale: es }) : "Fecha";
+            const fineId = fine.id ?? String(index);
 
             return (
-              <div key={fine.id ?? index} className="flex items-center gap-2">
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <div key={fineId} className="flex flex-wrap items-center gap-2">
+                <Popover open={openCalendarFor === fineId} onOpenChange={(v) => setOpenCalendarFor(v ? fineId : null)}>
                   <PopoverTrigger asChild>
                     <Button
+                      type="button"
                       variant="outline"
                       className={cn("w-[180px] justify-start text-left font-normal", !parsed && "text-muted-foreground")}
                     >
@@ -76,14 +85,16 @@ export function FineCheckDialog({ open, onOpenChange, fines, onSave }: FineCheck
                       {label}
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+
+                  <PopoverContent className="w-auto p-0" align="start">
                     <NewCalendar
-                      value={parsed}
-                      onChange={(date: any) => {
-                        if (date && !Array.isArray(date)) {
-                          handleFineChange(index, "date", date.toISOString());
+                      value={parsed ?? null}
+                      onChange={(value: RCValue) => {
+                        const d = Array.isArray(value) ? value[0] : value;
+                        if (d instanceof Date && isValid(d)) {
+                          handleFineChange(index, "date", d.toISOString());
                         }
-                        setIsCalendarOpen(false);
+                        setOpenCalendarFor(null);
                       }}
                     />
                   </PopoverContent>
@@ -92,7 +103,12 @@ export function FineCheckDialog({ open, onOpenChange, fines, onSave }: FineCheck
                 <Input
                   placeholder="Motivo"
                   value={fine.type ?? ""}
-                  onChange={(e) => handleFineChange(index, "type", e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    handleFineChange(index, "type", v);
+                    // opcional: sincroniza description con type
+                    if (!fine.description) handleFineChange(index, "description", v);
+                  }}
                   className="min-w-[180px]"
                 />
 
@@ -104,22 +120,32 @@ export function FineCheckDialog({ open, onOpenChange, fines, onSave }: FineCheck
                   className="w-28"
                 />
 
-                <Button variant="ghost" size="icon" onClick={() => handleRemoveFine(index)} aria-label="Eliminar multa">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleRemoveFine(index)}
+                  aria-label="Eliminar multa"
+                >
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
             );
           })}
 
-          <Button variant="outline" onClick={handleAddFine}>
+          <Button type="button" variant="outline" onClick={handleAddFine}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Añadir Multa
           </Button>
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button onClick={handleSave}>Guardar</Button>
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={handleSave}>
+            Guardar
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
