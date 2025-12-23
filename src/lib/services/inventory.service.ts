@@ -1,3 +1,4 @@
+
 // src/lib/services/inventory.service.ts
 
 import {
@@ -84,6 +85,10 @@ const updateInventoryStock = async (
     if (!db) throw new Error("Database not initialized.");
 
     const itemUpdates = items.map(async (item) => {
+        if (!item.id) {
+            console.warn('updateInventoryStock received an item without an ID. Skipping.', item);
+            return;
+        }
         const itemRef = doc(db, 'inventory', item.id);
         const itemDoc = await getDoc(itemRef);
 
@@ -107,6 +112,7 @@ const updateInventoryStock = async (
 
     await Promise.all(itemUpdates);
 };
+
 
 const getSuppliesCostForItem = (
     serviceItem: ServiceItem,
@@ -139,10 +145,10 @@ const onServiceTypesUpdatePromise = async (): Promise<ServiceTypeRecord[]> => {
 const saveServiceType = async (data: Omit<ServiceTypeRecord, 'id'>, id?: string): Promise<ServiceTypeRecord> => {
     if (!db) throw new Error("Database not initialized.");
     if (id) {
-        await updateDoc(doc(db, 'serviceTypes', id), data);
+        await updateDoc(doc(db, 'serviceTypes', id), data as any);
         return { id, ...data };
     } else {
-        const docRef = await addDoc(collection(db, 'serviceTypes'), data);
+        const docRef = await addDoc(collection(db, 'serviceTypes'), data as any);
         return { id: docRef.id, ...data };
     }
 };
@@ -170,10 +176,10 @@ const onCategoriesUpdatePromise = async (): Promise<InventoryCategory[]> => {
 const saveCategory = async (data: Omit<InventoryCategory, 'id'>, id?: string): Promise<InventoryCategory> => {
     if (!db) throw new Error("Database not initialized.");
     if (id) {
-        await updateDoc(doc(db, 'inventoryCategories', id), data);
+        await updateDoc(doc(db, 'inventoryCategories', id), data as any);
         return { id, ...data };
     } else {
-        const docRef = await addDoc(collection(db, 'inventoryCategories'), data);
+        const docRef = await addDoc(collection(db, 'inventoryCategories'), data as any);
         return { id: docRef.id, ...data };
     }
 };
@@ -200,10 +206,10 @@ const onSuppliersUpdatePromise = async (): Promise<Supplier[]> => {
 const saveSupplier = async (data: Omit<Supplier, 'id'>, id?: string): Promise<Supplier> => {
     if (!db) throw new Error("Database not initialized.");
     if (id) {
-        await updateDoc(doc(db, 'suppliers', id), data);
+        await updateDoc(doc(db, 'suppliers', id), data as any);
         return { id, ...data };
     } else {
-        const docRef = await addDoc(collection(db, 'suppliers'), data);
+        const docRef = await addDoc(collection(db, 'suppliers'), data as any);
         return { id: docRef.id, ...data };
     }
 };
@@ -316,11 +322,11 @@ const onFixedExpensesUpdate = (callback: (expenses: MonthlyFixedExpense[]) => vo
 const saveFixedExpense = async (data: Omit<MonthlyFixedExpense, 'id'>, id?: string): Promise<MonthlyFixedExpense> => {
     if (!db) throw new Error("Database not initialized.");
     if (id) {
-        await updateDoc(doc(db, 'monthlyFixedExpenses', id), data);
-        return { id, ...data };
+        await updateDoc(doc(db, 'monthlyFixedExpenses', id), data as any);
+        return { id, ...data } as MonthlyFixedExpense;
     } else {
-        const docRef = await addDoc(collection(db, 'monthlyFixedExpenses'), data);
-        return { id: docRef.id, ...data };
+        const docRef = await addDoc(collection(db, 'monthlyFixedExpenses'), data as any);
+        return { id: docRef.id, ...data } as MonthlyFixedExpense;
     }
 };
 
@@ -375,3 +381,5 @@ export const inventoryService = {
   onVehicleDataUpdate,
   deleteCollectionDoc,
 };
+
+    

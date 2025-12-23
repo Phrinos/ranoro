@@ -1,3 +1,4 @@
+
 // src/app/(app)/finanzas/components/egresos-content.tsx
 "use client";
 
@@ -150,14 +151,15 @@ export function EgresosContent({
               <span className="text-foreground">
                 (=) Gastos fijos aplicados al periodo (debe cuadrar con “Gastos Fijos (Proporcionales)”):
               </span>
-              <span className="text-red-600">{formatCurrency(financialSummary.totalBaseExpenses)}</span>
+              <span className="text-red-600">{formatCurrency(financialSummary?.totalBaseExpenses || 0)}</span>
             </div>
           </div>
 
           {/* Nota de consistencia */}
           <p className="text-xs text-muted-foreground">
             Nota: Si el total mensual configurado difiere de la base considerada, revisa la fecha de alta/activación
-            de cada gasto fijo. El Estado de Resultados sólo considera gastos activos hasta la fecha final del periodo.
+            de cada gasto fijo. El Estado de Resultados sólo considera gastos activos hasta la fecha final del
+            periodo.
           </p>
         </CardContent>
       </Card>
@@ -171,3 +173,5 @@ export function EgresosContent({
     </>
   );
 }
+
+    

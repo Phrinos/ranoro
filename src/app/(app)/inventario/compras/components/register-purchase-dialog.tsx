@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
@@ -240,7 +241,7 @@ export function RegisterPurchaseDialog({
                                             inputMode="decimal"
                                             className="h-8 w-16 text-center bg-white"
                                             {...field}
-                                            value={field.value ?? ""}
+                                            value={(field.value as any) ?? ""}
                                             onChange={(e) => updateQty(index, parseFloat(e.target.value))}
                                             onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
                                         />
@@ -265,7 +266,7 @@ export function RegisterPurchaseDialog({
                                         inputMode="decimal"
                                         className="h-8 pl-8 text-right bg-white"
                                         {...field}
-                                        value={field.value ?? ""}
+                                        value={(field.value as any) ?? ""}
                                         onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
                                       />
                                     </div>
@@ -504,3 +505,5 @@ function SearchItemDialog({
     </Dialog>
   );
 }
+
+    

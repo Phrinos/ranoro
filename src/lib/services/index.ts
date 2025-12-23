@@ -1,3 +1,4 @@
+
 // src/lib/services/index.ts
 
 export * from './admin.service';
@@ -14,5 +15,6 @@ export * from './quote.service';
 export * from './rental.service';
 export * from './sale.service';
 export * from './service.service';
-// La siguiente línea estaba comentada, la descomento para asegurar que todo se exporte.
 export * from './operations.service';
+
+    

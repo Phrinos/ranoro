@@ -100,7 +100,7 @@ async function denormalizeService(
   }
 
   // 3. Financial Denormalization
-  serviceData.total = pickTotal(serviceData);
+  serviceData.totalCost = pickTotal(serviceData);
   
   return serviceData;
 }
@@ -124,7 +124,7 @@ function buildPublicData(svc: any) {
       appointmentDateTime: svc.appointmentDateTime || null,
       appointmentStatus: svc.appointmentStatus || null,
       serviceItems: Array.isArray(svc.serviceItems) ? svc.serviceItems.map((item: any) => ({ name: item.name, sellingPrice: item.sellingPrice })) : [],
-      total: toNumber(svc.total),
+      totalCost: toNumber(svc.totalCost),
       recommendations: svc.recommendations || null,
       customerSignatureReception: svc.customerSignatureReception || null,
       customerSignatureDelivery: svc.customerSignatureDelivery || null,
@@ -246,18 +246,20 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
         .flatMap((item: any) => item.suppliesUsed || [])
         .filter((supply: any) => !supply.isService && supply.supplyId && supply.quantity > 0);
 
-    const itemRefs = suppliesToDiscount.map((item: any) => doc(db, 'inventory', item.supplyId));
-    
-    // Fetch docs outside the batch write loop if we're not in a transaction
-    if (manageBatch) {
-      const itemDocs = await Promise.all(itemRefs.map(ref => getDoc(ref)));
-      itemDocs.forEach((itemDoc, index) => {
-          if (itemDoc.exists()) {
-              const currentStock = itemDoc.data().quantity || 0;
-              const newStock = currentStock - suppliesToDiscount[index].quantity;
-              workBatch.update(itemDoc.ref, { quantity: newStock });
-          }
-      });
+    if (suppliesToDiscount.length > 0) {
+        const itemRefs = suppliesToDiscount.map((item: any) => doc(db, 'inventory', item.supplyId));
+        
+        // Fetch docs outside the batch write loop if we're not in a transaction
+        if (manageBatch) {
+          const itemDocs = await Promise.all(itemRefs.map(ref => getDoc(ref)));
+          itemDocs.forEach((itemDoc, index) => {
+              if (itemDoc.exists()) {
+                  const currentStock = itemDoc.data().quantity || 0;
+                  const newStock = currentStock - suppliesToDiscount[index].quantity;
+                  workBatch.update(itemDoc.ref, { quantity: newStock });
+              }
+          });
+        }
     }
 
     const cleanedNextServiceInfo = cleanObjectForFirestore(paymentDetails.nextServiceInfo);
@@ -403,3 +405,5 @@ export const serviceService = {
   saveMigratedServices,
   cancelService,
 };
+
+    

@@ -1,5 +1,6 @@
+
 // src/app/api/services/[id]/confirm/route.ts
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 
@@ -23,7 +24,7 @@ const db = getFirestore();
  * It expects the service ID to be part of the URL path.
  */
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
@@ -73,3 +74,5 @@ export async function POST(
     return NextResponse.json({ success: false, error: errorMessage }, { status: 500 });
   }
 }
+
+    

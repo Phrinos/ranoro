@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/compras/page.tsx
 "use client";
 
@@ -88,7 +89,7 @@ function ProveedoresTabContent({ suppliers }: { suppliers: Supplier[] }) {
   const handleSaveSupplier = useCallback(
     async (formData: SupplierFormValues) => {
       try {
-        await inventoryService.saveSupplier(formData, editingSupplier?.id);
+        await inventoryService.saveSupplier(formData as any, editingSupplier?.id);
         toast({
           title: `Proveedor ${editingSupplier ? "Actualizado" : "Agregado"}`,
         });
@@ -326,3 +327,5 @@ export default function ComprasUnificadasPage() {
     </>
   );
 }
+
+    

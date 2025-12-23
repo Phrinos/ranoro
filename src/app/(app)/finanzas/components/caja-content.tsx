@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, cn } from "@/lib/utils";
-import { format, isValid, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, isValid, startOfDay, endOfDay, subDays, startOfWeek, endOfMonth, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { DollarSign, ArrowDown, ArrowUp, Loader2, Wallet, CreditCard, Landmark, ArrowLeft, ArrowRight } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
@@ -31,7 +31,10 @@ const cashTransactionSchema = z.object({
   description: z.string().min(3, "La descripción debe tener al menos 3 caracteres."),
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a 0."),
 });
+
+type CashTransactionFormInput = z.input<typeof cashTransactionSchema>;
 type CashTransactionFormValues = z.infer<typeof cashTransactionSchema>;
+
 
 type EnhancedCashDrawerTransaction = CashDrawerTransaction & { fullDescription?: string; };
 
@@ -221,7 +224,14 @@ export default function CajaContent() {
   };
 
   // registrar manual
-  const form = useForm<CashTransactionFormValues>({ resolver: zodResolver(cashTransactionSchema) });
+  const form = useForm<CashTransactionFormInput, any, CashTransactionFormValues>({ 
+    resolver: zodResolver(cashTransactionSchema),
+    defaultValues: {
+      description: "",
+      amount: undefined,
+    }
+  });
+
   const handleOpenDialog = (type: 'Entrada' | 'Salida') => { setDialogType(type); form.reset(); setIsDialogOpen(true); };
   
   const handleTransactionSubmit = async (values: CashTransactionFormValues) => {
@@ -387,7 +397,7 @@ export default function CajaContent() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleTransactionSubmit)} id="cash-transaction-form" className="space-y-4">
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="description"
                   render={({ field }) => (
                     <FormItem>
@@ -398,7 +408,7 @@ export default function CajaContent() {
                   )}
                 />
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
@@ -406,7 +416,15 @@ export default function CajaContent() {
                       <FormControl>
                         <div className="relative">
                           <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input type="number" step="0.01" placeholder="0.00" {...field} value={field.value ?? ''} className="pl-8" />
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            value={(field.value as any) ?? ''}
+                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
+                            className="pl-8"
+                          />
                         </div>
                       </FormControl>
                       <FormMessage />
@@ -427,3 +445,5 @@ export default function CajaContent() {
     </div>
   );
 }
+
+    

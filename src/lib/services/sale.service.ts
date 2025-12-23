@@ -1,3 +1,4 @@
+
 // src/lib/services/sale.service.ts
 
 import {
@@ -59,7 +60,7 @@ const registerSale = async (
 
     const saleRef = doc(db, 'sales', saleId);
     
-    const totalAmount = saleData.items.reduce((acc, item) => acc + item.totalPrice, 0);
+    const totalAmount = saleData.items.reduce((acc, item) => acc + (item.totalPrice || 0), 0);
     const subTotal = totalAmount / 1.16;
     const tax = totalAmount - subTotal;
 
@@ -88,7 +89,7 @@ const registerSale = async (
     workBatch.set(saleRef, cleanObjectForFirestore(newSale));
 
     const inventoryUpdateItems = saleData.items
-        .filter(item => !item.isService)
+        .filter(item => !item.isService && item.inventoryItemId)
         .map(item => ({ id: item.inventoryItemId!, quantity: item.quantity }));
 
     if (inventoryUpdateItems.length > 0) {
@@ -107,6 +108,7 @@ const registerSale = async (
                 userName: currentUser.name,
                 relatedType: 'Venta',
                 relatedId: saleId,
+                paymentMethod: 'Efectivo',
             });
         }
     }
@@ -129,7 +131,7 @@ const cancelSale = async (saleId: string, reason: string, currentUser: User | nu
     batch.update(saleRef, { status: 'Cancelado', cancellationReason: reason });
     
     const inventoryUpdateItems = saleData.items
-        .filter(item => !(item as any).isService)
+        .filter(item => !(item as any).isService && (item as any).inventoryItemId)
         .map(item => ({ id: (item as any).inventoryItemId, quantity: item.quantity }));
 
     if (inventoryUpdateItems.length > 0) {
@@ -192,3 +194,5 @@ export const saleService = {
   cancelSale,
   deleteSale,
 };
+
+    

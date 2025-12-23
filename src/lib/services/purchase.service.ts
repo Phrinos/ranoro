@@ -1,3 +1,4 @@
+
 // src/lib/services/purchase.service.ts
 
 import {
@@ -157,7 +158,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     batch.set(payableRef, cleanObjectForFirestore(newPayableAccount));
     const currentDebt = (supplierDoc as any)?.debtAmount || 0;
     batch.set(supplierRef, { debtAmount: asMoney(currentDebt + invoiceTotal) }, { merge: true });
-  } else if (isImmediatePayment(data.paymentMethod) && cashTxRef) {
+  } else if (isCash(data.paymentMethod) && cashTxRef) {
     // 5b) Pago inmediato: salida en caja
     batch.set(
       cashTxRef,
@@ -242,6 +243,7 @@ const registerPayableAccountPayment = async (
           userName: user?.name || 'Sistema',
           relatedType: 'CuentaPorPagar',
           relatedId: accountId,
+          paymentMethod: 'Efectivo',
         })
       );
     }
@@ -266,3 +268,5 @@ export const purchaseService = {
   registerPurchase,
   registerPayableAccountPayment,
 };
+
+    

@@ -1,3 +1,4 @@
+
 // src/lib/services/rental.service.ts
 
 import {
@@ -23,6 +24,7 @@ import { cleanObjectForFirestore } from '../forms';
 import { inventoryService } from './inventory.service';
 import { personnelService } from './personnel.service';
 import { startOfDay, differenceInCalendarDays, addDays, parseISO, format as formatDate } from 'date-fns';
+import { cashService } from './cash.service';
 
 // --- Daily Rental Charges ---
 
@@ -93,14 +95,31 @@ const addRentalPayment = async (
         paymentMethod: paymentMethod,
         registeredByName: currentUser?.name || 'Sistema',
     };
+
+    let savedPaymentId: string;
     
     if (paymentId) {
         await updateDoc(doc(db, 'rentalPayments', paymentId), cleanObjectForFirestore(paymentData));
-        return { id: paymentId, ...paymentData };
+        savedPaymentId = paymentId;
     } else {
         const docRef = await addDoc(collection(db, 'rentalPayments'), cleanObjectForFirestore(paymentData));
-        return { id: docRef.id, ...paymentData };
+        savedPaymentId = docRef.id;
     }
+
+    if (paymentMethod === 'Efectivo') {
+        await cashService.addCashTransaction({
+            type: 'Entrada',
+            amount: amount,
+            concept: `Renta de ${driver.name} (${vehicle.licensePlate})`,
+            userId: currentUser?.id || 'system',
+            userName: currentUser?.name || 'Sistema',
+            relatedType: 'Flotilla',
+            relatedId: savedPaymentId,
+            paymentMethod: 'Efectivo',
+        });
+    }
+
+    return { id: savedPaymentId, ...paymentData };
 };
 
 
@@ -118,6 +137,7 @@ const onOwnerWithdrawalsUpdate = (callback: (withdrawals: OwnerWithdrawal[]) => 
 };
 
 const addOwnerWithdrawal = async (data: Omit<OwnerWithdrawal, 'id' | 'date'>): Promise<OwnerWithdrawal> => {
+    if (!db) throw new Error("Database not initialized.");
     const newWithdrawal = { ...data, date: new Date().toISOString() };
     const docRef = await addDoc(collection(db, 'ownerWithdrawals'), cleanObjectForFirestore(newWithdrawal));
     return { id: docRef.id, ...newWithdrawal };
@@ -132,6 +152,7 @@ const onVehicleExpensesUpdate = (callback: (expenses: VehicleExpense[]) => void)
 };
 
 const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'vehicleLicensePlate'>): Promise<VehicleExpense> => {
+    if (!db) throw new Error("Database not initialized.");
     const vehicle = await inventoryService.getVehicleById(data.vehicleId);
     if (!vehicle) throw new Error("Vehicle not found");
 
@@ -152,3 +173,5 @@ export const rentalService = {
   onVehicleExpensesUpdate,
   addVehicleExpense,
 };
+
+    

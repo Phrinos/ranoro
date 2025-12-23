@@ -136,7 +136,7 @@ function PageInner() {
     
   const tabs = [
     { value: "caja", label: "Caja", content: <Suspense fallback={<Loader2 className="animate-spin" />}><CajaContent /></Suspense> },
-    { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosContent allServices={allServices} allSales={allSales} allExpenses={allExpenses} allInventory={inventoryItems} dateRange={dateRange} onDateRangeChange={handleDateRangeChange} /></Suspense> },
+    { value: "movimientos", label: "Movimientos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><MovimientosContent allSales={allSales} allServices={allServices} allExpenses={allExpenses} allInventory={inventoryItems} dateRange={dateRange} onDateRangeChange={handleDateRangeChange} /></Suspense> },
     { value: "egresos", label: "Egresos", content: (
       <Suspense fallback={<Loader2 className="animate-spin" />}>
         <EgresosContent 
@@ -161,3 +161,5 @@ function PageInner() {
 }
 
 export default withSuspense(PageInner, null);
+
+    

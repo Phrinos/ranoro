@@ -1,3 +1,4 @@
+
 // src/app/(app)/personal/components/user-form.tsx
 "use client";
 
@@ -51,8 +52,8 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
         phone: initialData.phone || '',
         role: initialData.role || '',
         functions: initialData.functions || [],
-        monthlySalary: initialData.monthlySalary || undefined,
-        commissionRate: initialData.commissionRate || undefined,
+        monthlySalary: initialData.monthlySalary,
+        commissionRate: initialData.commissionRate,
         hireDate: initialData.hireDate ? parseDate(initialData.hireDate) : undefined,
         isArchived: initialData.isArchived ?? false,
     } : {
@@ -70,7 +71,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
 
   return (
     <Form {...form}>
-      <form id={id} onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-6 pt-4 pb-4">
+      <form id={id} onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4 pb-4">
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Ej: Juan Pérez" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} className="bg-card text-foreground" /></FormControl><FormMessage /></FormItem>
         )}/>
@@ -94,7 +95,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                         {OPERATIVE_FUNCTIONS.map((item) => (
                             <FormField
                                 key={item.id}
-                                control={form.control}
+                                control={form.control as any}
                                 name="functions"
                                 render={({ field }) => {
                                     return (
@@ -169,7 +170,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                 <FormItem><FormLabel>Sueldo Base Mensual</FormLabel><FormControl>
                     <Input
                         type="number"
-                        value={field.value ?? ''}
+                        value={(field.value as any) ?? ""}
                         onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                         className="bg-card text-foreground"
                         placeholder="0.00"
@@ -183,7 +184,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                 <FormItem><FormLabel>% Comisión</FormLabel><FormControl>
                     <Input
                         type="number"
-                        value={field.value ?? ''}
+                        value={(field.value as any) ?? ""}
                         onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
                         className="bg-card text-foreground"
                         placeholder="Ej: 5 para 5%"
@@ -195,3 +196,5 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
     </Form>
   );
 }
+
+    
