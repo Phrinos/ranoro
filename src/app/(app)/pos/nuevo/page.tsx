@@ -239,7 +239,7 @@ export default function NuevaVentaPage() {
   const [isAddingItem, setIsAddingItem] = useState(false);
 
   const methods = useForm<POSFormValues>({
-    resolver: zodResolver(posFormSchema),
+    resolver: zodResolver(posFormSchema) as any,
     defaultValues: {
       items: [],
       customerName: "Cliente Mostrador",

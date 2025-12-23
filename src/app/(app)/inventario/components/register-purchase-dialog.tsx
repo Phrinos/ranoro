@@ -26,7 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { NewCalendar } from "@/components/ui/calendar";
 import { format as formatDate } from "date-fns";
 import { es } from "date-fns/locale";
-import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
+import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 import type { CalendarProps } from "react-calendar";
 
 const purchaseItemSchema = z.object({
@@ -229,7 +229,7 @@ export function RegisterPurchaseDialog({
                                     <Minus className="h-4 w-4"/>
                                 </Button>
                                 <FormField
-                                    control={control}
+                                    control={control as any}
                                     name={`items.${index}.quantity`}
                                     render={({ field }) => (
                                         <Input
@@ -252,7 +252,7 @@ export function RegisterPurchaseDialog({
 
                               <div className="col-span-3 sm:col-span-2">
                                 <FormField
-                                  control={control}
+                                  control={control as any}
                                   name={`items.${index}.purchasePrice`}
                                   render={({ field }) => (
                                     <div className="relative">
@@ -314,7 +314,7 @@ export function RegisterPurchaseDialog({
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField
-                      control={control}
+                      control={control as any}
                       name="paymentMethod"
                       render={({ field }) => (
                         <FormItem>
@@ -339,7 +339,7 @@ export function RegisterPurchaseDialog({
 
                     {paymentMethod === "Crédito" && (
                       <FormField
-                        control={control}
+                        control={control as any}
                         name="dueDate"
                         render={({ field }) => (
                           <FormItem className="flex flex-col">

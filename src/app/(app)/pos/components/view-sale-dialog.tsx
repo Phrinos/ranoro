@@ -61,7 +61,7 @@ export function ViewSaleDialog({
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
 
   const methods = useForm<POSFormValues>({
-    resolver: zodResolver(posFormSchema),
+    resolver: zodResolver(posFormSchema) as any,
     defaultValues: sale as any,
   });
 
