@@ -1,5 +1,5 @@
 
-// src/app/(public)/s/[id]/page.tsx
+// src/app/(public)/s/page.tsx
 
 "use client";
 

@@ -1,3 +1,4 @@
+
 // src/app/(public)/s/[id]/page.tsx
 
 "use client";
@@ -56,17 +57,17 @@ type PublicServiceDoc = {
 };
 
 const pickFirstText = (...vals: any[]): string | undefined => {
-    for (const v of vals) {
-      if (v === null || v === undefined) continue;
-  
-      if (typeof v === "number" && Number.isFinite(v)) return String(v);
-  
-      if (typeof v === "string") {
-        const s = v.trim();
-        if (s && s.toLowerCase() !== "na") return s;
-      }
+  for (const v of vals) {
+    if (v === null || v === undefined) continue;
+
+    if (typeof v === "number" && Number.isFinite(v)) return String(v);
+
+    if (typeof v === "string") {
+      const s = v.trim();
+      if (s && s.toLowerCase() !== "na") return s;
     }
-    return undefined;
+  }
+  return undefined;
 };
 
 
@@ -131,7 +132,7 @@ export default function PublicServicePage() {
       return;
     }
     
-    getPublicServiceData(publicId).catch((e) => console.warn("auto-repair failed:", e));
+    getPublicServiceData(publicId).catch((e: any) => console.warn("auto-repair failed:", e));
 
     const ref = doc(db, "publicServices", publicId);
     const unsub = onSnapshot(
