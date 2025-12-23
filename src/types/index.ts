@@ -1,7 +1,116 @@
+// src/types/index.ts
 import { type ReactNode } from "react";
 
-export const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Transferencia", "Crédito"] as const;
-export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+// ✅ Roles: tu UI compara contra "Superadministrador" y también tienes data legacy "superadmin"
+export type AppRole =
+  | "Superadministrador"
+  | "Administrador"
+  | "Supervisor"
+  | "Técnico"
+  | "Cajero"
+  | "Usuario"
+  | "superadmin"
+  | "admin"
+  | "user";
+
+// ✅ Métodos de pago: tu UI usa "Tarjeta MSI"
+export type PaymentMethod = "Efectivo" | "Tarjeta" | "Tarjeta MSI" | "Transferencia" | "Crédito" | "Efectivo+Transferencia" | "Tarjeta+Transferencia";
+export const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Crédito"] as const;
+
+
+// ✅ Sub-estatus: tu UI compara estos literales
+export type ServiceSubStatus =
+  | "Sin Confirmar"
+  | "Confirmada"
+  | "Ingresado"
+  | "En Espera de Refacciones"
+  | "Reparando"
+  | "Completado"
+  | "Cancelada";
+
+// ✅ Safety
+export type SafetyCheckStatus = "ok" | "atencion" | "inmediata" | "na";
+
+export type SafetyCheckValue = {
+  // si ya tienes fields, déjalos y solo agrega lo que falte
+  status?: SafetyCheckStatus;
+  note?: string;
+  // value?: boolean | string | number; // opcional si ya lo manejas así
+};
+
+export type SafetyInspection = {
+  id: string;
+  name: string;
+  value: SafetyCheckValue;
+};
+
+// ✅ Items/Payments: tu ticket usa sellingPrice y folio
+export type ServiceItem = {
+  id?: string;
+  name?: string;
+  quantity?: number;
+  sellingPrice?: number; // <-- clave
+  price?: number;        // fallback si hay data vieja
+  suppliesUsed?: any[];
+  itemName?: string;
+  [k: string]: any;
+};
+
+export type Payment = {
+  id?: string;
+  date?: string;
+
+  // nombre “nuevo” usado en UI:
+  method?: PaymentMethod;
+  amount: number;
+  folio?: string;
+
+  // nombre legacy si existe en algún lugar:
+  paymentMethod?: PaymentMethod;
+
+  [k: string]: any;
+};
+
+// ✅ ServiceRecord: tu UI lee appointmentStatus, paymentMethod, cardCommission, safetyInspection, vehicleId
+export type ServiceRecord = {
+  id: string;
+
+  appointmentStatus?: string; // lo usas en UI
+  subStatus?: ServiceSubStatus;
+
+  payments?: Payment[];
+  paymentMethod?: PaymentMethod;
+  cardCommission?: number;
+
+  serviceItems?: ServiceItem[];
+
+  vehicleId?: string;
+  vehicle?: any; // si tu Vehicle ya está tipado, cambia any por Vehicle
+
+  safetyInspection?: SafetyInspection[]; // <-- tu UI lo pasa como array
+
+  totalAmount?: number;
+  totalCost?: number;
+  serviceProfit?: number;
+
+  [k: string]: any;
+};
+
+// ✅ Tickets: facturar/page.tsx usa totalAmount o totalCost
+export type SaleReceipt = {
+  id: string;
+  totalAmount?: number;
+  totalCost?: number;
+  items: ServiceItem[];     // si antes era InventoryItem[], cámbialo a un tipo de línea de venta
+  payments?: Payment[];
+  [k: string]: any;
+};
+
+export type TicketType = ServiceRecord | SaleReceipt;
+
+// ✅ Cash drawer: tu código usa 'Entrada'/'Salida' en algunos lados
+export type CashDrawerTransactionType = "in" | "out" | "Entrada" | "Salida";
+
 
 export interface Vehicle {
   id: string;
@@ -57,56 +166,6 @@ export interface FinancialInfo {
   notaryPowerExpirationDate?: string;
 }
 
-export type ServiceSubStatus =
-  | "pending"
-  | "pending-approval"
-  | "approved"
-  | "in-progress"
-  | "completed"
-  | "cancelled";
-
-export interface ServiceRecord {
-  id: string;
-  vehicle: Vehicle;
-  items: ServiceItem[];
-  payments: Payment[];
-  status: string;
-  subTotal: number;
-  total: number;
-  notes: string;
-  createdAt: string;
-  updatedAt: string;
-  deliveryDateTime?: string;
-  serviceDate?: string;
-  receptionDateTime?: string;
-  totalCost?: number;
-  serviceItems?: ServiceItem[];
-  serviceType?: string;
-  folio?: string;
-  vehicleIdentifier?: string;
-  cancellationReason?: string;
-  publicId?: string;
-  subStatus?: ServiceSubStatus;
-  technicianId?: string;
-  serviceAdvisorId?: string;
-  appointmentDateTime?: string;
-  nextServiceInfo?: NextServiceInfo;
-  safetyInspection?: SafetyInspection[];
-  photoReports?: any[];
-  originalQuoteItems?: ServiceItem[];
-  serviceAdvisorName?: string;
-  serviceAdvisorSignatureDataUrl?: string;
-  customerSignatureReception?: string;
-  customerSignatureDelivery?: string;
-  vehicleConditions?: string;
-  customerItems?: string;
-  fuelLevel?: string;
-  customerName?: string;
-  customerPhone?: string;
-  mileage?: number;
-  description?: string;
-}
-
 export interface AuditLog {
   id: string;
   user: User;
@@ -142,10 +201,8 @@ export interface InventoryItem {
   inventoryItemId?: string;
 }
 
-export interface InventoryCategory {
-  id: string;
-  name: string;
-}
+export type InventoryCategory = string;
+
 
 export interface Supplier {
   id: string;
@@ -160,22 +217,6 @@ export interface Supplier {
   debtAmount?: number;
 }
 
-export interface SaleReceipt {
-  id: string;
-  items: InventoryItem[];
-  total: number;
-  paymentMethod: PaymentMethod;
-  createdAt: string;
-  status?: string;
-  saleDate?: string;
-  totalAmount?: number;
-  payments?: Payment[];
-  customerName?: string;
-  registeredByName?: string;
-  registeredById?: string;
-  subTotal?: number;
-  tax?: number;
-}
 
 export interface MonthlyFixedExpense {
   id: string;
@@ -188,7 +229,7 @@ export interface MonthlyFixedExpense {
 export interface User {
   id: string;
   name: string;
-  role: AppRole;
+  role: string;
   isArchived?: boolean;
   monthlySalary?: number;
   commissionRate?: number;
@@ -197,12 +238,6 @@ export interface User {
   hireDate?: string;
   signatureDataUrl?: string;
   email?: string;
-}
-
-export interface AppRole {
-  id: string;
-  name: string;
-  permissions: string[];
 }
 
 export interface CapacityAnalysisOutput {
@@ -223,7 +258,7 @@ export interface Personnel {
 
 export interface CashDrawerTransaction {
   id: string;
-  type: "in" | "out";
+  type: CashDrawerTransactionType;
   amount: number;
   reason: string;
   timestamp: string;
@@ -231,15 +266,6 @@ export interface CashDrawerTransaction {
   concept?: string;
   paymentMethod?: PaymentMethod;
   relatedType?: string;
-}
-
-export interface Payment {
-  id: string;
-  amount: number;
-  date: string;
-  paymentMethod: PaymentMethod;
-  note?: string;
-  method?: PaymentMethod;
 }
 
 export interface OwnerWithdrawal {
@@ -318,8 +344,8 @@ export interface NextServiceInfo {
 }
 
 export interface EngineData {
-  insumos?: any[];
-  servicios?: any[];
+  insumos?: any;
+  servicios?: any;
   name?: string;
 }
 
@@ -347,7 +373,7 @@ export interface NavigationEntry {
   path?: string;
   isActive?: boolean;
   label?: string;
-  icon?: ReactNode;
+  icon?: React.ElementType;
   groupTag?: string;
   permissions?: string[];
 }
@@ -373,25 +399,6 @@ export interface InitialCashBalance {
   timestamp: string;
 }
 
-export interface ServiceItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  suppliesUsed?: any[];
-}
-
-export type SafetyCheckValue = "ok" | "atencion" | "inmediata" | "na";
-
-export interface SafetyInspection {
-  id: string;
-  name: string;
-  value: SafetyCheckValue;
-  status?: string;
-}
-
-export type SafetyCheckStatus = "ok" | "pending" | "critical";
-
 export interface FinancialSummary {
   totalTechnicianSalaries: number;
   totalAdministrativeSalaries: number;
@@ -406,8 +413,6 @@ export interface Infraction {
   paidAmount: number;
   payments: Payment[];
 }
-
-export type TicketType = ServiceRecord | SaleReceipt;
 
 export interface SimplifiedSale {
   totalAmount: number;

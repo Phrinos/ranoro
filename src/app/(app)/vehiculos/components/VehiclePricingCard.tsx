@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import type { EngineData } from '@/types';
+import type { EngineData } from '@/lib/data/vehicle-database-types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DollarSign, Droplet, Edit } from 'lucide-react';
@@ -56,9 +56,23 @@ export function VehiclePricingCard({ engineData, make, onEdit }: VehiclePricingC
     );
   }
 
-  const { insumos, servicios } = engineData;
-  const balatasDel = insumos?.balatas?.delanteras?.[0];
-  const balatasTra = insumos?.balatas?.traseras?.[0];
+  const insumosRaw: any = engineData?.insumos;
+  const serviciosRaw: any = engineData?.servicios;
+
+  const insumos = Array.isArray(insumosRaw) ? insumosRaw[0] : insumosRaw;
+  const servicios = Array.isArray(serviciosRaw) ? serviciosRaw[0] : serviciosRaw;
+
+  if (!insumos || !servicios) {
+    return (
+        <Card>
+            <CardHeader><CardTitle>Precios y Costos</CardTitle></CardHeader>
+            <CardContent><p className="text-sm text-muted-foreground text-center py-4">Datos de precios incompletos.</p></CardContent>
+        </Card>
+    );
+  }
+  
+  const balatasDel = insumos.balatas?.delanteras?.[0];
+  const balatasTra = insumos.balatas?.traseras?.[0];
 
   return (
     <Card>
@@ -80,17 +94,17 @@ export function VehiclePricingCard({ engineData, make, onEdit }: VehiclePricingC
         <div>
           <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><Droplet className="h-4 w-4" /> Costo de Insumos</h4>
           <div className="p-3 bg-muted/50 rounded-md space-y-1">
-            <DetailRow label="Aceite" value={`${insumos?.aceite?.grado || 'N/A'} (${insumos?.aceite?.litros || 'N/A'} L)`} />
-            <DetailRow label="Costo Aceite (x L)" value={formatCurrency(insumos?.aceite?.costoUnitario)} />
+            <DetailRow label="Aceite" value={`${insumos.aceite?.grado || 'N/A'} (${insumos.aceite?.litros || 'N/A'} L)`} />
+            <DetailRow label="Costo Aceite (x L)" value={formatCurrency(insumos.aceite?.costoUnitario)} />
             <Separator />
-            <DetailRow label="Filtro Aceite" value={insumos?.filtroAceite?.sku} />
-            <DetailRow label="Costo Filtro Aceite" value={formatCurrency(insumos?.filtroAceite?.costoUnitario)} />
+            <DetailRow label="Filtro Aceite" value={insumos.filtroAceite?.sku} />
+            <DetailRow label="Costo Filtro Aceite" value={formatCurrency(insumos.filtroAceite?.costoUnitario)} />
             <Separator />
-            <DetailRow label="Filtro Aire" value={insumos?.filtroAire?.sku} />
-            <DetailRow label="Costo Filtro Aire" value={formatCurrency(insumos?.filtroAire?.costoUnitario)} />
+            <DetailRow label="Filtro Aire" value={insumos.filtroAire?.sku} />
+            <DetailRow label="Costo Filtro Aire" value={formatCurrency(insumos.filtroAire?.costoUnitario)} />
             <Separator />
-            <DetailRow label="Bujía Cobre" value={insumos?.bujias?.modelos?.cobre} />
-            <DetailRow label="Costo Bujía Cobre" value={formatCurrency(insumos?.bujias?.costoUnitario?.cobre)} />
+            <DetailRow label="Bujía Cobre" value={insumos.bujias?.modelos?.cobre} />
+            <DetailRow label="Costo Bujía Cobre" value={formatCurrency(insumos.bujias?.costoUnitario?.cobre)} />
             <Separator />
             <DetailRow label="Balatas Del." value={balatasDel?.modelo} />
             <DetailRow label="Costo Balatas Del." value={formatCurrency(balatasDel?.costoJuego)} />
@@ -103,10 +117,10 @@ export function VehiclePricingCard({ engineData, make, onEdit }: VehiclePricingC
         <div>
           <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><DollarSign className="h-4 w-4" /> Precios de Servicios (Público)</h4>
           <div className="p-3 bg-muted/50 rounded-md space-y-2">
-            <ServiceRow label="Afinación Integral" price={servicios?.afinacionIntegral?.precioPublico} />
-            <ServiceRow label="Cambio de Aceite" price={servicios?.cambioAceite?.precioPublico} />
-            <ServiceRow label="Frenos Delanteros" price={servicios?.balatasDelanteras?.precioPublico} />
-            <ServiceRow label="Frenos Traseros" price={servicios?.balatasTraseras?.precioPublico} />
+            <ServiceRow label="Afinación Integral" price={servicios.afinacionIntegral?.precioPublico} />
+            <ServiceRow label="Cambio de Aceite" price={servicios.cambioAceite?.precioPublico} />
+            <ServiceRow label="Frenos Delanteros" price={servicios.balatasDelanteras?.precioPublico} />
+            <ServiceRow label="Frenos Traseros" price={servicios.balatasTraseras?.precioPublico} />
           </div>
         </div>
       </CardContent>

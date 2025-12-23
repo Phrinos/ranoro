@@ -1,11 +1,11 @@
-
+// src/app/(app)/opciones/components/config-ticket-content.tsx
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { Save, Printer } from "lucide-react";
@@ -22,6 +22,7 @@ import { MensajesPiePaginaCard } from "./config-ticket/mensajes-pie-pagina-card"
 import { PieTicketEspaciadoCard } from "./config-ticket/pie-ticket-espaciado-card";
 import { TicketContent } from "@/components/ticket-content";
 import { useDebouncedCallback } from "use-debounce";
+import { defaultTicketSettings } from "@/lib/placeholder-data";
 
 const LOCALSTORAGE_KEY = "workshopTicketInfo";
 
@@ -71,7 +72,6 @@ const ticketSchema = z.object({
 type TicketFormInput = z.input<typeof ticketSchema>;
 type TicketFormValues = z.output<typeof ticketSchema>;
 
-
 const sampleSale: SaleReceipt = {
   id: "PREVIEW-001",
   saleDate: new Date().toISOString(),
@@ -81,14 +81,14 @@ const sampleSale: SaleReceipt = {
       itemName: "Artículo demo 1",
       quantity: 2,
       unitPrice: 116,
-      total: 232,
+      totalPrice: 232,
     },
     {
       itemId: "X2",
       itemName: "Artículo demo 2",
       quantity: 1,
       unitPrice: 58,
-      total: 58,
+      totalPrice: 58,
     },
   ],
   subTotal: 232 / 1.16 + 58 / 1.16,
@@ -98,34 +98,6 @@ const sampleSale: SaleReceipt = {
   customerName: "Cliente Demo",
 };
 
-const defaultWorkshopInfo: Partial<TicketFormValues> = {
-  name: "RANORO",
-  nameBold: true,
-  phone: "4491425323",
-  phoneBold: false,
-  addressLine1: "Av. de la Convencion de 1914 No. 1421",
-  addressLine1Bold: false,
-  addressLine2: "Jardines de la Concepcion, C.P. 20267",
-  addressLine2Bold: false,
-  cityState: "Aguascalientes, Ags.",
-  cityStateBold: false,
-  logoUrl: "/ranoro-logo.png",
-  logoWidth: 120,
-  headerFontSize: 10,
-  bodyFontSize: 10,
-  itemsFontSize: 10,
-  totalsFontSize: 10,
-  footerFontSize: 10,
-  blankLinesTop: 0,
-  blankLinesBottom: 0,
-  footerLine1: "¡Gracias por su preferencia!",
-  footerLine1Bold: true,
-  footerLine2: "Para dudas o aclaraciones, no dude en contactarnos.",
-  footerLine2Bold: false,
-  fixedFooterText:
-    "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
-  fixedFooterTextBold: false,
-};
 
 export function ConfiguracionTicketPageContent() {
   const { toast } = useToast();
@@ -134,7 +106,7 @@ export function ConfiguracionTicketPageContent() {
 
   const methods = useForm<TicketFormInput, any, TicketFormValues>({
     resolver: zodResolver(ticketSchema),
-    defaultValues: defaultWorkshopInfo as any,
+    defaultValues: defaultTicketSettings as any,
     mode: "onChange",
   });
   const watchedValues = methods.watch();
@@ -146,7 +118,7 @@ export function ConfiguracionTicketPageContent() {
         try {
           methods.reset(JSON.parse(stored) as any);
         } catch {
-          methods.reset(defaultWorkshopInfo as any);
+          methods.reset(defaultTicketSettings as any);
         }
       }
     };
@@ -239,18 +211,18 @@ export function ConfiguracionTicketPageContent() {
                 fileInputRef={fileInputRef}
                 isUploading={isUploading}
                 handleImageUpload={handleImageUpload}
-                defaultLogoWidth={defaultWorkshopInfo.logoWidth!}
+                defaultLogoWidth={defaultTicketSettings.logoWidth!}
               />
               <InformacionNegocioCard
-                defaultHeaderFontSize={defaultWorkshopInfo.headerFontSize!}
+                defaultHeaderFontSize={defaultTicketSettings.headerFontSize!}
               />
               <EstiloTextoTicketCard
-                defaultBodyFontSize={defaultWorkshopInfo.bodyFontSize!}
-                defaultItemsFontSize={defaultWorkshopInfo.itemsFontSize!}
-                defaultTotalsFontSize={defaultWorkshopInfo.totalsFontSize!}
+                defaultBodyFontSize={defaultTicketSettings.bodyFontSize!}
+                defaultItemsFontSize={defaultTicketSettings.itemsFontSize!}
+                defaultTotalsFontSize={defaultTicketSettings.totalsFontSize!}
               />
               <MensajesPiePaginaCard
-                defaultFooterFontSize={defaultWorkshopInfo.footerFontSize!}
+                defaultFooterFontSize={defaultTicketSettings.footerFontSize!}
               />
               <PieTicketEspaciadoCard />
               <Button

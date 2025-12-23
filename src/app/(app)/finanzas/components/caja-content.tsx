@@ -146,7 +146,7 @@ export default function CajaContent() {
         refId: (t as any).relatedId,
         user: t.userName || (t as any).user || 'Sistema',
         description: t.concept || (t as any).description || '',
-        amount: Math.abs(t.amount || 0),
+        amount: Math.abs((t as any).amount || 0),
         method: t.paymentMethod,
       });
     });

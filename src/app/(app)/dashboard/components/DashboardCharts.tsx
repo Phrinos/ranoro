@@ -1,11 +1,13 @@
+// src/app/(app)/dashboard/components/DashboardCharts.tsx
 "use client";
 
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
-  ResponsiveContainer, PieChart, Pie, Cell, TooltipProps 
+  ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
+import type { TooltipProps, ValueType, NameType } from "recharts";
 import type { ServiceRecord, SaleReceipt, InventoryItem, MonthlyFixedExpense, User as Personnel } from '@/types';
 import { format, subMonths, isValid, getDaysInMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -13,7 +15,6 @@ import { formatCurrency, formatNumber } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 
 // --- Data Processing Functions ---
-
 const processFinancialChartData = (
     services: ServiceRecord[], 
     sales: SaleReceipt[], 
@@ -80,7 +81,7 @@ const processFinancialChartData = (
             const monthKey = format(saleDate, 'yyyy-MM');
             if (dataByMonth[monthKey]) {
                 const income = sale.totalAmount || 0;
-                const costOfGoods = sale.items.reduce((sum, item) => {
+                const costOfGoods = sale.items.reduce((sum, item: any) => {
                     const inventoryItem = inventoryMap.get(item.inventoryItemId || '');
                     const itemUnitCost = inventoryItem?.unitPrice ?? 0;
                     return sum + (itemUnitCost * item.quantity);
@@ -179,15 +180,15 @@ const processOperationalChartData = (services: ServiceRecord[], sales: SaleRecei
     return { lineData: Object.values(dataByMonth), pieData };
 };
 
-// --- Optimized Chart Components (Sin cambios aquí) ---
-
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#00C49F', '#FFBB28', '#FF8042', '#0088FE'];
 
-const CustomPieTooltip = ({ active, payload }: any) => {
+const CustomPieTooltip = (props: TooltipProps<ValueType, NameType>) => {
+    const { active, payload } = props as any;
     if (active && payload && payload.length) {
+      const value = Number(payload[0]?.value ?? 0);
       return (
         <div className="bg-background border p-2 rounded-md shadow-lg">
-          <p className="font-bold">{`${payload[0].name} : ${payload[0].value}`}</p>
+          <p className="font-bold">{`${payload[0].name} : ${value}`}</p>
         </div>
       );
     }

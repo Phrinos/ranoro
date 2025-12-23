@@ -1,4 +1,3 @@
-
 // src/app/(public)/facturar/page.tsx
 "use client";
 
@@ -15,7 +14,7 @@ import { Loader2, Search, FileText, FileJson, CheckCircle, AlertTriangle } from 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from '@/hooks/use-toast';
 import { billingService } from '@/lib/services/billing.service';
-import type { SaleReceipt, ServiceRecord } from '@/types';
+import type { SaleReceipt, ServiceRecord, TicketType } from '@/types';
 import { BillingForm } from './components/billing-form';
 import { billingFormSchema, type BillingFormValues } from './components/billing-schema';
 import { createInvoiceAction } from './actions';
@@ -35,7 +34,6 @@ const searchSchema = z.object({
 
 type SearchFormInput = z.input<typeof searchSchema>;
 type SearchFormValues = z.output<typeof searchSchema>;
-type TicketType = SaleReceipt | ServiceRecord;
 
 const LoadingOverlay = ({ message }: { message: string }) => (
     <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-20 transition-opacity duration-300">
@@ -130,7 +128,10 @@ function PageInner() {
   };
   
   const ticketDate = getTicketDate(searchResult);
-  const ticketTotal = searchResult ? ('totalAmount' in searchResult ? searchResult.totalAmount : (searchResult.totalCost || 0)) : 0;
+  const ticketTotal = !searchResult ? 0
+  : ("totalAmount" in searchResult && typeof searchResult.totalAmount === "number") ? searchResult.totalAmount
+  : ("totalCost" in searchResult && typeof (searchResult as any).totalCost === "number") ? (searchResult as any).totalCost
+  : 0;
   
   if (submissionSuccess) {
     return (
@@ -267,5 +268,3 @@ function PageInner() {
 }
 
 export default withSuspense(PageInner, null);
-
-    
