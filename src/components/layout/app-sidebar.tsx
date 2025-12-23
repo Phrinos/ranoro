@@ -179,18 +179,11 @@ function AppSidebarInner({
   }, [navItems]);
 
   const sortedGroupEntries = React.useMemo(() => {
-    const orderedGroupNames = navItems.reduce((acc, item) => {
-      if (!acc.includes(item.groupTag)) {
-        acc.push(item.groupTag);
-      }
-      return acc;
-    }, [] as string[]);
-
-    return orderedGroupNames.map((groupName) => [
-      groupName,
-      groupedByTag[groupName] || [],
-    ]);
-  }, [groupedByTag, navItems]);
+    return DESIRED_GROUP_ORDER.map(groupName => [
+        groupName,
+        groupedByTag[groupName] || [],
+    ]).filter(group => (group[1] as NavigationEntry[]).length > 0);
+  }, [groupedByTag]);
 
   return (
     <Sidebar collapsible="icon" side="left" variant="sidebar" className="app-sidebar">

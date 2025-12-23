@@ -30,7 +30,7 @@ import { NewCalendar } from "@/components/ui/calendar";
 
 const transactionSchema = z.object({
   driverId: z.string({ required_error: "Debe seleccionar un conductor." }),
-  date: z.date({ required_error: "La fecha es obligatoria." }),
+  date: z.coerce.date({ message: "La fecha es obligatoria." }),
   amount: z.coerce.number().min(0.01, "El monto debe ser positivo."),
   note: z.string().min(3, "La descripción es obligatoria."),
   paymentMethod: z.string().optional(),
@@ -288,5 +288,3 @@ export function GlobalTransactionDialog({
     </Dialog>
   );
 }
-
-    

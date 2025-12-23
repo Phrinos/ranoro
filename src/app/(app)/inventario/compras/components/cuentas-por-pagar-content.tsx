@@ -1,4 +1,3 @@
-
 // src/app/(app)/inventario/compras/components/cuentas-por-pagar-content.tsx
 "use client";
 

@@ -34,7 +34,7 @@ import type { DailyRentalCharge } from "@/types";
 import { Textarea } from "@/components/ui/textarea";
 
 const chargeSchema = z.object({
-  date: z.date({ required_error: "La fecha es obligatoria." }),
+  date: z.coerce.date({ message: "La fecha es obligatoria." }),
   amount: z.coerce.number().min(0, "El monto no puede ser negativo."),
   note: z.string().optional(),
 });

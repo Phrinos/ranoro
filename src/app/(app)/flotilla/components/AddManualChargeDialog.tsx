@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils";
 
 
 const chargeSchema = z.object({
-  date: z.date({ required_error: "La fecha es obligatoria." }),
+  date: z.coerce.date({ message: "La fecha es obligatoria." }),
   amount: z.coerce.number().min(0.01, "El monto debe ser positivo."),
   note: z.string().optional(),
 });

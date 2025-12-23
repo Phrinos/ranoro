@@ -22,7 +22,7 @@ import { es } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const individualServiceSchema = z.object({
-  serviceDate: z.date({ required_error: "La fecha es obligatoria." }),
+  serviceDate: z.coerce.date({ message: "La fecha es obligatoria." }),
   licensePlate: z.string().min(3, "La placa es obligatoria."),
   vehicleId: z.string().min(1, "Debe seleccionar un vehículo válido."),
   description: z.string().min(5, "La descripción del servicio es obligatoria."),

@@ -45,14 +45,15 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, vehicles, onSave }: 
     defaultValues: { ownerName: "", amount: undefined, note: "" },
   });
 
-  const owners = useMemo<string[]>(() => {
+  const owners = useMemo(() => {
     const ownerNames = vehicles
-      .filter(v => v.isFleetVehicle)
-      .map(v => v.ownerName)
-      .filter((name): name is string => !!name && name.trim().length > 0);
+      .filter((v) => v.isFleetVehicle)
+      .map((v) => v.ownerName)
+      .filter((name): name is string => typeof name === "string" && name.trim().length > 0);
 
     return Array.from(new Set(ownerNames));
   }, [vehicles]);
+
 
   useEffect(() => {
     if (!open) return;

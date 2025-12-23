@@ -14,7 +14,7 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { signOut, onAuthStateChanged, type Auth } from 'firebase/auth';
-import { auth, db } from '@/lib/firebaseClient.js';
+import { auth, db } from '@/lib/firebaseClient';
 import { useEffect, useState } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import type { User as RanoroUser } from '@/types';
@@ -32,7 +32,8 @@ function AppHeaderInner() {
   const [ranoroUser, setRanoroUser] = useState<RanoroUser | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth as Auth, async (user) => {
+    if (!auth) return;
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setCurrentUser(user);
         if (db) {
@@ -51,7 +52,8 @@ function AppHeaderInner() {
   }, [router]);
 
   const handleLogout = async () => {
-    await signOut(auth as Auth);
+    if (!auth) return;
+    await signOut(auth);
   };
   
   const mainNavItems = navigation.map((item: any) => (
