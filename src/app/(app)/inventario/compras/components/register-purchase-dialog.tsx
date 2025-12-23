@@ -20,7 +20,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, PackagePlus, DollarSign, PlusCircle, Trash2, CalendarIcon, Minus, Plus } from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
 import { formatCurrency, cn } from "@/lib/utils";
-import { InventoryItemDialog } from "../../components/inventory-item-dialog";
+import { InventoryItemDialog } from "../../../inventario/components/inventory-item-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NewCalendar } from "@/components/ui/calendar";
@@ -252,7 +252,7 @@ export function RegisterPurchaseDialog({
 
                               <div className="col-span-3 sm:col-span-2">
                                 <FormField
-                                  control={control}
+                                  control={control as any}
                                   name={`items.${index}.purchasePrice`}
                                   render={({ field }) => (
                                     <div className="relative">
@@ -314,7 +314,7 @@ export function RegisterPurchaseDialog({
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField
-                      control={control}
+                      control={control as any}
                       name="paymentMethod"
                       render={({ field }) => (
                         <FormItem>
@@ -339,7 +339,7 @@ export function RegisterPurchaseDialog({
 
                     {paymentMethod === "Crédito" && (
                       <FormField
-                        control={control}
+                        control={control as any}
                         name="dueDate"
                         render={({ field }) => (
                           <FormItem className="flex flex-col">

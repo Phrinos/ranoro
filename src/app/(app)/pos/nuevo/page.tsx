@@ -239,7 +239,7 @@ export default function NuevaVentaPage() {
   const [isAddingItem, setIsAddingItem] = useState(false);
 
   const methods = useForm<POSFormValues>({
-    resolver: zodResolver(posFormSchema) as any,
+    resolver: zodResolver(posFormSchema),
     defaultValues: {
       items: [],
       customerName: "Cliente Mostrador",
@@ -469,11 +469,11 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
             title: "No se pudo compartir",
             description: "Copiando texto para WhatsApp como alternativa.",
           });
-          handleCopySaleForWhatsapp();
+          handleCopyWhatsAppMessage();
         }
       }
     } else {
-      handleCopySaleForWhatsapp();
+      handleCopyWhatsAppMessage();
     }
   };
 
