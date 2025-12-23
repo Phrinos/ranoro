@@ -2,7 +2,8 @@
 "use client";
 
 import React from 'react';
-import { useFormContext, type FieldErrors, type SubmitErrorHandler, FormField, FormLabel, FormControl, FormItem } from 'react-hook-form';
+import { useFormContext, type FieldErrors, type SubmitErrorHandler } from 'react-hook-form';
+import { Form, FormField, FormLabel, FormControl, FormItem } from '@/components/ui/form';
 import type {
   ServiceRecord,
   Vehicle,
@@ -19,6 +20,7 @@ import { ServiceItemsList } from './ServiceItemsList';
 import { VehicleSelectionCard } from './VehicleSelectionCard';
 import { ServiceDetailsCard } from './ServiceDetailsCard';
 import { NextServiceInfoCard } from './NextServiceInfoCard';
+import { ReceptionAndDelivery } from './ReceptionAndDelivery';
 import { SafetyChecklist } from './SafetyChecklist';
 import PhotoReportTab from './PhotoReportTab';
 import { ServiceSummary } from './ServiceSummary';
@@ -32,6 +34,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BrainCircuit, Loader2, Signature } from 'lucide-react';
 import Image from 'next/image';
+
 
 const ReceptionContent = ({ part, isReadOnly, isEnhancingText, handleEnhanceText, onOpenSignature }: any) => {
     const { control, watch } = useFormContext();
