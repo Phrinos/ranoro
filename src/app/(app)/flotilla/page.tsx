@@ -1,7 +1,7 @@
 // src/app/(app)/flotilla/page.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -9,8 +9,8 @@ import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { Button } from '@/components/ui/button';
 import { withSuspense } from '@/lib/withSuspense';
 
-import type { Vehicle, Driver, PaymentMethod } from '@/types';
-import { personnelService, rentalService } from '@/lib/services';
+import type { Vehicle, Driver, PaymentMethod, InventoryItem } from '@/types';
+import { personnelService, rentalService, inventoryService } from '@/lib/services';
 import { useFlotillaData } from './useFlotillaData';
 
 import { GlobalTransactionDialog, type GlobalTransactionFormValues } from './components/GlobalTransactionDialog';
@@ -23,6 +23,9 @@ import { FlotillaVehiculosTab } from './vehiculos/components/FlotillaVehiculosTa
 import { FlotillaConductoresTab } from './conductores/components/FlotillaConductoresTab';
 import { FlotillaBalanceTab } from './balance/components/FlotillaBalanceTab';
 import { FlotillaCajaTab } from './caja/components/FlotillaCajaTab';
+import { InventorySearchDialog } from '@/components/shared/InventorySearchDialog';
+import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
+
 
 function PageInner() {
   const router = useRouter();
@@ -40,6 +43,12 @@ function PageInner() {
     isLoading,
     handleShowTicket,
   } = useFlotillaData();
+  
+  const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
+  useEffect(() => {
+    const unsub = inventoryService.onItemsUpdate(setAllInventory);
+    return () => unsub();
+  }, []);
 
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'balance');
 
@@ -49,6 +58,9 @@ function PageInner() {
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [isDriverDialogOpen, setIsDriverDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
+  
+  const [isAddVehicleDialogOpen, setIsAddVehicleDialogOpen] = useState(false);
+  const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
 
   const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab);
@@ -104,8 +116,30 @@ function PageInner() {
     setIsDriverDialogOpen(false);
   }
 
-  const handleAddVehicle = () => {
-    router.push('/vehiculos?tab=vehiculos');
+  const handleAddVehicleToFleet = async (item: InventoryItem) => {
+    try {
+      await inventoryService.saveVehicle({ isFleetVehicle: true }, item.id);
+      toast({ title: 'Vehículo Añadido', description: `${item.name} ahora es parte de la flotilla.` });
+      setIsAddVehicleDialogOpen(false);
+    } catch (error) {
+      toast({ title: 'Error', description: 'No se pudo añadir el vehículo a la flotilla.', variant: 'destructive'});
+    }
+  };
+
+  const handleCreateAndAddVehicle = () => {
+      setIsAddVehicleDialogOpen(false);
+      setIsNewVehicleDialogOpen(true);
+  };
+
+  const handleSaveNewVehicle = async (data: any) => {
+      try {
+          const newVehicleData = { ...data, isFleetVehicle: true };
+          await inventoryService.saveVehicle(newVehicleData);
+          toast({ title: 'Vehículo Creado y Añadido', description: 'El nuevo vehículo se ha añadido a la flotilla.' });
+          setIsNewVehicleDialogOpen(false);
+      } catch (error) {
+          toast({ title: 'Error', description: 'No se pudo crear el vehículo.', variant: 'destructive'});
+      }
   };
 
 
@@ -130,7 +164,7 @@ function PageInner() {
     { value: 'balance', label: 'Balance', content: <FlotillaBalanceTab drivers={drivers} vehicles={vehicles} dailyCharges={dailyCharges} payments={payments} manualDebts={manualDebts} /> },
     { value: 'caja', label: 'Caja', content: <FlotillaCajaTab payments={payments} withdrawals={withdrawals} expenses={expenses} drivers={drivers} vehicles={vehicles} allManualDebts={manualDebts} allDailyCharges={dailyCharges} onAddWithdrawal={() => setIsWithdrawalDialogOpen(true)} onAddExpense={() => setIsExpenseDialogOpen(true)} handleShowTicket={handleShowTicket} /> },
     { value: 'conductores', label: 'Conductores', content: <FlotillaConductoresTab drivers={drivers} onAddDriver={handleAddDriver} /> },
-    { value: 'vehiculos', label: 'Vehículos', content: <FlotillaVehiculosTab vehicles={vehicles} onAddVehicle={handleAddVehicle}/> },
+    { value: 'vehiculos', label: 'Vehículos', content: <FlotillaVehiculosTab vehicles={vehicles} onAddVehicle={() => setIsAddVehicleDialogOpen(true)} /> },
   ];
 
   return (
@@ -171,6 +205,21 @@ function PageInner() {
         onOpenChange={setIsDriverDialogOpen}
         onSave={handleSaveDriver}
         driver={editingDriver}
+      />
+      
+      <InventorySearchDialog
+        open={isAddVehicleDialogOpen}
+        onOpenChange={setIsAddVehicleDialogOpen}
+        inventoryItems={allInventory.filter(i => i.category === 'Vehiculos')}
+        onItemSelected={(item) => handleAddVehicleToFleet(item)}
+        onNewItemRequest={handleCreateAndAddVehicle}
+        includeServices={false}
+      />
+
+      <VehicleDialog 
+        open={isNewVehicleDialogOpen}
+        onOpenChange={setIsNewVehicleDialogOpen}
+        onSave={handleSaveNewVehicle}
       />
     </>
   );
