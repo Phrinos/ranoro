@@ -44,7 +44,7 @@ const onDailyChargesUpdate = (callback: (charges: DailyRentalCharge[]) => void, 
 const saveDailyCharge = async (id: string, data: { date: string; amount: number; note: string }): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     const docRef = doc(db, 'dailyRentalCharges', id);
-    await updateDoc(docRef, data);
+    await updateDoc(docRef, data as any);
 };
 
 const deleteDailyCharge = async (id: string): Promise<void> => {
@@ -84,7 +84,7 @@ const addRentalPayment = async (
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
     const currentUser = authUserString ? JSON.parse(authUserString) : null;
     
-    const paymentData = {
+    const paymentData: Omit<RentalPayment, 'id'> = {
         driverId: driver.id,
         driverName: driver.name,
         vehicleLicensePlate: vehicle.licensePlate,
@@ -94,6 +94,7 @@ const addRentalPayment = async (
         note: note || `Abono de Renta`,
         paymentMethod: paymentMethod,
         registeredByName: currentUser?.name || 'Sistema',
+        date: paymentDate.toISOString(),
     };
 
     let savedPaymentId: string;
@@ -108,7 +109,7 @@ const addRentalPayment = async (
 
     if (paymentMethod === 'Efectivo') {
         await cashService.addCashTransaction({
-            type: 'Entrada',
+            type: 'in',
             amount: amount,
             concept: `Renta de ${driver.name} (${vehicle.licensePlate})`,
             userId: currentUser?.id || 'system',
@@ -153,7 +154,7 @@ const onVehicleExpensesUpdate = (callback: (expenses: VehicleExpense[]) => void)
 
 const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'vehicleLicensePlate'>): Promise<VehicleExpense> => {
     if (!db) throw new Error("Database not initialized.");
-    const vehicle = await inventoryService.getVehicleById(data.vehicleId);
+    const vehicle = await inventoryService.getVehicleById(data.vehicleId as string);
     if (!vehicle) throw new Error("Vehicle not found");
 
     const newExpense = { ...data, date: new Date().toISOString(), vehicleLicensePlate: vehicle.licensePlate };
@@ -173,5 +174,3 @@ export const rentalService = {
   onVehicleExpensesUpdate,
   addVehicleExpense,
 };
-
-    

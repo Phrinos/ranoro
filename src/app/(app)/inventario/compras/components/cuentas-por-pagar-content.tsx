@@ -44,7 +44,7 @@ export function CuentasPorPagarContent({ accounts, onRegisterPayment }: CuentasP
     initialSortOption: 'dueDate_asc',
   });
   
-  const getStatusVariant = (status: PayableAccount['status']): 'destructive' | 'secondary' | 'success' => {
+  const getStatusVariant = (status?: string): 'destructive' | 'secondary' | 'success' => {
       switch(status) {
           case 'Pendiente': return 'destructive';
           case 'Pagado Parcialmente': return 'secondary';
@@ -95,7 +95,7 @@ export function CuentasPorPagarContent({ accounts, onRegisterPayment }: CuentasP
                       <TableCell>{account.invoiceId}</TableCell>
                       <TableCell>{account.invoiceDate ? format(parseISO(account.invoiceDate), 'dd/MM/yyyy') : ''}</TableCell>
                       <TableCell>{account.dueDate ? format(parseISO(account.dueDate), 'dd/MM/yyyy') : ''}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(account.totalAmount)}</TableCell>
+                      <TableCell className="text-right">{formatCurrency(account.totalAmount ?? 0)}</TableCell>
                       <TableCell className="text-right text-green-600">{formatCurrency(account.paidAmount || 0)}</TableCell>
                       <TableCell className="text-right font-bold">{formatCurrency((account.totalAmount ?? 0) - (account.paidAmount || 0))}</TableCell>
                       <TableCell className="text-center">

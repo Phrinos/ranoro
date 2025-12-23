@@ -40,6 +40,7 @@ const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   "Transferencia": Landmark,
   "Efectivo+Transferencia": Wallet,
   "Tarjeta+Transferencia": CreditCard,
+  "Crédito": CreditCard,
 };
 
 const generateMonthOptions = () => {

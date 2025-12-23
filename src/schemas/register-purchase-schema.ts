@@ -6,7 +6,7 @@ export const registerPurchaseSchema = z.object({
   purchaseDate: z.string().min(1),
   items: z.array(
     z.object({
-      itemId: z.string().min(1),
+      inventoryItemId: z.string().min(1),
       quantity: z.number().min(0),
       purchasePrice: z.number().min(0),
     })

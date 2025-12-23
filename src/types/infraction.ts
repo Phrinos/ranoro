@@ -13,4 +13,6 @@ export type Infraction = {
   date: string;
   amount: number;
   description: string;
+  totalAmount: number;
+  paidAmount: number;
 };

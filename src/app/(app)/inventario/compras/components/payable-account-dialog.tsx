@@ -8,6 +8,7 @@ import { PayableAccountForm } from "./payable-account-form";
 import type { PayableAccountFormValues } from '@/schemas/payable-account-form-schema';
 import type { PayableAccount } from '@/types';
 import { useToast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/lib/utils';
 
 interface PayableAccountDialogProps {
   open: boolean;
@@ -38,7 +39,7 @@ export function PayableAccountDialog({ open, onOpenChange, onSave, account }: Pa
       open={open}
       onOpenChange={onOpenChange}
       title={`Registrar Pago a Factura`}
-      description={`Folio: ${account.invoiceId} - Saldo: ${(account.totalAmount ?? 0) - (account.paidAmount || 0)}`}
+      description={`Folio: ${account.invoiceId} - Saldo: ${formatCurrency((account.totalAmount ?? 0) - (account.paidAmount || 0))}`}
       formId="payable-account-form"
       isSubmitting={isSubmitting}
       submitButtonText="Registrar Pago"

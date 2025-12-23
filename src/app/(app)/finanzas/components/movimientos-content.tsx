@@ -75,6 +75,7 @@ const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   Transferencia: Landmark,
   "Efectivo+Transferencia": Wallet,
   "Tarjeta+Transferencia": CreditCard,
+  "Crédito": CreditCard,
 };
 
 // === Helpers ===
@@ -178,13 +179,13 @@ function MovimientosTabContent({
 
     // 3) ASIENTOS de CAJA (ledger) – Solo manuales para evitar duplicados
     const ledgerMovs: Movement[] = (cashTransactions || [])
-      .filter(t => t.relatedType === 'Manual')
+      .filter(t => (t as any).relatedType === 'Manual')
       .map((t) => ({
         id: t.id,
         origin: "ledger",
         date: parseDate((t as any).date || (t as any).createdAt) || null,
         folio: t.id,
-        type: t.type === "in" || t.type === "Entrada" ? "Entrada" : "Salida",
+        type: (t.type === "Entrada" || t.type === "in") ? "Entrada" : "Salida",
         client: (t as any).userName || (t as any).user || "Sistema",
         total: Math.abs(Number(t.amount) || 0),
         description: (t as any).description || (t as any).concept || "",
@@ -219,7 +220,10 @@ function MovimientosTabContent({
       .reduce((sum, m) => sum + (m.total || 0), 0);
       
     const egresosCaja = rows
-      .filter((m) => m.origin === "ledger" && (m.type === "Salida" || m.type === "out"))
+      .filter((m) => {
+        const typeStr = String(m.type);
+        return m.origin === "ledger" && (typeStr === "Salida" || typeStr === "out");
+      })
       .reduce((sum, m) => sum + (m.total || 0), 0);
 
     const neto = ingresos - egresosCaja;

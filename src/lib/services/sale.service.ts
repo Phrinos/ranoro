@@ -101,7 +101,7 @@ const registerSale = async (
             const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
             workBatch.set(cashTransactionRef, {
                 date: new Date().toISOString(),
-                type: 'Entrada',
+                type: 'in',
                 amount: payment.amount,
                 concept: `Venta POS #${saleId.slice(-6)}`,
                 userId: currentUser.id,
@@ -194,5 +194,3 @@ export const saleService = {
   cancelSale,
   deleteSale,
 };
-
-    

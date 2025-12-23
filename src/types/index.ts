@@ -102,7 +102,7 @@ export type ServiceRecord = {
   vehicleId?: string;
   vehicle?: any; // si tu Vehicle ya está tipado, cambia any por Vehicle
 
-  safetyInspection?: SafetyInspection[]; // <-- tu UI lo pasa como array
+  safetyInspection?: SafetyInspection;
 
   totalAmount?: number;
   totalCost?: number;
@@ -330,6 +330,16 @@ export type Paperwork = {
   name: string;
   dueDate?: string;
   expirationDate?: string;
+  [k: string]: any;
+};
+
+export type FineCheck = {
+  id: string;
+  checkDate: string;          // ISO
+  status?: "ok" | "warn" | "error" | string;
+  note?: string;
+  checkedByName?: string;
+  fines?: Fine[];
   [k: string]: any;
 };
 

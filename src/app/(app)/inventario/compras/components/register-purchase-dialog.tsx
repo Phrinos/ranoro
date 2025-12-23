@@ -1,3 +1,4 @@
+
 // src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
@@ -42,6 +43,7 @@ const purchaseFormSchema = z
   .object({
     supplierId: z.string().min(1, "Debe seleccionar un proveedor."),
     invoiceId: z.string().optional(),
+    purchaseDate: z.coerce.date({ message: "La fecha es obligatoria." }),
     items: z.array(purchaseItemSchema).min(1, "Debe añadir al menos un artículo a la compra."),
     paymentMethod: z.enum(["Efectivo", "Tarjeta", "Transferencia", "Crédito"]),
     dueDate: z.date().optional(),
@@ -77,7 +79,7 @@ export function RegisterPurchaseDialog({
   onSave,
   onInventoryItemCreated,
 }: RegisterPurchaseDialogProps) {
-  const form = useForm<PurchaseFormInput, any, PurchaseFormValues>({
+  const form = useForm<PurchaseFormValues>({
     resolver: zodResolver(purchaseFormSchema) as unknown as Resolver<PurchaseFormValues>,
     defaultValues: {
       supplierId: "",

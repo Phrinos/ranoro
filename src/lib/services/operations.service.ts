@@ -74,5 +74,3 @@ export const operationsService = {
   onCashDrawerUpdate,
   getAggregatedPaymentData,
 };
-
-    
