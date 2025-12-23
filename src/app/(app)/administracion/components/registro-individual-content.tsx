@@ -31,8 +31,7 @@ const individualServiceSchema = z.object({
   paymentMethod: z.string().min(1, "Seleccione un método de pago."),
 });
 
-type FormInput = z.input<typeof individualServiceSchema>;
-type FormValues = z.output<typeof individualServiceSchema>;
+type FormValues = z.infer<typeof individualServiceSchema>;
 
 const paymentMethods: PaymentMethod[] = ['Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia'];
 
@@ -45,8 +44,10 @@ export function RegistroIndividualContent() {
   const [searchResults, setSearchResults] = useState<Vehicle[]>([]);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
-  const form = useForm<FormInput, any, FormValues>({
-    resolver: zodResolver(individualServiceSchema),
+  const resolver = zodResolver(individualServiceSchema) as unknown as Resolver<FormValues>;
+
+  const form = useForm<FormValues>({
+    resolver,
     defaultValues: {
       serviceDate: new Date(),
       licensePlate: '',
@@ -55,7 +56,7 @@ export function RegistroIndividualContent() {
       totalCost: undefined,
       suppliesCost: undefined,
       paymentMethod: 'Efectivo',
-    },
+    } as any,
   });
 
   const { watch, setValue } = form;
@@ -63,9 +64,9 @@ export function RegistroIndividualContent() {
   const suppliesCost = watch('suppliesCost');
   const licensePlateSearch = watch('licensePlate');
   const serviceProfit = useMemo(() => {
-      const tc = totalCost || 0;
-      const sc = suppliesCost || 0;
-      return tc > 0 ? tc - sc : 0;
+      const tc = Number(totalCost ?? 0);
+      const sc = Number(suppliesCost ?? 0);
+      return tc > 0 ? Math.max(0, tc - sc) : 0;
   }, [totalCost, suppliesCost]);
 
   useEffect(() => {
@@ -118,7 +119,7 @@ export function RegistroIndividualContent() {
         description: '', 
         totalCost: undefined,
         suppliesCost: undefined,
-      });
+      } as any);
       setSearchedVehicle(null);
     } catch (e) {
       console.error(e);
@@ -276,7 +277,17 @@ export function RegistroIndividualContent() {
                       <div className="relative">
                         <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="1200.00" {...field} value={field.value ?? ''} className="pl-8"/>
+                          <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="1200.00"
+                              className="pl-8"
+                              value={field.value ?? ""}
+                              onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
+                              onBlur={field.onBlur}
+                              name={field.name}
+                              ref={field.ref}
+                            />
                         </FormControl>
                       </div>
                       <FormMessage />
@@ -292,7 +303,17 @@ export function RegistroIndividualContent() {
                       <div className="relative">
                         <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <FormControl>
-                          <Input type="number" step="0.01" placeholder="750.00" {...field} value={field.value ?? ''} className="pl-8"/>
+                          <Input
+                              type="number"
+                              step="0.01"
+                              placeholder="750.00"
+                              className="pl-8"
+                              value={field.value ?? ""}
+                              onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
+                              onBlur={field.onBlur}
+                              name={field.name}
+                              ref={field.ref}
+                           />
                         </FormControl>
                       </div>
                       <FormMessage />

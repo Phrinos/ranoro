@@ -3,7 +3,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, type Resolver } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,15 +38,9 @@ const fixedExpenseFormSchema = z.object({
       if (v === "" || v === null || typeof v === "undefined") return undefined;
       return typeof v === "string" ? Number(v) : v;
     },
-    z
-      .union([
-        z.number({ message: "Captura un número válido." })
-          .finite("Captura un número válido.")
-          .positive("El monto debe ser mayor a 0."),
-        z.undefined(),
-      ])
-      .refine((v) => typeof v === "number", { message: "El monto es requerido." })
-      .transform((v) => v as number)
+    z.coerce.number({ message: "El monto es requerido." })
+      .finite("Captura un número válido.")
+      .positive("El monto debe ser mayor a 0.")
   ),
   category: z.enum(expenseCategories, { message: "Debe seleccionar una categoría." }),
   notes: z.string().optional(),
