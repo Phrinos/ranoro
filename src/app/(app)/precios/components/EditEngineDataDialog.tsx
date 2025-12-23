@@ -200,14 +200,14 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                           <h4 className="font-semibold text-sm">Aceite</h4>{last(watch("insumos.aceite.lastUpdated"))}
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <FormField control={control} name="insumos.aceite.grado" render={({ field }) => (
+                          <FormField control={control as any} name="insumos.aceite.grado" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Grado</FormLabel>
                               <FormControl><Input {...field} value={field.value ?? ""} placeholder="10W30" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="insumos.aceite.litros" render={({ field }) => (
+                          <FormField control={control as any} name="insumos.aceite.litros" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Litros</FormLabel>
                               <FormControl>
@@ -216,7 +216,7 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="insumos.aceite.costoUnitario" render={({ field }) => (
+                          <FormField control={control as any} name="insumos.aceite.costoUnitario" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Costo/Litro</FormLabel>
                               <FormControl>
@@ -423,14 +423,14 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                       <div className="space-y-3 border-b pb-4">
                         <h4 className="font-semibold text-sm">Afinación Integral</h4>
                         <div className="grid grid-cols-2 gap-3">
-                          <FormField control={control} name="servicios.afinacionIntegral.costoInsumos" render={({ field }) => (
+                          <FormField control={control as any} name="servicios.afinacionIntegral.costoInsumos" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Costo Insumos</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="850.00" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="servicios.afinacionIntegral.precioPublico" render={({ field }) => (
+                          <FormField control={control as any} name="servicios.afinacionIntegral.precioPublico" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Precio Público</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="1200.00" /></FormControl>
@@ -441,28 +441,28 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                         <Separator className="my-3" />
                         <h5 className="font-semibold text-xs text-muted-foreground">Actualizaciones (Costo Adicional)</h5>
                         <div className="grid grid-cols-2 gap-3">
-                          <FormField control={control} name="servicios.afinacionIntegral.upgrades.conAceiteSintetico" render={({ field }) => (
+                          <FormField control={control as any} name="servicios.afinacionIntegral.upgrades.conAceiteSintetico" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Aceite Sintético</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="350" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="servicios.afinacionIntegral.upgrades.conAceiteMobil" render={({ field }) => (
+                          <FormField control={control as any} name="servicios.afinacionIntegral.upgrades.conAceiteMobil" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Aceite Mobil</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="550" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="servicios.afinacionIntegral.upgrades.conBujiasPlatino" render={({ field }) => (
+                          <FormField control={control as any} name="servicios.afinacionIntegral.upgrades.conBujiasPlatino" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Bujías de Platino</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="400" /></FormControl>
                               <FormMessage />
                             </FormItem>
                           )}/>
-                          <FormField control={control} name="servicios.afinacionIntegral.upgrades.conBujiasIridio" render={({ field }) => (
+                          <FormField control={control as any} name="servicios.afinacionIntegral.upgrades.conBujiasIridio" render={({ field }) => (
                             <FormItem className="space-y-1">
                               <FormLabel className="text-xs">Bujías de Iridio</FormLabel>
                               <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="700" /></FormControl>
