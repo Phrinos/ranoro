@@ -23,7 +23,7 @@ import { parseDate } from '@/lib/forms';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { z } from "zod";
-import { useForm, FormProvider, type FieldValues, type SubmitHandler } from "react-hook-form";
+import { useForm, FormProvider, type SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 
@@ -188,9 +188,9 @@ function PageInner() {
               {!searchResult ? (
                 <FormProvider {...searchForm}>
                   <Form {...searchForm}>
-                    <form onSubmit={searchForm.handleSubmit(onSearchSubmit as SubmitHandler<FieldValues>)} className="space-y-4">
+                    <form onSubmit={searchForm.handleSubmit(onSearchSubmit as SubmitHandler<SearchFormValues>)} className="space-y-4">
                       <FormField
-                        control={searchForm.control as any}
+                        control={searchForm.control}
                         name="folio"
                         render={({ field }) => (
                           <FormItem>
@@ -203,7 +203,7 @@ function PageInner() {
                         )}
                       />
                       <FormField
-                        control={searchForm.control as any}
+                        control={searchForm.control}
                         name="total"
                         render={({ field }) => (
                           <FormItem>

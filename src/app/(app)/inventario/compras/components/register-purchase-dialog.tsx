@@ -1,5 +1,3 @@
-
-      
 // src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
@@ -78,7 +76,7 @@ export function RegisterPurchaseDialog({
   onInventoryItemCreated,
 }: RegisterPurchaseDialogProps) {
   const form = useForm<PurchaseFormValues>({
-    resolver: zodResolver(purchaseFormSchema) as any,
+    resolver: zodResolver(purchaseFormSchema),
     defaultValues: {
       supplierId: "",
       items: [],
@@ -89,7 +87,7 @@ export function RegisterPurchaseDialog({
   });
 
   const { control, handleSubmit, watch, setValue, getValues } = form;
-  const { fields, append, remove } = useFieldArray({ control, name: "items" as const });
+  const { fields, append, remove } = useFieldArray({ control, name: "items" });
   const paymentMethod = watch("paymentMethod");
   const itemsWatch = useWatch({ control, name: "items" });
 
@@ -160,7 +158,7 @@ export function RegisterPurchaseDialog({
                 <div className="max-h-[calc(80vh-150px)] space-y-6 overflow-y-auto px-6 py-4 bg-muted/50">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField
-                      control={control as any}
+                      control={control}
                       name="supplierId"
                       render={({ field }) => (
                         <FormItem>
@@ -186,7 +184,7 @@ export function RegisterPurchaseDialog({
                       )}
                     />
                     <FormField
-                      control={control as any}
+                      control={control}
                       name="invoiceId"
                       render={({ field }) => (
                         <FormItem>
@@ -316,7 +314,7 @@ export function RegisterPurchaseDialog({
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField
-                      control={control as any}
+                      control={control}
                       name="paymentMethod"
                       render={({ field }) => (
                         <FormItem>
@@ -341,7 +339,7 @@ export function RegisterPurchaseDialog({
 
                     {paymentMethod === "Crédito" && (
                       <FormField
-                        control={control as any}
+                        control={control}
                         name="dueDate"
                         render={({ field }) => (
                           <FormItem className="flex flex-col">
@@ -505,5 +503,3 @@ function SearchItemDialog({
     </Dialog>
   );
 }
-
-    

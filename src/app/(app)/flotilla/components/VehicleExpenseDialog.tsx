@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { Vehicle } from '@/types';
@@ -15,7 +15,7 @@ import { Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const expenseSchema = z.object({
-  vehicleId: z.string({ required_error: "Debe seleccionar un vehículo." }),
+  vehicleId: z.string().min(1, "Debe seleccionar un vehículo."),
   amount: z.coerce.number().min(0.01, "El monto debe ser positivo."),
   description: z.string().min(3, "La descripción es obligatoria."),
 });
@@ -33,10 +33,19 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
   const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<VehicleExpenseFormValues>({
     resolver: zodResolver(expenseSchema),
+    defaultValues: {
+      amount: undefined,
+      description: '',
+      vehicleId: ''
+    }
   });
 
   useEffect(() => {
-    if (open) form.reset();
+    if (open) form.reset({
+      vehicleId: '',
+      amount: undefined,
+      description: ''
+    });
   }, [open, form]);
 
   const handleFormSubmit = async (values: VehicleExpenseFormValues) => {
@@ -65,7 +74,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
               <FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="amount" render={({ field }) => (
-              <FormItem><FormLabel>Monto del Gasto ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Monto del Gasto ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ''} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField control={form.control} name="description" render={({ field }) => (
               <FormItem><FormLabel>Descripción del Gasto</FormLabel><FormControl><Textarea {...field} placeholder="Ej: Cambio de aceite, llanta nueva..." className="bg-white" /></FormControl><FormMessage /></FormItem>

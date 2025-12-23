@@ -54,6 +54,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
         monthlySalary: initialData.monthlySalary || 0,
         commissionRate: initialData.commissionRate || 0,
         hireDate: initialData.hireDate ? parseDate(initialData.hireDate) : undefined,
+        isArchived: initialData.isArchived ?? false,
     } : {
       name: "",
       email: "",
@@ -63,6 +64,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
       monthlySalary: 0,
       commissionRate: 0,
       hireDate: new Date(),
+      isArchived: false,
     },
   });
 
@@ -83,7 +85,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
               <FormItem><FormLabel>Rol de Permisos</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-card text-foreground"><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => (<SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
             )}/>
              <FormField
-              control={form.control as any}
+              control={form.control}
               name="functions"
               render={() => (
                 <FormItem>
@@ -118,7 +120,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
             />
         </div>
          <FormField
-          control={form.control as any}
+          control={form.control}
           name="hireDate"
           render={({ field }) => {
             const valueAsDate = field.value instanceof Date ? field.value : field.value ? new Date(field.value as any) : null;
@@ -161,7 +163,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
         />
         <div className="grid grid-cols-2 gap-4">
             <FormField
-                control={form.control as any}
+                control={form.control}
                 name="monthlySalary"
                 render={({ field }) => (
                 <FormItem><FormLabel>Sueldo Base Mensual</FormLabel><FormControl>
@@ -175,7 +177,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                 </FormControl><FormMessage /></FormItem>
             )}/>
             <FormField
-                control={form.control as any}
+                control={form.control}
                 name="commissionRate"
                 render={({ field }) => (
                 <FormItem><FormLabel>% Comisión</FormLabel><FormControl>

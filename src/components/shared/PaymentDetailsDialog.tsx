@@ -106,7 +106,7 @@ export function PaymentDetailsDialog({
       })),
     };
 
-    const totalPaid = normalized.payments.reduce((acc, p) => acc + toNumber(p.amount), 0);
+    const totalPaid = normalized.payments.reduce((acc, p) => acc + toNumber(p?.amount), 0);
     if (Math.abs(totalAmount - totalPaid) > 0.01) {
       toast({
         title: "El monto del pago no coincide",
