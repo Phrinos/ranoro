@@ -2,7 +2,8 @@
 "use client";
 
 import React from 'react';
-import { useFormContext, type FieldErrors, type SubmitErrorHandler, FormField, FormItem } from 'react-hook-form';
+import { useFormContext, type FieldErrors, type SubmitErrorHandler } from 'react-hook-form';
+import { FormField, FormItem } from '@/components/ui/form';
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from '@/components/ui/button';
