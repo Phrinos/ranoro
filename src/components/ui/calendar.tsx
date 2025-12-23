@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -26,3 +27,5 @@ export function Calendar({ selected, onSelect, ...props }: CalendarProps) {
     />
   );
 }
+
+export const NewCalendar = Calendar;

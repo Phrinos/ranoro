@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/components/DocumentsCard.tsx
 "use client";
 
@@ -51,7 +52,7 @@ export function DocumentsCard({ driver }: DocumentsCardProps) {
 
       await personnelService.saveDriver({
         ...driver,
-        documents: { ...driver.documents, [uploadingDocType]: downloadURL }
+        documents: { ...(driver.documents ?? {}), [uploadingDocType]: downloadURL }
       }, driver.id);
 
       toast({ title: 'Documento Subido', description: 'El documento se ha guardado correctamente.' });
@@ -73,9 +74,12 @@ export function DocumentsCard({ driver }: DocumentsCardProps) {
        console.error("Old file not found, skipping delete.", error)
     }
 
+    const current = driver.documents ?? {};
+    const { [docType]: _removed, ...rest } = current;
+
     await personnelService.saveDriver({
       ...driver,
-      documents: { ...driver.documents, [docType]: undefined }
+      documents: rest
     }, driver.id);
     toast({ title: "Documento eliminado", variant: "destructive" });
   };

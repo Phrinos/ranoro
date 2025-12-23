@@ -1,3 +1,4 @@
+
 // src/app/(app)/dashboard/components/DashboardCharts.tsx
 "use client";
 
@@ -7,7 +8,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
   ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
-import type { TooltipProps, ValueType, NameType } from "recharts";
+import type { TooltipProps } from "recharts";
 import type { ServiceRecord, SaleReceipt, InventoryItem, MonthlyFixedExpense, User as Personnel } from '@/types';
 import { format, subMonths, isValid, getDaysInMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -182,7 +183,7 @@ const processOperationalChartData = (services: ServiceRecord[], sales: SaleRecei
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#00C49F', '#FFBB28', '#FF8042', '#0088FE'];
 
-const CustomPieTooltip = (props: TooltipProps<ValueType, NameType>) => {
+const CustomPieTooltip = (props: TooltipProps<number, string>) => {
     const { active, payload } = props as any;
     if (active && payload && payload.length) {
       const value = Number(payload[0]?.value ?? 0);

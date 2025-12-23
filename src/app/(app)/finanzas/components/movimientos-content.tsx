@@ -1,3 +1,4 @@
+
 // src/app/(app)/finanzas/components/movimientos-content.tsx
 
 "use client";
@@ -354,7 +355,7 @@ function MovimientosTabContent({
 
                     const amountClass =
                       m.origin === "ledger"
-                        ? m.type === "in"
+                        ? m.type === "Entrada"
                           ? "text-green-600"
                           : "text-red-600"
                         : m.isRefund

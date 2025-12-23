@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -193,7 +194,7 @@ export function MigracionPageContent() {
                     )}
                      {hasProducts && analysisResult.products && (
                         <div className="rounded-md border h-64 overflow-auto">
-                           <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>SKU</TableHead><TableHead>Nombre</TableHead><TableHead>Marca</TableHead><TableHead>Categoría</TableHead><TableHead>Cantidad</TableHead><TableHead>Precio Compra</TableHead><TableHead>Precio Venta</TableHead></TableRow></TableHeader><TableBody>{analysisResult.products.map((p, i) => ( <TableRow key={i}><TableCell>{p.sku || 'N/A'}</TableCell><TableCell>{p.name}</TableCell><TableCell>{p.brand}</TableCell><TableCell>{p.category.name}</TableCell><TableCell>{p.quantity}</TableCell><TableCell>{formatCurrency(p.unitPrice || 0)}</TableCell><TableCell>{formatCurrency(p.sellingPrice || 0)}</TableCell></TableRow> ))}</TableBody></Table>
+                           <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>SKU</TableHead><TableHead>Nombre</TableHead><TableHead>Marca</TableHead><TableHead>Categoría</TableHead><TableHead>Cantidad</TableHead><TableHead>Precio Compra</TableHead><TableHead>Precio Venta</TableHead></TableRow></TableHeader><TableBody>{analysisResult.products.map((p, i) => ( <TableRow key={i}><TableCell>{p.sku || 'N/A'}</TableCell><TableCell>{p.name}</TableCell><TableCell>{p.brand}</TableCell><TableCell>{typeof p.category === "string" ? p.category : (p.category?.name ?? "N/A")}</TableCell><TableCell>{p.quantity}</TableCell><TableCell>{formatCurrency(p.unitPrice || 0)}</TableCell><TableCell>{formatCurrency(p.sellingPrice || 0)}</TableCell></TableRow> ))}</TableBody></Table>
                         </div>
                     )}
                     {hasDataToSave ? (
