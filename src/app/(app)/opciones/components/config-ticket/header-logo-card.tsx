@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -88,5 +87,3 @@ export const HeaderLogoCard: React.FC<HeaderLogoCardProps> = ({
     </Card>
   );
 };
-
-    

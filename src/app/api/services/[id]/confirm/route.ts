@@ -1,9 +1,21 @@
 // src/app/api/services/[id]/confirm/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminDb } from '@/lib/firebaseAdmin';
+import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import { getFirestore } from 'firebase-admin/firestore';
 
-// Obtiene la instancia de la base de datos de administrador
-const db = getAdminDb();
+// --- Firebase Admin SDK Initialization ---
+try {
+  if (!getApps().length) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY!);
+    initializeApp({
+      credential: cert(serviceAccount),
+    });
+  }
+} catch (error) {
+  console.error('Firebase Admin initialization error:', error);
+}
+
+const db = getFirestore();
 
 /**
  * Handles the POST request to confirm a service appointment.

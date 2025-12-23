@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
@@ -31,7 +30,8 @@ const individualServiceSchema = z.object({
   paymentMethod: z.string().min(1, "Seleccione un método de pago."),
 });
 
-type FormValues = z.infer<typeof individualServiceSchema>;
+type FormInput = z.input<typeof individualServiceSchema>;
+type FormValues = z.output<typeof individualServiceSchema>;
 
 const paymentMethods: PaymentMethod[] = ['Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia'];
 
@@ -44,7 +44,7 @@ export function RegistroIndividualContent() {
   const [searchResults, setSearchResults] = useState<Vehicle[]>([]);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput, any, FormValues>({
     resolver: zodResolver(individualServiceSchema),
     defaultValues: {
       serviceDate: new Date(),
@@ -54,7 +54,7 @@ export function RegistroIndividualContent() {
       totalCost: 0,
       suppliesCost: 0,
       paymentMethod: 'Efectivo',
-    },
+    } as FormInput,
   });
 
   const { watch, setValue } = form;
@@ -215,7 +215,9 @@ export function RegistroIndividualContent() {
                 <FormField
                   control={form.control}
                   name="serviceDate"
-                  render={({ field }) => (
+                  render={({ field }) => {
+                    const dateValue = field.value instanceof Date ? field.value : undefined;
+                    return (
                     <FormItem className="flex flex-col">
                       <FormLabel>Fecha del Servicio</FormLabel>
                       <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
@@ -223,26 +225,26 @@ export function RegistroIndividualContent() {
                           <FormControl>
                             <Button
                               variant="outline"
-                              className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                              className={cn("pl-3 text-left font-normal", !dateValue && "text-muted-foreground")}
                             >
                               <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                              {field.value ? format(field.value, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
+                              {dateValue ? format(dateValue, "PPP", { locale: es }) : <span>Seleccione fecha</span>}
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
                           <NewCalendar
-                            value={field.value}
                             onChange={(date: any) => {
                               field.onChange(date);
                               setIsCalendarOpen(false);
                             }}
+                            value={dateValue ?? undefined}
                           />
                         </PopoverContent>
                       </Popover>
                       <FormMessage />
                     </FormItem>
-                  )}
+                  )}}
                 />
                 <FormField
                   control={form.control}

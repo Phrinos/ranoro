@@ -65,7 +65,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
       commissionRate: undefined,
       hireDate: new Date(),
       isArchived: false,
-    },
+    } as UserFormInput,
   });
 
   return (
@@ -94,7 +94,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                         {OPERATIVE_FUNCTIONS.map((item) => (
                             <FormField
                                 key={item.id}
-                                control={form.control as any}
+                                control={form.control}
                                 name="functions"
                                 render={({ field }) => {
                                     return (
