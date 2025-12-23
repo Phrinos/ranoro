@@ -11,10 +11,10 @@ const db = getAdminDb();
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const publicId = params.id;
+    const { id: publicId } = await params;
 
     // 1. Validate the incoming data
     if (!publicId) {
