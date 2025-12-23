@@ -21,7 +21,7 @@ export function DriverDialog({ open, onOpenChange, driver, onSave }: DriverDialo
       title={driver ? "Editar Conductor" : "Nuevo Conductor"}
       description={driver ? "Actualiza los detalles del conductor." : "Completa la información para un nuevo conductor."}
       formId="driver-form"
-      isSubmitting={false}
+      isSubmitting={false} // The parent component will manage submission state if needed
       submitButtonText={driver ? "Actualizar" : "Crear Conductor"}
       dialogContentClassName="sm:max-w-lg"
     >

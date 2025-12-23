@@ -7,8 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { FileText, DollarSign, Edit } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { parseDate } from '@/lib/forms';
+
 
 interface FinancialInfoCardProps {
   driver: Driver;
@@ -16,8 +18,10 @@ interface FinancialInfoCardProps {
 }
 
 export function FinancialInfoCard({ driver, onEdit }: FinancialInfoCardProps) {
+  const contractDate = parseDate(driver.contractDate);
+
   const financialInfo = [
-    { icon: FileText, label: "Fecha de Contrato", value: driver.contractDate ? format(parseISO(driver.contractDate), "dd MMM yyyy", { locale: es }) : 'N/A' },
+    { icon: FileText, label: "Fecha de Contrato", value: contractDate && isValid(contractDate) ? format(contractDate, "dd MMM yyyy", { locale: es }) : 'N/A' },
     { icon: DollarSign, label: "Depósito Requerido", value: formatCurrency(driver.requiredDepositAmount) },
     { icon: DollarSign, label: "Depósito Entregado", value: formatCurrency(driver.depositAmount) },
   ];

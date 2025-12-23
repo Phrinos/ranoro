@@ -1,132 +1,159 @@
-
 // src/app/(app)/flotilla/conductores/[id]/page.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import { toast } from "sonner";
+import React, { useState, useEffect, useMemo } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
+import { PageHeader } from '@/components/page-header';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, Trash2, Archive, ArchiveRestore } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { useFlotillaData } from '../../../useFlotillaData';
 
-import { Title } from "@/components/Title";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { PersonalInfoCard } from "@/app/(app)/flotilla/components/PersonalInfoCard";
-import {
-  EditFinancialInfoDialog,
-  type FinancialInfoFormValues,
-} from "@/app/(app)/flotilla/components/EditFinancialInfoDialog";
+import type { Driver, Vehicle } from '@/types';
+import type { DriverFormValues } from '@/schemas/driver-form-schema';
 
-import { mockDrivers } from "@/data/mock-data";
-import type { Driver } from "@/types";
+import { personnelService } from '@/lib/services';
+import { DriverDialog } from '../components/DriverDialog';
 
-const getDriver = (id: string): Promise<Driver> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const driver = mockDrivers.find((d: Driver) => d.id === id);
-      if (driver) resolve(driver);
-      else reject(new Error("Driver not found"));
-    }, 150);
-  });
-};
+import { ContactInfoCard } from '../../../components/ContactInfoCard';
+import { AssignedVehicleCard } from '../../../components/AssignedVehicleCard';
+import { FinancialInfoCard } from '../../../components/FinancialInfoCard';
+import { DocumentsCard } from '../../../components/DocumentsCard';
+import { HistoryTabContent } from '../components/HistoryTabContent';
 
-const updateDriver = (id: string, data: Partial<Driver>): Promise<Driver> => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const driver = mockDrivers.find((d: Driver) => d.id === id);
-      if (!driver) return reject(new Error("Driver not found"));
-
-      Object.assign(driver, data);
-      resolve(driver);
-    }, 150);
-  });
-};
-
-export default function Page() {
-  const [driver, setDriver] = useState<Driver | undefined>(undefined);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-
-  const params = useParams() as { id?: string };
+function DriverProfilePage() {
+  const params = useParams();
+  const driverId = params.id as string;
+  const router = useRouter();
+  const { toast } = useToast();
+  
+  const { vehicles, drivers, isLoading: isFlotillaLoading } = useFlotillaData();
+  
+  const [driver, setDriver] = useState<Driver | null>(null);
+  const [assignedVehicle, setAssignedVehicle] = useState<Vehicle | null>(null);
+  
+  const [isDriverDialogOpen, setIsDriverDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    const id = params?.id;
-    if (!id) return;
+    if (!isFlotillaLoading && drivers.length > 0) {
+      const currentDriver = drivers.find(d => d.id === driverId);
+      if (currentDriver) {
+        setDriver(currentDriver);
+        if (currentDriver.assignedVehicleId) {
+          setAssignedVehicle(vehicles.find(v => v.id === currentDriver.assignedVehicleId) || null);
+        } else {
+          setAssignedVehicle(null);
+        }
+      } else {
+        toast({ title: "Conductor no encontrado", variant: "destructive" });
+        router.push('/flotilla?tab=conductores');
+      }
+    }
+  }, [driverId, drivers, vehicles, isFlotillaLoading, router, toast]);
 
-    getDriver(id)
-      .then(setDriver)
-      .catch(() => toast.error("No se encontró el conductor"));
-  }, [params?.id]);
-
-  const handleSave = async (data: FinancialInfoFormValues) => {
+  const handleSaveDriver = async (data: DriverFormValues) => {
+    if (!driver) return;
     try {
-      if (!driver) return;
-
-      // ✅ Convertimos Date -> ISO string para que encaje con Driver (string | undefined)
-      const payload: Partial<Driver> = {
-        ...data,
-        notaryPowerRegistrationDate: data.notaryPowerRegistrationDate
-          ? data.notaryPowerRegistrationDate.toISOString()
-          : undefined,
-        notaryPowerExpirationDate: data.notaryPowerExpirationDate
-          ? data.notaryPowerExpirationDate.toISOString()
-          : undefined,
-      };
-
-      const updatedDriver = await updateDriver(driver.id, payload);
-      setDriver(updatedDriver);
-      setIsEditDialogOpen(false);
-      toast.success("Información financiera actualizada");
-    } catch {
-      toast.error("Error al actualizar la información financiera");
+        await personnelService.saveDriver(data, driver.id);
+        toast({ title: 'Información actualizada' });
+        setIsDriverDialogOpen(false);
+    } catch (e) {
+        toast({ title: 'Error al guardar', variant: 'destructive' });
     }
   };
 
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-between">
-        <Title title={driver?.name ?? ""} />
-      </div>
+  const handleArchiveDriver = async () => {
+    if (!driver) return;
+    try {
+        await personnelService.saveDriver({ isArchived: !driver.isArchived }, driver.id);
+        toast({ title: `Conductor ${driver.isArchived ? 'restaurado' : 'archivado'}` });
+    } catch (e) {
+        toast({ title: 'Error', description: 'No se pudo actualizar el estado del conductor.', variant: 'destructive' });
+    }
+  };
 
-      <Separator />
+  const handleDeleteDriver = async () => {
+      // Implement if needed, for now we just archive.
+      toast({ title: "Función no implementada", description: "Por seguridad, por favor archive al conductor en su lugar.", variant: "default"});
+  };
 
-      <div className="grid grid-cols-12 gap-4">
-        <div className="col-span-12 lg:col-span-3">
-          <PersonalInfoCard driver={driver} />
+  if (isFlotillaLoading || !driver) {
+    return (
+        <div className="p-1 space-y-6">
+            <PageHeader title={<Skeleton className="h-8 w-1/2" />} description={<Skeleton className="h-4 w-1/3" />} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                    <Skeleton className="h-48 rounded-lg" />
+                    <Skeleton className="h-56 rounded-lg" />
+                </div>
+                <div className="space-y-6">
+                    <Skeleton className="h-56 rounded-lg" />
+                    <Skeleton className="h-64 rounded-lg" />
+                </div>
+            </div>
         </div>
+    );
+  }
 
-        <div className="col-span-12 lg:col-span-9">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="text-lg font-semibold">Información financiera</h2>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditDialogOpen(true)}
-              disabled={!driver}
-            >
-              Editar
+  return (
+    <>
+      <PageHeader
+        title={driver.name}
+        description={`Perfil del conductor de la flotilla. ID: ${driver.id}`}
+        actions={
+          <div className="flex gap-2">
+            <ConfirmDialog
+              triggerButton={
+                <Button variant={driver.isArchived ? "secondary" : "outline"} size="sm">
+                  {driver.isArchived ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
+                  {driver.isArchived ? "Restaurar" : "Archivar"}
+                </Button>
+              }
+              title={`¿${driver.isArchived ? 'Restaurar' : 'Archivar'} a ${driver.name}?`}
+              description={driver.isArchived ? "El conductor volverá a estar activo." : "El conductor se marcará como inactivo y se ocultará de las listas principales."}
+              onConfirm={handleArchiveDriver}
+            />
+            <Button variant="outline" onClick={() => router.push('/flotilla?tab=conductores')}>
+              <ArrowLeft className="mr-2 h-4 w-4" /> Volver
             </Button>
           </div>
-
-          <Separator className="my-2" />
-
-          <div className="grid grid-cols-3 gap-x-4 gap-y-2">
-            <p className="text-sm text-muted-foreground">Poder notarial</p>
-            <p className="text-sm col-span-2">{driver?.hasNotaryPower ? "Sí" : "No"}</p>
-
-            <p className="text-sm text-muted-foreground">Fecha de registro</p>
-            <p className="text-sm col-span-2">{driver?.notaryPowerRegistrationDate ?? "N/A"}</p>
-
-            <p className="text-sm text-muted-foreground">Fecha de vencimiento</p>
-            <p className="text-sm col-span-2">{driver?.notaryPowerExpirationDate ?? "N/A"}</p>
-          </div>
-        </div>
-      </div>
-
-      <EditFinancialInfoDialog
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        driver={driver}
-        onSave={handleSave}
+        }
       />
-    </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="overview">Resumen</TabsTrigger>
+          <TabsTrigger value="history">Historial de Cuenta</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <ContactInfoCard driver={driver} onEdit={() => setIsDriverDialogOpen(true)} />
+              <FinancialInfoCard driver={driver} onEdit={() => setIsDriverDialogOpen(true)} />
+            </div>
+            <div className="space-y-6">
+              <AssignedVehicleCard assignedVehicle={assignedVehicle} />
+              <DocumentsCard driver={driver} />
+            </div>
+          </div>
+        </TabsContent>
+        <TabsContent value="history" className="mt-6">
+          <HistoryTabContent driver={driver} vehicle={assignedVehicle} />
+        </TabsContent>
+      </Tabs>
+
+      <DriverDialog
+        open={isDriverDialogOpen}
+        onOpenChange={setIsDriverDialogOpen}
+        driver={driver}
+        onSave={handleSaveDriver}
+      />
+    </>
   );
 }
+
+export default DriverProfilePage;
