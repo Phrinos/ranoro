@@ -1,4 +1,3 @@
-
 // src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
@@ -27,7 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { NewCalendar } from "@/components/ui/calendar";
 import { format as formatDate } from "date-fns";
 import { es } from "date-fns/locale";
-import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
+import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 import type { CalendarProps } from "react-calendar";
 
 const purchaseItemSchema = z.object({
@@ -77,11 +76,12 @@ export function RegisterPurchaseDialog({
   onInventoryItemCreated,
 }: RegisterPurchaseDialogProps) {
   const form = useForm<PurchaseFormValues>({
-    resolver: zodResolver(purchaseFormSchema) as unknown as Resolver<PurchaseFormValues>,
+    resolver: zodResolver(purchaseFormSchema),
     defaultValues: {
       supplierId: "",
       items: [],
       paymentMethod: "Efectivo",
+      invoiceTotal: 0,
     },
     mode: "onBlur",
   });
@@ -229,7 +229,7 @@ export function RegisterPurchaseDialog({
                                     <Minus className="h-4 w-4"/>
                                 </Button>
                                 <FormField
-                                    control={control}
+                                    control={control as any}
                                     name={`items.${index}.quantity`}
                                     render={({ field }) => (
                                         <Input
@@ -380,17 +380,17 @@ export function RegisterPurchaseDialog({
                 </div>
 
                 <DialogFooter className="flex w-full flex-col-reverse items-center border-t bg-white p-6 pt-4 sm:flex-row sm:justify-between">
-                  <div className="text-right text-lg font-bold">
-                    Total: {formatCurrency(watch("invoiceTotal") || 0)}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-                      Cancelar
-                    </Button>
-                    <Button type="submit" form="purchase-form" disabled={fields.length === 0}>
-                      Registrar Compra
-                    </Button>
-                  </div>
+                    <div className="text-right text-lg font-bold">
+                        Total: {formatCurrency(watch("invoiceTotal") || 0)}
+                    </div>
+                    <div className="flex gap-2">
+                        <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+                        Cancelar
+                        </Button>
+                        <Button type="submit" form="purchase-form" disabled={fields.length === 0}>
+                        Registrar Compra
+                        </Button>
+                    </div>
                 </DialogFooter>
               </form>
             </Form>
@@ -503,4 +503,3 @@ function SearchItemDialog({
     </Dialog>
   );
 }
-

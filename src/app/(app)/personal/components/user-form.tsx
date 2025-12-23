@@ -83,7 +83,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
               <FormItem><FormLabel>Rol de Permisos</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger className="bg-card text-foreground"><SelectValue placeholder="Seleccione un rol" /></SelectTrigger></FormControl><SelectContent>{roles.map(r => (<SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>
             )}/>
              <FormField
-              control={form.control}
+              control={form.control as any}
               name="functions"
               render={() => (
                 <FormItem>
