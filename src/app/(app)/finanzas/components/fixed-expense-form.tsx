@@ -47,7 +47,7 @@ const fixedExpenseFormSchema = z.object({
       .positive("El monto debe ser mayor a 0.")
   ),
   category: z.enum(expenseCategories, {
-    required_error: "Debe seleccionar una categoría.",
+    errorMap: () => ({ message: "Debe seleccionar una categoría." }),
   }),
   notes: z.string().optional(),
 });
@@ -141,7 +141,7 @@ export function FixedExpenseForm({
         />
 
         <FormField
-          control={form.control}
+          control={form.control as any}
           name="amount"
           render={({ field }) => (
             <FormItem>
@@ -159,12 +159,11 @@ export function FixedExpenseForm({
                     value={field.value === undefined || field.value === null ? "" : String(field.value)}
                     onChange={(e) => {
                       const val = e.target.value;
-                      if (val === "") {
-                        field.onChange(""); // deja limpiar sin poner 0
-                      } else {
-                        field.onChange(val); // se convierte en número en el schema
-                      }
+                      field.onChange(val === "" ? undefined : e.target.valueAsNumber);
                     }}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    ref={field.ref}
                     className="pl-8"
                   />
                 </div>

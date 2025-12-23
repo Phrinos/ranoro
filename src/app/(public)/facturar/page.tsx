@@ -23,16 +23,17 @@ import { parseDate } from '@/lib/forms';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { z } from "zod";
-import { useForm, FormProvider, type SubmitHandler } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 
 const searchSchema = z.object({
   folio: z.string().min(5, "El folio debe tener al menos 5 caracteres.").trim(),
-  total: z.coerce.number({invalid_type_error: "El monto debe ser un número."}).min(0.01, "El monto debe ser mayor a cero."),
+  total: z.coerce.number({ message: "El monto debe ser un número."}).min(0.01, "El monto debe ser mayor a cero."),
 });
 
-type SearchFormValues = z.infer<typeof searchSchema>;
+type SearchFormInput = z.input<typeof searchSchema>;
+type SearchFormValues = z.output<typeof searchSchema>;
 type TicketType = SaleReceipt | ServiceRecord;
 
 const LoadingOverlay = ({ message }: { message: string }) => (
@@ -56,7 +57,7 @@ function PageInner() {
   const [error, setError] = useState<string | null>(null);
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
 
-  const searchForm = useForm<SearchFormValues>({
+  const searchForm = useForm<SearchFormInput, any, SearchFormValues>({
     resolver: zodResolver(searchSchema),
     defaultValues: { folio: '', total: undefined },
   });
@@ -90,10 +91,10 @@ function PageInner() {
     const total = searchParams.get('total');
     
     if (folio) searchForm.setValue('folio', folio);
-    if (total) searchForm.setValue('total', parseFloat(total));
+    if (total) searchForm.setValue('total', Number(total));
     
     if (folio && total) {
-        onSearchSubmit({ folio, total: parseFloat(total) });
+        onSearchSubmit({ folio, total: Number(total) });
     }
   }, [searchParams, searchForm, onSearchSubmit]);
   
@@ -187,9 +188,9 @@ function PageInner() {
               {!searchResult ? (
                 <FormProvider {...searchForm}>
                   <Form {...searchForm}>
-                    <form onSubmit={searchForm.handleSubmit(onSearchSubmit as SubmitHandler<SearchFormValues>)} className="space-y-4">
+                    <form onSubmit={searchForm.handleSubmit(onSearchSubmit)} className="space-y-4">
                       <FormField
-                        control={searchForm.control}
+                        control={searchForm.control as any}
                         name="folio"
                         render={({ field }) => (
                           <FormItem>
@@ -202,7 +203,7 @@ function PageInner() {
                         )}
                       />
                       <FormField
-                        control={searchForm.control}
+                        control={searchForm.control as any}
                         name="total"
                         render={({ field }) => (
                           <FormItem>

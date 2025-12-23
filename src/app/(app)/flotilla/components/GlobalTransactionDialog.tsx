@@ -1,4 +1,3 @@
-
 // src/app/(app)/flotilla/components/GlobalTransactionDialog.tsx
 "use client";
 
@@ -29,13 +28,15 @@ import { NewCalendar } from "@/components/ui/calendar";
 
 
 const transactionSchema = z.object({
-  driverId: z.string({ required_error: "Debe seleccionar un conductor." }),
+  driverId: z.string().min(1, "Debe seleccionar un conductor."),
   date: z.coerce.date({ message: "La fecha es obligatoria." }),
   amount: z.coerce.number().min(0.01, "El monto debe ser positivo."),
   note: z.string().min(3, "La descripción es obligatoria."),
   paymentMethod: z.string().optional(),
 });
 export type GlobalTransactionFormValues = z.infer<typeof transactionSchema>;
+type GlobalTransactionFormInput = z.input<typeof transactionSchema>;
+
 
 interface GlobalTransactionDialogProps {
   open: boolean;
@@ -58,13 +59,13 @@ export function GlobalTransactionDialog({
   const [isDriverPopoverOpen, setIsDriverPopoverOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  const form = useForm<GlobalTransactionFormValues>({
+  const form = useForm<GlobalTransactionFormInput, any, GlobalTransactionFormValues>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
-      driverId: undefined as unknown as string,
+      driverId: undefined as any,
       date: toMidday(new Date()),
       paymentMethod: 'Efectivo',
-      amount: undefined as unknown as number,
+      amount: undefined,
       note: '',
     },
   });
@@ -72,9 +73,9 @@ export function GlobalTransactionDialog({
   useEffect(() => {
     if (open) {
       form.reset({
-        driverId: undefined as unknown as string,
+        driverId: undefined as any,
         date: toMidday(new Date()),
-        amount: undefined as unknown as number,
+        amount: undefined,
         note: transactionType === 'payment' ? 'Abono de Renta' : '',
         paymentMethod: 'Efectivo',
       });
@@ -246,13 +247,20 @@ export function GlobalTransactionDialog({
             )}
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="amount"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Monto ($)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" {...field} className="bg-white" />
+                    <Input 
+                        type="number"
+                        step="0.01"
+                        {...field}
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
+                        className="bg-white" 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
