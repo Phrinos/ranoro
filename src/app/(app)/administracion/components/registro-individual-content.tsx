@@ -16,7 +16,7 @@ import { Loader2, Car, User, AlertCircle, Save, CalendarIcon, DollarSign } from 
 import { useToast } from '@/hooks/use-toast';
 import { serviceService, inventoryService } from '@/lib/services';
 import type { Vehicle, PaymentMethod } from '@/types';
-import { cn, formatCurrency } from '@/lib/utils';
+import { cn, formatCurrency } from "@/lib/utils";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
