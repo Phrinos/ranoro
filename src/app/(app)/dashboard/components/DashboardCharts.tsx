@@ -183,7 +183,7 @@ const processOperationalChartData = (services: ServiceRecord[], sales: SaleRecei
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#00C49F', '#FFBB28', '#FF8042', '#0088FE'];
 
-const CustomPieTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+const CustomPieTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-background border p-2 rounded-md shadow-lg">
@@ -206,7 +206,7 @@ const FinancialChart = React.memo(({ data }: { data: any[] }) => (
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis dataKey="name" />
           <YAxis tickFormatter={(value) => new Intl.NumberFormat('es-MX', { notation: 'compact', compactDisplay: 'short', style: 'currency', currency: 'MXN' }).format(value)} width={80} tick={{ fontSize: 12 }} />
-          <Tooltip formatter={(value: number) => formatCurrency(value)} />
+          <Tooltip formatter={(value?: number) => formatCurrency(value ?? 0)} />
           <Legend />
           <Line type="monotone" dataKey="ingresos" stroke="#3b82f6" strokeWidth={2} name="Ingresos Totales" />
           <Line type="monotone" dataKey="costoInsumos" stroke="#f97316" strokeWidth={2} name="Costo de Insumos" />

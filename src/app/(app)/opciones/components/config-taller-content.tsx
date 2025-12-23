@@ -52,7 +52,7 @@ const cleanObjectForFirestore = (obj: any) => {
 
 export function ConfigTallerPageContent() {
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isCropping, setIsCropping] = useState(false);
   const [imgSrc, setImgSrc] = useState('');
@@ -162,7 +162,7 @@ export function ConfigTallerPageContent() {
           <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
             <InfoGeneralCard
               watchedLogoUrl={watchedLogoUrl}
-              fileInputRef={fileInputRef as any}
+              fileInputRef={fileInputRef}
               isUploading={isUploading}
               onFileChange={onFileChange}
             />

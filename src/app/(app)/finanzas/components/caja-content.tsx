@@ -397,7 +397,7 @@ export default function CajaContent() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleTransactionSubmit)} id="cash-transaction-form" className="space-y-4">
                 <FormField
-                  control={form.control as any}
+                  control={form.control}
                   name="description"
                   render={({ field }) => (
                     <FormItem>
@@ -408,7 +408,7 @@ export default function CajaContent() {
                   )}
                 />
                 <FormField
-                  control={form.control as any}
+                  control={form.control}
                   name="amount"
                   render={({ field }) => (
                     <FormItem>
