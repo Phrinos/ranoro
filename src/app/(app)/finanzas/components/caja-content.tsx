@@ -1,3 +1,4 @@
+// src/app/(app)/finanzas/components/caja-content.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -15,7 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from "zod";
 import { cashService, saleService, serviceService } from '@/lib/services';
@@ -33,6 +34,7 @@ const cashTransactionSchema = z.object({
 
 type CashTransactionFormInput = z.input<typeof cashTransactionSchema>;
 type CashTransactionFormValues = z.output<typeof cashTransactionSchema>;
+const resolver = zodResolver(cashTransactionSchema) as unknown as Resolver<CashTransactionFormValues, any>;
 
 
 type EnhancedCashDrawerTransaction = CashDrawerTransaction & { fullDescription?: string; };
@@ -40,10 +42,7 @@ type EnhancedCashDrawerTransaction = CashDrawerTransaction & { fullDescription?:
 const methodIcon: Partial<Record<PaymentMethod, React.ElementType>> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
-  "Tarjeta MSI": CreditCard,
   Transferencia: Landmark,
-  "Efectivo+Transferencia": Wallet,
-  "Tarjeta+Transferencia": CreditCard,
 };
 
 // ---------- helpers ----------
@@ -141,7 +140,7 @@ export default function CajaContent() {
       allRows.push({
         id: t.id,
         date: d,
-        type: t.type,
+        type: t.type === 'in' ? 'Entrada' : 'Salida',
         source: 'Libro',
         relatedType: (t as any).relatedType || 'Manual',
         refId: (t as any).relatedId,
@@ -180,11 +179,11 @@ export default function CajaContent() {
         .filter(t => t.paymentMethod === 'Efectivo');
         
     const allManualCashIncome = allManualCashFlow
-        .filter(t => t.type === 'Entrada')
+        .filter(t => t.type === 'in')
         .reduce((s, r) => s + (r as any).amount, 0);
 
     const allManualCashOutcome = allManualCashFlow
-        .filter(t => t.type === 'Salida')
+        .filter(t => t.type === 'out')
         .reduce((s, r) => s + (r as any).amount, 0);
         
     const currentTotalBalance = allManualCashIncome - allManualCashOutcome;
@@ -223,12 +222,12 @@ export default function CajaContent() {
   };
 
   // registrar manual
-  const form = useForm<CashTransactionFormInput, any, CashTransactionFormValues>({
-    resolver: zodResolver(cashTransactionSchema),
+  const form = useForm<CashTransactionFormValues>({
+    resolver: resolver as any,
     defaultValues: {
       description: "",
       amount: undefined,
-    } as CashTransactionFormInput,
+    } as any,
   });
 
   const handleOpenDialog = (type: 'Entrada' | 'Salida') => { setDialogType(type); form.reset(); setIsDialogOpen(true); };
@@ -238,7 +237,7 @@ export default function CajaContent() {
     const currentUser = authUserString ? JSON.parse(authUserString) : null;
     try {
       await cashService.addCashTransaction({
-        type: dialogType,
+        type: dialogType === 'Entrada' ? 'in' : 'out',
         amount: values.amount,
         concept: values.description,
         userId: currentUser?.id || 'system',
@@ -420,8 +419,7 @@ export default function CajaContent() {
                             step="0.01"
                             placeholder="0.00"
                             className="pl-8"
-                            {...field}
-                            value={(field.value as any) ?? ''}
+                            value={field.value ?? ""}
                             onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
                           />
                         </div>

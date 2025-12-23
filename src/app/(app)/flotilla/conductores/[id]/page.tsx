@@ -1,129 +1,112 @@
-// src/app/(app)/flotilla/conductores/[id]/page.tsx
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { PageHeader } from '@/components/page-header';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
-import { personnelService, inventoryService } from '@/lib/services';
-import type { Driver, Vehicle } from '@/types';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState } from "react";
+import { useParams } from "next/navigation";
+import { toast } from "sonner";
 
-import { ContactInfoCard } from '../../components/ContactInfoCard';
-import { AssignedVehicleCard } from '../../components/AssignedVehicleCard';
-import { DocumentsCard } from '../../components/DocumentsCard';
-import { HistoryTabContent } from '../components/HistoryTabContent';
-import { EditContactInfoDialog, type ContactInfoFormValues } from '../../components/EditContactInfoDialog';
-import { EditFinancialInfoDialog, type FinancialInfoFormValues } from '../../components/EditFinancialInfoDialog';
-import { ContractGeneratorCard } from '../../components/ContractGeneratorCard';
+import { Title } from "@/components/Title";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { PersonalInfoCard } from "@/app/(app)/flotilla/components/PersonalInfoCard";
+import {
+  EditFinancialInfoDialog,
+  type FinancialInfoFormValues,
+} from "@/app/(app)/flotilla/components/EditFinancialInfoDialog";
 
-export default function FlotillaConductorProfilePage() {
+import { mockDrivers } from "@/data/mock-data";
+import type { Driver } from "@/types";
+
+const getDriver = (id: string): Promise<Driver> => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const driver = mockDrivers.find((d) => d.id === id);
+      if (driver) {
+        resolve(driver);
+      } else {
+        reject(new Error("Driver not found"));
+      }
+    }, 500);
+  });
+};
+
+const updateDriver = (id: string, data: Partial<Driver>): Promise<Driver> => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const driver = mockDrivers.find((d) => d.id === id);
+      if (driver) {
+        Object.assign(driver, data);
+        resolve(driver);
+      } else {
+        reject(new Error("Driver not found"));
+      }
+    }, 500);
+  });
+};
+
+export default function Page() {
+  const [driver, setDriver] = useState<Driver | undefined>(undefined);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const params = useParams();
-  const driverId = params.id as string;
-  const router = useRouter();
-  const { toast } = useToast();
-  
-  const [driver, setDriver] = useState<Driver | null>(null);
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const [isContactInfoDialogOpen, setIsContactInfoDialogOpen] = useState(false);
-  const [isFinancialInfoDialogOpen, setIsFinancialInfoDialogOpen] = useState(false);
+  React.useEffect(() => {
+    const { id } = params;
+    getDriver(id as string).then(setDriver);
+  }, [params]);
 
-  useEffect(() => {
-    if (!driverId) return;
-    
-    const unsubDriver = personnelService.onDriversUpdate((drivers) => {
-      const currentDriver = drivers.find(d => d.id === driverId);
-      setDriver(currentDriver || null);
-      setIsLoading(false);
-    });
-
-    const unsubVehicles = inventoryService.onVehiclesUpdate(setVehicles);
-
-    return () => {
-      unsubDriver();
-      unsubVehicles();
-    };
-  }, [driverId, router, toast]);
-
-  const assignedVehicle = useMemo(() => {
-    if (!driver?.assignedVehicleId) return null;
-    return vehicles.find(v => v.id === driver.assignedVehicleId) || null;
-  }, [driver, vehicles]);
-
-  const handleSaveContactInfo = async (data: ContactInfoFormValues) => {
-    if (!driver) return;
-    await personnelService.saveDriver({ ...driver, ...data }, driver.id);
-    toast({ title: "Información de Contacto Actualizada" });
-    setIsContactInfoDialogOpen(false);
+  const handleSave = async (data: FinancialInfoFormValues) => {
+    try {
+      if (!driver) return;
+      const updatedDriver = await updateDriver(driver.id, data);
+      setDriver(updatedDriver);
+      setIsEditDialogOpen(false);
+    } catch (error) {
+      toast.error("Error al actualizar la información financiera");
+    }
   };
-  
-  const handleSaveFinancialInfo = async (data: FinancialInfoFormValues) => {
-    if (!driver) return;
-    const dataToSave = {
-        ...driver,
-        ...data,
-        contractDate: data.contractDate ? data.contractDate.toISOString() : undefined,
-    };
-    await personnelService.saveDriver(dataToSave, driver.id);
-    toast({ title: "Información Financiera Actualizada" });
-    setIsFinancialInfoDialogOpen(false);
-  };
-
-  if (isLoading || !driver) {
-    return (
-      <div className="p-1 space-y-6">
-        <PageHeader title={<Skeleton className="h-8 w-1/2" />} description={<Skeleton className="h-4 w-1/3" />} />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Skeleton className="h-64 rounded-lg" />
-          <Skeleton className="h-64 rounded-lg" />
-        </div>
-        <Skeleton className="h-48 rounded-lg" />
-        <Skeleton className="h-96 rounded-lg" />
-      </div>
-    );
-  }
 
   return (
-    <>
-      <PageHeader
-        title={`Perfil de ${driver.name}`}
-        description="Información detallada, contrato y documentos del conductor."
-        actions={
-          <Button variant="outline" onClick={() => router.push('/flotilla?tab=conductores')} className="bg-white">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver
-          </Button>
-        }
-      />
-      <Tabs defaultValue="info" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="info">Información</TabsTrigger>
-          <TabsTrigger value="history">Historial</TabsTrigger>
-        </TabsList>
-        <TabsContent value="info" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-6">
-              <ContactInfoCard driver={driver} onEdit={() => setIsContactInfoDialogOpen(true)} />
-              <ContractGeneratorCard driver={driver} vehicle={assignedVehicle} onEdit={() => setIsFinancialInfoDialogOpen(true)} />
-            </div>
-            <div className="space-y-6">
-              <AssignedVehicleCard assignedVehicle={assignedVehicle} />
-              <DocumentsCard driver={driver} />
-            </div>
+    <div className="space-y-4">
+      <div className="flex justify-between">
+        <Title title={driver?.name ?? ""} />
+      </div>
+
+      <Separator />
+
+      <div className="grid grid-cols-12 gap-4">
+        <div className="col-span-3">
+          <PersonalInfoCard driver={driver} />
+        </div>
+
+        <div className="col-span-9">
+          <div className="flex justify-between">
+            <h2 className="text-lg font-semibold">Información financiera</h2>
+
+            <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+              Editar
+            </Button>
           </div>
-        </TabsContent>
-        <TabsContent value="history" className="mt-6">
-          <HistoryTabContent driver={driver} vehicle={assignedVehicle} />
-        </TabsContent>
-      </Tabs>
-      
-      <EditContactInfoDialog open={isContactInfoDialogOpen} onOpenChange={setIsContactInfoDialogOpen} driver={driver} onSave={handleSaveContactInfo} />
-      <EditFinancialInfoDialog open={isFinancialInfoDialogOpen} onOpenChange={setIsFinancialInfoDialogOpen} driver={driver} onSave={handleSaveFinancialInfo} />
-    </>
+
+          <Separator className="my-2" />
+
+          <div className="grid grid-cols-3 gap-x-4 gap-y-2">
+            <p className="text-sm text-gray-500">Poder notarial</p>
+            <p className="text-sm col-span-2">{driver?.hasNotaryPower ? "Sí" : "No"}</p>
+
+            <p className="text-sm text-gray-500">Fecha de registro</p>
+            <p className="text-sm col-span-2">{driver?.notaryPowerRegistrationDate ?? "N/A"}</p>
+
+            <p className="text-sm text-gray-500">Fecha de vencimiento</p>
+            <p className="text-sm col-span-2">{driver?.notaryPowerExpirationDate ?? "N/A"}</p>
+          </div>
+        </div>
+      </div>
+
+      <EditFinancialInfoDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        driver={driver}
+        onSave={handleSave}
+      />
+    </div>
   );
 }

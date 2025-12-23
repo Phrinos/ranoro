@@ -6,7 +6,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit, calcEffectiveProfit } from '@/lib/money-helpers';
-import type { User, CapacityAnalysisOutput, ServiceRecord, SaleReceipt, InventoryItem, Personnel, MonthlyFixedExpense, Driver, Vehicle, PaymentMethod } from '@/types';
+import type { User, CapacityAnalysisOutput, ServiceRecord, SaleReceipt, InventoryItem, Personnel, MonthlyFixedExpense, Driver, Vehicle, PaymentMethod, SimplifiedSale, LegacySale } from '@/types';
 import { BrainCircuit, Loader2, Wrench, DollarSign, AlertTriangle, Receipt, Truck } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
@@ -78,7 +78,7 @@ export default function DashboardPage() {
       serviceService.onServicesUpdate(setAllServices),
       saleService.onSalesUpdate(setAllSales),
       inventoryService.onItemsUpdate(setAllInventory),
-      personnelService.onPersonnelUpdate(setAllPersonnel),
+      personnelService.onPersonnelUpdate(setAllPersonnel as any),
       personnelService.onDriversUpdate(setDrivers),
       inventoryService.onFixedExpensesUpdate(setFixedExpenses),
       inventoryService.onVehiclesUpdate((vehicles) => {
@@ -96,7 +96,7 @@ export default function DashboardPage() {
     const dayEnd = endOfDay(nowZ);
 
     const salesToday = allSales.filter((s) => {
-      const d = parseDate(s.saleDate);
+      const d = parseDate(s.saleDate || new Date().toDateString());
       if (!d || !isValid(d)) return false;
       const dz = toZonedTime(d, TZ);
       return s.status !== "Cancelado" && isWithinInterval(dz, { start: dayStart, end: dayEnd });
@@ -120,7 +120,7 @@ export default function DashboardPage() {
     }, 0);
 
     const profitFromSales = salesToday.reduce(
-      (sum, s) => sum + calculateSaleProfit(s, allInventory),
+      (sum, s) => sum + calculateSaleProfit(s as LegacySale | SimplifiedSale, allInventory),
       0
     );
 
@@ -132,7 +132,7 @@ export default function DashboardPage() {
     const repairingServices = allServices.filter((s) => s.status === "En Taller");
     const scheduledTodayServices = allServices.filter((s) => {
       if (s.status !== "Agendado") return false;
-      const d = parseDate(s.serviceDate);
+      const d = parseDate(s.serviceDate || new Date().toDateString());
       if (!d || !isValid(d)) return false;
       const dz = toZonedTime(d, TZ);
       return isWithinInterval(dz, { start: dayStart, end: dayEnd });
@@ -171,7 +171,7 @@ export default function DashboardPage() {
     
     try {
       const servicesForToday = allServices.filter(s => {
-        const serviceDay = parseDate(s.serviceDate);
+        const serviceDay = parseDate(s.serviceDate || new Date().toDateString());
         return (s.status === 'En Taller') || (s.status === 'Agendado' && serviceDay && isValid(serviceDay) && isToday(serviceDay));
       });
 
@@ -187,8 +187,8 @@ export default function DashboardPage() {
           serviceHistory: allServices
             .filter(s => s.serviceDate)
             .map(s => {
-                const serviceDate = parseDate(s.serviceDate);
-                const deliveryDateTime = parseDate(s.deliveryDateTime);
+                const serviceDate = parseDate(s.serviceDate || new Date().toDateString());
+                const deliveryDateTime = parseDate(s.deliveryDateTime || new Date().toDateString());
                 return {
                     description: s.description || '',
                     serviceDate: serviceDate ? serviceDate.toISOString() : undefined,
@@ -298,7 +298,7 @@ export default function DashboardPage() {
                 ) : capacityInfo ? (
                     <>
                         <div className="text-2xl font-bold font-headline">{capacityInfo.capacityPercentage}%</div>
-                        <p className="text-xs text-muted-foreground" title={`${capacityInfo.totalRequiredHours.toFixed(1)}h de ${capacityInfo.totalAvailableHours}h`}>
+                        <p className="text-xs text-muted-foreground" title={`${capacityInfo.totalRequiredHours?.toFixed(1)}h de ${capacityInfo.totalAvailableHours}h`}>
                             {capacityInfo.recommendation}
                         </p>
                     </>
@@ -325,7 +325,7 @@ export default function DashboardPage() {
             sales={allSales}
             inventory={allInventory}
             fixedExpenses={fixedExpenses}
-            personnel={allPersonnel}
+            personnel={allPersonnel as any}
           />
         )}
 

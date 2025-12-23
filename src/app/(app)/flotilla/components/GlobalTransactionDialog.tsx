@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { NewCalendar } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
@@ -27,11 +27,14 @@ import { cn } from "@/lib/utils";
 import { globalTransactionSchema, type GlobalTransactionFormValues } from "@/schemas/global-transaction-schema";
 import type { Driver } from "@/types";
 
+export type { GlobalTransactionFormValues };
+
 interface GlobalTransactionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   drivers: Driver[];
   onSave: (data: GlobalTransactionFormValues) => Promise<void> | void;
+  transactionType: "payment" | "charge";
 }
 
 const buildDefaults = (): GlobalTransactionFormValues => ({
@@ -42,7 +45,7 @@ const buildDefaults = (): GlobalTransactionFormValues => ({
   paymentMethod: undefined,
 });
 
-export function GlobalTransactionDialog({ open, onOpenChange, drivers, onSave }: GlobalTransactionDialogProps) {
+export function GlobalTransactionDialog({ open, onOpenChange, drivers, onSave, transactionType }: GlobalTransactionDialogProps) {
   const resolver = zodResolver(globalTransactionSchema) as unknown as Resolver<GlobalTransactionFormValues>;
 
   const form = useForm<GlobalTransactionFormValues>({
@@ -61,7 +64,7 @@ export function GlobalTransactionDialog({ open, onOpenChange, drivers, onSave }:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Registrar transacción</DialogTitle>
+          <DialogTitle>Registrar {transactionType === 'payment' ? 'pago' : 'cobro'}</DialogTitle>
           <DialogDescription>Asigna la transacción a un chofer y guarda el movimiento.</DialogDescription>
         </DialogHeader>
 
@@ -112,7 +115,7 @@ export function GlobalTransactionDialog({ open, onOpenChange, drivers, onSave }:
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <NewCalendar mode="single" selected={field.value} onSelect={(d) => field.onChange(d ?? new Date())} initialFocus />
+                      <Calendar mode="single" selected={field.value} onSelect={(d) => field.onChange(d ?? new Date())} initialFocus />
                     </PopoverContent>
                   </Popover>
                   <FormMessage />

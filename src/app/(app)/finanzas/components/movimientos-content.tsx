@@ -67,13 +67,11 @@ const sortOptions = [
   { value: "total_asc", label: "Monto (Menor a Mayor)" },
 ];
 
-const paymentMethodIcons: Record<NonNullable<PaymentMethod>, React.ElementType> = {
+const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
-  "Tarjeta MSI": CreditCard,
   Transferencia: Landmark,
-  "Efectivo+Transferencia": Wallet,
-  "Tarjeta+Transferencia": CreditCard,
+  Crédito: CreditCard
 };
 
 // === Helpers ===
@@ -127,7 +125,7 @@ function MovimientosTabContent({
         return pays
           .filter((p) => typeof p?.amount === "number" && !Number.isNaN(p.amount))
           .map((p, idx) => {
-            const d = getPaymentDate(p) || parseDate(s.deliveryDateTime) || parseDate(s.serviceDate);
+            const d = getPaymentDate(p) || parseDate(s.deliveryDateTime || new Date().toISOString()) || parseDate(s.serviceDate || new Date().toISOString());
             const amt = Number(p.amount) || 0;
             const isRefund = amt < 0;
             const folio = s.folio || s.id.slice(-6);
@@ -183,7 +181,7 @@ function MovimientosTabContent({
         origin: "ledger",
         date: parseDate((t as any).date || (t as any).createdAt) || null,
         folio: t.id,
-        type: t.type === "Entrada" ? "Entrada" : "Salida",
+        type: t.type === "in" ? "Entrada" : "Salida",
         client: (t as any).userName || (t as any).user || "Sistema",
         total: Math.abs(Number(t.amount) || 0),
         description: (t as any).description || (t as any).concept || "",
@@ -354,7 +352,7 @@ function MovimientosTabContent({
 
                     const amountClass =
                       m.origin === "ledger"
-                        ? m.type === "Entrada"
+                        ? m.type === "in"
                           ? "text-green-600"
                           : "text-red-600"
                         : m.isRefund

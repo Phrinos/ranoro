@@ -1,182 +1,126 @@
-// src/app/(app)/flotilla/components/RegisterPaymentDialog.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import type { RentalPayment } from "@/types";
+import { CalendarIcon } from "lucide-react";
+import { format as formatDate } from "date-fns";
+import { es } from "date-fns/locale";
+import { toast } from "sonner";
 
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Loader2 } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
-import { NewCalendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { cn } from "@/lib/utils";
 
-const paymentSchema = z.object({
-  paymentDate: z.coerce.date({ message: "La fecha es obligatoria." }),
-  amount: z.coerce.number().min(0.01, "El monto debe ser positivo."),
-  note: z.string().optional(),
-  paymentMethod: z.string().optional(),
-});
-
-export type PaymentFormValues = z.infer<typeof paymentSchema>;
-type PaymentFormInput = z.input<typeof paymentSchema>;
+import { registerPaymentSchema, type RegisterPaymentFormValues } from "@/schemas/register-payment-schema";
+import type { Infraction, Payment } from "@/types/infraction";
+import { CURRENCY_FORMATTER, getToday } from "@/lib/utils";
 
 interface RegisterPaymentDialogProps {
   open: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-  onSave: (values: PaymentFormValues) => Promise<void>;
-  paymentToEdit?: RentalPayment | null;
+  onOpenChange: (open: boolean) => void;
+  onSave: (data: RegisterPaymentFormValues) => Promise<void> | void;
+  infraction: Infraction;
 }
 
-const toMidday = (d: Date) => {
-  const n = new Date(d);
-  n.setHours(12, 0, 0, 0);
-  return n;
-};
+const buildDefaults = (infraction: Infraction, payment?: Payment): RegisterPaymentFormValues => ({
+  id: payment?.id,
+  date: payment?.date ? new Date(payment.date) : getToday(),
+  amount: payment?.amount ?? Math.max(infraction.totalAmount - infraction.paidAmount, 0),
+  paymentMethod: payment?.paymentMethod,
+  note: payment?.note ?? "",
+  infractionId: infraction.id,
+});
 
-export function RegisterPaymentDialog({
-  open,
-  onOpenChange,
-  onSave,
-  paymentToEdit = null,
-}: RegisterPaymentDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+export function RegisterPaymentDialog({ open, onOpenChange, onSave, infraction }: RegisterPaymentDialogProps) {
+  const [payment, setPayment] = useState<Payment | undefined>(undefined);
+  const resolver = zodResolver(registerPaymentSchema) as unknown as Resolver<RegisterPaymentFormValues>;
 
-  const form = useForm<PaymentFormInput, any, PaymentFormValues>({
-    resolver: zodResolver(paymentSchema),
-    defaultValues: {
-      paymentDate: toMidday(new Date()),
-      note: "Abono de Renta",
-      paymentMethod: "Efectivo",
-      // amount: (se deja sin default para que el input inicie vacío)
-    },
+  const remainingAmount = useMemo(
+    () => infraction.totalAmount - infraction.paidAmount,
+    [infraction.totalAmount, infraction.paidAmount],
+  );
+
+  const form = useForm<RegisterPaymentFormValues>({
+    resolver,
+    defaultValues: buildDefaults(infraction, payment),
+    mode: "onBlur",
   });
 
+  const { handleSubmit, reset, formState, watch } = form;
+  const amount = watch("amount");
+
   useEffect(() => {
-    if (!open) return;
+    if (open) reset(buildDefaults(infraction, payment));
+  }, [open, reset, infraction, payment]);
 
-    if (paymentToEdit) {
-      const base = toMidday(new Date((paymentToEdit as any).paymentDate));
-      form.reset({
-        paymentDate: base,
-        amount: paymentToEdit.amount,
-        note: paymentToEdit.note ?? "Abono de Renta",
-        paymentMethod: paymentToEdit.paymentMethod ?? "Efectivo",
-      });
-    } else {
-      form.reset({
-        paymentDate: toMidday(new Date()),
-        note: "Abono de Renta",
-        paymentMethod: "Efectivo",
-        amount: undefined,
-      });
-    }
-  }, [open, paymentToEdit, form]);
-
-  const handleFormSubmit = async (values: PaymentFormValues) => {
-    setIsSubmitting(true);
+  const handleSave = async (data: RegisterPaymentFormValues) => {
     try {
-      await onSave(values);
-      onOpenChange(false);
-    } finally {
-      setIsSubmitting(false);
+      if (data.amount > remainingAmount) {
+        toast.error("El monto a pagar no puede ser mayor al monto restante");
+        return;
+      }
+
+      await onSave(data);
+    } catch (error) {
+      toast.error("Error al registrar el pago");
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md p-0">
-        <DialogHeader className="p-6 pb-4">
-          <DialogTitle>{paymentToEdit ? "Editar Pago" : "Registrar Pago"}</DialogTitle>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Registrar pago</DialogTitle>
           <DialogDescription>
-            {paymentToEdit ? "Actualiza los detalles del pago." : "Registra un nuevo abono a la cuenta del conductor."}
+            Deuda total: {CURRENCY_FORMATTER.format(infraction.totalAmount)} | Deuda restante:{" "}
+            {CURRENCY_FORMATTER.format(remainingAmount)}
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 p-6 pt-0">
+          <form onSubmit={handleSubmit(handleSave)} className="space-y-4">
             <FormField
               control={form.control}
-              name="paymentDate"
-              render={({ field }) => {
-                const dateValue = field.value instanceof Date ? field.value : undefined;
-                return (
+              name="date"
+              render={({ field }) => (
                 <FormItem className="flex flex-col">
-                  <FormLabel>Fecha del Pago</FormLabel>
-                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                  <FormLabel>Fecha</FormLabel>
+                  <Popover>
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
                           type="button"
-                          variant={"outline"}
-                          className={cn("pl-3 text-left font-normal bg-white", !dateValue && "text-muted-foreground")}
-                          onClick={() => setIsCalendarOpen(true)}
+                          variant="outline"
+                          className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")}
                         >
-                          {dateValue ? format(dateValue, "PPP", { locale: es }) : "Seleccionar fecha"}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {field.value ? formatDate(field.value, "PPP", { locale: es }) : "Selecciona una fecha"}
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-
                     <PopoverContent className="w-auto p-0" align="start">
-                      <NewCalendar
-                        onChange={(d: any) => {
-                          if (d) {
-                            field.onChange(toMidday(d));
-                            setIsCalendarOpen(false);
-                          }
-                        }}
-                        value={dateValue ?? null}
-                        locale="es-MX"
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={(d) => field.onChange(d ?? new Date())}
+                        initialFocus
                       />
                     </PopoverContent>
                   </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}}
-            />
-            
-            <FormField
-              control={form.control}
-              name="paymentMethod"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Método de Pago</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value ?? ""}>
-                    <FormControl>
-                      <SelectTrigger className="bg-white">
-                        <SelectValue placeholder="Selecciona un método" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="Efectivo">Efectivo</SelectItem>
-                      <SelectItem value="Transferencia">Transferencia</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -187,19 +131,38 @@ export function RegisterPaymentDialog({
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Monto del Pago ($)</FormLabel>
+                  <FormLabel>Monto</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
-                      step="0.01"
-                      min="0.01"
-                      inputMode="decimal"
                       className="bg-white"
-                      placeholder="0.00"
-                      value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)}
+                      value={Number.isFinite(field.value) ? field.value : ""}
+                      onChange={(e) => field.onChange(e.target.value === "" ? "" : e.target.valueAsNumber)}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="paymentMethod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Método de pago</FormLabel>
+                  <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Selecciona un método de pago" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Efectivo">Efectivo</SelectItem>
+                      <SelectItem value="Tarjeta">Tarjeta</SelectItem>
+                      <SelectItem value="Transferencia">Transferencia</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -210,27 +173,24 @@ export function RegisterPaymentDialog({
               name="note"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Descripción</FormLabel>
+                  <FormLabel>Nota</FormLabel>
                   <FormControl>
-                    <Textarea
-                      className="bg-white"
-                      placeholder="Abono de Renta"
-                      value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.value)}
-                    />
+                    <Textarea className="bg-white" {...field} value={field.value ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <DialogFooter className="pt-2">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <DialogFooter>
+              <p className="text-sm text-muted-foreground">
+                {amount > remainingAmount && <span className="text-red-500">El monto a pagar es mayor al restante</span>}
+              </p>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={formState.isSubmitting}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {paymentToEdit ? "Actualizar Pago" : "Guardar Pago"}
+              <Button type="submit" disabled={formState.isSubmitting}>
+                Guardar
               </Button>
             </DialogFooter>
           </form>

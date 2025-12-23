@@ -1,4 +1,3 @@
-
 // src/app/(app)/inventario/compras/page.tsx
 "use client";
 
@@ -26,13 +25,23 @@ import { useTableManager } from "@/hooks/useTableManager";
 import dynamic from "next/dynamic";
 
 const ComprasContent = lazy(() => import("./components/compras-content"));
-const CuentasPorPagarContent = lazy(() =>
-    import("./components/cuentas-por-pagar-content").then((m) => ({ default: m.CuentasPorPagarContent }))
-);
-const RegisterPurchaseDialog = dynamic(
-  () => import("./components/register-purchase-dialog").then((m) => ({ default: m.RegisterPurchaseDialog })),
+
+const CuentasPorPagarContent = dynamic(
+  () =>
+    import("./components/cuentas-por-pagar-content").then((m) => ({
+      default: m.CuentasPorPagarContent,
+    })),
   { ssr: false }
 );
+
+const RegisterPurchaseDialog = dynamic(
+  () =>
+    import("./components/register-purchase-dialog").then((m) => ({
+      default: m.RegisterPurchaseDialog,
+    })),
+  { ssr: false }
+);
+
 const PayableAccountDialog = dynamic(() =>
     import("./components/payable-account-dialog").then((m) => ({ default: m.PayableAccountDialog })),
     { ssr: false }
@@ -309,5 +318,3 @@ export default function ComprasUnificadasPage() {
     </>
   );
 }
-
-    

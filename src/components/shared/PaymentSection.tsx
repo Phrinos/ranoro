@@ -13,15 +13,13 @@ import { formatCurrency } from "@/lib/utils";
 import { DollarSign, PlusCircle, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
-const paymentMethods: PaymentMethod[] = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Efectivo+Transferencia", "Tarjeta+Transferencia"];
+const paymentMethods: PaymentMethod[] = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia"];
 
 const paymentMethodIcons: Record<PaymentMethod, React.ElementType> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
   "Tarjeta MSI": CreditCard,
   Transferencia: Landmark,
-  "Efectivo+Transferencia": Wallet,
-  "Tarjeta+Transferencia": CreditCard,
 };
 
 interface PaymentSectionProps {
@@ -73,7 +71,7 @@ export function PaymentSection({
       method: availablePaymentMethods[0] ?? "Efectivo",
       amount: undefined,
       folio: "",
-    } as any);
+    });
   };
 
   return (
@@ -109,7 +107,7 @@ export function PaymentSection({
                             className="pl-8 bg-card"
                             onChange={(e) => {
                               const raw = e.target.value;
-                              formField.onChange(raw === "" ? "" : toNumber(raw));
+                              formField.onChange(raw === "" ? undefined : toNumber(raw));
                             }}
                           />
                         </FormControl>
@@ -130,13 +128,13 @@ export function PaymentSection({
                         </FormControl>
                         <SelectContent>
                           {paymentMethods.map((method) => {
-                            const Icon = paymentMethodIcons[method];
+                            const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons];
                             const disabled =
                               availablePaymentMethods.indexOf(method) === -1 && method !== selectedMethod;
                             return (
                               <SelectItem key={method} value={method} disabled={disabled}>
                                 <div className="flex items-center gap-2">
-                                  <Icon className="h-4 w-4" />
+                                  {Icon && <Icon className="h-4 w-4" />}
                                   <span>{method}</span>
                                 </div>
                               </SelectItem>

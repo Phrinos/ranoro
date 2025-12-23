@@ -50,7 +50,7 @@ function PageInner() {
       saleService.onSalesUpdate(setAllSales),
       inventoryService.onFixedExpensesUpdate(setAllExpenses),
       adminService.onUsersUpdate((users) => {
-        setAllUsers(users);
+        setAllUsers(users as any);
       }),
       inventoryService.onItemsUpdate((items) => {
         setInventoryItems(items);
@@ -108,13 +108,14 @@ function PageInner() {
       const advisor = activePersonnel.find(p => p.id === s.serviceAdvisorId);
       if ((advisor as any)?.commissionRate) commission += profit * ((advisor as any).commissionRate / 100);
         
-      s.serviceItems.forEach(item => {
-        const tech = activePersonnel.find(p => p.id === (item as any).technicianId);
-        if ((tech as any)?.commissionRate) {
-          const itemProfit = (item.sellingPrice || 0) - (inventoryService.getSuppliesCostForItem(item, inventoryItems) || 0);
-          if (itemProfit > 0) commission += itemProfit * ((tech as any).commissionRate / 100);
-        }
-      });
+      if(s.serviceItems)
+        s.serviceItems.forEach(item => {
+          const tech = activePersonnel.find(p => p.id === (item as any).technicianId);
+          if ((tech as any)?.commissionRate) {
+            const itemProfit = (item.sellingPrice || 0) - (inventoryService.getSuppliesCostForItem(item, inventoryItems) || 0);
+            if (itemProfit > 0) commission += itemProfit * ((tech as any).commissionRate / 100);
+          }
+        });
       return sum + commission;
     }, 0);
   

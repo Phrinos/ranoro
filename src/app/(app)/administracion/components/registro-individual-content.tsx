@@ -33,7 +33,7 @@ const individualServiceSchema = z.object({
 
 type FormValues = z.infer<typeof individualServiceSchema>;
 
-const paymentMethods: PaymentMethod[] = ['Efectivo', 'Tarjeta', 'Transferencia', 'Efectivo+Transferencia', 'Tarjeta+Transferencia'];
+const paymentMethods: PaymentMethod[] = ['Efectivo', 'Tarjeta', 'Transferencia', 'Crédito'];
 const resolver = zodResolver(individualServiceSchema) as unknown as Resolver<FormValues>;
 
 export function RegistroIndividualContent() {
@@ -88,9 +88,9 @@ export function RegistroIndividualContent() {
     
     const lowerSearch = licensePlateSearch.toLowerCase();
     const results = vehicles.filter(v => 
-      v.licensePlate.toLowerCase().includes(lowerSearch) ||
-      v.make.toLowerCase().includes(lowerSearch) ||
-      v.model.toLowerCase().includes(lowerSearch) ||
+      (v.licensePlate && v.licensePlate.toLowerCase().includes(lowerSearch)) ||
+      (v.make && v.make.toLowerCase().includes(lowerSearch)) ||
+      (v.model && v.model.toLowerCase().includes(lowerSearch)) ||
       (v.ownerName && v.ownerName.toLowerCase().includes(lowerSearch))
     ).slice(0, 5);
     
@@ -101,7 +101,7 @@ export function RegistroIndividualContent() {
   const handleSelectVehicle = useCallback((vehicle: Vehicle) => {
     setSearchedVehicle(vehicle);
     setValue('vehicleId', vehicle.id, { shouldValidate: true });
-    setValue('licensePlate', vehicle.licensePlate);
+    setValue('licensePlate', vehicle.licensePlate || '');
     setVehicleNotFound(false);
     setSearchResults([]);
   }, [setValue]);

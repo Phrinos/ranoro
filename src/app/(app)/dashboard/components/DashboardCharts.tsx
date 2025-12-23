@@ -79,14 +79,15 @@ const processFinancialChartData = (
         if (saleDate && isValid(saleDate)) {
             const monthKey = format(saleDate, 'yyyy-MM');
             if (dataByMonth[monthKey]) {
-                const income = sale.totalAmount;
+                const income = sale.totalAmount || 0;
                 const costOfGoods = sale.items.reduce((sum, item) => {
                     const inventoryItem = inventoryMap.get(item.inventoryItemId || '');
                     const itemUnitCost = inventoryItem?.unitPrice ?? 0;
                     return sum + (itemUnitCost * item.quantity);
                 }, 0);
                 
-                dataByMonth[monthKey].ingresos += income;
+                if (income)
+                    dataByMonth[monthKey].ingresos += income;
                 dataByMonth[monthKey].costoInsumos += costOfGoods;
             }
         }

@@ -153,7 +153,8 @@ export function MigracionPageContent() {
         if(analysisResult.type === 'operaciones') summaryText = `Se encontraron ${analysisResult.vehicles.length} vehículos y ${analysisResult.services.length} servicios nuevos. Los registros existentes fueron omitidos.`;
         if (analysisResult.type === 'productos' && analysisResult.products) summaryText = `Se encontraron ${analysisResult.products.length} productos nuevos. Los registros existentes fueron omitidos.`;
         
-        const renderDate = (dateString: string) => {
+        const renderDate = (dateString: string | undefined) => {
+            if (!dateString) return 'N/A';
             const possibleFormats = ['M/d/yy', 'MM/dd/yy', 'M-d-yy', 'MM-dd-yy', 'yyyy-MM-dd', 'dd/MM/yyyy'];
             for (const fmt of possibleFormats) {
                 const parsed = parse(dateString, fmt, new Date());
@@ -192,7 +193,7 @@ export function MigracionPageContent() {
                     )}
                      {hasProducts && analysisResult.products && (
                         <div className="rounded-md border h-64 overflow-auto">
-                           <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>SKU</TableHead><TableHead>Nombre</TableHead><TableHead>Marca</TableHead><TableHead>Categoría</TableHead><TableHead>Cantidad</TableHead><TableHead>Precio Compra</TableHead><TableHead>Precio Venta</TableHead></TableRow></TableHeader><TableBody>{analysisResult.products.map((p, i) => ( <TableRow key={i}><TableCell>{p.sku || 'N/A'}</TableCell><TableCell>{p.name}</TableCell><TableCell>{p.brand}</TableCell><TableCell>{p.category}</TableCell><TableCell>{p.quantity}</TableCell><TableCell>{formatCurrency(p.unitPrice || 0)}</TableCell><TableCell>{formatCurrency(p.sellingPrice || 0)}</TableCell></TableRow> ))}</TableBody></Table>
+                           <Table><TableHeader className="sticky top-0 bg-muted"><TableRow><TableHead>SKU</TableHead><TableHead>Nombre</TableHead><TableHead>Marca</TableHead><TableHead>Categoría</TableHead><TableHead>Cantidad</TableHead><TableHead>Precio Compra</TableHead><TableHead>Precio Venta</TableHead></TableRow></TableHeader><TableBody>{analysisResult.products.map((p, i) => ( <TableRow key={i}><TableCell>{p.sku || 'N/A'}</TableCell><TableCell>{p.name}</TableCell><TableCell>{p.brand}</TableCell><TableCell>{p.category.name}</TableCell><TableCell>{p.quantity}</TableCell><TableCell>{formatCurrency(p.unitPrice || 0)}</TableCell><TableCell>{formatCurrency(p.sellingPrice || 0)}</TableCell></TableRow> ))}</TableBody></Table>
                         </div>
                     )}
                     {hasDataToSave ? (

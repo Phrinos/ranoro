@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import type { ServiceRecord, InventoryItem } from '@/types';
+import type { ServiceRecord, InventoryItem, Supplier } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ShoppingCart, AlertTriangle, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -56,7 +56,7 @@ export default function AsistenteComprasContent() {
 
         try {
             const servicesForToday = allServices.filter(s => {
-                const serviceDay = parseDate(s.serviceDate);
+                const serviceDay = parseDate(s.serviceDate || new Date().toISOString());
                 return serviceDay && isToday(serviceDay) && s.status !== 'Entregado' && s.status !== 'Cancelado';
             });
 
@@ -68,14 +68,14 @@ export default function AsistenteComprasContent() {
         
             const input = {
                 scheduledServices: servicesForToday.map(s => ({ id: s.id, description: s.description || '' })),
-                inventoryItems: allInventory.map(i => ({ id: i.id, name: i.name, quantity: i.quantity || 0, supplier: i.supplier || '' })),
+                inventoryItems: allInventory.map(i => ({ id: i.id, name: i.name, quantity: i.quantity || 0, supplier: i.supplier.id || '' })),
                 serviceHistory: allServices.map(s => ({
                     description: s.description || '',
                     suppliesUsed: (s.serviceItems || []).flatMap(item => item.suppliesUsed || []).map(sup => ({ supplyName: sup.supplyName || allInventory.find(i => i.id === sup.supplyId)?.name || 'Unknown' }))
                 }))
             };
 
-            const result = await getPurchaseRecommendations(input);
+            const result = await getPurchaseRecommendations(input as any);
             setPurchaseRecommendations(result.recommendations);
             toast({ title: 'Orden de Compra Generada', description: result.reasoning, duration: 6000 });
             if (result.recommendations.length > 0) {

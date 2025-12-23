@@ -19,21 +19,22 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { vehicleInfoSchema, type VehicleInfoFormValues } from "@/schemas/vehicle-info-schema";
 import type { Vehicle } from "@/types";
 
+export type { VehicleInfoFormValues };
+
 interface EditVehicleInfoDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  vehicle?: Partial<Vehicle> | null;
   onSave: (data: VehicleInfoFormValues) => Promise<void> | void;
+  vehicle?: Vehicle;
 }
 
-const buildDefaults = (v?: Partial<Vehicle> | null): VehicleInfoFormValues => ({
-  make: v?.make ?? "",
-  model: v?.model ?? "",
-  year: Number(v?.year ?? new Date().getFullYear()),
-  licensePlate: (v as any)?.licensePlate ?? "",
+const buildDefaults = (vehicle?: Vehicle): VehicleInfoFormValues => ({
+  ownerName: vehicle?.ownerName ?? "",
+  ownerLicence: vehicle?.ownerLicence ?? "",
+  ownerAddress: vehicle?.ownerAddress ?? "",
 });
 
-export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: EditVehicleInfoDialogProps) {
+export function EditVehicleInfoDialog({ open, onOpenChange, onSave, vehicle }: EditVehicleInfoDialogProps) {
   const resolver = zodResolver(vehicleInfoSchema) as unknown as Resolver<VehicleInfoFormValues>;
 
   const form = useForm<VehicleInfoFormValues>({
@@ -46,26 +47,26 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
 
   useEffect(() => {
     if (open) reset(buildDefaults(vehicle));
-  }, [open, vehicle, reset]);
+  }, [open, reset, vehicle]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Editar vehículo</DialogTitle>
-          <DialogDescription>Actualiza la información del vehículo.</DialogDescription>
+          <DialogTitle>Editar información del vehículo</DialogTitle>
+          <DialogDescription>Actualiza los datos del propietario del vehículo.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={handleSubmit(async (data) => onSave(data))} className="space-y-4">
             <FormField
               control={form.control}
-              name="make"
+              name="ownerName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Marca</FormLabel>
+                  <FormLabel>Nombre del propietario</FormLabel>
                   <FormControl>
-                    <Input className="bg-white" {...field} value={field.value ?? ""} />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -74,35 +75,12 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
 
             <FormField
               control={form.control}
-              name="model"
+              name="ownerLicence"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Modelo</FormLabel>
+                  <FormLabel>Licencia del propietario</FormLabel>
                   <FormControl>
-                    <Input className="bg-white" {...field} value={field.value ?? ""} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* 👇 clave: NO hacer {...field} en number si te viene como unknown; setear value/onChange */}
-            <FormField
-              control={form.control}
-              name="year"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Año</FormLabel>
-                  <FormControl>
-                    <Input
-                      className="bg-white"
-                      type="number"
-                      name={field.name}
-                      ref={field.ref}
-                      onBlur={field.onBlur}
-                      value={typeof field.value === "number" ? field.value : Number(field.value ?? "") || ""}
-                      onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)}
-                    />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -111,12 +89,12 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
 
             <FormField
               control={form.control}
-              name="licensePlate"
+              name="ownerAddress"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Placas</FormLabel>
+                  <FormLabel>Dirección del propietario</FormLabel>
                   <FormControl>
-                    <Input className="bg-white" {...field} value={field.value ?? ""} />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -128,7 +106,7 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
                 Cancelar
               </Button>
               <Button type="submit" disabled={formState.isSubmitting}>
-                Guardar cambios
+                Guardar
               </Button>
             </DialogFooter>
           </form>
