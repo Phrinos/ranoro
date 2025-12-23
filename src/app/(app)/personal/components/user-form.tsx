@@ -44,7 +44,7 @@ const OPERATIVE_FUNCTIONS = [
 export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const form = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
+    resolver: zodResolver(userFormSchema) as Resolver<UserFormValues, any>,
     defaultValues: initialData ? {
         name: initialData.name,
         email: initialData.email,
@@ -118,7 +118,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
             />
         </div>
          <FormField
-          control={form.control}
+          control={form.control as any}
           name="hireDate"
           render={({ field }) => {
             const valueAsDate = field.value instanceof Date ? field.value : field.value ? new Date(field.value as any) : null;
@@ -161,7 +161,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
         />
         <div className="grid grid-cols-2 gap-4">
             <FormField
-                control={form.control}
+                control={form.control as any}
                 name="monthlySalary"
                 render={({ field }) => (
                 <FormItem><FormLabel>Sueldo Base Mensual</FormLabel><FormControl>
@@ -175,7 +175,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                 </FormControl><FormMessage /></FormItem>
             )}/>
             <FormField
-                control={form.control}
+                control={form.control as any}
                 name="commissionRate"
                 render={({ field }) => (
                 <FormItem><FormLabel>% Comisión</FormLabel><FormControl>
