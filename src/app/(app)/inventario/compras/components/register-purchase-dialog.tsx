@@ -1,3 +1,5 @@
+
+      
 // src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
@@ -20,7 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, PackagePlus, DollarSign, PlusCircle, Trash2, CalendarIcon, Minus, Plus } from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
 import { formatCurrency, cn } from "@/lib/utils";
-import { InventoryItemDialog } from "@/app/(app)/inventario/components/inventory-item-dialog";
+import { InventoryItemDialog } from "../../components/inventory-item-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { NewCalendar } from "@/components/ui/calendar";
@@ -76,7 +78,7 @@ export function RegisterPurchaseDialog({
   onInventoryItemCreated,
 }: RegisterPurchaseDialogProps) {
   const form = useForm<PurchaseFormValues>({
-    resolver: zodResolver(purchaseFormSchema),
+    resolver: zodResolver(purchaseFormSchema) as any,
     defaultValues: {
       supplierId: "",
       items: [],
@@ -503,3 +505,5 @@ function SearchItemDialog({
     </Dialog>
   );
 }
+
+    
