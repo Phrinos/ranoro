@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/page.tsx
 "use client";
 
@@ -56,6 +57,15 @@ function PageInner() {
   const [isAddVehicleDialogOpen, setIsAddVehicleDialogOpen] = useState(false);
   const [isNewVehicleDialogOpen, setIsNewVehicleDialogOpen] = useState(false);
 
+  const vehicleOwners = React.useMemo(() => {
+    const ownerSet = new Set<string>();
+    vehicles.forEach(v => {
+      if (v.ownerName) ownerSet.add(v.ownerName);
+    });
+    return Array.from(ownerSet).sort();
+  }, [vehicles]);
+
+
   const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab);
     router.push(`/flotilla?tab=${tab}`, { scroll: false });
@@ -78,9 +88,8 @@ function PageInner() {
   };
 
   const handleSaveWithdrawal = async (data: OwnerWithdrawalFormValues) => {
-    const ownerName = "Socio"; // O obtener del usuario actual si es necesario
     try {
-        await rentalService.addOwnerWithdrawal({ ...data, ownerName });
+        await rentalService.addOwnerWithdrawal({ ...data });
         toast({ title: "Retiro Registrado" });
         setIsWithdrawalDialogOpen(false);
     } catch (e) {
@@ -184,7 +193,7 @@ function PageInner() {
       <OwnerWithdrawalDialog
         open={isWithdrawalDialogOpen}
         onOpenChange={setIsWithdrawalDialogOpen}
-        vehicles={vehicles}
+        owners={vehicleOwners}
         onSave={handleSaveWithdrawal}
       />
 

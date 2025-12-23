@@ -126,13 +126,7 @@ const addRentalPayment = async (
         });
     }
     
-    const result: RentalPayment = { 
-        id: savedPaymentId, 
-        driverId: rawPaymentData.driverId,
-        amount: rawPaymentData.amount,
-        date: rawPaymentData.date,
-        ...rawPaymentData 
-    };
+    const result: RentalPayment = { id: savedPaymentId, ...rawPaymentData };
     return result;
 };
 
@@ -150,10 +144,21 @@ const onOwnerWithdrawalsUpdate = (callback: (withdrawals: OwnerWithdrawal[]) => 
     });
 };
 
-const addOwnerWithdrawal = async (data: Omit<OwnerWithdrawal, 'id' | 'date'>): Promise<OwnerWithdrawal> => {
+const addOwnerWithdrawal = async (data: Omit<OwnerWithdrawal, 'id' | 'date'> & { date: Date }): Promise<OwnerWithdrawal> => {
     if (!db) throw new Error("Database not initialized.");
-    const newWithdrawal = { ...data, date: new Date().toISOString() };
+    const newWithdrawal = { ...data, date: data.date.toISOString() };
     const docRef = await addDoc(collection(db, 'ownerWithdrawals'), cleanObjectForFirestore(newWithdrawal));
+
+    // Also create a cash transaction for this withdrawal
+    await cashService.addCashTransaction({
+        type: 'out',
+        amount: data.amount,
+        concept: `Retiro de socio: ${data.ownerName}`,
+        note: data.note,
+        relatedType: 'RetiroSocio',
+        relatedId: docRef.id,
+    });
+    
     return { id: docRef.id, ...newWithdrawal };
 };
 
@@ -180,6 +185,16 @@ const addVehicleExpense = async (data: Partial<Omit<VehicleExpense, 'id' | 'date
     };
     
     const docRef = await addDoc(collection(db, 'vehicleExpenses'), cleanObjectForFirestore(newExpense));
+
+    // Also create a cash transaction for this expense
+    await cashService.addCashTransaction({
+        type: 'out',
+        amount: newExpense.amount,
+        concept: `Gasto vehículo: ${newExpense.description} (${vehicle.licensePlate})`,
+        relatedType: 'GastoVehiculo',
+        relatedId: docRef.id,
+    });
+
     const result: VehicleExpense = { 
         id: docRef.id, 
         vehicleId: newExpense.vehicleId,

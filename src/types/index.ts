@@ -270,7 +270,6 @@ export interface Personnel {
 
 export interface OwnerWithdrawal {
   id: string;
-  vehicleId: string;
   ownerName: string;
   date: string;
   amount: number;

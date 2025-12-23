@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect } from "react";
@@ -25,7 +26,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { cn } from "@/lib/utils";
 
 import { ownerWithdrawalSchema, type OwnerWithdrawalFormValues } from "@/schemas/owner-withdrawal-schema";
-import type { Vehicle } from "@/types";
 
 export type { OwnerWithdrawalFormValues };
 
@@ -33,17 +33,17 @@ interface OwnerWithdrawalDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (data: OwnerWithdrawalFormValues) => Promise<void> | void;
-  vehicles: Vehicle[];
+  owners: string[];
 }
 
 const buildDefaults = (): OwnerWithdrawalFormValues => ({
-  vehicleId: "",
+  ownerName: "",
   date: new Date(),
   amount: 0,
   note: "",
 });
 
-export function OwnerWithdrawalDialog({ open, onOpenChange, onSave, vehicles }: OwnerWithdrawalDialogProps) {
+export function OwnerWithdrawalDialog({ open, onOpenChange, onSave, owners }: OwnerWithdrawalDialogProps) {
   const resolver = zodResolver(ownerWithdrawalSchema) as unknown as Resolver<OwnerWithdrawalFormValues>;
 
   const form = useForm<OwnerWithdrawalFormValues>({
@@ -62,28 +62,28 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, onSave, vehicles }: 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl">
         <DialogHeader>
-          <DialogTitle>Retiro de socio</DialogTitle>
-          <DialogDescription>Registra un retiro de un socio y asigna el movimiento a un vehículo.</DialogDescription>
+          <DialogTitle>Retiro de Socio</DialogTitle>
+          <DialogDescription>Registra un retiro de un socio y asigna el movimiento.</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={handleSubmit(async (data) => onSave(data))} className="space-y-4">
             <FormField
               control={form.control}
-              name="vehicleId"
+              name="ownerName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Vehículo</FormLabel>
+                  <FormLabel>Socio</FormLabel>
                   <Select value={field.value ?? ""} onValueChange={field.onChange}>
                     <FormControl>
                       <SelectTrigger className="bg-white">
-                        <SelectValue placeholder="Selecciona un vehículo" />
+                        <SelectValue placeholder="Selecciona un socio" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {vehicles.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.name}
+                      {owners.map((ownerName) => (
+                        <SelectItem key={ownerName} value={ownerName}>
+                          {ownerName}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -131,8 +131,8 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, onSave, vehicles }: 
                     <Input
                       type="number"
                       className="bg-white"
-                      value={Number.isFinite(field.value) ? field.value : 0}
-                      onChange={(e) => field.onChange(e.target.value === "" ? 0 : e.target.valueAsNumber)}
+                      value={Number.isFinite(field.value) ? field.value : ""}
+                      onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)}
                     />
                   </FormControl>
                   <FormMessage />
