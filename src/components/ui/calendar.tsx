@@ -1,26 +1,17 @@
 "use client";
 
 import * as React from "react";
+import ReactCalendar, { type CalendarProps as ReactCalendarProps } from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import { cn } from "@/lib/utils";
 import { DayPicker } from "react-day-picker";
 import type { Locale } from "date-fns";
 import { es as esLocale } from "date-fns/locale";
-import { cn } from "@/lib/utils";
 
-import ReactCalendar, {
-  type CalendarProps as ReactCalendarProps,
-  type Value as ReactCalendarValue,
-} from "react-calendar";
+type ValuePiece = Date | null;
+export type CalendarValue = ValuePiece | [ValuePiece, ValuePiece];
 
-import "react-day-picker/dist/style.css";
-import "react-calendar/dist/Calendar.css";
-
-/**
- * Calendar (DayPicker / shadcn-like)
- * - Soporta: selected/onSelect (nativo)
- * - Soporta: value/onChange (alias para compat con formularios viejos)
- * - locale: puede ser Locale o "es"
- */
-export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
+export type CalendarProps = Omit<React.ComponentProps<typeof DayPicker>, "value" | "onChange"> & {
   value?: Date | undefined;
   onChange?: (date: Date | undefined) => void;
   locale?: Locale | "es" | string;
@@ -56,17 +47,19 @@ export function Calendar({
   );
 }
 
-/**
- * NewCalendar (react-calendar)
- * - Para vistas tipo “calendario grande”
- * - Soporta value/onChange/locale="es"
- */
-export type NewCalendarProps = Omit<ReactCalendarProps, "value" | "onChange" | "locale"> & {
-  value?: ReactCalendarValue;
-  onChange?: ReactCalendarProps["onChange"];
+export type NewCalendarProps = Omit<ReactCalendarProps, "value" | "onChange"> & {
+  value?: CalendarValue;
+  onChange?: (value: CalendarValue, event?: any) => void; // 👈 flexible
   locale?: string;
 };
 
 export function NewCalendar({ value, onChange, locale, ...props }: NewCalendarProps) {
-  return <ReactCalendar value={value ?? null} onChange={onChange} locale={locale} {...props} />;
+  return (
+    <ReactCalendar
+      {...props}
+      locale={locale}
+      value={(value ?? null) as any}
+      onChange={(v: any, e: any) => onChange?.(v as CalendarValue, e)}
+    />
+  );
 }

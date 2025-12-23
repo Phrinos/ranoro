@@ -115,7 +115,7 @@ export function GlobalTransactionDialog({ open, onOpenChange, drivers, onSave, t
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={field.value} onSelect={(d) => field.onChange(d ?? new Date())} initialFocus />
+                      <Calendar mode="single" selected={field.value} onSelect={(d: Date | undefined) => field.onChange(d ?? new Date())} initialFocus />
                     </PopoverContent>
                   </Popover>
                   <FormMessage />

@@ -89,7 +89,7 @@ export function FineCheckDialog({ open, onOpenChange, fines, onSave }: FineCheck
                   <PopoverContent className="w-auto p-0" align="start">
                     <NewCalendar
                       value={parsed ?? null}
-                      onChange={(value: RCValue) => {
+                      onChange={(value: any) => {
                         const d = Array.isArray(value) ? value[0] : value;
                         if (d instanceof Date && isValid(d)) {
                           handleFineChange(index, "date", d.toISOString());

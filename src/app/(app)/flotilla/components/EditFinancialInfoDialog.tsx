@@ -1,11 +1,12 @@
+// src/app/(app)/flotilla/components/EditFinancialInfoDialog.tsx
 "use client";
 
-import React, { useEffect } from "react";
-import { useForm, type Resolver } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon } from "lucide-react";
-import { format as formatDate } from "date-fns";
-import { es } from "date-fns/locale";
+import React, { useEffect, useState } from 'react';
+import { useForm, type Resolver } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { CalendarIcon } from 'lucide-react';
+import { format as formatDate } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 import {
   Dialog,
@@ -106,7 +107,7 @@ export function EditFinancialInfoDialog({ open, onOpenChange, onSave, driver }: 
                           <Calendar
                             mode="single"
                             selected={field.value}
-                            onSelect={(d) => field.onChange(d ?? new Date())}
+                            onSelect={(d: Date | undefined) => field.onChange(d ?? new Date())}
                             initialFocus
                           />
                         </PopoverContent>
@@ -139,7 +140,7 @@ export function EditFinancialInfoDialog({ open, onOpenChange, onSave, driver }: 
                           <Calendar
                             mode="single"
                             selected={field.value}
-                            onSelect={(d) => field.onChange(d ?? new Date())}
+                            onSelect={(d: Date | undefined) => field.onChange(d ?? new Date())}
                             initialFocus
                           />
                         </PopoverContent>

@@ -3,7 +3,7 @@ import { z } from "zod";
 export const registerPurchaseSchema = z.object({
   supplierId: z.string().min(1),
   invoiceId: z.string().optional(),
-  purchaseDate: z.date(),
+  purchaseDate: z.coerce.date(),
   items: z.array(
     z.object({
       inventoryItemId: z.string().min(1),
@@ -19,6 +19,8 @@ export const registerPurchaseSchema = z.object({
   subtotal: z.number().optional(),
   taxes: z.number().optional(),
   discounts: z.number().optional(),
+  note: z.string().optional(),
+  total: z.number().optional(),
 });
 
 export type RegisterPurchaseFormValues = z.infer<typeof registerPurchaseSchema>;
