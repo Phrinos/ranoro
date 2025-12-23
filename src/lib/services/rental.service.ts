@@ -88,33 +88,37 @@ const addRentalPayment = async (
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
     const currentUser = authUserString ? JSON.parse(authUserString) : null;
     
-    const paymentData: Omit<RentalPayment, 'id'> = {
-        driverId: driver.id,
+    // ✅ FIX: “raw” data tipado con los campos requeridos
+    const rawPaymentData: Omit<RentalPayment, "id"> = {
+        driverId: String(driver.id),
         driverName: driver.name,
         vehicleLicensePlate: vehicle.licensePlate,
         paymentDate: paymentDateIso,
-        amount,
-        daysCovered: dailyRate > 0 ? amount / dailyRate : 0,
-        note: note || `Abono de Renta`,
-        paymentMethod: paymentMethod,
+        amount: Number(amount) || 0,
+        daysCovered: dailyRate > 0 ? (Number(amount) || 0) / dailyRate : 0,
+        note: note || "Abono de Renta",
+        paymentMethod,
         registeredByName: currentUser?.name || 'Sistema',
+        // si tu app usa `date` como fecha genérica para timeline/unificación
         date: paymentDateIso,
     };
+    
+    const paymentDataForDb = cleanObjectForFirestore(rawPaymentData);
 
     let savedPaymentId: string;
     
     if (paymentId) {
-        await updateDoc(doc(db, 'rentalPayments', paymentId), cleanObjectForFirestore(paymentData));
+        await updateDoc(doc(db, 'rentalPayments', paymentId), paymentDataForDb as any);
         savedPaymentId = paymentId;
     } else {
-        const docRef = await addDoc(collection(db, 'rentalPayments'), cleanObjectForFirestore(paymentData));
+        const docRef = await addDoc(collection(db, 'rentalPayments'), paymentDataForDb as any);
         savedPaymentId = docRef.id;
     }
 
     if (paymentMethod === 'Efectivo') {
         await cashService.addCashTransaction({
             type: 'in',
-            amount: amount,
+            amount: Number(amount) || 0,
             concept: `Renta de ${driver.name} (${vehicle.licensePlate})`,
             userId: currentUser?.id || 'system',
             userName: currentUser?.name || 'Sistema',
@@ -123,8 +127,10 @@ const addRentalPayment = async (
             paymentMethod: 'Efectivo',
         });
     }
-
-    return { id: savedPaymentId, ...paymentData };
+    
+    // ✅ FIX: retorno garantizado con campos requeridos
+    const result: RentalPayment = { id: savedPaymentId, ...rawPaymentData };
+    return result;
 };
 
 
@@ -156,14 +162,13 @@ const onVehicleExpensesUpdate = (callback: (expenses: VehicleExpense[]) => void)
     });
 };
 
-const addVehicleExpense = async (data: Omit<VehicleExpense, 'id' | 'date' | 'vehicleLicensePlate'>): Promise<VehicleExpense> => {
+const addVehicleExpense = async (data: Partial<Omit<VehicleExpense, 'id' | 'date' | 'vehicleLicensePlate'>> & { vehicleId: string }): Promise<VehicleExpense> => {
     if (!db) throw new Error("Database not initialized.");
-    if (!data.vehicleId) throw new Error("Vehicle ID is missing");
+    
     const vehicle = await inventoryService.getVehicleById(data.vehicleId);
     if (!vehicle) throw new Error("Vehicle not found");
 
     const newExpense: Omit<VehicleExpense, 'id'> = {
-      ...data,
       date: new Date().toISOString(),
       vehicleLicensePlate: vehicle.licensePlate,
       vehicleId: vehicle.id,

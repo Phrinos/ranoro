@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ReceptionAndDelivery.tsx
 "use client";
 
@@ -34,6 +35,9 @@ const defaultTicketSettings: any = {
   fixedFooterText: "© 2025 Ranoro® Sistema de Administracion de Talleres. Todos los derechos reservados - Diseñado y Desarrollado por Arturo Valdelamar +524493930914",
   googleMapsUrl: "https://share.google/7ow83ayhfb2iIOKUX"
 };
+
+// ✅ FIX: el useState usa esto
+const initialWorkshopInfo: any = { ...defaultTicketSettings };
 
 const coerceDate = (v: unknown): Date | null => {
   if (!v) return null;
