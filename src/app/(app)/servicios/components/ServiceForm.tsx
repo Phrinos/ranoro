@@ -36,7 +36,8 @@ import Image from 'next/image';
 
 const ReceptionContent = ({ part, isReadOnly, isEnhancingText, handleEnhanceText, onOpenSignature }: any) => {
     const { control, watch } = useFormContext();
-    const signatureUrl = watch(part === 'reception' ? 'customerSignatureReception' : 'customerSignatureDelivery');
+    const signatureFieldName = part === 'reception' ? 'customerSignatureReception' : 'customerSignatureDelivery';
+    const signatureUrl = watch(signatureFieldName);
     const signatureLabel = part === 'reception' ? 'Firma de Recepción (Cliente)' : 'Firma de Conformidad (Cliente)';
 
     return (
@@ -61,13 +62,19 @@ const ReceptionContent = ({ part, isReadOnly, isEnhancingText, handleEnhanceText
                     <Input type="range" min="0" max="8" step="1" {...field} disabled={isReadOnly} />
                 </FormItem>
             )}/>
-            <FormItem>
-                <FormLabel>{signatureLabel}</FormLabel>
-                <div className="p-2 border rounded-md min-h-[100px] flex justify-center items-center bg-muted/50">
-                    {signatureUrl ? <Image src={signatureUrl} alt="Firma" width={200} height={100} style={{ objectFit: 'contain' }} /> : <p className="text-sm text-muted-foreground">No hay firma.</p>}
-                </div>
-                {!isReadOnly && <Button type="button" variant="outline" size="sm" onClick={() => onOpenSignature(part)} className="mt-2">Capturar Firma</Button>}
-            </FormItem>
+            <FormField
+              control={control}
+              name={signatureFieldName}
+              render={({ field }) => (
+                <FormItem>
+                    <FormLabel>{signatureLabel}</FormLabel>
+                    <div className="p-2 border rounded-md min-h-[100px] flex justify-center items-center bg-muted/50">
+                        {signatureUrl ? <Image src={signatureUrl} alt="Firma" width={200} height={100} style={{ objectFit: 'contain' }} /> : <p className="text-sm text-muted-foreground">No hay firma.</p>}
+                    </div>
+                    {!isReadOnly && <Button type="button" variant="outline" size="sm" onClick={() => onOpenSignature(part)} className="mt-2">Capturar Firma</Button>}
+                </FormItem>
+              )}
+            />
         </div>
     );
 };
