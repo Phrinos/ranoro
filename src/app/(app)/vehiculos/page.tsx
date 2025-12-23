@@ -1,12 +1,13 @@
+
 //src/app/(app)/vehiculos/page.tsx
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Car, AlertTriangle, Activity, CalendarX, Loader2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import type { Vehicle, InventoryItem, InventoryCategory, Supplier } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Vehicle } from "@/types";
 import { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,19 +20,17 @@ import { DatabaseManagementTab } from './components/database-management-tab';
 
 function PageInner() {
   const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'vehiculos';
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [isLoading, setIsLoading] = useState(true);
-
+  const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
+  
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Partial<Vehicle> | null>(null);
-
-  const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
-
+  
   useEffect(() => {
     setIsLoading(true);
     const unsubscribeVehicles = inventoryService.onVehiclesUpdate((data) => {
@@ -52,18 +51,14 @@ function PageInner() {
     let inactive12Months = 0;
 
     allVehicles.forEach(v => {
-      if (v.lastServiceDate) {
-        const lastService = parseDate(v.lastServiceDate);
-        if (lastService && isValid(lastService)) {
-          const monthsSinceService = differenceInMonths(now, lastService);
-          if (monthsSinceService <= 1) recent++;
-          if (monthsSinceService >= 6) inactive6Months++;
-          if (monthsSinceService >= 12) inactive12Months++;
-        } else {
-          inactive6Months++;
-          inactive12Months++;
-        }
+      const lastService = v.lastServiceDate ? parseDate(v.lastServiceDate) : null;
+      if (lastService && isValid(lastService)) {
+        const monthsSinceService = differenceInMonths(now, lastService);
+        if (monthsSinceService <= 1) recent++;
+        if (monthsSinceService >= 6) inactive6Months++;
+        if (monthsSinceService >= 12) inactive12Months++;
       } else {
+        // Treat vehicles with no service date as inactive
         inactive6Months++;
         inactive12Months++;
       }
@@ -74,7 +69,6 @@ function PageInner() {
 
   const handleSaveVehicle = async (data: VehicleFormValues) => {
     try {
-      // Correctly pass the ID of the vehicle being edited.
       await inventoryService.saveVehicle(data, editingVehicle?.id);
       toast({ title: `Vehículo ${editingVehicle?.id ? 'Actualizado' : 'Creado'}` });
       setIsVehicleDialogOpen(false);
@@ -101,7 +95,6 @@ function PageInner() {
     setEditingVehicle(vehicle);
     setIsVehicleDialogOpen(true);
   };
-
 
   if (isLoading) {
     return (
@@ -148,16 +141,13 @@ function PageInner() {
               <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Vehículos Inactivos</CardTitle><CalendarX className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-orange-600">{vehicleSummary.inactive6Months}</div><p className="text-xs text-muted-foreground">Sin servicio por más de 6 meses.</p></CardContent></Card>
               <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Vehículos en Riesgo</CardTitle><AlertTriangle className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{vehicleSummary.inactive12Months}</div><p className="text-xs text-muted-foreground">Sin servicio por más de 12 meses.</p></CardContent></Card>
             </div>
-
-            <Card>
-              <CardContent className="pt-6">
-                <VehiclesTable
-                  vehicles={allVehicles}
-                  onSave={handleSaveVehicle}
-                  onDelete={handleDeleteVehicle}
-                />
-              </CardContent>
-            </Card>
+            
+            <VehiclesTable
+              vehicles={allVehicles}
+              onSave={handleSaveVehicle}
+              onDelete={handleDeleteVehicle}
+              onAdd={handleOpenVehicleDialog}
+            />
           </div>
         </TabsContent>
         <TabsContent value="database" className="mt-6">

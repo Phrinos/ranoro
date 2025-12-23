@@ -1,3 +1,4 @@
+
 // src/app/(app)/vehiculos/components/database-management-tab.tsx
 "use client";
 
@@ -14,6 +15,7 @@ import { collection, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { VehicleCatalogEditor } from '@/app/(app)/precios/components/VehicleCatalogEditor';
 import { VEHICLE_COLLECTION } from '@/lib/vehicle-constants';
+import { Card, CardContent } from '@/components/ui/card';
 
 export function DatabaseManagementTab() {
   const { toast } = useToast();
@@ -52,32 +54,36 @@ export function DatabaseManagementTab() {
   const makes = useMemo(() => vehicleDb.map(d => d.make).sort(), [vehicleDb]);
 
   return (
-    <div className="space-y-6">
-       <div className="max-w-sm space-y-2">
-            <label htmlFor="make-select" className="text-sm font-medium">Marca</label>
-            <Select
-              value={selectedMake}
-              onValueChange={setSelectedMake}
-              disabled={isLoading}
-            >
-              <SelectTrigger id="make-select" className="bg-white">
-                <SelectValue placeholder={isLoading ? "Cargando marcas..." : "Seleccione una marca..."} />
-              </SelectTrigger>
-              <SelectContent>
-                {makes.map((make) => (
-                  <SelectItem key={make} value={make}>
-                    {make}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-        </div>
+    <Card>
+      <CardContent className="pt-6">
+        <div className="space-y-6">
+          <div className="max-w-sm space-y-2">
+                <label htmlFor="make-select" className="text-sm font-medium">Marca</label>
+                <Select
+                  value={selectedMake}
+                  onValueChange={setSelectedMake}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger id="make-select" className="bg-white">
+                    <SelectValue placeholder={isLoading ? "Cargando marcas..." : "Seleccione una marca..."} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {makes.map((make) => (
+                      <SelectItem key={make} value={make}>
+                        {make}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+            </div>
 
-      {selectedMake && (
-        <div className="pt-4 mt-4 border-t">
-          <VehicleCatalogEditor make={selectedMake} />
+          {selectedMake && (
+            <div className="pt-4 mt-4 border-t">
+              <VehicleCatalogEditor make={selectedMake} />
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 }
