@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Vehicle, ServiceRecord, SafetyInspection, SafetyCheckValue } from '@/types';
@@ -54,7 +55,7 @@ const coerceDate = (v: unknown): Date | null => {
   return null;
 };
 
-const pickText = (...vals: any[]) => {
+const pickFirstText = (...vals: any[]): string => {
   for (const v of vals) {
     if (typeof v === "string" && v.trim()) return v.trim();
   }
@@ -140,18 +141,17 @@ const SheetHeader = React.memo(({ service, workshopInfo }: { service: ServiceRec
 SheetHeader.displayName = 'SheetHeader';
 
 const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, vehicle?: Vehicle | null }) => {
-  // ---- Cliente (robusto)
   const customerName = capitalizeWords(
-    pickText(
-      (service as any).customerName,
+    pickFirstText(
+      service.customerName,
       (service as any).customer?.name,
       (service as any).customer?.fullName,
       vehicle?.ownerName
     )
   ) || "Cliente no registrado";
 
-  const customerPhoneRaw = pickText(
-    (service as any).customerPhone,
+  const customerPhoneRaw = pickFirstText(
+    service.customerPhone,
     (service as any).customer?.phone,
     (service as any).customer?.phoneNumber,
     (service as any).phone,
@@ -161,14 +161,13 @@ const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, v
   const customerPhone = customerPhoneRaw ? formatPhoneMx(customerPhoneRaw) : "Teléfono no disponible";
   const waDigits = customerPhoneRaw ? toWhatsAppDigits(customerPhoneRaw) : "";
 
-  // ---- Vehículo (robusto)
-  const make = pickText(
+  const make = pickFirstText(
     vehicle?.make,
     (service as any).vehicleMake,
     (service as any).vehicle?.make
   );
 
-  const model = pickText(
+  const model = pickFirstText(
     vehicle?.model,
     (service as any).vehicleModel,
     (service as any).vehicle?.model
@@ -180,31 +179,29 @@ const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, v
     (service as any).vehicle?.year
   );
 
-  // Placa: evita usar licensePlate si trae texto raro
-  const fromVehiclePlate = pickText(vehicle?.licensePlate, (vehicle as any)?.plates);
+  const fromVehiclePlate = pickFirstText(vehicle?.licensePlate, (vehicle as any)?.plates);
   const safeVehiclePlate = fromVehiclePlate && isLikelyPlate(fromVehiclePlate) ? normalizePlate(fromVehiclePlate) : "";
 
-  const fromServicePlate = pickText(
-    (service as any).licensePlate,
-    (service as any).vehicleLicensePlate,
+  const fromServicePlate = pickFirstText(
+    service.licensePlate,
+    service.vehicleLicensePlate,
     (service as any).plates
   );
   const safeServicePlate = fromServicePlate && isLikelyPlate(fromServicePlate) ? normalizePlate(fromServicePlate) : "";
 
-  const parsedPlate = extractPlateFromText(pickText((service as any).vehicleIdentifier));
+  const parsedPlate = extractPlateFromText(pickFirstText(service.vehicleIdentifier));
   const vehicleLicensePlate = safeVehiclePlate || safeServicePlate || parsedPlate || "";
 
-  // Título: marca + modelo + (año). Si no hay, usa vehicleIdentifier sin placa.
   const titleParts = [make, model].filter(Boolean).join(" ").trim();
   const vehicleTitle =
     titleParts
       ? `${titleParts}${year ? ` (${year})` : ""}`
-      : (pickText((service as any).vehicleIdentifier)
-          ? stripPlateFromText(pickText((service as any).vehicleIdentifier), vehicleLicensePlate) || "Vehículo no asignado"
+      : (pickFirstText(service.vehicleIdentifier)
+          ? stripPlateFromText(pickFirstText(service.vehicleIdentifier), vehicleLicensePlate) || "Vehículo no asignado"
           : "Vehículo no asignado");
 
-  const color = pickText(vehicle?.color, (service as any).vehicleColor);
-  const vin = pickText((vehicle as any)?.vin, (service as any)?.vin);
+  const color = pickFirstText(vehicle?.color, service.vehicleColor);
+  const vin = pickFirstText(vehicle?.vin, service?.vin);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -233,9 +230,9 @@ const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, v
             )}
           </div>
 
-          {!!pickText((service as any).customerEmail, (service as any).customer?.email) && (
+          {!!pickFirstText(service.customerEmail, (service as any).customer?.email) && (
             <p className="text-xs text-muted-foreground">
-              {pickText((service as any).customerEmail, (service as any).customer?.email)}
+              {pickFirstText(service.customerEmail, (service as any).customer?.email)}
             </p>
           )}
         </CardContent>
@@ -257,7 +254,7 @@ const ClientInfo = React.memo(({ service, vehicle }: { service: ServiceRecord, v
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground pt-1">
             {color && <span>Color: {color}</span>}
             {vin && <span>VIN: {vin}</span>}
-            {!!(service as any).mileage && <span>KM: {formatNumber((service as any).mileage)}</span>}
+            {!!service.mileage && <span>KM: {formatNumber(service.mileage)}</span>}
           </div>
         </CardContent>
       </Card>
@@ -510,7 +507,7 @@ export const ServiceSheetContent = React.forwardRef<
       if (service.safetyInspection && Object.values(service.safetyInspection).some(v => v && (v as any).status && (v as any).status !== 'na')) {
         available.push({ value: 'checklist', label: 'Revisión de Seguridad', content: <SafetyChecklistDisplay inspection={service.safetyInspection as SafetyInspection} /> });
       }
-      if (service.photoReports && service.photoReports.length > 0 && service.photoReports.some(r => r.photos.length > 0)) {
+      if (service.photoReports && service.photoReports.length > 0 && service.photoReports.some((r: { photos: string | any[]; }) => r.photos.length > 0)) {
         available.push({ value: 'photoreport', label: 'Reporte Fotográfico', content: <PhotoReportContent photoReports={service.photoReports} /> });
       }
       if (service.originalQuoteItems && service.originalQuoteItems.length > 0) {
@@ -563,7 +560,7 @@ function ServiceOrderTab(
     [service?.serviceItems]
   );
   const { subTotal, taxAmount, totalCost } = useMemo(() => {
-    const total = items.reduce((acc, it) => acc + (it.price || 0), 0);
+    const total = items.reduce((acc, it: any) => acc + (it.price || 0), 0);
     const sub = total / (1 + 0.16);
     const tax = total - sub;
     return { subTotal: sub, taxAmount: tax, totalCost: total };
@@ -578,14 +575,14 @@ function ServiceOrderTab(
         <CardHeader><CardTitle>Trabajos a Realizar y Costos</CardTitle></CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {items.length > 0 ? items.map((item, index) => (
+            {items.length > 0 ? items.map((item: any, index: number) => (
               <div key={item.id || index} className="p-4 rounded-lg bg-background">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <p className="font-semibold">{item.name}</p>
                     {item.suppliesUsed && item.suppliesUsed.length > 0 && (
                       <p className="text-xs text-muted-foreground mt-1">
-                        Insumos: {item.suppliesUsed.map(s => `${s.quantity}x ${s.supplyName}`).join(', ')}
+                        Insumos: {item.suppliesUsed.map((s: any) => `${s.quantity}x ${s.supplyName}`).join(', ')}
                       </p>
                     )}
                   </div>
@@ -633,46 +630,13 @@ function ServiceOrderTab(
       <div className={cn("grid grid-cols-1 gap-6", service.status === 'Entregado' && "md:grid-cols-2")}>
         {showReceptionCard && (
           <Card>
-            <CardHeader><CardTitle>Recepción del Vehículo</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Ingreso del Vehiculo al Taller</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <h4 className="font-semibold">Condiciones del Vehículo</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {service.vehicleConditions || "No especificado"}
-                  </p>
-                </div>
-                <div>
-                  <h4 className="font-semibold">Pertenencias del Cliente</h4>
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {service.customerItems || "No especificado"}
-                  </p>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold">Nivel de Combustible</h4>
-                <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300 mt-2">
-                  <div className={cn("h-full transition-all", service.fuelLevel ? {
-                    'bg-red-500': ['Vacío', '1/8', '1/4'].includes(service.fuelLevel),
-                    'bg-yellow-400': ['3/8', '1/2', '5/8'].includes(service.fuelLevel),
-                    'bg-green-500': ['3/4', '7/8', 'Lleno'].includes(service.fuelLevel),
-                  } : 'bg-gray-300')} style={{ width: `${({Vacío:0, "1/8":12.5, "1/4":25, "3/8":37.5, "1/2":50, "5/8":62.5, "3/4":75, "7/8":87.5, Lleno:100}[service.fuelLevel || ''] || 0)}%` }} />
-                </div>
-                <p className="text-center text-xs mt-1">{service.fuelLevel || "N/A"}</p>
-              </div>
+              <ReceptionDetails service={service} />
               <div className="border-t pt-4">
                 <p className="text-xs text-muted-foreground whitespace-pre-line mt-2">{INGRESO_CONDICIONES_TEXT}</p>
                 <h4 className="font-semibold mb-2 mt-4">Firma de Autorización</h4>
-                 <div className="text-center">
-                    <p className="text-xs font-semibold">CLIENTE (RECEPCIÓN)</p>
-                    <div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">
-                      {service.customerSignatureReception ? (
-                        <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" width={150} height={75} style={{objectFit:"contain"}} unoptimized />
-                      ) : onSignClick ? (
-                        <Button size="sm" onClick={() => onSignClick('reception')} disabled={isSigning}>{isSigning ? 'Cargando...' : 'Firmar'}</Button>
-                      ) : (<p className="text-xs text-muted-foreground">Pendiente</p>)}
-                    </div>
-                </div>
+                <SignatureDisplay type="reception" signatureUrl={service.customerSignatureReception} onSignClick={onSignClick} isSigning={isSigning}/>
               </div>
             </CardContent>
           </Card>
@@ -680,25 +644,92 @@ function ServiceOrderTab(
         
         {service.status === 'Entregado' && (
           <Card>
-            <CardHeader><CardTitle>Entrega y Conformidad</CardTitle></CardHeader>
+            <CardHeader><CardTitle>Salida del Vehículo del Taller</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="border-t pt-4">
                 <h4 className="font-semibold mb-2">Garantía</h4>
                 <p className="text-xs text-muted-foreground whitespace-pre-line">{GARANTIA_CONDICIONES_TEXT}</p>
               </div>
               <h4 className="font-semibold mb-2">Firma de Conformidad</h4>
-              <div className="text-center">
-                  <p className="text-xs font-semibold">CLIENTE (ENTREGA)</p>
-                  <div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">
-                    {service.customerSignatureDelivery ? (
-                      <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de entrega" width={150} height={75} style={{objectFit:"contain"}} unoptimized />
-                    ) : onSignClick ? (
-                      <Button size="sm" onClick={() => onSignClick('delivery')} disabled={isSigning}>{isSigning ? 'Cargando...' : 'Firmar'}</Button>
-                    ) : (<p className="text-xs text-muted-foreground">Pendiente</p>)}
-                  </div>
-              </div>
+              <SignatureDisplay type="delivery" signatureUrl={service.customerSignatureDelivery} onSignClick={onSignClick} isSigning={isSigning}/>
             </CardContent>
           </Card>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ReceptionDetails({ service }: { service: ServiceRecord }) {
+  const fuelLevelMap: Record<string, number> = {
+    'Vacío': 0, '1/8': 12.5, '1/4': 25, '3/8': 37.5, '1/2': 50, '5/8': 62.5, '3/4': 75, '7/8': 87.5, 'Lleno': 100
+  };
+  const fuelKey = String(service.fuelLevel || "");
+  const fuelPercentage = fuelMap[fuelKey] ?? 0;
+  const fuelColor =
+    fuelPercentage <= 25 ? "bg-red-500" :
+    fuelPercentage <= 50 ? "bg-orange-400" :
+    fuelPercentage <= 87.5 ? "bg-yellow-400" :
+    "bg-green-500";
+
+  return (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <h4 className="font-semibold">Condiciones del Vehículo</h4>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+            {service.vehicleConditions || "No especificado"}
+          </p>
+        </div>
+        <div>
+          <h4 className="font-semibold">Pertenencias del Cliente</h4>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+            {service.customerItems || "No especificado"}
+          </p>
+        </div>
+      </div>
+      <div>
+        <h4 className="font-semibold">Nivel de Combustible</h4>
+        <div className="h-2 w-full bg-gray-200 rounded-full overflow-hidden border border-gray-300 mt-2">
+          <div className={cn("h-full transition-all", fuelColor)} style={{ width: `${fuelPercentage}%` }} />
+        </div>
+        <p className="text-center text-xs mt-1">{service.fuelLevel || "N/A"}</p>
+      </div>
+    </>
+  );
+}
+
+function SignatureDisplay({
+  type,
+  signatureUrl,
+  onSignClick,
+  isSigning,
+}: {
+  type: "reception" | "delivery";
+  signatureUrl?: string | null;
+  onSignClick?: (type: "reception" | "delivery") => void;
+  isSigning?: boolean;
+}) {
+  const label = type === "reception" ? "CLIENTE (RECEPCIÓN)" : "CLIENTE (ENTREGA)";
+  return (
+    <div className="text-center">
+      <p className="text-xs font-semibold">{label}</p>
+      <div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">
+        {signatureUrl ? (
+          <Image
+            src={normalizeDataUrl(signatureUrl)}
+            alt={`Firma de ${type}`}
+            width={150}
+            height={75}
+            style={{ objectFit: "contain" }}
+            unoptimized
+          />
+        ) : onSignClick ? (
+          <Button size="sm" onClick={() => onSignClick(type)} disabled={isSigning}>
+            {isSigning ? "Cargando..." : "Firmar"}
+          </Button>
+        ) : (
+          <p className="text-xs text-muted-foreground">Pendiente</p>
         )}
       </div>
     </div>
@@ -713,7 +744,7 @@ type SafetyInspectionRecord = SafetyInspection & {
 function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }) {
   const inspectionRecord = (inspection ?? {}) as SafetyInspectionRecord;
 
-  const groups = [
+  const inspectionGroups = [
     { title: "LUCES", items: [
       { name: "luces_altas_bajas_niebla", label: "ALTAS, BAJAS Y NIEBLA" },
       { name: "luces_cuartos", label: "CUARTOS" },
@@ -757,14 +788,14 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
   ];
 
   const StatusIndicator = ({ status }: { status?: SafetyCheckValue['status'] }) => {
-    const m = {
-      ok: { label: "Bien", color: "bg-green-500", text: "text-green-700" },
-      atencion: { label: "Atención", color: "bg-yellow-400", text: "text-yellow-700" },
-      inmediata: { label: "Inmediata", color: "bg-red-500", text: "text-red-700" },
-      na: { label: "N/A", color: "bg-gray-300", text: "text-gray-500" },
+    const statusInfo = {
+      ok: { label: "Bien", color: "bg-green-500", textColor: "text-green-700" },
+      atencion: { label: "Atención", color: "bg-yellow-400", textColor: "text-yellow-700" },
+      inmediata: { label: "Inmediata", color: "bg-red-500", textColor: "text-red-700" },
+      na: { label: "N/A", color: "bg-gray-300", textColor: "text-gray-500" },
     } as const;
-    const s = m[status || 'na'];
-    return <div className="flex items-center gap-2"><div className={`h-3 w-3 rounded-full ${s.color}`} /><span className={cn("text-xs font-semibold", s.text)}>{s.label}</span></div>;
+    const currentStatus = statusInfo[status || 'na'];
+    return <div className="flex items-center gap-2"><div className={`h-3 w-3 rounded-full ${currentStatus.color}`} /><span className={cn("text-xs font-semibold", currentStatus.textColor)}>{currentStatus.label}</span></div>;
   };
 
   return (
@@ -772,7 +803,7 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection }
       <CardHeader><CardTitle>Revisión de Puntos de Seguridad</CardTitle></CardHeader>
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-          {groups.map(group => (
+          {inspectionGroups.map(group => (
             <div key={group.title}>
               <h4 className="font-bold text-base mb-2 border-b-2 border-primary pb-1">{group.title}</h4>
               <div className="space-y-1">

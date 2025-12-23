@@ -6,6 +6,7 @@ export const registerPaymentSchema = z.object({
   amount: z.coerce.number().min(1, "Ingresa un monto válido"),
   paymentMethod: z.string().optional(),
   note: z.string().optional(),
+  infractionId: z.string().optional(),
 });
 
 export type RegisterPaymentFormValues = z.infer<typeof registerPaymentSchema>;
