@@ -1,11 +1,12 @@
 
-import * as admin from "firebase-admin";
+import * as admin from "firebase-admin"; // Necesario para admin.auth() y admin.firestore.FieldValue
 import * as logger from "firebase-functions/logger";
 import { onDocumentCreated, onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { getAdminDb } from '@/lib/firebaseAdmin'; // Importa la instancia centralizada
 
-// No inicializar 'db' aquí. Se accederá a través de admin.firestore() directamente
-// para asegurar que la app de Firebase ya esté inicializada desde index.ts.
+// Obtiene la instancia de la base de datos
+const db = getAdminDb();
 
 /**
  * Revisa si un usuario tiene privilegios de administrador basado en sus custom claims.
@@ -26,7 +27,6 @@ const isAdmin = async (uid: string): Promise<boolean> => {
  * Registra la salida de inventario cuando un servicio se marca como "entregado".
  */
 export const onStockExit = onDocumentUpdated("serviceRecords/{serviceId}", async (event) => {
-  const db = admin.firestore(); // Obtener la instancia de db aquí
   const serviceId = event.params.serviceId;
   const dataBefore = event.data?.before.data();
   const dataAfter = event.data?.after.data();
@@ -57,7 +57,7 @@ export const onStockExit = onDocumentUpdated("serviceRecords/{serviceId}", async
           continue;
         }
 
-        const inventoryItemRef = db.collection("inventoryItems").doc(item.id);
+        const inventoryItemRef = db.collection("inventory").doc(item.id);
         const movementRef = db.collection("inventoryMovements").doc();
 
         transaction.set(movementRef, {
@@ -87,8 +87,7 @@ export const onStockExit = onDocumentUpdated("serviceRecords/{serviceId}", async
  * @param {FirebaseFirestore.DocumentSnapshot} purchaseSnap El snapshot del documento de la compra.
  * @param {string} purchaseId El ID de la compra.
  */
-const processStockEntry = async (purchaseSnap: FirebaseFirestore.DocumentSnapshot, purchaseId: string) => {
-  const db = admin.firestore(); // Obtener la instancia de db aquí
+const processStockEntry = async (purchaseSnap: admin.firestore.DocumentSnapshot, purchaseId: string) => {
   const purchaseData = purchaseSnap.data();
   if (!purchaseData) {
     logger.info(`[Inventory] No hay datos en el snapshot de la compra ${purchaseId}.`);
@@ -106,21 +105,21 @@ const processStockEntry = async (purchaseSnap: FirebaseFirestore.DocumentSnapsho
   try {
     await db.runTransaction(async (transaction) => {
       for (const item of items) {
-        if (!item.id || !item.quantity || item.quantity <= 0) {
+        if (!item.inventoryItemId || !item.quantity || item.quantity <= 0) {
           logger.warn(`[Inventory] Compra ${purchaseId}: Datos de item inválidos, omitiendo.`, item);
           continue;
         }
-        const inventoryItemRef = db.collection("inventoryItems").doc(item.id);
+        const inventoryItemRef = db.collection("inventory").doc(item.inventoryItemId);
         const movementRef = db.collection("inventoryMovements").doc();
 
         transaction.set(movementRef, {
-          itemId: item.id,
+          itemId: item.inventoryItemId,
           purchaseId: purchaseId,
           type: "purchase",
           quantityChanged: item.quantity,
           date: admin.firestore.FieldValue.serverTimestamp(),
-          itemName: item.name || "N/A",
-          itemSku: item.sku || "N/A",
+          itemName: item.itemName || "N/A",
+          itemSku: item.itemSku || "N/A",
         });
         transaction.update(inventoryItemRef, {
           stock: admin.firestore.FieldValue.increment(item.quantity),
@@ -143,8 +142,8 @@ export const onPurchaseCreated = onDocumentCreated("purchases/{purchaseId}", asy
   }
 
   const purchaseData = eventData.data();
-  if (purchaseData?.status === 'completado') {
-    logger.info(`[Inventory] Compra ${event.params.purchaseId} creada como 'completado'.`);
+  if (purchaseData?.status === 'Completado') {
+    logger.info(`[Inventory] Compra ${event.params.purchaseId} creada como 'Completado'.`);
     await processStockEntry(eventData, event.params.purchaseId);
   }
 });
@@ -160,8 +159,8 @@ export const onPurchaseUpdated = onDocumentUpdated("purchases/{purchaseId}", asy
   const dataBefore = event.data.before.data();
   const dataAfter = event.data.after.data();
   
-  if (dataAfter?.status === 'completado' && dataBefore?.status !== 'completado') {
-    logger.info(`[Inventory] Compra ${event.params.purchaseId} actualizada a 'completado'.`);
+  if (dataAfter?.status === 'Completado' && dataBefore?.status !== 'Completado') {
+    logger.info(`[Inventory] Compra ${event.params.purchaseId} actualizada a 'Completado'.`);
     await processStockEntry(event.data.after, event.params.purchaseId);
   }
 });
@@ -170,7 +169,6 @@ export const onPurchaseUpdated = onDocumentUpdated("purchases/{purchaseId}", asy
  * Permite a un administrador ajustar manualmente el stock de un item.
  */
 export const adjustStock = onCall(async (request) => {
-  const db = admin.firestore(); // Obtener la instancia de db aquí
   const auth = request.auth;
   if (!auth) {
     throw new HttpsError("unauthenticated", "Debes estar autenticado para realizar esta acción.");
@@ -188,7 +186,7 @@ export const adjustStock = onCall(async (request) => {
 
   logger.info(`[Inventory] Admin ${auth.uid} está ajustando el stock para el item ${itemId}.`);
 
-  const inventoryItemRef = db.collection("inventoryItems").doc(itemId);
+  const inventoryItemRef = db.collection("inventory").doc(itemId);
   const movementRef = db.collection("inventoryMovements").doc();
 
   try {

@@ -1,18 +1,13 @@
-
 // functions/src/index.ts
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as logger from 'firebase-functions/logger';
-import * as admin from 'firebase-admin';
+import { getAdminDb, serverTimestamp } from '@/lib/firebaseAdmin'; // Importa la instancia centralizada
 import { startOfDay, endOfDay } from 'date-fns';
 import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 import { onStockExit, onPurchaseCreated, onPurchaseUpdated, adjustStock } from './inventory';
 
-// Initialize Firebase Admin SDK - THIS SHOULD BE DONE ONLY ONCE
-if (admin.apps.length === 0) {
-  admin.initializeApp();
-}
-
-const db = admin.firestore();
+// Obtén la instancia de la base de datos desde el módulo centralizado
+const db = getAdminDb();
 const TZ = 'America/Mexico_City';
 
 // --- Daily Rental Charges Generation (fixed) ---
@@ -64,10 +59,10 @@ export const generateDailyRentalCharges = onSchedule(
           vehicleId,
           amount: dailyRentalCost,
           vehicleLicensePlate: vehicle?.licensePlate || '',
-          date: admin.firestore.Timestamp.fromDate(nowUtc),
+          date: serverTimestamp(),
           dateKey,
-          dayStartUtc: admin.firestore.Timestamp.fromDate(dayStartUtc),
-          dayEndUtc: admin.firestore.Timestamp.fromDate(dayEndUtc),
+          dayStartUtc: dayStartUtc,
+          dayEndUtc: dayEndUtc,
         });
         logger.info(`Created daily charge for ${driver.name} (${dateKey}).`);
       } catch (err: any) {

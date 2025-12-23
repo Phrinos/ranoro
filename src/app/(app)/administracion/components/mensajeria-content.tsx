@@ -21,16 +21,16 @@ const messagingConfigSchema = z.object({
   fromPhoneNumberId: z.string().min(1, 'El ID del Número de Teléfono es obligatorio.'),
   endpointUrl: z.string().url("Debe ser una URL válida.").optional().or(z.literal('')),
   
-  appointmentConfirmationEnabled: z.boolean().default(false),
+  appointmentConfirmationEnabled: z.boolean(),
   appointmentConfirmationTemplate: z.string().optional(),
   
-  appointmentReminderEnabled: z.boolean().default(false),
+  appointmentReminderEnabled: z.boolean(),
   appointmentReminderTemplate: z.string().optional(),
   
-  nextServiceReminderEnabled: z.boolean().default(false),
+  nextServiceReminderEnabled: z.boolean(),
   nextServiceReminderTemplate: z.string().optional(),
   
-  serviceLinkEnabled: z.boolean().default(true),
+  serviceLinkEnabled: z.boolean(),
   serviceLinkTemplate: z.string().optional(),
 });
 
