@@ -46,7 +46,7 @@ export function TiposDeServicioPageContent({ serviceTypes }: TiposDeServicioProp
         }
 
         try {
-            await inventoryService.saveServiceType({ name: trimmedName, estimatedHours: 0 }, editingType?.id);
+            await inventoryService.saveServiceType({ name: trimmedName, estimatedHours: 0, description: "" }, editingType?.id);
             toast({ title: `Tipo de servicio ${editingType ? 'actualizado' : 'creado'}.`, description: `El tipo de servicio "${trimmedName}" se ha guardado correctamente.` });
             setIsDialogOpen(false);
         } catch (error) {

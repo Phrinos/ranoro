@@ -48,9 +48,9 @@ export function InformePosContent({ allSales, allServices, allInventory }: Infor
         const saleDate = typeof s.saleDate === 'string' ? parseISO(s.saleDate) : s.saleDate;
         return s.status !== 'Cancelado' && saleDate && isValid(saleDate) && isWithinInterval(saleDate, interval)
     });
-    const servicesInRange = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime)) && isWithinInterval(parseISO(s.deliveryDateTime), interval));
+    const servicesInRange = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime as string)) && isWithinInterval(parseISO(s.deliveryDateTime as string), interval));
     
-    const salesRevenue = salesInRange.reduce((sum, s) => sum + s.totalAmount, 0);
+    const salesRevenue = salesInRange.reduce((sum, s) => sum + (s.totalAmount ?? 0), 0);
     const salesProfit = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
     const servicesRevenue = servicesInRange.reduce((sum, s) => sum + (s.totalCost || 0), 0);
     const servicesProfit = servicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
@@ -59,7 +59,8 @@ export function InformePosContent({ allSales, allServices, allInventory }: Infor
     const totalProfit = salesProfit + servicesProfit;
 
     const itemCounts = salesInRange.flatMap(s => s.items).reduce((acc, item) => {
-        acc[item.itemName] = (acc[item.itemName] || 0) + item.quantity;
+        const key = item.itemName ?? "Sin nombre";
+        acc[key] = (acc[key] || 0) + (item.quantity ?? 0);
         return acc;
     }, {} as Record<string, number>);
 

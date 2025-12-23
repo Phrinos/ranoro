@@ -2,21 +2,28 @@
 import { type ReactNode } from "react";
 
 // ✅ Roles: tu UI compara contra "Superadministrador" y también tienes data legacy "superadmin"
-export type AppRole =
+export type AppRoleName =
   | "Superadministrador"
   | "Administrador"
   | "Supervisor"
   | "Técnico"
   | "Cajero"
   | "Usuario"
+  // legacy si existe en algún lugar:
+  | "Admin"
   | "superadmin"
   | "admin"
   | "user";
 
+export type AppRole = {
+  id: string;
+  name: AppRoleName | string;
+  permissions: string[];
+};
+
 // ✅ Métodos de pago: tu UI usa "Tarjeta MSI"
 export type PaymentMethod = "Efectivo" | "Tarjeta" | "Tarjeta MSI" | "Transferencia" | "Crédito" | "Efectivo+Transferencia" | "Tarjeta+Transferencia";
 export const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Crédito"] as const;
-
 
 // ✅ Sub-estatus: tu UI compara estos literales
 export type ServiceSubStatus =
@@ -35,14 +42,14 @@ export type SafetyCheckValue = {
   // si ya tienes fields, déjalos y solo agrega lo que falte
   status?: SafetyCheckStatus;
   note?: string;
+  photos?: string[];
   // value?: boolean | string | number; // opcional si ya lo manejas así
 };
 
 export type SafetyInspection = {
-  id: string;
-  name: string;
-  value: SafetyCheckValue;
+  [key: string]: SafetyCheckValue;
 };
+
 
 // ✅ Items/Payments: tu ticket usa sellingPrice y folio
 export type ServiceItem = {
@@ -61,7 +68,7 @@ export type Payment = {
   date?: string;
 
   // nombre “nuevo” usado en UI:
-  method?: PaymentMethod;
+  method: PaymentMethod;
   amount: number;
   folio?: string;
 
@@ -82,12 +89,12 @@ export type ServiceRecord = {
   paymentMethod?: PaymentMethod;
   cardCommission?: number;
 
-  serviceItems?: ServiceItem[];
+  serviceItems: ServiceItem[];
 
   vehicleId?: string;
   vehicle?: any; // si tu Vehicle ya está tipado, cambia any por Vehicle
 
-  safetyInspection?: SafetyInspection[]; // <-- tu UI lo pasa como array
+  safetyInspection?: SafetyInspection;
 
   totalAmount?: number;
   totalCost?: number;
@@ -99,9 +106,9 @@ export type ServiceRecord = {
 // ✅ Tickets: facturar/page.tsx usa totalAmount o totalCost
 export type SaleReceipt = {
   id: string;
-  totalAmount?: number;
+  totalAmount: number;
   totalCost?: number;
-  items: ServiceItem[];     // si antes era InventoryItem[], cámbialo a un tipo de línea de venta
+  items: ServiceItem[];
   payments?: Payment[];
   [k: string]: any;
 };
@@ -118,10 +125,10 @@ export interface Vehicle {
   ownerName?: string;
   ownerLicence?: string;
   ownerAddress?: string;
-  licensePlate?: string;
-  make?: string;
-  model?: string;
-  year?: number;
+  licensePlate: string;
+  make: string;
+  model: string;
+  year: number;
   ownerPhone?: string;
   color?: string;
   vin?: string;
@@ -166,6 +173,25 @@ export interface FinancialInfo {
   notaryPowerExpirationDate?: string;
 }
 
+export type AuditLogAction =
+  | "Crear"
+  | "Editar"
+  | "Eliminar"
+  | "Registrar"
+  | "Cancelar"
+  | "Pagar"
+  | "Archivar"
+  | "Restaurar"
+  // si ya existían en inglés en tu sistema:
+  | "CREATE"
+  | "EDIT"
+  | "DELETE"
+  | "REGISTER"
+  | "CANCEL"
+  | "PAY"
+  | "ARCHIVE"
+  | "RESTORE";
+
 export interface AuditLog {
   id: string;
   user: User;
@@ -178,30 +204,11 @@ export interface AuditLog {
   date?: string;
 }
 
-export type AuditLogAction = "CREATE" | "UPDATE" | "DELETE" | "CANCEL" | "ARCHIVE" | "RESTORE" | "PAY";
 
-export interface InventoryItem {
+export type InventoryCategory = {
   id: string;
   name: string;
-  category: InventoryCategory;
-  supplier: Supplier;
-  purchasePrice: number;
-  salePrice: number;
-  quantity: number;
-  lowStockThreshold?: number;
-  sku?: string;
-  brand?: string;
-  unitPrice?: number;
-  sellingPrice?: number;
-  isService?: boolean;
-  unitType?: string;
-  description?: string;
-  rendimiento?: number;
-  itemName?: string;
-  inventoryItemId?: string;
-}
-
-export type InventoryCategory = string;
+};
 
 
 export interface Supplier {
@@ -216,6 +223,28 @@ export interface Supplier {
   taxRegime?: string;
   debtAmount?: number;
 }
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  category: string;
+  supplier: string;
+  purchasePrice?: number;
+  salePrice?: number;
+  quantity: number;
+  lowStockThreshold?: number;
+  sku?: string;
+  brand?: string;
+  unitPrice?: number;
+  sellingPrice?: number;
+  isService?: boolean;
+  unitType?: string;
+  description?: string;
+  rendimiento?: number;
+  itemName?: string;
+  inventoryItemId?: string;
+}
+
 
 
 export interface MonthlyFixedExpense {
@@ -358,6 +387,7 @@ export interface ServiceTypeRecord {
 
 export interface PayableAccount {
   id: string;
+  supplierId: string;
   supplier: Supplier;
   amount: number;
   dueDate: string;
