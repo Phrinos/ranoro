@@ -16,7 +16,7 @@ export const paymentDetailsSchema = z.object({
   payments: z.array(singlePaymentSchema).min(1, "Debe agregar al menos un método de pago."),
   nextServiceInfo: z.object({
     date: z.date().nullable().optional(),
-    mileage: z.number().nullable().optional(),
+    mileage: z.coerce.number().nullable().optional(),
   }).optional(),
 });
 

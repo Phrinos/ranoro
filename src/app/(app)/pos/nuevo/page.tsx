@@ -272,7 +272,7 @@ export default function NuevaVentaPage() {
     return () => unsubs.forEach((unsub) => unsub && unsub());
   }, []);
 
-  const handleCopySaleForWhatsapp = useCallback(() => {
+  const handleCopyWhatsAppMessage = useCallback(() => {
     if (!saleForTicket) return;
     const workshopName = workshopInfo?.name || "nuestro taller";
     const message = `Hola ${

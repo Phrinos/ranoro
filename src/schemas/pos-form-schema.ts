@@ -25,7 +25,7 @@ export const posFormSchema = z.object({
   customerName: z.string().optional(),
   whatsappNumber: z.string().optional(),
   payments: z.array(paymentSchema).min(1, 'Debe agregar al menos un método de pago.'),
-  cardCommission: z.number().optional(), 
+  cardCommission: z.coerce.number().optional(), 
 }).superRefine((data, ctx) => {
     const totalItems = data.items
         .filter(item => item.inventoryItemId !== 'COMMISSION_FEE')
