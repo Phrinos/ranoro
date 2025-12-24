@@ -1,4 +1,5 @@
 // src/app/(app)/pos/page.tsx
+
 "use client";
 
 import { withSuspense } from "@/lib/withSuspense";
@@ -30,14 +31,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const InformePosContent = lazy(() => import("./components/informe-pos-content").then(m => ({ default: m.InformePosContent })));
-const VentasPosContent = lazy(() => import("./components/ventas-pos-content").then(m => ({ default: m.VentasPosContent })));
+const InformePosContent = lazy(() => import("./components/informe-pos-content"));
+const VentasPosContent = lazy(() => import("./components/ventas-pos-content"));
 const PaymentDetailsDialog = lazy(() =>
   import("@/components/shared/PaymentDetailsDialog").then((module) => ({
     default: module.PaymentDetailsDialog,
   }))
 );
-const ViewSaleDialog = lazy(() => import("./components/view-sale-dialog").then(m => ({ default: m.ViewSaleDialog })));
+const ViewSaleDialog = lazy(() => import("./components/view-sale-dialog"));
 
 function PageInner() {
   const router = useRouter();
