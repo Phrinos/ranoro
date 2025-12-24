@@ -1,3 +1,4 @@
+
 // src/components/shared/PaymentSection.tsx
 "use client";
 
@@ -32,13 +33,17 @@ interface PaymentSectionProps {
 }
 
 const toNumber = (v: unknown): number => {
+  if (v === null || v === undefined || v === '') return 0;
   if (typeof v === "number") return Number.isFinite(v) ? v : 0;
-  if (typeof v === "string") {
-    const n = Number(v.replace(/[^d.-]/g, ""));
-    return Number.isFinite(n) ? n : 0;
-  }
-  return 0;
+  
+  const s = String(v).trim();
+  if (s === '') return 0;
+  
+  // No permitir múltiples puntos decimales o caracteres no válidos
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : 0;
 };
+
 
 export function PaymentSection({
   onOpenValidateDialog,
@@ -114,6 +119,10 @@ export function PaymentSection({
                                         value={formField.value ?? ""}
                                         className="pl-8 bg-card"
                                         onChange={(e) => {
+                                            const raw = e.target.value;
+                                            formField.onChange(raw === "" ? undefined : raw);
+                                        }}
+                                        onBlur={(e) => {
                                             const raw = e.target.value;
                                             formField.onChange(raw === "" ? undefined : toNumber(raw));
                                         }}
