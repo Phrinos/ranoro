@@ -1,4 +1,3 @@
-
 // src/app/(app)/pos/components/informe-pos-content.tsx
 "use client";
 
@@ -6,6 +5,7 @@ import React, { useState, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   calculateSaleProfit,
+  calcEffectiveProfit,
 } from "@/lib/money-helpers";
 import type { InventoryItem, SaleReceipt, ServiceRecord } from "@/types";
 import {
@@ -21,6 +21,7 @@ import { ShoppingCart, DollarSign, TrendingUp, BarChart2 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
+import { parseDate } from '@/lib/forms';
 
 
 interface DateRange {
@@ -34,7 +35,7 @@ interface InformePosContentProps {
   allInventory: InventoryItem[];
 }
 
-export function InformePosContent({ allSales, allServices, allInventory }: InformePosContentProps) {
+export default function InformePosContent({ allSales, allServices, allInventory }: InformePosContentProps) {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
     const now = new Date();
     return { from: startOfMonth(now), to: endOfMonth(now) };
@@ -46,15 +47,18 @@ export function InformePosContent({ allSales, allServices, allInventory }: Infor
     const interval = { start: from, end: to };
 
     const salesInRange = allSales.filter(s => {
-        const saleDate = typeof s.saleDate === 'string' ? parseISO(s.saleDate) : s.saleDate;
+        const saleDate = parseDate(s.saleDate);
         return s.status !== 'Cancelado' && saleDate && isValid(saleDate) && isWithinInterval(saleDate, interval)
     });
-    const servicesInRange = allServices.filter(s => s.status === 'Entregado' && s.deliveryDateTime && isValid(parseISO(s.deliveryDateTime as string)) && isWithinInterval(parseISO(s.deliveryDateTime as string), interval));
+    const servicesInRange = allServices.filter(s => {
+        const deliveryDate = parseDate(s.deliveryDateTime);
+        return s.status === 'Entregado' && deliveryDate && isValid(deliveryDate) && isWithinInterval(deliveryDate, interval);
+    });
     
     const salesRevenue = salesInRange.reduce((sum, s) => sum + (s.totalAmount ?? 0), 0);
     const salesProfit = salesInRange.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
     const servicesRevenue = servicesInRange.reduce((sum, s) => sum + (s.totalCost || 0), 0);
-    const servicesProfit = servicesInRange.reduce((sum, s) => sum + (s.serviceProfit || 0), 0);
+    const servicesProfit = servicesInRange.reduce((sum, s) => sum + calcEffectiveProfit(s, allInventory), 0);
 
     const totalRevenue = salesRevenue + servicesRevenue;
     const totalProfit = salesProfit + servicesProfit;

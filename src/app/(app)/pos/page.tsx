@@ -1,15 +1,21 @@
-
 // src/app/(app)/pos/page.tsx
 "use client";
 
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import React, { useState, useEffect, useCallback, Suspense, lazy, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  Suspense,
+  lazy,
+  useRef,
+} from "react";
 import { TabbedPageLayout } from "@/components/layout/tabbed-page-layout";
 import { Loader2, PlusCircle, Printer, Copy, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import type { SaleReceipt, InventoryItem, User, ServiceRecord } from "@/types";
+import type { SaleReceipt, InventoryItem, User, ServiceRecord, InventoryCategory, Supplier } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { inventoryService, saleService, serviceService, adminService } from "@/lib/services";
 import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
@@ -26,7 +32,11 @@ import {
 
 const InformePosContent = lazy(() => import("./components/informe-pos-content").then(m => ({ default: m.InformePosContent })));
 const VentasPosContent = lazy(() => import("./components/ventas-pos-content").then(m => ({ default: m.VentasPosContent })));
-const PaymentDetailsDialog = lazy(() => import("@/components/shared/PaymentDetailsDialog").then(m => ({ default: m.PaymentDetailsDialog })));
+const PaymentDetailsDialog = lazy(() =>
+  import("@/components/shared/PaymentDetailsDialog").then((module) => ({
+    default: module.PaymentDetailsDialog,
+  }))
+);
 const ViewSaleDialog = lazy(() => import("./components/view-sale-dialog").then(m => ({ default: m.ViewSaleDialog })));
 
 function PageInner() {
@@ -44,6 +54,9 @@ function PageInner() {
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
+  const [allCategories, setAllCategories] = useState<InventoryCategory[]>([]);
+  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
+
 
   const [isReprintDialogOpen, setIsReprintDialogOpen] = useState(false);
   const [saleForReprint, setSaleForReprint] = useState<SaleReceipt | null>(null);
@@ -69,9 +82,11 @@ function PageInner() {
       saleService.onSalesUpdate(setAllSales),
       inventoryService.onItemsUpdate(setAllInventory),
       serviceService.onServicesUpdate(setAllServices),
-      adminService.onUsersUpdate((users) => {
-        setAllUsers(users);
-        setIsLoading(false);
+      adminService.onUsersUpdate(setAllUsers),
+      inventoryService.onCategoriesUpdate(setAllCategories),
+      inventoryService.onSuppliersUpdate((data) => {
+          setAllSuppliers(data);
+          setIsLoading(false);
       }),
     ];
     return () => unsubs.forEach((u) => u && u());
@@ -282,8 +297,8 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
             sale={viewingSale}
             inventory={allInventory}
             users={allUsers}
-            categories={[]}
-            suppliers={[]}
+            categories={allCategories}
+            suppliers={allSuppliers}
             onCancelSale={handleCancelSale}
             onDeleteSale={handleDeleteSale}
             onPaymentUpdate={handlePaymentUpdate}

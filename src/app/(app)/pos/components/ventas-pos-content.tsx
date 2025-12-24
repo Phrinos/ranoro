@@ -32,8 +32,6 @@ const paymentMethodOptions: { value: PaymentMethod | 'all', label: string }[] = 
     { value: 'Tarjeta', label: 'Tarjeta' },
     { value: 'Tarjeta MSI', label: 'Tarjeta MSI' },
     { value: 'Transferencia', label: 'Transferencia' },
-    { value: 'Efectivo+Transferencia', label: 'Efectivo+Transferencia' },
-    { value: 'Tarjeta+Transferencia', label: 'Tarjeta+Transferencia' },
 ];
 
 const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
@@ -41,9 +39,6 @@ const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   "Tarjeta": CreditCard,
   "Tarjeta MSI": CreditCard,
   "Transferencia": Landmark,
-  "Efectivo+Transferencia": Wallet,
-  "Tarjeta+Transferencia": CreditCard,
-  "Crédito": CreditCard,
 };
 
 interface VentasPosContentProps {
@@ -59,7 +54,7 @@ interface VentasPosContentProps {
 }
 
 
-export function VentasPosContent({ 
+export default function VentasPosContent({ 
   allSales, 
   allInventory, 
   allUsers, 
@@ -127,43 +122,6 @@ export function VentasPosContent({
 
   return (
     <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Ventas en Periodo</CardTitle><ShoppingCart className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{summaryData.salesCount}</div></CardContent></Card>
-           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Ganancia Bruta (Periodo)</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{formatCurrency(summaryData.totalProfit)}</div>
-            </CardContent>
-          </Card>
-          <Card className="md:col-span-2">
-             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Ventas por Método de Pago</CardTitle>
-            </CardHeader>
-            <CardContent>
-                {Array.from(summaryData.paymentsSummary.entries()).length > 0 ? (
-                  <div className="flex flex-wrap gap-x-4 gap-y-2">
-                    {Array.from(summaryData.paymentsSummary.entries()).map(([method, data]) => {
-                      const Icon = paymentMethodIcons[method] ?? Wallet;
-                      return (
-                        <div key={method} className="flex items-center gap-2 text-sm">
-                           <Icon className="h-4 w-4 text-muted-foreground" />
-                           <span className="font-semibold">{method}:</span>
-                           <span className="text-foreground">{formatCurrency(data.total)}</span>
-                           <span className="text-muted-foreground text-xs">({data.count})</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No hay pagos registrados en este periodo.</p>
-                )}
-            </CardContent>
-          </Card>
-        </div>
-        
         <TableToolbar
             searchTerm={tableManager.searchTerm}
             onSearchTermChange={tableManager.onSearchTermChange}
@@ -171,11 +129,6 @@ export function VentasPosContent({
             filterOptions={[{ value: 'payments.method', label: 'Método de Pago', options: paymentMethodOptions }]}
             dateRange={tableManager.dateRange}
             onDateRangeChange={tableManager.onDateRangeChange}
-            actions={
-                <Button asChild className="w-full sm:w-auto">
-                    <Link href="/pos/nuevo"><PlusCircle className="mr-2 h-4 w-4" />Nueva Venta</Link>
-                </Button>
-            }
         />
         
         {paginatedData.length > 0 ? (
