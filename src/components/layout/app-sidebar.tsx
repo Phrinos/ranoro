@@ -56,7 +56,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Compras', path: '/inventario/compras', icon: ShoppingCart, groupTag: 'Operaciones', permissions: ['purchases:manage'] },
   
   // Finanzas (Nueva Categoría)
-  { label: 'Finanzas', path: '/finanzas', icon: Wallet, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
+  { label: 'Finanzas', path: '/finanzas', icon: DollarSign, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
   { label: 'Cierres', path: '/finanzas/cierre', icon: BarChart3, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
   { label: 'Facturación', path: '/facturacion', icon: FileJson, groupTag: 'Finanzas', permissions: ['billing:manage'] },
 

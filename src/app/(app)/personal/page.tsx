@@ -55,6 +55,11 @@ function PageInner() {
     return () => unsubs.forEach(unsub => unsub());
   }, []);
 
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    router.push(`${pathname}?tab=${newTab}`);
+  }
+
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
     
   const tabs = [
@@ -69,7 +74,7 @@ function PageInner() {
       title="Gestión de Personal"
       description="Administra tu equipo, sus roles, permisos y analiza su rendimiento."
       activeTab={activeTab}
-      onTabChange={setActiveTab}
+      onTabChange={handleTabChange}
       tabs={tabs}
     />
   );
