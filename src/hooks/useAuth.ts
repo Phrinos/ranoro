@@ -1,6 +1,7 @@
+
 // src/hooks/useAuth.ts
 import { useEffect, useState, useCallback } from 'react';
-import { onAuthStateChanged, signOut, type Auth } from 'firebase/auth';
+import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebaseClient';
 import type { User } from '@/types';
@@ -13,69 +14,68 @@ export function useAuth() {
   const router = useRouter();
 
   const handleLogout = useCallback(async () => {
-    // Limpia inmediatamente el estado local para una respuesta de UI rápida
     setCurrentUser(null);
     localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
     if (auth) {
         await signOut(auth);
     }
-    // Redirigir al login ya lo hace el useEffect de AppClientLayout
-    // No es necesario hacerlo aquí.
   }, []);
 
   useEffect(() => {
-    // Sincroniza desde localStorage al inicio.
-    // Esto es rápido y evita el parpadeo de "Verificando sesión..."
     const cachedUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
     if (cachedUserString) {
       try {
-        const cachedUser = JSON.parse(cachedUserString);
+        const cachedUser = JSON.parse(cachedUserString) as User;
         setCurrentUser(cachedUser);
       } catch (e) {
         console.error("Failed to parse cached user, clearing.", e);
         localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
       }
     }
+    // We are not done loading until Firebase confirms the state.
+    // Setting isLoading to true ensures we wait for the real source of truth.
+    setIsLoading(true);
     
-    // El listener de Firebase Auth es la fuente de verdad definitiva.
     if (!auth) {
         setIsLoading(false);
         return;
     }
+
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        // Usuario autenticado. Escucha su documento en Firestore.
+        // Auth state is confirmed. We are no longer "loading" the auth state itself.
+        setIsLoading(false);
+        
+        // Now, fetch the user document from Firestore asynchronously.
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const unsubscribeDoc = onSnapshot(userDocRef, (userDoc) => {
           if (userDoc.exists()) {
             const userData = { id: firebaseUser.uid, ...userDoc.data() } as User;
-            // Actualiza tanto el estado como el localStorage.
             setCurrentUser(userData);
             localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
           } else {
-            // Caso raro: autenticado en Firebase pero sin documento en Firestore.
-            // Cierra la sesión para evitar un estado inconsistente.
             console.warn(`User ${firebaseUser.uid} authenticated but not found in Firestore. Logging out.`);
             handleLogout();
           }
-          setIsLoading(false); // Termina la carga después de obtener datos de Firestore.
         }, (error) => {
            console.error("Error listening to user document:", error);
-           handleLogout(); // Cierra sesión si hay error leyendo el doc.
-           setIsLoading(false);
+           handleLogout();
         });
+        
+        // Return the doc listener's unsubscribe function.
+        // It will be called when the auth state changes or component unmounts.
         return () => unsubscribeDoc();
+
       } else {
-        // No hay usuario en Firebase Auth. Limpia todo.
+        // No user is authenticated in Firebase.
         setCurrentUser(null);
         localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
         setIsLoading(false);
-        // AppClientLayout se encargará de la redirección.
       }
     }, (error) => {
         console.error("Auth state listener error:", error);
-        handleLogout(); // Cierra sesión si hay un error en el listener principal
-        setIsLoading(false); // Termina la carga si hay un error en el listener.
+        handleLogout();
+        setIsLoading(false);
     });
 
     return () => unsubscribeAuth();
