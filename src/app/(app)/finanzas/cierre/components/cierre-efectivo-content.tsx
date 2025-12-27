@@ -123,13 +123,15 @@ export default function CierreEfectivoContent({ transactions, summary }: CierreE
                     const isIncome = t.type === 'in' || t.type === 'Entrada';
                     return (
                       <TableRow key={t.id}>
-                        <TableCell className="font-mono text-xs">{transactionDate && isValid(transactionDate) ? format(transactionDate, 'dd/MM, HH:mm', { locale: es }) : 'N/A'}</TableCell>
+                        <TableCell className="font-mono text-xs whitespace-nowrap">
+                            {transactionDate && isValid(transactionDate) ? format(transactionDate, 'dd/MM/yy, HH:mm', { locale: es }) : 'N/A'}
+                        </TableCell>
                         <TableCell><Badge variant={isIncome ? 'success' : 'destructive'}>{t.type}</Badge></TableCell>
                         <TableCell>{(t as any).concept || (t as any).description}</TableCell>
                         <TableCell className={cn("text-right font-semibold", isIncome ? 'text-green-600' : 'text-red-600')}>{formatCurrency(t.amount)}</TableCell>
                       </TableRow>
                     );
-                  })
+                })
                 ) : (
                   <TableRow><TableCell colSpan={4} className="h-24 text-center">No hay movimientos de efectivo en este mes.</TableCell></TableRow>
                 )}
