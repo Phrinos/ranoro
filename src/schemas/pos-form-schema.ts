@@ -6,8 +6,8 @@ const saleItemSchema = z.object({
   inventoryItemId: z.string().min(1, 'Seleccione un artículo.'),
   itemName: z.string(),
   quantity: z.coerce.number().min(0.001, 'La cantidad debe ser mayor a 0.'),
-  unitPrice: z.coerce.number(), // This is the COST for the workshop OR the customer price for a service
-  totalPrice: z.coerce.number(), // This is the SELLING price to customer
+  unitPrice: z.coerce.number(), // Costo taller o precio servicio
+  totalPrice: z.coerce.number(), // Precio venta al cliente
   isService: z.boolean().optional(),
   unitType: z.enum(['units', 'ml', 'liters']).optional(),
 });

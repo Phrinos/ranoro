@@ -28,7 +28,6 @@ const getVehicleStats = ai.defineTool(
     servicesSnap.forEach(doc => {
       const data = doc.data();
       const identifier = data.vehicleIdentifier || 'Desconocido';
-      // Limpiamos el identificador para agrupar mejor (quitamos placas si es posible)
       const cleanName = identifier.split(' ').slice(0, 2).join(' '); 
       counts[cleanName] = (counts[cleanName] || 0) + 1;
     });
@@ -117,8 +116,6 @@ export const workshopChatFlow = ai.defineFlow(
     outputSchema: z.string(),
   },
   async (input) => {
-    // En Genkit 1.x, si ai.chat no está disponible en la instancia, 
-    // usamos ai.generate con la lista de mensajes (historial + nuevo mensaje)
     const response = await ai.generate({
       system: `Eres el Asistente Inteligente de Ranoro, un experto en gestión de talleres mecánicos. 
       Tienes acceso a los datos reales del taller mediante herramientas. 

@@ -51,16 +51,14 @@ export function FlotillaBalanceTab({ drivers, dailyCharges, payments, manualDebt
   const driverBalances = useMemo(() => {
     const activeDrivers = drivers.filter(d => !d.isArchived);
     
-    // Configuración del intervalo de fechas si no es "Histórico"
     let interval: { start: Date; end: Date } | null = null;
     if (selectedMonth !== 'all') {
         const [year, month] = selectedMonth.split('-').map(Number);
-        const startDate = startOfMonth(new Date(year, month - 1));
-        interval = { start: startDate, end: endOfMonth(startDate) };
+        const startDate = new Date(year, month - 1, 1);
+        interval = { start: startOfMonth(startDate), end: endOfMonth(startDate) };
     }
 
     const balances = activeDrivers.map(driver => {
-      // Filtrar cargos por mes
       const driverCharges = dailyCharges.filter(c => {
           if (c.driverId !== driver.id) return false;
           if (!interval) return true;
@@ -68,7 +66,6 @@ export function FlotillaBalanceTab({ drivers, dailyCharges, payments, manualDebt
           return d && isWithinInterval(d, interval);
       }).reduce((sum, c) => sum + c.amount, 0);
 
-      // Filtrar deudas manuales por mes
       const driverDebts = manualDebts.filter(d => {
           if (d.driverId !== driver.id) return false;
           if (!interval) return true;
@@ -76,7 +73,6 @@ export function FlotillaBalanceTab({ drivers, dailyCharges, payments, manualDebt
           return dt && isWithinInterval(dt, interval);
       }).reduce((sum, d) => sum + d.amount, 0);
 
-      // Filtrar pagos por mes
       const driverPayments = payments.filter(p => {
           if (p.driverId !== driver.id) return false;
           if (!interval) return true;
@@ -175,11 +171,11 @@ export function FlotillaBalanceTab({ drivers, dailyCharges, payments, manualDebt
                     <Table>
                         <TableHeader className="bg-black">
                             <TableRow className="hover:bg-transparent">
-                                <SortableTableHeader sortKey="name" label="Conductor" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction}`} textClassName="text-white" />
-                                <SortableTableHeader sortKey="totalCharges" label="Cargos" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction}`} className="justify-end" textClassName="text-white"/>
-                                <SortableTableHeader sortKey="totalPayments" label="Abonos" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction}`} className="justify-end" textClassName="text-white"/>
-                                <SortableTableHeader sortKey="balance" label="Balance Mes" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction}`} className="justify-end" textClassName="text-white"/>
-                                <SortableTableHeader sortKey="lastPaymentDate" label="Último Pago" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction}`} className="hidden md:table-cell justify-end" textClassName="text-white"/>
+                                <SortableTableHeader sortKey="name" label="Conductor" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction === 'ascending' ? 'asc' : 'desc'}`} textClassName="text-white" />
+                                <SortableTableHeader sortKey="totalCharges" label="Cargos" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction === 'ascending' ? 'asc' : 'desc'}`} className="justify-end" textClassName="text-white"/>
+                                <SortableTableHeader sortKey="totalPayments" label="Abonos" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction === 'ascending' ? 'asc' : 'desc'}`} className="justify-end" textClassName="text-white"/>
+                                <SortableTableHeader sortKey="balance" label="Balance Mes" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction === 'ascending' ? 'asc' : 'desc'}`} className="justify-end" textClassName="text-white"/>
+                                <SortableTableHeader sortKey="lastPaymentDate" label="Último Pago" onSort={requestSort} currentSort={`${sortConfig.key}_${sortConfig.direction === 'ascending' ? 'asc' : 'desc'}`} className="hidden md:table-cell justify-end" textClassName="text-white"/>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
