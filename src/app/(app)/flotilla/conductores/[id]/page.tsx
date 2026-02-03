@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/conductores/[id]/page.tsx
 "use client";
 
@@ -62,7 +63,11 @@ function DriverProfilePage() {
   const handleSaveDriver = async (data: DriverFormValues) => {
     if (!driver) return;
     try {
-        await personnelService.saveDriver(data, driver.id);
+        const payload: Partial<Driver> = {
+          ...data,
+          contractDate: data.contractDate ? data.contractDate.toISOString() : undefined,
+        };
+        await personnelService.saveDriver(payload, driver.id);
         toast({ title: 'Información actualizada' });
         setIsDriverDialogOpen(false);
     } catch (e) {

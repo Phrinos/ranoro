@@ -1,5 +1,4 @@
 
-// src/app/(app)/finanzas/cierre/components/cierre-efectivo-content.tsx
 "use client";
 
 import React, { useState } from 'react';
@@ -20,7 +19,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from "zod";
 
@@ -41,7 +40,7 @@ export default function CierreEfectivoContent({ transactions, summary }: CierreE
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
 
   const form = useForm<WithdrawalFormValues>({
-    resolver: zodResolver(withdrawalSchema),
+    resolver: zodResolver(withdrawalSchema) as Resolver<WithdrawalFormValues>,
     defaultValues: { description: "", amount: undefined },
   });
 
@@ -103,7 +102,7 @@ export default function CierreEfectivoContent({ transactions, summary }: CierreE
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent><div className={cn("text-2xl font-bold", summary.cashNet >= 0 ? 'text-foreground' : 'text-destructive')}>{formatCurrency(summary.cashNet)}</div></CardContent>
-            </Card>
+            </div>
           </div>
 
           <div className="overflow-x-auto rounded-md border">

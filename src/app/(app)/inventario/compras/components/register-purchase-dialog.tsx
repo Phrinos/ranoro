@@ -32,6 +32,8 @@ import type { CalendarProps } from "react-calendar";
 import { Separator } from "@/components/ui/separator";
 import { registerPurchaseSchema, type RegisterPurchaseFormValues } from "@/schemas/register-purchase-schema";
 
+export type { RegisterPurchaseFormValues };
+
 const purchaseItemSchema = z.object({
   inventoryItemId: z.string(),
   itemName: z.string(),
@@ -84,10 +86,6 @@ export function RegisterPurchaseDialog({
   const paymentMethod = watch("paymentMethod");
   const itemsWatch = useWatch({ control, name: "items" });
 
-  const [isItemSearchOpen, setIsItemSearchOpen] = useState(false);
-  const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
-  const [newItemSearchTerm, setNewItemSearchTerm] = useState("");
-
   useEffect(() => {
     const total = (itemsWatch ?? []).reduce((sum: number, i: any) => {
       const qty = Number(i?.quantity) || 0;
@@ -138,6 +136,10 @@ export function RegisterPurchaseDialog({
     setIsNewItemDialogOpen(false);
   };
 
+  const [isItemSearchOpen, setIsItemSearchOpen] = useState(false);
+  const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
+  const [newItemSearchTerm, setNewItemSearchTerm] = useState("");
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -159,7 +161,7 @@ export function RegisterPurchaseDialog({
                         name="supplierId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Proveedor</FormLabel>
+                            <FormLabel>Proveedor</Label>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="bg-white">
@@ -351,7 +353,7 @@ export function RegisterPurchaseDialog({
                                     >
                                       <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
                                       {field.value ? (
-                                        formatDate(field.value, "PPP", { locale: es })
+                                        formatDate(field.value as Date, "PPP", { locale: es })
                                       ) : (
                                         <span>Seleccione fecha</span>
                                       )}
@@ -362,7 +364,7 @@ export function RegisterPurchaseDialog({
                                   <Calendar
                                     mode="single"
                                     onSelect={(d: Date | undefined) => field.onChange(d)}
-                                    selected={field.value}
+                                    selected={field.value as Date}
                                   />
                                 </PopoverContent>
                               </Popover>

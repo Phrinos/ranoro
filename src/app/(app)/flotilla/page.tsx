@@ -60,7 +60,7 @@ function PageInner() {
   const vehicleOwners = React.useMemo(() => {
     const ownerSet = new Set<string>();
     vehicles
-      .filter(v => v.isFleetVehicle) // Filtra solo vehículos de la flotilla
+      .filter(v => v.isFleetVehicle) 
       .forEach(v => {
         if (v.ownerName) ownerSet.add(v.ownerName);
       });
@@ -115,7 +115,11 @@ function PageInner() {
   };
   
   const handleSaveDriver = async (data: DriverFormValues) => {
-    await personnelService.saveDriver(data, editingDriver?.id);
+    const payload: Partial<Driver> = {
+      ...data,
+      contractDate: data.contractDate ? data.contractDate.toISOString() : undefined,
+    };
+    await personnelService.saveDriver(payload, editingDriver?.id);
     toast({ title: `Conductor ${editingDriver ? 'actualizado' : 'creado'}.`});
     setIsDriverDialogOpen(false);
   }
@@ -188,7 +192,7 @@ function PageInner() {
         open={isPaymentDialogOpen}
         onOpenChange={setIsPaymentDialogOpen}
         drivers={drivers}
-        onSave={handleSaveTransaction}
+        onSave={async (data) => { await handleSaveTransaction(data); }}
         transactionType="payment"
       />
 

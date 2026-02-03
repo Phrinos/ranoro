@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotillareportes/components/detalles-flotilla-content.tsx
 "use client";
 
@@ -12,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Truck, User as UserIcon, Landmark, Info, Calendar, Tag, CreditCard, StickyNote } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Info, Calendar, Tag, CreditCard, StickyNote } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -20,7 +21,7 @@ import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 import type { RentalPayment, VehicleExpense, OwnerWithdrawal, CashDrawerTransaction } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { cashService } from '@/lib/services';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -63,13 +64,6 @@ const tipoOptions = [
   { value: 'Egreso', label: 'Egresos' },
 ];
 
-const metodoOptions = [
-  { value: 'all', label: 'Todos los Métodos' },
-  { value: 'Efectivo', label: 'Efectivo' },
-  { value: 'Tarjeta', label: 'Tarjeta' },
-  { value: 'Transferencia', label: 'Transferencia' },
-];
-
 export default function DetallesFlotillaContent({ payments, expenses, withdrawals, cashTransactions }: DetallesFlotillaProps) {
   const { toast } = useToast();
   const permissions = usePermissions();
@@ -80,7 +74,7 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
   const canManageFleetFinances = permissions.has('finances:manage_manual_entries') || permissions.has('fleet:manage');
 
   const form = useForm<TransactionFormValues>({
-    resolver: zodResolver(transactionSchema),
+    resolver: zodResolver(transactionSchema) as Resolver<TransactionFormValues>,
     defaultValues: { concept: "", amount: undefined },
   });
 
@@ -224,23 +218,23 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card className="border-green-200 bg-green-50/30">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium uppercase text-muted-foreground">Rentas Efectivo</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><Label className="text-xs font-medium uppercase text-muted-foreground">Rentas Efectivo</Label></CardHeader>
           <CardContent><div className="text-xl font-bold text-green-600">{formatCurrency(kpis.efectivoIngreso)}</div></CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium uppercase text-muted-foreground">Ingreso Flotilla</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><Label className="text-xs font-medium uppercase text-muted-foreground">Ingreso Flotilla</Label></CardHeader>
           <CardContent><div className="text-xl font-bold flex items-center gap-2"><ArrowUpRight className="h-4 w-4 text-green-500"/>{formatCurrency(kpis.ingresoTotal)}</div></CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium uppercase text-muted-foreground">Gastos Flotilla</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><Label className="text-xs font-medium uppercase text-muted-foreground">Gastos Flotilla</Label></CardHeader>
           <CardContent><div className="text-xl font-bold flex items-center gap-2"><ArrowDownRight className="h-4 w-4 text-red-500"/>{formatCurrency(kpis.egresoTotal)}</div></CardContent>
         </Card>
         <Card className="bg-primary/5 border-primary/20">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium uppercase text-muted-foreground">Utilidad Flotilla</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><Label className="text-xs font-medium uppercase text-muted-foreground">Utilidad Flotilla</Label></CardHeader>
           <CardContent><div className={cn("text-xl font-bold", kpis.balanceNeto >= 0 ? "text-primary" : "text-destructive")}>{formatCurrency(kpis.balanceNeto)}</div></CardContent>
         </Card>
         <Card className="bg-blue-50 border-blue-200">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium uppercase text-muted-foreground">Efectivo Periodo</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><Label className="text-xs font-medium uppercase text-muted-foreground">Efectivo Periodo</Label></CardHeader>
           <CardContent><div className={cn("text-xl font-bold flex items-center gap-2", kpis.efectivoDelPeriodo >= 0 ? "text-blue-700" : "text-destructive")}><Wallet className="h-4 w-4"/>{formatCurrency(kpis.efectivoDelPeriodo)}</div></CardContent>
         </Card>
       </div>
@@ -286,14 +280,6 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
                 >
                   <SelectTrigger className="w-full md:w-[150px] bg-card h-10"><SelectValue placeholder="Tipo" /></SelectTrigger>
                   <SelectContent>{tipoOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
-                </Select>
-
-                <Select 
-                  value={tableManager.otherFilters["method"] || "all"} 
-                  onValueChange={(val) => tableManager.setOtherFilters(prev => ({ ...prev, method: val }))}
-                >
-                  <SelectTrigger className="w-full md:w-[180px] bg-card h-10"><SelectValue placeholder="Método Pago" /></SelectTrigger>
-                  <SelectContent>{metodoOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
@@ -354,7 +340,7 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
                 control={form.control}
                 name="concept"
                 render={({ field }) => (
-                  <FormItem><FormLabel>Concepto</FormLabel><FormControl><Textarea placeholder="Motivo del movimiento..." {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><Label>Concepto</Label><FormControl><Textarea placeholder="Motivo del movimiento..." {...field} /></FormControl><FormMessage /></FormItem>
                 )}
               />
               <FormField
@@ -362,7 +348,7 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Monto</FormLabel>
+                    <Label>Monto</Label>
                     <FormControl>
                       <div className="relative">
                         <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

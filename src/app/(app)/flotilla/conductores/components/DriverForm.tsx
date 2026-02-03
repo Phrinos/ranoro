@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/conductores/components/DriverForm.tsx
 "use client";
 
@@ -16,6 +17,8 @@ import { CalendarIcon } from "lucide-react";
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar } from "@/components/ui/calendar";
+
+export type { DriverFormValues };
 
 interface DriverFormProps {
   id: string;

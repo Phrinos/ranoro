@@ -165,7 +165,7 @@ export default function CajaContent() {
   };
 
   const form = useForm<CashTransactionFormValues>({
-    resolver: zodResolver(cashTransactionSchema),
+    resolver: zodResolver(cashTransactionSchema) as Resolver<CashTransactionFormValues>,
     defaultValues: { description: "", amount: undefined },
   });
 

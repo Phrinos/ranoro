@@ -88,7 +88,7 @@ const addRentalPayment = async (
     const authUserString = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
     const currentUser = authUserString ? JSON.parse(authUserString) : null;
     
-    const rawPaymentData: Omit<RentalPayment, "id"> = {
+    const rawPaymentData = {
         driverId: String(driver.id),
         driverName: driver.name,
         vehicleLicensePlate: vehicle.licensePlate,
@@ -126,8 +126,7 @@ const addRentalPayment = async (
         });
     }
     
-    const result: RentalPayment = { id: savedPaymentId, ...rawPaymentData };
-    return result;
+    return { id: savedPaymentId, ...rawPaymentData } as RentalPayment;
 };
 
 

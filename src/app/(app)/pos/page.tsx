@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/page.tsx
 
 "use client";
@@ -38,7 +39,7 @@ const PaymentDetailsDialog = lazy(() =>
     default: module.PaymentDetailsDialog,
   }))
 );
-const ViewSaleDialog = lazy(() => import("./components/view-sale-dialog"));
+const ViewSaleDialog = lazy(() => import("./components/view-sale-dialog").then(m => ({ default: m.ViewSaleDialog })));
 
 function PageInner() {
   const router = useRouter();

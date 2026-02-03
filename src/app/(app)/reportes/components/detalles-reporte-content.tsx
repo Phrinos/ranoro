@@ -1,3 +1,4 @@
+
 // src/app/(app)/reportes/components/detalles-reporte-content.tsx
 "use client";
 
@@ -11,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote, Download, Filter } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote, Download, Filter, Landmark } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -19,7 +20,7 @@ import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 import type { ServiceRecord, SaleReceipt, CashDrawerTransaction, User, PaymentMethod } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { cashService, serviceService, saleService } from '@/lib/services';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
@@ -34,13 +35,12 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { exportToCsv } from '@/lib/services/export.service';
 import { Checkbox } from "@/components/ui/checkbox";
 import { usePermissions } from '@/hooks/usePermissions';
-import { Landmark } from 'lucide-react';
 
 const transactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a 0."),
-  date: z.date({ required_error: "La fecha es obligatoria." }),
-  paymentMethod: z.enum(["Efectivo", "Tarjeta", "Transferencia", "Transferencia/Contadora"], { required_error: "El método de pago es obligatorio." }),
+  date: z.date({ invalid_type_error: "La fecha es obligatoria." }),
+  paymentMethod: z.enum(["Efectivo", "Tarjeta", "Transferencia", "Transferencia/Contadora"] as const),
 });
 
 type TransactionFormValues = z.infer<typeof transactionSchema>;
@@ -79,7 +79,7 @@ const metodoOptions = [
   { value: 'Tarjeta', label: 'Tarjeta' },
   { value: 'Transferencia', label: 'Transferencia' },
   { value: 'Transferencia/Contadora', label: 'Transferencia/Contadora' },
-];
+] as const;
 
 const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   "Efectivo": Wallet,
@@ -102,7 +102,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
   const canDeleteEntries = permissions.has('finances:delete_entries') || permissions.has('workshop:manage');
 
   const form = useForm<TransactionFormValues>({
-    resolver: zodResolver(transactionSchema),
+    resolver: zodResolver(transactionSchema) as Resolver<TransactionFormValues>,
     defaultValues: { 
       concept: "", 
       amount: undefined, 
@@ -570,7 +570,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
             <form onSubmit={form.handleSubmit(handleTransactionSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="date"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
@@ -586,7 +586,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                               )}
                             >
                               {field.value ? (
-                                format(field.value, "PPP", { locale: es })
+                                format(field.value as Date, "PPP", { locale: es })
                               ) : (
                                 <span>Seleccionar fecha</span>
                               )}
@@ -600,7 +600,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                               field.onChange(date);
                               setIsCalendarOpen(false);
                             }}
-                            value={field.value}
+                            value={field.value as Date}
                           />
                         </PopoverContent>
                       </Popover>
@@ -610,7 +610,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                 />
 
                 <FormField
-                  control={form.control}
+                  control={form.control as any}
                   name="paymentMethod"
                   render={({ field }) => (
                     <FormItem>
@@ -635,7 +635,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
               </div>
 
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="concept"
                 render={({ field }) => (
                   <FormItem>
@@ -646,7 +646,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                 )}
               />
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="amount"
                 render={({ field }) => (
                   <FormItem>

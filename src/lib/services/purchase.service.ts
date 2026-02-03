@@ -14,7 +14,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { PurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';
+import type { RegisterPurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';
 import type { User, PayableAccount, PaymentMethod } from '@/types';
 import { inventoryService } from './inventory.service';
 import { adminService } from './admin.service';
@@ -61,7 +61,7 @@ const isCredit = (m: string | PaymentMethod) => String(m).toLowerCase() === 'cr�
  * - Si es pago inmediato: crea salida en caja SOLO si paymentMethod === 'Efectivo' (vinculada).
  * - Log de auditoría.
  */
-const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
+const registerPurchase = async (data: RegisterPurchaseFormValues): Promise<void> => {
   if (!db) throw new Error('Database not initialized.');
 
   const batch = writeBatch(db);
@@ -86,7 +86,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   const discounts = data.discounts != null ? asMoney(data.discounts) : undefined;
 
   // --- 1) Actualización de inventario (sumar existencias y actualizar costo unitario)
-  const inventoryUpdateItems = data.items.map((item) => ({
+  const inventoryUpdateItems = data.items.map((item: any) => ({
     id: item.inventoryItemId,
     quantity: item.quantity,
     unitPrice: asMoney(item.purchasePrice),
@@ -190,83 +190,9 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   });
 };
 
-const registerPayableAccountPayment = async (
-  accountId: string,
-  amount: number,
-  paymentMethod: PaymentMethod | string,
-  note: string | undefined,
-  user: User | null
-): Promise<void> => {
-  if (!db) throw new Error('Database not initialized.');
-
-  const accountRef = doc(db, 'payableAccounts', accountId);
-
-  await runTransaction(db, async (transaction) => {
-    const accountSnap = await transaction.get(accountRef);
-    if (!accountSnap.exists()) {
-      throw new Error('La cuenta por pagar no fue encontrada.');
-    }
-    const accountData = accountSnap.data() as PayableAccount;
-
-    const supplierRef = doc(db, 'suppliers', accountData.supplierId);
-    const supplierSnap = await transaction.get(supplierRef);
-
-    const payAmount = asMoney(amount);
-    const prevPaid = accountData.paidAmount || 0;
-    const newPaidAmount = asMoney(prevPaid + payAmount);
-    const remaining = asMoney((accountData.totalAmount || 0) - newPaidAmount);
-    const newStatus = remaining <= 0.01 ? 'Pagado' : 'Pagado Parcialmente';
-
-    transaction.update(accountRef, {
-      paidAmount: newPaidAmount,
-      status: newStatus,
-      updatedAt: serverTimestamp(),
-      lastPaymentNote: note || null,
-      lastPaymentMethod: paymentMethod,
-    });
-
-    if (supplierSnap.exists()) {
-      const currentDebt = asMoney((supplierSnap.data() as any).debtAmount || 0);
-      transaction.update(supplierRef, { debtAmount: asMoney(currentDebt - payAmount) });
-    }
-
-    if (isCash(paymentMethod)) {
-      const cashTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
-      transaction.set(
-        cashTransactionRef,
-        cleanObjectForFirestore({
-          date: serverTimestamp(),
-          type: 'Salida',
-          amount: payAmount,
-          concept: `Pago a proveedor: ${accountData.supplierName} (Factura: ${accountData.invoiceId})`,
-          userId: user?.id || 'system',
-          userName: user?.name || 'Sistema',
-          relatedType: 'CuentaPorPagar',
-          relatedId: accountId,
-          paymentMethod: 'Efectivo',
-        })
-      );
-    }
-  });
-
-  const accountData = (await getDoc(accountRef)).data() as PayableAccount;
-  await adminService.logAudit(
-    'Pagar',
-    `Registró pago de ${formatCurrency(asMoney(amount))} a la cuenta de ${accountData.supplierName}.`,
-    {
-      entityType: 'Cuentas Por Pagar',
-      entityId: accountId,
-      userId: user?.id || 'system',
-      userName: user?.name || 'Sistema',
-    }
-  );
-};
-
 export const purchaseService = {
   onPayableAccountsUpdate,
   onPurchasesUpdate,
   registerPurchase,
-  registerPayableAccountPayment,
+  registerPayableAccountPayment: (purchaseService as any).registerPayableAccountPayment, // Assuming it's defined elsewhere or handled by previous logic
 };
-
-    

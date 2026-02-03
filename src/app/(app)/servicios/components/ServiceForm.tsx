@@ -1,13 +1,15 @@
+
 // src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
 import React from 'react';
-import { useFormContext, type FieldErrors, type SubmitErrorHandler } from 'react-hook-form';
+import { useFormContext, type FieldErrors } from 'react-hook-form';
 import { FormField, FormItem } from '@/components/ui/form';
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Button } from '@/components/ui/button';
-import { BrainCircuit, Loader2, Signature } from 'lucide-react';
+import { BrainCircuit, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import type {
   ServiceRecord,
@@ -104,7 +106,7 @@ export function ServiceForm({
   serviceHistory: ServiceRecord[];
   onSave: (values: ServiceFormValues) => Promise<ServiceRecord | void>;
   onComplete?: () => void; 
-  onSaveSuccess?: (s: ServiceRecord) => void;
+  onSaveSuccess?: (service: ServiceRecord) => void;
   onValidationErrors: (errors: FieldErrors<ServiceFormValues>) => void;
   onVehicleCreated?: (data: VehicleFormValues) => Promise<Vehicle>;
   onCancel: () => void;
@@ -115,7 +117,7 @@ export function ServiceForm({
   setIsChecklistWizardOpen: (v: boolean) => void;
   onOpenNewVehicleDialog: (vehicle?: Partial<Vehicle> | null) => void;
   isNewRecord: boolean;
-  isReadOnly?: boolean; // Prop para controlar el modo solo lectura
+  isReadOnly?: boolean; 
 }) {
   const { toast } = useToast();
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = React.useState(false);

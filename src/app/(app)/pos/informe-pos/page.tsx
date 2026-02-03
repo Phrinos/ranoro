@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/informe-pos/page.tsx
 "use client";
 
@@ -7,7 +8,7 @@ import type { SaleReceipt, InventoryItem, ServiceRecord } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
 import { inventoryService, saleService, serviceService, cashService } from '@/lib/services';
-import { InformePosContent } from '../components/informe-pos-content';
+import InformePosContent from '../components/informe-pos-content';
 
 function PageInner() {
   const { toast } = useToast();

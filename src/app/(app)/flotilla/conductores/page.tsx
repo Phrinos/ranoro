@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/conductores/page.tsx
 "use client";
 
@@ -31,7 +32,11 @@ export default function ConductoresPage() {
   };
   
   const handleSaveDriver = async (data: DriverFormValues) => {
-    await personnelService.saveDriver(data, editingDriver?.id);
+    const payload: Partial<Driver> = {
+      ...data,
+      contractDate: data.contractDate ? data.contractDate.toISOString() : undefined,
+    };
+    await personnelService.saveDriver(payload, editingDriver?.id);
     toast({ title: `Conductor ${editingDriver ? 'actualizado' : 'creado'}.`});
     setIsDriverDialogOpen(false);
   }
