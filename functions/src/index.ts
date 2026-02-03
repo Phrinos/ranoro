@@ -1,33 +1,35 @@
-
+// functions/src/index.ts
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import * as admin from 'firebase-admin';
 import * as logger from 'firebase-functions/logger';
+import * as admin from 'firebase-admin';
 import { startOfDay, endOfDay } from 'date-fns';
 import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 
-admin.initializeApp();
+// Asegurar inicialización de admin
+if (!admin.apps.length) {
+  admin.initializeApp();
+}
 
 const db = admin.firestore();
 const TZ = 'America/Mexico_City';
 
-// --- Daily Rental Charges Generation (fixed) ---
+// --- Daily Rental Charges Generation ---
 export const generateDailyRentalCharges = onSchedule(
   {
-    schedule: '0 8 * * *', // 08:00 every day (Mexico City Time)
+    schedule: '0 8 * * *', // 08:00 todos los días (Hora CDMX)
     timeZone: TZ,
   },
   async () => {
-    logger.info('Starting daily rental charge generation...');
+    logger.info('Iniciando generación automática de cargos diarios...');
     
+    // Obtener la fecha actual en la zona horaria de México
     const nowInMexico = toZonedTime(new Date(), TZ);
+    const dateKey = formatInTimeZone(nowInMexico, TZ, 'yyyy-MM-dd');
     
     const startOfTodayInMexico = startOfDay(nowInMexico);
     const endOfTodayInMexico = endOfDay(nowInMexico);
-
-    const startOfTodayUtc = toZonedTime(startOfTodayInMexico, TZ);
-    const endOfTodayUtc = toZonedTime(endOfTodayInMexico, TZ);
     
-    const dateKey = formatInTimeZone(nowInMexico, TZ, 'yyyy-MM-dd');
+    logger.info(`Generando cargos para la fecha: ${dateKey}`);
 
     const activeDriversSnap = await db
       .collection('drivers')
@@ -36,7 +38,7 @@ export const generateDailyRentalCharges = onSchedule(
       .get();
 
     if (activeDriversSnap.empty) {
-      logger.info('No active drivers with assigned vehicles found.');
+      logger.info('No se encontraron conductores activos con vehículos asignados.');
       return;
     }
 
@@ -51,7 +53,7 @@ export const generateDailyRentalCharges = onSchedule(
       const dailyRentalCost = vehicle?.dailyRentalCost;
       if (!vehicleDoc.exists || !dailyRentalCost) {
         logger.warn(
-          `Vehicle ${vehicleId} for driver ${driver.name} not found or has no daily rental cost.`
+          `Vehículo ${vehicleId} para el conductor ${driver.name} no encontrado o no tiene costo de renta diario.`
         );
         return;
       }
@@ -65,22 +67,23 @@ export const generateDailyRentalCharges = onSchedule(
           vehicleId,
           amount: dailyRentalCost,
           vehicleLicensePlate: vehicle?.licensePlate || '',
-          date: admin.firestore.Timestamp.fromDate(startOfTodayUtc),
+          date: admin.firestore.FieldValue.serverTimestamp(),
           dateKey,
-          dayStartUtc: admin.firestore.Timestamp.fromDate(startOfTodayUtc),
-          dayEndUtc: admin.firestore.Timestamp.fromDate(endOfTodayUtc),
+          dayStartUtc: admin.firestore.Timestamp.fromDate(startOfTodayInMexico),
+          dayEndUtc: admin.firestore.Timestamp.fromDate(endOfTodayInMexico),
+          note: `Cargo automático de renta diaria - ${dateKey}`
         });
-        logger.info(`Created daily charge for ${driver.name} (${dateKey}).`);
+        logger.info(`Cargo creado para ${driver.name} (${dateKey}).`);
       } catch (err: any) {
         if (err?.code === 6 || err?.code === 'ALREADY_EXISTS') {
-          logger.info(`Charge already exists for ${driver.name} (${dateKey}).`);
+          logger.info(`El cargo ya existe para ${driver.name} (${dateKey}). Omitiendo.`);
         } else {
-          logger.error(`Failed to create charge for ${driver.name}:`, err);
+          logger.error(`Error al crear cargo para ${driver.name}:`, err);
         }
       }
     });
 
     await Promise.all(ops);
-    logger.info('Daily rental charge generation finished successfully.');
+    logger.info('Proceso de cargos diarios finalizado.');
   }
 );
