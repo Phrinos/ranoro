@@ -177,19 +177,24 @@ function MovimientosTabContent({
           });
       });
 
-    // 3) ASIENTOS de CAJA (ledger) – Solo manuales para evitar duplicados
+    // 3) ASIENTOS de CAJA (ledger)
+    // Filtramos 'Servicio' y 'Venta' porque ya se procesan arriba con más detalle
     const ledgerMovs: Movement[] = (cashTransactions || [])
-      .filter(t => (t as any).relatedType === 'Manual')
-      .map((t) => ({
-        id: t.id,
-        origin: "ledger",
-        date: parseDate((t as any).date || (t as any).createdAt) || null,
-        folio: t.id,
-        type: (t.type === "Entrada" || t.type === "in") ? "Entrada" : "Salida",
-        client: (t as any).userName || (t as any).user || "Sistema",
-        total: Math.abs(Number(t.amount) || 0),
-        description: (t as any).description || (t as any).concept || "",
-    }));
+      .filter(t => t.relatedType !== 'Servicio' && t.relatedType !== 'Venta')
+      .map((t) => {
+        const isIncome = t.type === "Entrada" || t.type === "in";
+        return {
+          id: t.id,
+          origin: "ledger",
+          date: parseDate((t as any).date || (t as any).createdAt) || null,
+          folio: t.id,
+          type: isIncome ? "Entrada" : "Salida",
+          client: (t as any).userName || (t as any).user || "Sistema",
+          total: Math.abs(Number(t.amount) || 0),
+          description: (t as any).description || (t as any).concept || "",
+          method: t.paymentMethod,
+        };
+      });
 
     return [...salePaymentMovs, ...servicePaymentMovs, ...ledgerMovs];
   }, [allSales, allServices, cashTransactions]);
@@ -208,30 +213,31 @@ function MovimientosTabContent({
     }
   }, [dateRange, onDateRangeChangeCallback]);
 
-  // ---- KPI: Ingresos = pagos positivos (todos métodos); Egresos = Salidas de caja (ledger) ----
+  // ---- KPI: Ingresos = pagos positivos (todos métodos) + entradas manuales; Egresos = Salidas de caja (ledger) ----
   const summary = useMemo(() => {
     const rows = fullFilteredData;
+    
+    // Total de ingresos (Ventas, Servicios y Entradas manuales)
     const ingresos = rows
-      .filter((m) => m.origin === "payment" && !m.isRefund)
+      .filter((m) => (m.type === "Servicio" || m.type === "Venta" || m.type === "Entrada") && !m.isRefund)
       .reduce((sum, m) => sum + (m.total || 0), 0);
 
+    // Solo efectivo (para saber cuánto hay en caja física)
     const ingresosEfectivo = rows
-      .filter((m) => m.origin === "payment" && !m.isRefund && m.method === 'Efectivo')
+      .filter((m) => (m.type === "Servicio" || m.type === "Venta" || m.type === "Entrada") && !m.isRefund && m.method === 'Efectivo')
       .reduce((sum, m) => sum + (m.total || 0), 0);
       
-    const egresosCaja = rows
-      .filter((m) => {
-        const typeStr = String(m.type);
-        return m.origin === "ledger" && (typeStr === "Salida" || typeStr === "out");
-      })
+    // Egresos (Salidas del ledger: compras, gastos, retiros)
+    const egresos = rows
+      .filter((m) => m.type === "Salida")
       .reduce((sum, m) => sum + (m.total || 0), 0);
 
-    const neto = ingresos - egresosCaja;
+    const neto = ingresos - egresos;
     return {
       totalMovements: rows.length,
       totalIncome: ingresos,
       cashIncome: ingresosEfectivo,
-      totalOutcome: egresosCaja,
+      totalOutcome: egresos,
       netBalance: neto,
     };
   }, [fullFilteredData]);
@@ -241,7 +247,6 @@ function MovimientosTabContent({
       if (m.type === "Servicio") window.open(`/servicios/${m.folio}`, "_blank");
       if (m.type === "Venta") window.open(`/pos?saleId=${m.folio}`, "_blank");
     }
-    // ledger no navega
   };
 
   const handleSort = (key: string) => {
@@ -271,7 +276,7 @@ function MovimientosTabContent({
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-600">Ingresos (todos los métodos)</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-600">Ingresos Totales</CardTitle>
             <ArrowRight className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -280,7 +285,7 @@ function MovimientosTabContent({
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-red-600">Egresos de Caja</CardTitle>
+            <CardTitle className="text-sm font-medium text-red-600">Egresos del Periodo</CardTitle>
             <ArrowLeft className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
@@ -289,7 +294,7 @@ function MovimientosTabContent({
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Saldo del Periodo</CardTitle>
+            <CardTitle className="text-sm font-medium">Balance del Periodo</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -353,18 +358,12 @@ function MovimientosTabContent({
                         ? "secondary"
                         : m.type === "Servicio"
                         ? "outline"
-                        : (String(m.type) === "Entrada" || String(m.type) === "in")
+                        : m.type === "Entrada"
                         ? "success"
                         : "destructive";
 
-                    const amountClass =
-                      m.origin === "ledger"
-                        ? (String(m.type) === "Entrada" || String(m.type) === "in")
-                          ? "text-green-600"
-                          : "text-red-600"
-                        : m.isRefund
-                        ? "text-red-600"
-                        : "text-green-600";
+                    const isIncome = m.type === "Venta" || m.type === "Servicio" || m.type === "Entrada";
+                    const amountClass = isIncome && !m.isRefund ? "text-green-600" : "text-red-600";
 
                     return (
                       <TableRow
@@ -386,8 +385,8 @@ function MovimientosTabContent({
                           <Badge variant={badgeVariant}>
                             {m.type === "Venta" && <ShoppingCart className="h-3 w-3 mr-1" />}
                             {m.type === "Servicio" && <Wrench className="h-3 w-3 mr-1" />}
-                            {(String(m.type) === "Entrada" || String(m.type) === "in") && <ArrowRight className="h-3 w-3 mr-1" />}
-                            {(String(m.type) === "Salida" || String(m.type) === "out") && <ArrowLeft className="h-3 w-3 mr-1" />}
+                            {m.type === "Entrada" && <ArrowRight className="h-3 w-3 mr-1" />}
+                            {m.type === "Salida" && <ArrowLeft className="h-3 w-3 mr-1" />}
                             {m.type}
                           </Badge>
                         </TableCell>
