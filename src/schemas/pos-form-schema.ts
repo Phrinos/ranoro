@@ -40,10 +40,11 @@ export const posFormSchema = z.object({
     }
 
     data.payments.forEach((payment, index) => {
-        if ((payment.method === 'Tarjeta' || payment.method === 'Tarjeta MSI') && (!payment.folio || payment.folio.trim() === '')) {
+        const needsFolio = ['Tarjeta', 'Tarjeta MSI', 'Transferencia', 'Transferencia/Contadora'].includes(payment.method);
+        if (needsFolio && (!payment.folio || payment.folio.trim() === '')) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: 'El folio es obligatorio para pagos con tarjeta.',
+                message: 'El folio/referencia es obligatorio para este método de pago.',
                 path: [`payments.${index}.folio`],
             });
         }

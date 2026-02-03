@@ -1,4 +1,3 @@
-
 // src/components/shared/PaymentSection.tsx
 "use client";
 
@@ -40,7 +39,6 @@ const toNumber = (v: unknown): number => {
   const s = String(v).trim();
   if (s === '') return 0;
   
-  // No permitir múltiples puntos decimales o caracteres no válidos
   const n = parseFloat(s);
   return Number.isFinite(n) ? n : 0;
 };
@@ -94,12 +92,13 @@ export function PaymentSection({
                     <div className="space-y-4 mt-2">
                     {fields.map((field, index) => {
                         const selectedMethod = watchedPayments?.[index]?.method;
-                        const showFolio =
+                        const needsFolio =
                         selectedMethod === "Tarjeta" ||
                         selectedMethod === "Tarjeta MSI" ||
                         selectedMethod === "Transferencia" ||
                         selectedMethod === "Transferencia/Contadora";
-                        const folioLabel = (selectedMethod === "Transferencia" || selectedMethod === "Transferencia/Contadora") ? "Folio de Transferencia" : "Folio de Voucher";
+                        
+                        const folioLabel = (selectedMethod === "Transferencia" || selectedMethod === "Transferencia/Contadora") ? "Folio de Transferencia" : "Folio de Voucher / Terminal";
                         const isFolioValidated = validatedFolios[index];
 
                         return (
@@ -171,7 +170,7 @@ export function PaymentSection({
                             )}
                             </div>
 
-                            {showFolio && onOpenValidateDialog && (
+                            {needsFolio && (
                             <div className="flex items-end gap-2 mt-2">
                                 <FormField
                                 control={control}
@@ -209,8 +208,7 @@ export function PaymentSection({
                             </div>
                             )}
 
-                            <FormMessage className="text-red-500">
-                            </FormMessage>
+                            <FormMessage className="text-red-500" />
                         </div>
                         );
                     })}

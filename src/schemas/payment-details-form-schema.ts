@@ -7,8 +7,13 @@ const singlePaymentSchema = z.object({
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a cero.").optional(),
   folio: z.string().optional(),
 }).superRefine((data, ctx) => {
-  if ((data.method === 'Tarjeta' || data.method === 'Tarjeta MSI') && (!data.folio || data.folio.trim() === '')) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'El folio es obligatorio para pagos con tarjeta.', path: ['folio'] });
+  const needsFolio = ['Tarjeta', 'Tarjeta MSI', 'Transferencia', 'Transferencia/Contadora'].includes(data.method);
+  if (needsFolio && (!data.folio || data.folio.trim() === '')) {
+    ctx.addIssue({ 
+      code: z.ZodIssueCode.custom, 
+      message: 'El folio es obligatorio para pagos con tarjeta o transferencia.', 
+      path: ['folio'] 
+    });
   }
 });
 
