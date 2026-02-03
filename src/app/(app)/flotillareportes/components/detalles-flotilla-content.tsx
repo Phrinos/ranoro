@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Truck, User as UserIcon, Landmark } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Truck, User as UserIcon, Landmark, Info, Calendar, Tag, CreditCard, StickyNote } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -26,6 +26,7 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 
 const transactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
@@ -50,6 +51,8 @@ type FlotillaReportRow = {
   method: string;
   amount: number;
   clientUser: string;
+  note?: string;
+  registeredBy?: string;
 };
 
 const tipoOptions = [
@@ -69,6 +72,7 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'Ingreso' | 'Egreso'>('Ingreso');
+  const [selectedMovement, setSelectedMovement] = useState<FlotillaReportRow | null>(null);
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
@@ -90,6 +94,8 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
         method: p.paymentMethod || 'Efectivo',
         amount: p.amount,
         clientUser: p.driverName || 'Conductor',
+        note: p.note,
+        registeredBy: p.registeredByName || 'Sistema',
       });
     });
 
@@ -102,9 +108,11 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
         type: 'Egreso',
         source: 'Gasto Vehículo',
         concept: `${e.description} - ${e.vehicleLicensePlate || 'Vehículo'}`,
-        method: 'Efectivo', // Los gastos suelen salir de caja
+        method: 'Efectivo',
         amount: e.amount,
         clientUser: e.vehicleLicensePlate || 'Vehículo',
+        note: e.description,
+        registeredBy: 'Sistema',
       });
     });
 
@@ -120,12 +128,13 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
         method: 'Efectivo',
         amount: w.amount,
         clientUser: w.ownerName,
+        note: w.note,
+        registeredBy: 'Sistema',
       });
     });
 
     // 4. Movimientos Manuales de Caja etiquetados como Flotilla
     cashTransactions.forEach(t => {
-      // Evitar duplicar lo que ya viene de las colecciones específicas
       if (t.relatedType === 'RetiroSocio' || t.relatedType === 'GastoVehiculo' || t.relatedType === 'Flotilla') return;
       if (t.concept?.toLowerCase().includes('flotilla') || t.description?.toLowerCase().includes('flotilla')) {
         const d = parseDate(t.date);
@@ -139,6 +148,8 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
           method: t.paymentMethod || 'Efectivo',
           amount: Math.abs(t.amount),
           clientUser: t.userName || 'Sistema',
+          note: t.note || t.description,
+          registeredBy: t.userName || 'Sistema',
         });
       }
     });
@@ -299,7 +310,11 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
               <TableBody>
                 {fullFilteredData.length > 0 ? (
                   fullFilteredData.map(r => (
-                    <TableRow key={r.id}>
+                    <TableRow 
+                      key={r.id} 
+                      className="cursor-pointer hover:bg-muted/50" 
+                      onClick={() => setSelectedMovement(r)}
+                    >
                       <TableCell className="text-xs">{r.date ? format(r.date, 'dd/MM/yy HH:mm', { locale: es }) : '—'}</TableCell>
                       <TableCell><Badge variant={r.type === 'Ingreso' ? 'success' : 'destructive'}>{r.type}</Badge></TableCell>
                       <TableCell><Badge variant="outline" className="font-normal">{r.source}</Badge></TableCell>
@@ -320,6 +335,7 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
         </CardContent>
       </Card>
 
+      {/* Modal de Registro Manual */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader><DialogTitle>Registrar {dialogType} de Flotilla</DialogTitle><DialogDescription>Añade un movimiento directo a la caja de la flotilla.</DialogDescription></DialogHeader>
@@ -351,6 +367,80 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
               <DialogFooter><Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button><Button type="submit">Registrar {dialogType}</Button></DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Detalles del Movimiento */}
+      <Dialog open={!!selectedMovement} onOpenChange={(open) => !open && setSelectedMovement(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              Detalle del Movimiento
+            </DialogTitle>
+            <DialogDescription>Información completa registrada en el sistema.</DialogDescription>
+          </DialogHeader>
+          
+          {selectedMovement && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1"><Calendar className="h-3 w-3"/> Fecha y Hora</Label>
+                  <p className="text-sm font-medium">{selectedMovement.date ? format(selectedMovement.date, "dd 'de' MMMM, yyyy HH:mm", { locale: es }) : 'N/A'}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1"><Tag className="h-3 w-3"/> Origen</Label>
+                  <p className="text-sm font-medium">{selectedMovement.source}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Concepto</Label>
+                <p className="text-sm font-semibold">{selectedMovement.concept}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1"><CreditCard className="h-3 w-3"/> Método de Pago</Label>
+                  <p className="text-sm font-medium">{selectedMovement.method}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1"><DollarSign className="h-3 w-3"/> Monto</Label>
+                  <p className={cn("text-lg font-bold", selectedMovement.type === 'Ingreso' ? "text-green-600" : "text-red-600")}>
+                    {selectedMovement.type === 'Ingreso' ? '+' : '-'} {formatCurrency(selectedMovement.amount)}
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Cliente / Unidad</Label>
+                  <p className="text-sm font-medium">{selectedMovement.clientUser}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Registrado por</Label>
+                  <p className="text-sm font-medium">{selectedMovement.registeredBy}</p>
+                </div>
+              </div>
+
+              {selectedMovement.note && (
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1"><StickyNote className="h-3 w-3"/> Notas Adicionales</Label>
+                  <div className="p-2 bg-muted rounded-md text-sm italic">
+                    {selectedMovement.note}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedMovement(null)}>Cerrar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
