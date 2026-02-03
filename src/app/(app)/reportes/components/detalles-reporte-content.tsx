@@ -7,9 +7,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatCurrency, cn } from "@/lib/utils";
-import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, ChevronLeft, ChevronRight, PlusCircle, DollarSign } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, ChevronLeft, ChevronRight, PlusCircle, DollarSign, CalendarDays } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -175,6 +175,16 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
     tableManager.onSortOptionChange(`${key}_${isAsc ? 'desc' : 'asc'}`);
   };
 
+  const setThisMonth = () => {
+    const now = new Date();
+    tableManager.onDateRangeChange({ from: startOfMonth(now), to: endOfMonth(now) });
+  };
+
+  const setLastMonth = () => {
+    const last = subMonths(new Date(), 1);
+    tableManager.onDateRangeChange({ from: startOfMonth(last), to: endOfMonth(last) });
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -202,23 +212,38 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
 
       <Card>
         <CardContent className="p-4 space-y-4">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative w-full md:max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por concepto, cliente..."
-                value={tableManager.searchTerm}
-                onChange={(e) => tableManager.onSearchTermChange(e.target.value)}
-                className="pl-8 bg-background"
-              />
+          <div className="flex flex-col gap-4">
+            {/* Fila 1: Buscador y Acciones de Registro */}
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+              <div className="relative w-full md:flex-grow">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por concepto, cliente, origen o método..."
+                  value={tableManager.searchTerm}
+                  onChange={(e) => tableManager.onSearchTermChange(e.target.value)}
+                  className="pl-8 bg-background"
+                />
+              </div>
+              <div className="flex gap-2 w-full md:w-auto shrink-0">
+                <Button onClick={() => { setDialogType('Ingreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="flex-1 md:flex-none text-green-600 border-green-600 hover:bg-green-50 bg-card">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Registrar Ingreso
+                </Button>
+                <Button onClick={() => { setDialogType('Egreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="flex-1 md:flex-none text-red-600 border-red-600 hover:bg-red-50 bg-card">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Registrar Egreso
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2 flex-wrap justify-end">
-              <Button onClick={() => { setDialogType('Ingreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="text-green-600 border-green-600 hover:bg-green-50 bg-card">
-                <PlusCircle className="mr-2 h-4 w-4" /> Registrar Ingreso
-              </Button>
-              <Button onClick={() => { setDialogType('Egreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="text-red-600 border-red-600 hover:bg-red-50 bg-card">
-                <PlusCircle className="mr-2 h-4 w-4" /> Registrar Egreso
-              </Button>
+
+            {/* Fila 2: Filtros de Fecha */}
+            <div className="flex flex-col sm:flex-row gap-2 items-center justify-end border-t pt-4">
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button variant="outline" size="sm" onClick={setThisMonth} className="flex-1 sm:flex-none bg-card">
+                  Este Mes
+                </Button>
+                <Button variant="outline" size="sm" onClick={setLastMonth} className="flex-1 sm:flex-none bg-card">
+                  Mes Pasado
+                </Button>
+              </div>
               <DatePickerWithRange date={tableManager.dateRange} onDateChange={tableManager.onDateRangeChange} />
             </div>
           </div>
