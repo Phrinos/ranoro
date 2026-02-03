@@ -134,20 +134,29 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
 
   const kpis = useMemo(() => {
     const data = fullFilteredData;
+    
+    // Totales brutos del periodo
     const ingresoTotal = data.filter(r => r.type === 'Ingreso').reduce((s, r) => s + r.amount, 0);
     const egresoTotal = data.filter(r => r.type === 'Egreso').reduce((s, r) => s + r.amount, 0);
-    const efectivoIngreso = data.filter(r => r.type === 'Ingreso' && r.method.includes('Efectivo')).reduce((s, r) => s + r.amount, 0);
-    const allCashIn = cashTransactions.filter(t => (t.type === 'in' || t.type === 'Entrada') && (t.paymentMethod === 'Efectivo' || !t.paymentMethod)).reduce((s, t) => s + t.amount, 0);
-    const allCashOut = cashTransactions.filter(t => (t.type === 'out' || t.type === 'Salida') && (t.paymentMethod === 'Efectivo' || !t.paymentMethod)).reduce((s, t) => s + t.amount, 0);
+    
+    // Filtrar solo movimientos en EFECTIVO dentro del periodo seleccionado
+    const efectivoIngresoPeriodo = data
+      .filter(r => r.type === 'Ingreso' && r.method.toLowerCase().includes('efectivo'))
+      .reduce((s, r) => s + r.amount, 0);
+      
+    const efectivoEgresoPeriodo = data
+      .filter(r => r.type === 'Egreso' && r.method.toLowerCase().includes('efectivo'))
+      .reduce((s, r) => s + r.amount, 0);
 
     return {
       ingresoTotal,
       egresoTotal,
-      efectivoIngreso,
+      efectivoIngreso: efectivoIngresoPeriodo,
       balanceNeto: ingresoTotal - egresoTotal,
-      efectivoActual: allCashIn - allCashOut
+      // Ahora "Efectivo del Periodo" es el flujo neto de efectivo solo de este rango
+      efectivoDelPeriodo: efectivoIngresoPeriodo - efectivoEgresoPeriodo
     };
-  }, [fullFilteredData, cashTransactions]);
+  }, [fullFilteredData]);
 
   const handleTransactionSubmit = async (values: TransactionFormValues) => {
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
@@ -205,15 +214,14 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
           <CardContent><div className={cn("text-xl font-bold", kpis.balanceNeto >= 0 ? "text-primary" : "text-destructive")}>{formatCurrency(kpis.balanceNeto)}</div></CardContent>
         </Card>
         <Card className="bg-blue-50 border-blue-200">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium uppercase text-muted-foreground">Efectivo Actual</CardTitle></CardHeader>
-          <CardContent><div className="text-xl font-bold text-blue-700 flex items-center gap-2"><Wallet className="h-4 w-4"/>{formatCurrency(kpis.efectivoActual)}</div></CardContent>
+          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium uppercase text-muted-foreground">Efectivo Periodo</CardTitle></CardHeader>
+          <CardContent><div className={cn("text-xl font-bold flex items-center gap-2", kpis.efectivoDelPeriodo >= 0 ? "text-blue-700" : "text-destructive")}><Wallet className="h-4 w-4"/>{formatCurrency(kpis.efectivoDelPeriodo)}</div></CardContent>
         </Card>
       </div>
 
       <Card>
         <CardContent className="p-4 space-y-4">
           <div className="flex flex-col gap-4">
-            {/* Fila 1: Buscador y Acciones de Registro */}
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
               <div className="relative w-full md:flex-grow">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -234,7 +242,6 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
               </div>
             </div>
 
-            {/* Fila 2: Filtros de Fecha */}
             <div className="flex flex-col sm:flex-row gap-2 items-center justify-end border-t pt-4">
               <div className="flex gap-2 w-full sm:w-auto">
                 <Button variant="outline" size="sm" onClick={setThisMonth} className="flex-1 sm:flex-none bg-card">
