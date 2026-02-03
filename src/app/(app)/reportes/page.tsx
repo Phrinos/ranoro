@@ -1,4 +1,3 @@
-
 "use client";
 
 import { withSuspense } from "@/lib/withSuspense";
@@ -25,7 +24,7 @@ function ReportesPageInner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const tab = searchParams.get('tab') || 'detalles';
+  const tab = searchParams.get('tab') || 'movimientos';
   
   const [activeTab, setActiveTab] = useState(tab);
   const [isLoading, setIsLoading] = useState(true);
@@ -166,7 +165,7 @@ function ReportesPageInner() {
 
   const tabs = [
     { 
-      value: "detalles", 
+      value: "movimientos", 
       label: "Movimientos", 
       content: <DetallesReporteContent services={services} sales={sales} cashTransactions={cashTransactions} users={users} /> 
     },
