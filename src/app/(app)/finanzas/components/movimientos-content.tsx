@@ -1,8 +1,9 @@
+
 // src/app/(app)/finanzas/components/movimientos-content.tsx
 
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type {
   SaleReceipt,
@@ -18,7 +19,7 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, cn } from "@/lib/utils";
-import { format, isValid, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { TableToolbar } from "@/components/shared/table-toolbar";
 import {
@@ -27,7 +28,6 @@ import {
   Wallet,
   CreditCard,
   Landmark,
-  LineChart,
   DollarSign,
   ChevronLeft,
   ChevronRight,
@@ -45,7 +45,7 @@ interface DateRange {
   to?: Date | undefined;
 }
 
-// --- Tipos UI ---
+// --- UI Types ---
 type MovementOrigin = "payment" | "ledger";
 interface Movement {
   id: string;
@@ -55,8 +55,8 @@ interface Movement {
   type: "Venta" | "Servicio" | "Entrada" | "Salida";
   client: string;
   method?: PaymentMethod;
-  total: number;               // siempre en positivo para UI
-  isRefund?: boolean;          // pagos negativos
+  total: number;               // always positive for UI
+  isRefund?: boolean;          // negative payments
   description?: string;
 }
 
@@ -78,15 +78,15 @@ const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
 };
 
 // === Helpers ===
-const getPaymentDate = (p: Payment) =>
-  parseDate((p as any).date || (p as any).paidAt || (p as any).createdAt);
+const getPaymentDate = (p: any) =>
+  parseDate(p.date || p.paidAt || p.createdAt);
 
 const getAdvisorForService = (s: ServiceRecord): string => {
   const anyS = s as any;
   return (
+    anyS.serviceAdvisorName ||
     anyS.deliveredByName ||
     anyS.statusHistory?.find((h: any) => h?.status === "Entregado")?.userName ||
-    anyS.advisorName ||
     anyS.assignedToName ||
     anyS.technicianName ||
     s.customerName ||
@@ -118,66 +118,115 @@ function MovimientosTabContent({
   }, []);
 
   const mergedMovements = useMemo((): Movement[] => {
-    // 1) PAGOS de SERVICIOS (todos los métodos)
+    // 1) SERVICE PAYMENTS (all methods)
     const servicePaymentMovs: Movement[] = (allServices || [])
       .filter((s) => s.status !== "Cancelado" && s.status !== "Cotizacion")
       .flatMap((s) => {
-        const pays = (s as any).payments as Payment[] | undefined;
-        if (!Array.isArray(pays)) return [];
+        const anyS = s as any;
+        const pays = anyS.payments as Payment[] | undefined;
         const advisor = getAdvisorForService(s);
-        return pays
-          .filter((p) => typeof p?.amount === "number" && !Number.isNaN(p.amount))
-          .map((p, idx) => {
-            const d = getPaymentDate(p) || parseDate(s.deliveryDateTime) || parseDate(s.serviceDate);
-            const amt = Number(p.amount) || 0;
-            const isRefund = amt < 0;
-            const folio = (s as any).folio || s.id.slice(-6);
-            return {
-              id: `${s.id}-svc-pay-${idx}`,
-              origin: "payment",
-              date: d || null,
-              folio: s.id,
-              type: "Servicio",
-              client: advisor,
-              method: p.method,
-              total: Math.abs(amt),
-              isRefund,
-              description: `Pago Servicio #${folio}`,
-            } as Movement;
-          });
+        const folio = anyS.folio || s.id.slice(-6);
+        const baseDate = parseDate(anyS.deliveryDateTime) || parseDate(s.serviceDate);
+
+        // If there are multiple payments
+        if (Array.isArray(pays) && pays.length > 0) {
+            return pays
+              .filter((p) => typeof p?.amount === "number" && !Number.isNaN(p.amount))
+              .map((p, idx) => {
+                const d = getPaymentDate(p) || baseDate;
+                const amt = Number(p.amount) || 0;
+                const isRefund = amt < 0;
+                return {
+                  id: `${s.id}-svc-pay-${idx}`,
+                  origin: "payment",
+                  date: d || null,
+                  folio: s.id,
+                  type: "Servicio",
+                  client: advisor,
+                  method: p.method,
+                  total: Math.abs(amt),
+                  isRefund,
+                  description: `Pago Servicio #${folio}`,
+                } as Movement;
+              });
+        }
+        
+        // Fallback for legacy single-payment services
+        const legacyMethod = anyS.paymentMethod;
+        if (legacyMethod) {
+            const amt = Number(anyS.totalCost || anyS.total || 0);
+            return [{
+                id: `${s.id}-svc-legacy`,
+                origin: "payment",
+                date: baseDate || null,
+                folio: s.id,
+                type: "Servicio",
+                client: advisor,
+                method: legacyMethod,
+                total: Math.abs(amt),
+                isRefund: amt < 0,
+                description: `Pago Servicio #${folio}`,
+            } as Movement];
+        }
+
+        return [];
       });
 
-    // 2) PAGOS de VENTAS (todos los métodos)
+    // 2) SALE PAYMENTS (all methods)
     const salePaymentMovs: Movement[] = (allSales || [])
       .filter((s) => s.status !== "Cancelado")
       .flatMap((s) => {
-        const pays = (s as any).payments as Payment[] | undefined;
-        if (!Array.isArray(pays)) return [];
+        const anyS = s as any;
+        const pays = anyS.payments as Payment[] | undefined;
         const customer = s.customerName || "Cliente Mostrador";
-        return pays
-          .filter((p) => typeof p?.amount === "number" && !Number.isNaN(p.amount))
-          .map((p, idx) => {
-            const d = getPaymentDate(p) || parseDate(s.saleDate as any);
-            const amt = Number(p.amount) || 0;
-            const isRefund = amt < 0;
-            const folio = s.id.slice(-6);
-            return {
-              id: `${s.id}-sale-pay-${idx}`,
-              origin: "payment",
-              date: d || null,
-              folio: s.id,
-              type: "Venta",
-              client: customer,
-              method: p.method,
-              total: Math.abs(amt),
-              isRefund,
-              description: `Pago Venta #${folio}`,
-            } as Movement;
-          });
+        const folio = s.id.slice(-6);
+        const baseDate = parseDate(s.saleDate as any);
+
+        if (Array.isArray(pays) && pays.length > 0) {
+            return pays
+              .filter((p) => typeof p?.amount === "number" && !Number.isNaN(p.amount))
+              .map((p, idx) => {
+                const d = getPaymentDate(p) || baseDate;
+                const amt = Number(p.amount) || 0;
+                const isRefund = amt < 0;
+                return {
+                  id: `${s.id}-sale-pay-${idx}`,
+                  origin: "payment",
+                  date: d || null,
+                  folio: s.id,
+                  type: "Venta",
+                  client: customer,
+                  method: p.method,
+                  total: Math.abs(amt),
+                  isRefund,
+                  description: `Pago Venta #${folio}`,
+                } as Movement;
+              });
+        }
+
+        // Fallback for legacy single-payment sales
+        const legacyMethod = anyS.paymentMethod;
+        if (legacyMethod) {
+            const amt = Number(anyS.totalAmount || 0);
+            return [{
+                id: `${s.id}-sale-legacy`,
+                origin: "payment",
+                date: baseDate || null,
+                folio: s.id,
+                type: "Venta",
+                client: customer,
+                method: legacyMethod,
+                total: Math.abs(amt),
+                isRefund: amt < 0,
+                description: `Pago Venta #${folio}`,
+            } as Movement];
+        }
+
+        return [];
       });
 
-    // 3) ASIENTOS de CAJA (ledger)
-    // Filtramos 'Servicio' y 'Venta' porque ya se procesan arriba con más detalle
+    // 3) CASH LEDGER ENTRIES
+    // Filter 'Servicio' and 'Venta' because they're processed above with more metadata
     const ledgerMovs: Movement[] = (cashTransactions || [])
       .filter(t => t.relatedType !== 'Servicio' && t.relatedType !== 'Venta')
       .map((t) => {
@@ -192,7 +241,7 @@ function MovimientosTabContent({
           total: Math.abs(Number(t.amount) || 0),
           description: (t as any).description || (t as any).concept || "",
           method: t.paymentMethod as any,
-        };
+        } as Movement;
       });
 
     return [...salePaymentMovs, ...servicePaymentMovs, ...ledgerMovs];
@@ -203,14 +252,15 @@ function MovimientosTabContent({
     searchKeys: ["folio", "client", "description"],
     dateFilterKey: "date",
     initialSortOption: "date_desc",
+    initialDateRange: dateRange, // Properly initialize hook with parent range
   });
 
-  const onDateRangeChangeCallback = tableManager.onDateRangeChange;
+  // Sync parent dateRange to hook if it changes externally
   useEffect(() => {
-    if (onDateRangeChangeCallback) {
-        onDateRangeChangeCallback(dateRange);
+    if (tableManager.onDateRangeChange) {
+        tableManager.onDateRangeChange(dateRange);
     }
-  }, [dateRange, onDateRangeChangeCallback]);
+  }, [dateRange]);
 
   // ---- KPI Summary ----
   const summary = useMemo(() => {
@@ -249,24 +299,15 @@ function MovimientosTabContent({
     tableManager.onSortOptionChange(`${key}_${isAsc ? "desc" : "asc"}`);
   };
 
-  const setRangeMonth = () => {
-    const now = new Date();
-    onDateRangeChange({ from: startOfMonth(now), to: endOfMonth(now) });
-  };
-
-  const setRangeLastMonth = () => {
-    const last = subMonths(new Date(), 1);
-    onDateRangeChange({ from: startOfMonth(last), to: endOfMonth(last) });
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center gap-2">
-        <Button variant="outline" size="sm" onClick={setRangeMonth} className="bg-card">Mes Actual</Button>
-        <Button variant="outline" size="sm" onClick={setRangeLastMonth} className="bg-card">Mes Pasado</Button>
         <div className="flex-1 w-full">
           <TableToolbar
-            {...tableManager}
+            searchTerm={tableManager.searchTerm}
+            onSearchTermChange={tableManager.onSearchTermChange}
+            sortOption={tableManager.sortOption}
+            onSortOptionChange={tableManager.onSortOptionChange}
             searchPlaceholder="Buscar por folio, usuario/asesor, descripción..."
             sortOptions={sortOptions}
             dateRange={dateRange}
