@@ -3,7 +3,7 @@
 
 import React, { useState, useCallback, Suspense, lazy, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Loader2, PlusCircle, CalendarPlus } from 'lucide-react';
+import { Loader2, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { Button } from '@/components/ui/button';
@@ -50,7 +50,6 @@ function PageInner() {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
-  const [isBackfilling, setIsBackfilling] = useState(false);
   
   const [isDriverDialogOpen, setIsDriverDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
@@ -123,29 +122,6 @@ function PageInner() {
     }
   };
 
-  const handleBackfillCharges = async () => {
-    if (!currentUser) {
-        toast({ title: "Error", description: "Sesión no iniciada.", variant: "destructive" });
-        return;
-    }
-    setIsBackfilling(true);
-    try {
-        // Generar para el 3 de febrero de 2025
-        const targetDate = new Date(2025, 1, 3, 12, 0, 0); 
-        const count = await rentalService.generateManualDailyCharges(targetDate, currentUser);
-        toast({ 
-            title: count > 0 ? "Cargos generados" : "Sin cambios", 
-            description: count > 0 
-                ? `Se han creado ${count} cargos pendientes para el 3 de febrero.` 
-                : "No se encontraron cargos nuevos para generar (posiblemente ya están registrados)." 
-        });
-    } catch (e: any) {
-        toast({ title: "Error", description: e.message, variant: "destructive" });
-    } finally {
-        setIsBackfilling(false);
-    }
-  };
-
   const handleAddDriver = () => {
     setEditingDriver(null);
     setIsDriverDialogOpen(true);
@@ -200,15 +176,6 @@ function PageInner() {
 
   const pageActions = (
     <div className="flex flex-wrap gap-2">
-      <Button 
-        variant="outline" 
-        onClick={handleBackfillCharges} 
-        disabled={isBackfilling}
-        className="w-full sm:w-auto bg-white border-orange-500 text-black font-bold hover:bg-orange-50"
-      >
-        {isBackfilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CalendarPlus className="mr-2 h-4 w-4 text-orange-600" />}
-        Cargar 3 Feb
-      </Button>
       <Button variant="outline" onClick={() => setIsPaymentDialogOpen(true)} className="w-full sm:w-auto bg-white border-green-500 text-black font-bold hover:bg-green-50">
         <PlusCircle className="mr-2 h-4 w-4 text-green-600" />
         Registrar Abono
