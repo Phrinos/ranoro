@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -25,10 +25,14 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { NewCalendar } from '@/components/ui/calendar';
 
 const transactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a 0."),
+  date: z.date({ required_error: "La fecha es obligatoria." }),
+  paymentMethod: z.enum(["Efectivo", "Tarjeta"], { required_error: "El método de pago es obligatorio." }),
 });
 
 type TransactionFormValues = z.infer<typeof transactionSchema>;
@@ -68,10 +72,16 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'Ingreso' | 'Egreso'>('Ingreso');
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
-    defaultValues: { concept: "", amount: undefined },
+    defaultValues: { 
+      concept: "", 
+      amount: undefined, 
+      date: new Date(),
+      paymentMethod: "Efectivo"
+    },
   });
 
   const mergedMovements = useMemo(() => {
@@ -182,10 +192,11 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
         type: dialogType === 'Ingreso' ? 'in' : 'out',
         amount: values.amount,
         concept: values.concept,
+        date: values.date.toISOString(),
         userId: currentUser?.id || 'system',
         userName: currentUser?.name || 'Sistema',
         relatedType: 'Manual',
-        paymentMethod: 'Efectivo',
+        paymentMethod: values.paymentMethod,
       });
       toast({ title: `${dialogType} registrado con éxito.` });
       setIsDialogOpen(false);
@@ -359,6 +370,70 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleTransactionSubmit)} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Fecha del Movimiento</FormLabel>
+                      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP", { locale: es })
+                              ) : (
+                                <span>Seleccionar fecha</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <NewCalendar
+                            onChange={(date: any) => {
+                              field.onChange(date);
+                              setIsCalendarOpen(false);
+                            }}
+                            value={field.value}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="paymentMethod"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Método de Pago</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione método" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="Efectivo">Efectivo</SelectItem>
+                          <SelectItem value="Tarjeta">Tarjeta</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <FormField
                 control={form.control}
                 name="concept"
