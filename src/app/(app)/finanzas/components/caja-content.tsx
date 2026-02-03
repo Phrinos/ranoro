@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatCurrency, cn } from "@/lib/utils";
-import { format, isValid, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, isWithinInterval, startOfMonth, endOfMonth } from 'date-fns';
+import { format, isValid, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, isWithinInterval, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { DollarSign, ArrowDown, ArrowUp, Loader2, Wallet, CreditCard, Landmark, ArrowLeft, ArrowRight } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
@@ -212,7 +212,7 @@ export default function CajaContent() {
   };
 
   // presets
-  const setPresetRange = (preset: 'today' | 'yesterday' | 'week' | 'month') => {
+  const setPresetRange = (preset: 'today' | 'yesterday' | 'week' | 'month' | 'lastMonth') => {
     const now = new Date();
     if (preset === 'today') return setDateRange({ from: startOfDay(now), to: endOfDay(now) });
     if (preset === 'yesterday') {
@@ -221,6 +221,10 @@ export default function CajaContent() {
     }
     if (preset === 'week') return setDateRange({ from: startOfWeek(now, { weekStartsOn: 1 }), to: endOfWeek(now, { weekStartsOn: 1 }) });
     if (preset === 'month') return setDateRange({ from: startOfMonth(now), to: endOfMonth(now) });
+    if (preset === 'lastMonth') {
+      const last = subMonths(now, 1);
+      return setDateRange({ from: startOfMonth(last), to: endOfMonth(last) });
+    }
   };
 
   // registrar manual
@@ -273,6 +277,7 @@ export default function CajaContent() {
           <Button variant="outline" size="sm" onClick={() => setPresetRange('yesterday')} className="bg-card">Ayer</Button>
           <Button variant="outline" size="sm" onClick={() => setPresetRange('week')} className="bg-card">Semana</Button>
           <Button variant="outline" size="sm" onClick={() => setPresetRange('month')} className="bg-card">Mes</Button>
+          <Button variant="outline" size="sm" onClick={() => setPresetRange('lastMonth')} className="bg-card">Mes Pasado</Button>
           <DatePickerWithRange date={dateRange} onDateChange={setDateRange} />
         </div>
       </div>

@@ -1,4 +1,3 @@
-
 // src/app/(app)/finanzas/components/movimientos-content.tsx
 
 "use client";
@@ -19,7 +18,7 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
-import { format, isValid } from "date-fns";
+import { format, isValid, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
 import { TableToolbar } from "@/components/shared/table-toolbar";
 import {
@@ -254,15 +253,31 @@ function MovimientosTabContent({
     tableManager.onSortOptionChange(`${key}_${isAsc ? "desc" : "asc"}`);
   };
 
+  const setRangeMonth = () => {
+    const now = new Date();
+    onDateRangeChange({ from: startOfMonth(now), to: endOfMonth(now) });
+  };
+
+  const setRangeLastMonth = () => {
+    const last = subMonths(new Date(), 1);
+    onDateRangeChange({ from: startOfMonth(last), to: endOfMonth(last) });
+  };
+
   return (
     <div className="space-y-6">
-      <TableToolbar
-        {...tableManager}
-        searchPlaceholder="Buscar por folio, usuario/asesor, descripción..."
-        sortOptions={sortOptions}
-        dateRange={dateRange}
-        onDateRangeChange={onDateRangeChange}
-      />
+      <div className="flex flex-col sm:flex-row items-center gap-2">
+        <Button variant="outline" size="sm" onClick={setRangeMonth} className="bg-card">Mes</Button>
+        <Button variant="outline" size="sm" onClick={setRangeLastMonth} className="bg-card">Mes Pasado</Button>
+        <div className="flex-1 w-full">
+          <TableToolbar
+            {...tableManager}
+            searchPlaceholder="Buscar por folio, usuario/asesor, descripción..."
+            sortOptions={sortOptions}
+            dateRange={dateRange}
+            onDateRangeChange={onDateRangeChange}
+          />
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
