@@ -1,6 +1,5 @@
 "use client";
 
-// src/hooks/useAuth.ts
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -23,14 +22,9 @@ export function useAuth() {
   }, []);
 
   const handleLogout = useCallback(async () => {
-    // 1. Detener cualquier listener activo ANTES de desloguear para evitar errores de permisos
     cleanupDocListener();
-    
-    // 2. Limpiar estados locales
     setCurrentUser(null);
     localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
-    
-    // 3. Ejecutar el cierre de sesión en Firebase
     if (auth) {
         await signOut(auth);
     }
@@ -55,12 +49,9 @@ export function useAuth() {
     }
 
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
-      // Limpiar listener previo si el usuario cambió
       cleanupDocListener();
 
       if (firebaseUser) {
-        setIsLoading(false);
-        
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         unsubscribeDocRef.current = onSnapshot(userDocRef, (userDoc) => {
           if (userDoc.exists()) {
@@ -68,14 +59,24 @@ export function useAuth() {
             setCurrentUser(userData);
             localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(userData));
           } else {
-            console.warn(`User ${firebaseUser.uid} not found in Firestore. Logging out.`);
-            handleLogout();
+            // Si el usuario existe en Auth pero no en Firestore, no cerramos sesión.
+            // Creamos un perfil temporal para permitir el acceso.
+            const fallbackUser: User = {
+                id: firebaseUser.uid,
+                name: firebaseUser.displayName || 'Usuario Nuevo',
+                email: firebaseUser.email || '',
+                role: 'Usuario',
+                isArchived: false
+            };
+            setCurrentUser(fallbackUser);
+            localStorage.setItem(AUTH_USER_LOCALSTORAGE_KEY, JSON.stringify(fallbackUser));
           }
+          setIsLoading(false);
         }, (error) => {
-           // Si el error es de permisos durante el logout, lo ignoramos silenciosamente
            if (error.code !== 'permission-denied') {
              console.error("Error listening to user document:", error);
            }
+           setIsLoading(false);
         });
 
       } else {

@@ -1,4 +1,3 @@
-
 // app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
@@ -88,31 +87,6 @@ export const metadata: Metadata = {
     telephone: true,
     address: true,
     email: false,
-  },
-  icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/favicon-32x32.png", type: "image/png", sizes: "32x32" },
-      { url: "/favicon-16x16.png", type: "image/png", sizes: "16x16" },
-    ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
-    shortcut: ["/favicon.ico"],
-    other: [
-      {
-        rel: "mask-icon",
-        url: "/safari-pinned-tab.svg",
-        color: "#0b0b0b",
-      },
-    ],
-  },
-  appleWebApp: {
-    capable: true,
-    title: "Ranoro",
-    statusBarStyle: "black-translucent",
-  },
-  other: {
-    "msapplication-TileColor": "#0b0b0b",
-    "color-scheme": "light dark",
   },
 };
 
