@@ -14,13 +14,14 @@ import { formatCurrency } from "@/lib/utils";
 import { DollarSign, PlusCircle, Trash2, Minus, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
-const paymentMethods: PaymentMethod[] = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia"];
+const paymentMethods: PaymentMethod[] = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Transferencia/Contadora"];
 
 const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
   "Tarjeta MSI": CreditCard,
   Transferencia: Landmark,
+  "Transferencia/Contadora": Landmark,
   "Efectivo+Transferencia": Wallet,
   "Tarjeta+Transferencia": CreditCard,
   "Crédito": CreditCard,
@@ -96,8 +97,9 @@ export function PaymentSection({
                         const showFolio =
                         selectedMethod === "Tarjeta" ||
                         selectedMethod === "Tarjeta MSI" ||
-                        selectedMethod === "Transferencia";
-                        const folioLabel = selectedMethod === "Transferencia" ? "Folio de Transferencia" : "Folio de Voucher";
+                        selectedMethod === "Transferencia" ||
+                        selectedMethod === "Transferencia/Contadora";
+                        const folioLabel = (selectedMethod === "Transferencia" || selectedMethod === "Transferencia/Contadora") ? "Folio de Transferencia" : "Folio de Voucher";
                         const isFolioValidated = validatedFolios[index];
 
                         return (

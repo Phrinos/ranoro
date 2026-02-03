@@ -1,3 +1,4 @@
+
 // src/app/(app)/flotilla/caja/components/FlotillaCajaTab.tsx
 "use client";
 
@@ -38,6 +39,7 @@ const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   "Tarjeta": CreditCard,
   "Tarjeta MSI": CreditCard,
   "Transferencia": Landmark,
+  "Transferencia/Contadora": Landmark,
   "Efectivo+Transferencia": Wallet,
   "Tarjeta+Transferencia": CreditCard,
   "Crédito": CreditCard,
@@ -102,7 +104,7 @@ export function FlotillaCajaTab({
     });
   
     const totalCash = monthlyPayments.filter(p => p.paymentMethod === 'Efectivo').reduce((sum, p) => sum + p.amount, 0);
-    const totalTransfers = monthlyPayments.filter(p => p.paymentMethod === 'Transferencia').reduce((sum, p) => sum + p.amount, 0);
+    const totalTransfers = monthlyPayments.filter(p => p.paymentMethod === 'Transferencia' || p.paymentMethod === 'Transferencia/Contadora').reduce((sum, p) => sum + p.amount, 0);
     const totalWithdrawals = monthlyWithdrawals.reduce((sum, w) => sum + w.amount, 0);
     const totalExpenses = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
     const cashBalance = totalCash - totalWithdrawals - totalExpenses;
@@ -124,7 +126,7 @@ export function FlotillaCajaTab({
     switch (t.transactionType) {
       case 'income': {
         const Icon = paymentMethodIcons[t.paymentMethod as PaymentMethod] ?? Wallet;
-        return { variant: t.paymentMethod === 'Transferencia' ? 'info' : 'success', label: 'Ingreso', description: `Pago de ${t.driverName}`, note: t.note, methodIcon: <Icon className="h-4 w-4" />, methodName: t.paymentMethod };
+        return { variant: (t.paymentMethod === 'Transferencia' || t.paymentMethod === 'Transferencia/Contadora') ? 'info' : 'success', label: 'Ingreso', description: `Pago de ${t.driverName}`, note: t.note, methodIcon: <Icon className="h-4 w-4" />, methodName: t.paymentMethod };
       }
       case 'withdrawal': {
         return { variant: 'destructive', label: 'Retiro', description: `Retiro de ${t.ownerName}`, note: t.note, methodIcon: null, methodName: 'N/A' };
@@ -153,7 +155,7 @@ export function FlotillaCajaTab({
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Wallet className="h-4 w-4 text-green-600"/>Ingresos Efectivo</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-green-600">{formatCurrency(summary.totalCash)}</div></CardContent></Card>
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Landmark className="h-4 w-4 text-blue-600"/>Ingresos Transferencia</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-blue-600">{formatCurrency(summary.totalTransfers)}</div></CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Landmark className="h-4 w-4 text-blue-600"/>Ingresos Transf.</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-blue-600">{formatCurrency(summary.totalTransfers)}</div></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><TrendingDownIcon className="h-4 w-4 text-red-500"/>Total Retiros</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-red-500">{formatCurrency(summary.totalWithdrawals)}</div></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2"><Wrench className="h-4 w-4 text-orange-500"/>Total Gastos</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-orange-500">{formatCurrency(summary.totalExpenses)}</div></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Balance Caja (Mes)</CardTitle></CardHeader><CardContent><div className={cn("text-2xl font-bold", summary.totalBalance >= 0 ? 'text-foreground' : 'text-destructive')}>{formatCurrency(summary.totalBalance)}</div></CardContent></Card>

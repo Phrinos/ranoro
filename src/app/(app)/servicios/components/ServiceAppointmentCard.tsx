@@ -1,3 +1,4 @@
+
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
 "use client";
 
@@ -36,6 +37,7 @@ const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   "Tarjeta": CreditCard,
   "Tarjeta MSI": CreditCard,
   "Transferencia": Landmark,
+  "Transferencia/Contadora": Landmark,
   "Efectivo+Transferencia": Wallet,
   "Tarjeta+Transferencia": CreditCard,
   "Crédito": CreditCard,

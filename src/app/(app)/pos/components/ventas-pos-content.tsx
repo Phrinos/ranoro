@@ -1,3 +1,4 @@
+
 // src/app/(app)/pos/components/ventas-pos-content.tsx
 "use client";
 
@@ -16,7 +17,7 @@ import { formatCurrency, getPaymentMethodVariant, cn } from '@/lib/utils';
 import { calculateSaleProfit } from '@/lib/money-helpers';
 import { Badge } from '@/components/ui/badge';
 import { parseDate } from '@/lib/forms';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Input } from '@/components/ui/input';
 
@@ -32,6 +33,7 @@ const paymentMethodOptions: { value: PaymentMethod | 'all', label: string }[] = 
     { value: 'Tarjeta', label: 'Tarjeta' },
     { value: 'Tarjeta MSI', label: 'Tarjeta MSI' },
     { value: 'Transferencia', label: 'Transferencia' },
+    { value: 'Transferencia/Contadora', label: 'Transferencia/Contadora' },
 ];
 
 const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
@@ -39,6 +41,7 @@ const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   "Tarjeta": CreditCard,
   "Tarjeta MSI": CreditCard,
   "Transferencia": Landmark,
+  "Transferencia/Contadora": Landmark,
 };
 
 interface VentasPosContentProps {

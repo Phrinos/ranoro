@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -10,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote, Download, Filter } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote, Download, Filter, Landmark } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -37,7 +38,7 @@ const transactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a 0."),
   date: z.date({ required_error: "La fecha es obligatoria." }),
-  paymentMethod: z.enum(["Efectivo", "Tarjeta"], { required_error: "El método de pago es obligatorio." }),
+  paymentMethod: z.enum(["Efectivo", "Tarjeta", "Transferencia", "Transferencia/Contadora"], { required_error: "El método de pago es obligatorio." }),
 });
 
 type TransactionFormValues = z.infer<typeof transactionSchema>;
@@ -74,6 +75,7 @@ const metodoOptions = [
   { value: 'Efectivo', label: 'Efectivo' },
   { value: 'Tarjeta', label: 'Tarjeta' },
   { value: 'Transferencia', label: 'Transferencia' },
+  { value: 'Transferencia/Contadora', label: 'Transferencia/Contadora' },
 ];
 
 export default function DetallesReporteContent({ services, sales, cashTransactions, users }: DetallesReporteProps) {
@@ -551,6 +553,8 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                         <SelectContent>
                           <SelectItem value="Efectivo">Efectivo</SelectItem>
                           <SelectItem value="Tarjeta">Tarjeta</SelectItem>
+                          <SelectItem value="Transferencia">Transferencia</SelectItem>
+                          <SelectItem value="Transferencia/Contadora">Transferencia/Contadora</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />

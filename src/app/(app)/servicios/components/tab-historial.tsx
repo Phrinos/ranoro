@@ -54,6 +54,7 @@ const paymentMethodOptions: { value: PaymentMethod | "all"; label: string }[] = 
   { value: "Tarjeta", label: "Tarjeta" },
   { value: "Tarjeta MSI", label: "Tarjeta MSI" },
   { value: "Transferencia", label: "Transferencia" },
+  { value: "Transferencia/Contadora", label: "Transferencia/Contadora" },
 ];
 
 const sortOptions = [

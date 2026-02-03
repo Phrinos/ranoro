@@ -22,16 +22,17 @@ export type AppRole = {
   permissions: string[];
 };
 
-// ✅ Payment methods: incluye Crédito + combos
+// ✅ Payment methods: incluye Crédito + combos + Transferencia/Contadora
 export type PaymentMethod =
   | "Efectivo"
   | "Tarjeta"
   | "Tarjeta MSI"
   | "Transferencia"
+  | "Transferencia/Contadora"
   | "Crédito"
   | "Efectivo+Transferencia"
   | "Tarjeta+Transferencia";
-export const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Crédito"] as const;
+export const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Transferencia/Contadora", "Crédito"] as const;
 
 // ✅ Sub-estatus: tu UI compara estos literales
 export type ServiceSubStatus =
