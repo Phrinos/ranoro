@@ -10,14 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 import type { ServiceRecord, SaleReceipt, CashDrawerTransaction, User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { cashService } from '@/lib/services';
+import { cashService, serviceService, saleService } from '@/lib/services';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -27,6 +27,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { NewCalendar } from '@/components/ui/calendar';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 const transactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
@@ -46,6 +49,7 @@ interface DetallesReporteProps {
 
 type ReportRow = {
   id: string;
+  realId: string;
   date: Date | null;
   type: 'Ingreso' | 'Egreso';
   source: 'Compra' | 'Venta (PDV)' | 'Servicio' | 'Manual' | 'Flotilla';
@@ -53,6 +57,8 @@ type ReportRow = {
   method: string;
   amount: number;
   clientUser: string;
+  note?: string;
+  registeredBy?: string;
 };
 
 const tipoOptions = [
@@ -73,6 +79,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'Ingreso' | 'Egreso'>('Ingreso');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [selectedMovement, setSelectedMovement] = useState<ReportRow | null>(null);
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
@@ -97,6 +104,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       
       rows.push({
         id: `svc-${s.id}`,
+        realId: s.id,
         date: d,
         type: 'Ingreso',
         source: 'Servicio',
@@ -104,6 +112,8 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
         method: methods,
         amount: amount,
         clientUser: s.customerName || 'Cliente',
+        note: s.notes,
+        registeredBy: s.serviceAdvisorName || 'Sistema',
       });
     });
 
@@ -117,6 +127,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
 
       rows.push({
         id: `sale-${s.id}`,
+        realId: s.id,
         date: d,
         type: 'Ingreso',
         source: 'Venta (PDV)',
@@ -124,6 +135,8 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
         method: methods,
         amount: amount,
         clientUser: s.customerName || 'Cliente Mostrador',
+        note: (s as any).note || (s as any).description,
+        registeredBy: (s as any).registeredByName || 'Sistema',
       });
     });
 
@@ -139,6 +152,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
 
       rows.push({
         id: `ledger-${t.id}`,
+        realId: t.id,
         date: d,
         type: isIncome ? 'Ingreso' : 'Egreso',
         source: source,
@@ -146,6 +160,8 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
         method: t.paymentMethod || 'Efectivo',
         amount: Math.abs(t.amount),
         clientUser: t.userName || 'Sistema',
+        note: t.note || t.description,
+        registeredBy: t.userName || 'Sistema',
       });
     });
 
@@ -203,6 +219,24 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       form.reset();
     } catch (e) {
       toast({ title: 'Error', description: 'No se pudo registrar el movimiento.', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteMovement = async (row: ReportRow) => {
+    try {
+      if (row.id.startsWith('ledger-')) {
+        await cashService.deleteCashTransaction(row.realId);
+      } else if (row.id.startsWith('svc-')) {
+        // Para servicios lo ideal es cancelarlos desde su módulo, pero permitimos borrar si es admin
+        await serviceService.deleteService(row.realId);
+      } else if (row.id.startsWith('sale-')) {
+        await saleService.deleteSale(row.realId, null);
+      }
+      
+      toast({ title: "Movimiento eliminado", description: "El registro ha sido removido del sistema." });
+      setSelectedMovement(null);
+    } catch (error) {
+      toast({ title: "Error al eliminar", description: "No se pudo completar la acción.", variant: "destructive" });
     }
   };
 
@@ -328,11 +362,13 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
               <TableBody>
                 {fullFilteredData.length > 0 ? (
                   fullFilteredData.map(r => (
-                    <TableRow key={r.id}>
+                    <TableRow 
+                      key={r.id} 
+                      className="cursor-pointer hover:bg-muted/50" 
+                      onClick={() => setSelectedMovement(r)}
+                    >
                       <TableCell className="text-xs">{r.date ? format(r.date, 'dd/MM/yy HH:mm', { locale: es }) : '—'}</TableCell>
-                      <TableCell>
-                        <Badge variant={r.type === 'Ingreso' ? 'success' : 'destructive'}>{r.type}</Badge>
-                      </TableCell>
+                      <TableCell><Badge variant={r.type === 'Ingreso' ? 'success' : 'destructive'}>{r.type}</Badge></TableCell>
                       <TableCell>
                         <Badge variant="outline" className="font-normal flex items-center gap-1.5 w-fit">
                           {r.source === 'Servicio' && <Wrench className="h-3 w-3" />}
@@ -362,6 +398,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
         </CardContent>
       </Card>
 
+      {/* Modal de Registro Manual */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -467,6 +504,93 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
               </DialogFooter>
             </form>
           </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Detalles del Movimiento */}
+      <Dialog open={!!selectedMovement} onOpenChange={(open) => !open && setSelectedMovement(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              Detalle del Movimiento
+            </DialogTitle>
+            <DialogDescription>Información completa registrada en el sistema.</DialogDescription>
+          </DialogHeader>
+          
+          {selectedMovement && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1"><CalendarIcon className="h-3 w-3"/> Fecha y Hora</Label>
+                  <p className="text-sm font-medium">{selectedMovement.date ? format(selectedMovement.date, "dd 'de' MMMM, yyyy HH:mm", { locale: es }) : 'N/A'}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1"><Tag className="h-3 w-3"/> Origen</Label>
+                  <p className="text-sm font-medium">{selectedMovement.source}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Concepto</Label>
+                <p className="text-sm font-semibold">{selectedMovement.concept}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1"><CreditCard className="h-3 w-3"/> Método de Pago</Label>
+                  <p className="text-sm font-medium">{selectedMovement.method}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1"><DollarSign className="h-3 w-3"/> Monto</Label>
+                  <p className={cn("text-lg font-bold", selectedMovement.type === 'Ingreso' ? "text-green-600" : "text-red-600")}>
+                    {selectedMovement.type === 'Ingreso' ? '+' : '-'} {formatCurrency(selectedMovement.amount)}
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Cliente / Usuario</Label>
+                  <p className="text-sm font-medium">{selectedMovement.clientUser}</p>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Registrado por</Label>
+                  <p className="text-sm font-medium">{selectedMovement.registeredBy}</p>
+                </div>
+              </div>
+
+              {selectedMovement.note && (
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1"><StickyNote className="h-3 w-3"/> Notas Adicionales</Label>
+                  <div className="p-2 bg-muted rounded-md text-sm italic">
+                    {selectedMovement.note}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            {selectedMovement && (
+              <ConfirmDialog
+                triggerButton={
+                  <Button variant="destructive" className="w-full sm:w-auto">
+                    <Trash2 className="mr-2 h-4 w-4" /> Eliminar Registro
+                  </Button>
+                }
+                title="¿Eliminar este movimiento?"
+                description="Esta acción es permanente. Si el movimiento proviene de una venta o servicio entregado, se recomienda cancelarlo desde su módulo correspondiente para mantener la consistencia del inventario y caja."
+                onConfirm={() => handleDeleteMovement(selectedMovement)}
+                confirmText="Sí, Eliminar"
+              />
+            )}
+            <Button variant="outline" onClick={() => setSelectedMovement(null)}>Cerrar</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
