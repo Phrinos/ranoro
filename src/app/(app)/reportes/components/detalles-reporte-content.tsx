@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -10,12 +9,28 @@ import { Input } from '@/components/ui/input';
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Scale, Search, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, ChevronLeft, ChevronRight, PlusCircle, DollarSign } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
-import type { ServiceRecord, SaleReceipt, CashDrawerTransaction, User, PaymentMethod } from '@/types';
+import type { ServiceRecord, SaleReceipt, CashDrawerTransaction, User } from '@/types';
+import { useToast } from '@/hooks/use-toast';
+import { cashService } from '@/lib/services';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+
+const transactionSchema = z.object({
+  concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
+  amount: z.coerce.number().min(0.01, "El monto debe ser mayor a 0."),
+});
+
+type TransactionFormValues = z.infer<typeof transactionSchema>;
 
 interface DetallesReporteProps {
   services: ServiceRecord[];
@@ -36,23 +51,29 @@ type ReportRow = {
 };
 
 export default function DetallesReporteContent({ services, sales, cashTransactions, users }: DetallesReporteProps) {
+  const { toast } = useToast();
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to?: Date | undefined }>(() => {
     const now = new Date();
     return { from: startOfMonth(now), to: endOfMonth(now) };
   });
 
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogType, setDialogType] = useState<'Ingreso' | 'Egreso'>('Ingreso');
+
+  const form = useForm<TransactionFormValues>({
+    resolver: zodResolver(transactionSchema),
+    defaultValues: { concept: "", amount: undefined },
+  });
+
   const mergedMovements = useMemo(() => {
     const rows: ReportRow[] = [];
 
-    // 1. Ingresos por Servicios
     services.forEach(s => {
       if (s.status === 'Cancelado') return;
       const d = parseDate(s.deliveryDateTime || s.serviceDate);
       const amount = Number(s.totalCost) || 0;
       if (amount <= 0) return;
-
       const methods = s.payments?.map(p => p.method).join(' / ') || (s as any).paymentMethod || 'Efectivo';
-
       rows.push({
         id: `svc-${s.id}`,
         date: d,
@@ -65,15 +86,12 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       });
     });
 
-    // 2. Ingresos por Ventas (PDV)
     sales.forEach(s => {
       if (s.status === 'Cancelado') return;
       const d = parseDate(s.saleDate);
       const amount = Number(s.totalAmount) || 0;
       if (amount <= 0) return;
-
       const methods = s.payments?.map(p => p.method).join(' / ') || (s as any).paymentMethod || 'Efectivo';
-
       rows.push({
         id: `sale-${s.id}`,
         date: d,
@@ -86,15 +104,11 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       });
     });
 
-    // 3. Movimientos de Caja (Filtrando duplicados de servicios/ventas para Reportes pero manteniendo Manuales y Compras)
     cashTransactions.forEach(t => {
-      const d = parseDate(t.date);
-      // Evitamos duplicar ingresos de servicios/ventas que ya procesamos arriba con más detalle
       if (t.relatedType === 'Servicio' || t.relatedType === 'Venta') return;
-
+      const d = parseDate(t.date);
       const isIncome = t.type === 'in' || t.type === 'Entrada';
       const source = t.relatedType === 'Compra' ? 'Compra' : 'Manual';
-
       rows.push({
         id: `ledger-${t.id}`,
         date: d,
@@ -122,11 +136,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
     const data = fullFilteredData;
     const ingresoTotal = data.filter(r => r.type === 'Ingreso').reduce((s, r) => s + r.amount, 0);
     const egresoTotal = data.filter(r => r.type === 'Egreso').reduce((s, r) => s + r.amount, 0);
-    
-    // Ingresos en efectivo (del periodo filtrado)
     const efectivoIngreso = data.filter(r => r.type === 'Ingreso' && r.method.includes('Efectivo')).reduce((s, r) => s + r.amount, 0);
-    
-    // Efectivo Actual (Saldo total de la caja, ignorando el filtro de fecha del reporte para saber qué hay HOY)
     const allCashIn = cashTransactions.filter(t => (t.type === 'in' || t.type === 'Entrada') && (t.paymentMethod === 'Efectivo' || !t.paymentMethod)).reduce((s, t) => s + t.amount, 0);
     const allCashOut = cashTransactions.filter(t => (t.type === 'out' || t.type === 'Salida') && (t.paymentMethod === 'Efectivo' || !t.paymentMethod)).reduce((s, t) => s + t.amount, 0);
 
@@ -139,6 +149,27 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
     };
   }, [fullFilteredData, cashTransactions]);
 
+  const handleTransactionSubmit = async (values: TransactionFormValues) => {
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    const currentUser = authUserString ? JSON.parse(authUserString) : null;
+    try {
+      await cashService.addCashTransaction({
+        type: dialogType === 'Ingreso' ? 'in' : 'out',
+        amount: values.amount,
+        concept: values.concept,
+        userId: currentUser?.id || 'system',
+        userName: currentUser?.name || 'Sistema',
+        relatedType: 'Manual',
+        paymentMethod: 'Efectivo',
+      });
+      toast({ title: `${dialogType} registrado con éxito.` });
+      setIsDialogOpen(false);
+      form.reset();
+    } catch (e) {
+      toast({ title: 'Error', description: 'No se pudo registrar el movimiento.', variant: 'destructive' });
+    }
+  };
+
   const handleSort = (key: string) => {
     const isAsc = tableManager.sortOption === `${key}_asc`;
     tableManager.onSortOptionChange(`${key}_${isAsc ? 'desc' : 'asc'}`);
@@ -146,7 +177,6 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
 
   return (
     <div className="space-y-6">
-      {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card className="border-green-200 bg-green-50/30">
           <CardHeader className="pb-2"><CardTitle className="text-xs font-medium uppercase text-muted-foreground">Ingreso Efectivo</CardTitle></CardHeader>
@@ -170,23 +200,31 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
         </Card>
       </div>
 
-      {/* Toolbar */}
       <Card>
-        <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
-          <div className="relative w-full md:max-w-sm">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por concepto, cliente..."
-              value={tableManager.searchTerm}
-              onChange={(e) => tableManager.onSearchTermChange(e.target.value)}
-              className="pl-8 bg-background"
-            />
+        <CardContent className="p-4 space-y-4">
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="relative w-full md:max-w-sm">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por concepto, cliente..."
+                value={tableManager.searchTerm}
+                onChange={(e) => tableManager.onSearchTermChange(e.target.value)}
+                className="pl-8 bg-background"
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap justify-end">
+              <Button onClick={() => { setDialogType('Ingreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="text-green-600 border-green-600 hover:bg-green-50 bg-card">
+                <PlusCircle className="mr-2 h-4 w-4" /> Registrar Ingreso
+              </Button>
+              <Button onClick={() => { setDialogType('Egreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="text-red-600 border-red-600 hover:bg-red-50 bg-card">
+                <PlusCircle className="mr-2 h-4 w-4" /> Registrar Egreso
+              </Button>
+              <DatePickerWithRange date={tableManager.dateRange} onDateChange={tableManager.onDateRangeChange} />
+            </div>
           </div>
-          <DatePickerWithRange date={tableManager.dateRange} onDateChange={tableManager.onDateRangeChange} />
         </CardContent>
       </Card>
 
-      {/* Table */}
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto rounded-md border">
@@ -240,6 +278,50 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Registrar {dialogType} Manual</DialogTitle>
+            <DialogDescription>Añade un movimiento directo al reporte financiero y caja.</DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleTransactionSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="concept"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Concepto</FormLabel>
+                    <FormControl><Textarea placeholder="Motivo del movimiento..." {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Monto</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <DollarSign className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input type="number" step="0.01" className="pl-8" {...field} value={field.value ?? ""} />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                <Button type="submit">Registrar {dialogType}</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
