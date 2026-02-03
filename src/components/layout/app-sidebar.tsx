@@ -57,7 +57,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Finanzas
   { label: 'Finanzas', path: '/finanzas', icon: DollarSign, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
-  { label: 'Cierres', path: '/finanzas/cierre', icon: BarChart3, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
   { label: 'Reportes Taller', path: '/reportes', icon: FileBarChart, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
   { label: 'Reportes Flotilla', path: '/flotillareportes', icon: Truck, groupTag: 'Finanzas', permissions: ['fleet:manage'] },
   { label: 'Facturación', path: '/facturacion', icon: FileJson, groupTag: 'Finanzas', permissions: ['billing:manage'] },
