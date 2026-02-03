@@ -26,10 +26,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { format as formatDate } from "date-fns";
 import { es } from "date-fns/locale";
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
-import { nanoid } from "nanoid";
 import { registerPurchaseSchema, type RegisterPurchaseFormValues } from "@/schemas/register-purchase-schema";
 
-export type { RegisterPurchaseFormValues };
+export type PurchaseFormValues = RegisterPurchaseFormValues;
 
 interface RegisterPurchaseDialogProps {
   open: boolean;
@@ -434,7 +433,7 @@ function SearchItemDialog({
   }, [searchTerm, inventoryItems]);
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg p-0">
         <DialogHeader className="border-b p-6 pb-4">
           <DialogTitle>Buscar Artículo en Inventario</DialogTitle>

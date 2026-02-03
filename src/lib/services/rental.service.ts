@@ -17,6 +17,7 @@ import { db } from '../firebaseClient';
 import type { RentalPayment, DailyRentalCharge, Driver, Vehicle, OwnerWithdrawal, VehicleExpense, PaymentMethod } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { cashService } from './cash.service';
+import { inventoryService } from './inventory.service';
 
 // --- Daily Rental Charges ---
 

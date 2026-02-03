@@ -13,6 +13,7 @@ import {
   type WriteBatch,
   serverTimestamp,
   orderBy,
+  runTransaction,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { RegisterPurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';

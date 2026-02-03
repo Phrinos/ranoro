@@ -37,7 +37,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 const transactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a 0."),
-  date: z.date({ invalid_type_error: "La fecha es obligatoria." }),
+  date: z.date({ required_error: "La fecha es obligatoria." }),
   paymentMethod: z.enum(["Efectivo", "Tarjeta", "Transferencia", "Transferencia/Contadora"] as const),
 });
 
