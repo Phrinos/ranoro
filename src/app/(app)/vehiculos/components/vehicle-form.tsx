@@ -74,11 +74,13 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
   }, []);
   
     // Hooks para obtener listas dependientes (marcas, modelos, etc.)
-    const makes = useMemo(() => vehicleDb.map(db => db.make).sort(), [vehicleDb]);
+    // Se añade .filter(Boolean) para evitar que cadenas vacías rompan el componente Select de Radix
+    const makes = useMemo(() => vehicleDb.map(db => db.make).filter(Boolean).sort(), [vehicleDb]);
+    
     const models = useMemo(() => {
         if (!watchedMake) return [];
         const selected = vehicleDb.find(db => db.make === watchedMake);
-        return selected ? selected.models.map(m => m.name).sort() : [];
+        return selected ? selected.models.map(m => m.name).filter(Boolean).sort() : [];
     }, [watchedMake, vehicleDb]);
 
     const years = useMemo(() => {
@@ -88,7 +90,9 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
         if (!modelData) return [];
         const yearSet = new Set<number>();
         modelData.generations.forEach(g => {
-            for (let y = g.startYear; y <= g.endYear; y++) yearSet.add(y);
+            for (let y = g.startYear; y <= g.endYear; y++) {
+                if (y) yearSet.add(y);
+            }
         });
         return Array.from(yearSet).sort((a, b) => b - a);
     }, [watchedMake, watchedModel, vehicleDb]);
@@ -99,7 +103,8 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
         const modelData = makeData?.models.find(m => m.name === watchedModel);
         const year = watchedYear;
         const generation = modelData?.generations.find(g => year >= g.startYear && year <= g.endYear);
-        return generation ? generation.engines.sort((a, b) => a.name.localeCompare(b.name)) : [];
+        // Filtramos motores que tengan un nombre válido (no vacío)
+        return generation ? generation.engines.filter(e => e.name).sort((a, b) => a.name.localeCompare(b.name)) : [];
     }, [watchedMake, watchedModel, watchedYear, vehicleDb]);
 
   return (
@@ -119,10 +124,73 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
         />
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <FormField control={control} name="make" render={({ field }) => ( <FormItem><Label>Marca</Label><Select onValueChange={(value) => { field.onChange(value); setValue("model", ""); setValue("year", undefined as any); setValue("engine", ""); }} value={field.value ?? ''} disabled={isLoadingDb}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder={isLoadingDb ? "Cargando..." : "Seleccione..."} /></SelectTrigger></FormControl><SelectContent>{makes.map(make => <SelectItem key={make} value={make}>{make}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
-            <FormField control={control} name="model" render={({ field }) => ( <FormItem><Label>Modelo</Label><Select onValueChange={(value) => { field.onChange(value); setValue("year", undefined as any); setValue("engine", ""); }} value={field.value ?? ''} disabled={!watchedMake}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl><SelectContent>{models.map(model => <SelectItem key={model} value={model}>{model}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
-            <FormField control={control} name="year" render={({ field }) => ( <FormItem><Label>Año</Label><Select onValueChange={(val) => { field.onChange(parseInt(val, 10)); setValue("engine", ""); }} value={String(field.value || '')} disabled={!watchedModel}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder="Seleccione..." /></SelectTrigger></FormControl><SelectContent>{years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
-            <FormField control={control} name="engine" render={({ field }) => ( <FormItem><Label>Motor (Opcional)</Label><Select onValueChange={field.onChange} value={field.value ?? ''} disabled={!watchedYear || engines.length === 0}><FormControl><SelectTrigger className="bg-card"><SelectValue placeholder={engines.length === 0 ? "No disponible" : "Seleccione..."} /></SelectTrigger></FormControl><SelectContent>{engines.map((engine, index) => <SelectItem key={`${engine.name}-${index}`} value={engine.name}>{engine.name}</SelectItem>)}</SelectContent></Select><FormMessage /></FormItem> )}/>
+            <FormField control={control} name="make" render={({ field }) => ( 
+              <FormItem>
+                <Label>Marca</Label>
+                <Select onValueChange={(value) => { field.onChange(value); setValue("model", ""); setValue("year", undefined as any); setValue("engine", ""); }} value={field.value ?? ''} disabled={isLoadingDb}>
+                  <FormControl>
+                    <SelectTrigger className="bg-card">
+                      <SelectValue placeholder={isLoadingDb ? "Cargando..." : "Seleccione..."} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {makes.map(make => <SelectItem key={make} value={make}>{make}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem> 
+            )}/>
+            
+            <FormField control={control} name="model" render={({ field }) => ( 
+              <FormItem>
+                <Label>Modelo</Label>
+                <Select onValueChange={(value) => { field.onChange(value); setValue("year", undefined as any); setValue("engine", ""); }} value={field.value ?? ''} disabled={!watchedMake}>
+                  <FormControl>
+                    <SelectTrigger className="bg-card">
+                      <SelectValue placeholder="Seleccione..." />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {models.map(model => <SelectItem key={model} value={model}>{model}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem> 
+            )}/>
+            
+            <FormField control={control} name="year" render={({ field }) => ( 
+              <FormItem>
+                <Label>Año</Label>
+                <Select onValueChange={(val) => { field.onChange(parseInt(val, 10)); setValue("engine", ""); }} value={field.value ? String(field.value) : ''} disabled={!watchedModel}>
+                  <FormControl>
+                    <SelectTrigger className="bg-card">
+                      <SelectValue placeholder="Seleccione..." />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem> 
+            )}/>
+            
+            <FormField control={control} name="engine" render={({ field }) => ( 
+              <FormItem>
+                <Label>Motor (Opcional)</Label>
+                <Select onValueChange={field.onChange} value={field.value ?? ''} disabled={!watchedYear || engines.length === 0}>
+                  <FormControl>
+                    <SelectTrigger className="bg-card">
+                      <SelectValue placeholder={engines.length === 0 ? "No disponible" : "Seleccione..."} />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {engines.map((engine, index) => <SelectItem key={`${engine.name}-${index}`} value={engine.name}>{engine.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem> 
+            )}/>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
