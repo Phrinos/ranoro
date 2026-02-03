@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -43,7 +43,7 @@ type ReportRow = {
   id: string;
   date: Date | null;
   type: 'Ingreso' | 'Egreso';
-  source: 'Compra' | 'Venta (PDV)' | 'Servicio' | 'Manual';
+  source: 'Compra' | 'Venta (PDV)' | 'Servicio' | 'Manual' | 'Flotilla';
   concept: string;
   method: string;
   amount: number;
@@ -52,11 +52,6 @@ type ReportRow = {
 
 export default function DetallesReporteContent({ services, sales, cashTransactions, users }: DetallesReporteProps) {
   const { toast } = useToast();
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to?: Date | undefined }>(() => {
-    const now = new Date();
-    return { from: startOfMonth(now), to: endOfMonth(now) };
-  });
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'Ingreso' | 'Egreso'>('Ingreso');
 
@@ -68,12 +63,15 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
   const mergedMovements = useMemo(() => {
     const rows: ReportRow[] = [];
 
+    // 1. Auditoría de Servicios: Solo entregados (dinero realizado)
     services.forEach(s => {
-      if (s.status === 'Cancelado') return;
+      if (s.status !== 'Entregado') return;
       const d = parseDate(s.deliveryDateTime || s.serviceDate);
       const amount = Number(s.totalCost) || 0;
       if (amount <= 0) return;
+      
       const methods = s.payments?.map(p => p.method).join(' / ') || (s as any).paymentMethod || 'Efectivo';
+      
       rows.push({
         id: `svc-${s.id}`,
         date: d,
@@ -86,12 +84,15 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       });
     });
 
+    // 2. Auditoría de Ventas PDV
     sales.forEach(s => {
-      if (s.status === 'Cancelado') return;
+      if (s.status !== 'Completado') return;
       const d = parseDate(s.saleDate);
       const amount = Number(s.totalAmount) || 0;
       if (amount <= 0) return;
+
       const methods = s.payments?.map(p => p.method).join(' / ') || (s as any).paymentMethod || 'Efectivo';
+
       rows.push({
         id: `sale-${s.id}`,
         date: d,
@@ -104,11 +105,19 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       });
     });
 
+    // 3. Auditoría de Caja (Manuales, Compras, Flotilla)
     cashTransactions.forEach(t => {
+      // Evitamos duplicar lo que ya viene de Servicios y Ventas por sus propias colecciones
       if (t.relatedType === 'Servicio' || t.relatedType === 'Venta') return;
+      
       const d = parseDate(t.date);
       const isIncome = t.type === 'in' || t.type === 'Entrada';
-      const source = t.relatedType === 'Compra' ? 'Compra' : 'Manual';
+      
+      // Mapeo de origen según el relatedType de la caja
+      let source: ReportRow['source'] = 'Manual';
+      if (t.relatedType === 'Compra') source = 'Compra';
+      if (t.relatedType === 'Flotilla') source = 'Flotilla';
+
       rows.push({
         id: `ledger-${t.id}`,
         date: d,
@@ -129,8 +138,8 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
     searchKeys: ['concept', 'clientUser', 'method', 'source'],
     dateFilterKey: 'date',
     initialSortOption: 'date_desc',
-    initialDateRange: dateRange,
-    itemsPerPage: 10000, // Valor muy alto para evitar paginación
+    initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
+    itemsPerPage: 10000, // Desactivar paginación visualmente al mostrar todo
   });
 
   const kpis = useMemo(() => {
@@ -279,7 +288,12 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                         <Badge variant={r.type === 'Ingreso' ? 'success' : 'destructive'}>{r.type}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="font-normal">{r.source}</Badge>
+                        <Badge variant="outline" className="font-normal flex items-center gap-1.5 w-fit">
+                          {r.source === 'Servicio' && <Wrench className="h-3 w-3" />}
+                          {r.source === 'Venta (PDV)' && <ShoppingCart className="h-3 w-3" />}
+                          {r.source === 'Compra' && <Receipt className="h-3 w-3" />}
+                          {r.source}
+                        </Badge>
                       </TableCell>
                       <TableCell className="max-w-[250px] truncate font-medium" title={r.concept}>{r.concept}</TableCell>
                       <TableCell className="text-xs">{r.method}</TableCell>
