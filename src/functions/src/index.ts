@@ -1,3 +1,4 @@
+
 // functions/src/index.ts
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as logger from 'firebase-functions/logger';
@@ -13,7 +14,7 @@ const TZ = 'America/Mexico_City';
 // --- Daily Rental Charges Generation (fixed) ---
 export const generateDailyRentalCharges = onSchedule(
   {
-    schedule: '0 3 * * *', // 03:00 todos los días
+    schedule: '0 8 * * *', // 08:00 todos los días (Hora CDMX)
     timeZone: TZ,
   },
   async () => {
