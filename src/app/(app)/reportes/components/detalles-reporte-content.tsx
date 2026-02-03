@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -50,6 +51,19 @@ type ReportRow = {
   clientUser: string;
 };
 
+const tipoOptions = [
+  { value: 'all', label: 'Todos los Tipos' },
+  { value: 'Ingreso', label: 'Ingresos' },
+  { value: 'Egreso', label: 'Egresos' },
+];
+
+const metodoOptions = [
+  { value: 'all', label: 'Todos los Métodos' },
+  { value: 'Efectivo', label: 'Efectivo' },
+  { value: 'Tarjeta', label: 'Tarjeta' },
+  { value: 'Transferencia', label: 'Transferencia' },
+];
+
 export default function DetallesReporteContent({ services, sales, cashTransactions, users }: DetallesReporteProps) {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -63,7 +77,6 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
   const mergedMovements = useMemo(() => {
     const rows: ReportRow[] = [];
 
-    // 1. Auditoría de Servicios: Solo entregados (dinero realizado)
     services.forEach(s => {
       if (s.status !== 'Entregado') return;
       const d = parseDate(s.deliveryDateTime || s.serviceDate);
@@ -84,7 +97,6 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       });
     });
 
-    // 2. Auditoría de Ventas PDV
     sales.forEach(s => {
       if (s.status !== 'Completado') return;
       const d = parseDate(s.saleDate);
@@ -105,15 +117,12 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       });
     });
 
-    // 3. Auditoría de Caja (Manuales, Compras, Flotilla)
     cashTransactions.forEach(t => {
-      // Evitamos duplicar lo que ya viene de Servicios y Ventas por sus propias colecciones
       if (t.relatedType === 'Servicio' || t.relatedType === 'Venta') return;
       
       const d = parseDate(t.date);
       const isIncome = t.type === 'in' || t.type === 'Entrada';
       
-      // Mapeo de origen según el relatedType de la caja
       let source: ReportRow['source'] = 'Manual';
       if (t.relatedType === 'Compra') source = 'Compra';
       if (t.relatedType === 'Flotilla') source = 'Flotilla';
@@ -139,7 +148,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
     dateFilterKey: 'date',
     initialSortOption: 'date_desc',
     initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
-    itemsPerPage: 10000, // Desactivar paginación visualmente al mostrar todo
+    itemsPerPage: 10000,
   });
 
   const kpis = useMemo(() => {
@@ -249,7 +258,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 items-center justify-end border-t pt-4">
+            <div className="flex flex-col md:flex-row gap-2 items-center justify-end border-t pt-4">
               <div className="flex gap-2 w-full sm:w-auto">
                 <Button variant="outline" size="sm" onClick={setThisMonth} className="flex-1 sm:flex-none bg-card">
                   Este Mes
@@ -259,6 +268,32 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                 </Button>
               </div>
               <DatePickerWithRange date={tableManager.dateRange} onDateChange={tableManager.onDateRangeChange} />
+              
+              <div className="flex gap-2 w-full md:w-auto">
+                <Select 
+                  value={tableManager.otherFilters["type"] || "all"} 
+                  onValueChange={(val) => tableManager.setOtherFilters(prev => ({ ...prev, type: val }))}
+                >
+                  <SelectTrigger className="w-full md:w-[150px] bg-card h-10">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {tipoOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+
+                <Select 
+                  value={tableManager.otherFilters["method"] || "all"} 
+                  onValueChange={(val) => tableManager.setOtherFilters(prev => ({ ...prev, method: val }))}
+                >
+                  <SelectTrigger className="w-full md:w-[180px] bg-card h-10">
+                    <SelectValue placeholder="Método Pago" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {metodoOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </CardContent>
