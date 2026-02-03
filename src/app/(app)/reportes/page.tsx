@@ -15,6 +15,7 @@ import { calcEffectiveProfit, calcSuppliesCostFromItems } from '@/lib/money-help
 const DetallesReporteContent = lazy(() => import('./components/detalles-reporte-content'));
 const MensualReporteContent = lazy(() => import('./components/mensual-reporte-content'));
 const EgresosContent = lazy(() => import('../finanzas/components/egresos-content').then(m => ({ default: m.EgresosContent })));
+const CajaReporteContent = lazy(() => import('./components/caja-reporte-content'));
 
 interface DateRange {
   from: Date | undefined;
@@ -25,7 +26,7 @@ function ReportesPageInner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const tab = searchParams.get('tab') || 'detalles';
+  const tab = searchParams.get('tab') || 'caja';
   
   const [activeTab, setActiveTab] = useState(tab);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,7 +61,9 @@ function ReportesPageInner() {
 
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
-    router.push(`${pathname}?tab=${newTab}`);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', newTab);
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   const handleDateRangeChange = useCallback((range?: DateRange) => {
@@ -164,8 +167,13 @@ function ReportesPageInner() {
 
   const tabs = [
     { 
+      value: "caja", 
+      label: "Caja y Balance", 
+      content: <Suspense fallback={<Loader2 className="animate-spin" />}><CajaReporteContent /></Suspense> 
+    },
+    { 
       value: "detalles", 
-      label: "Detalles de Movimientos", 
+      label: "Movimientos", 
       content: <DetallesReporteContent services={services} sales={sales} cashTransactions={cashTransactions} users={users} /> 
     },
     { 
@@ -191,8 +199,8 @@ function ReportesPageInner() {
 
   return (
     <TabbedPageLayout
-      title="Reportes Financieros"
-      description="Control total de ingresos, egresos y flujo de efectivo de tu taller."
+      title="Finanzas y Reportes"
+      description="Control total de caja, ingresos, egresos y utilidad neta de tu taller."
       activeTab={activeTab}
       onTabChange={handleTabChange}
       tabs={tabs}
