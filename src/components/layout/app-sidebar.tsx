@@ -59,6 +59,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Finanzas', path: '/finanzas', icon: DollarSign, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
   { label: 'Cierres', path: '/finanzas/cierre', icon: BarChart3, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
   { label: 'Reportes', path: '/reportes', icon: FileBarChart, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
+  { label: 'Reportes Flotilla', path: '/flotillareportes', icon: Truck, groupTag: 'Finanzas', permissions: ['fleet:manage'] },
   { label: 'Facturación', path: '/facturacion', icon: FileJson, groupTag: 'Finanzas', permissions: ['billing:manage'] },
 
   // Opciones
@@ -111,7 +112,7 @@ const useNavigation = (): NavigationEntry[] => {
         isActive = true;
     }
 
-    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/inventario/proveedores', '/inventario/compras', '/finanzas', '/personal', '/opciones', '/facturacion', '/ai', '/flotilla', '/reportes', '/precios'];
+    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/inventario/proveedores', '/inventario/compras', '/finanzas', '/personal', '/opciones', '/facturacion', '/ai', '/flotilla', '/reportes', '/precios', '/flotillareportes'];
     
     if (parentRoutes.includes(cleanEntryPath) && cleanPathname.startsWith(cleanEntryPath)) {
         if (cleanPathname === cleanEntryPath) {
