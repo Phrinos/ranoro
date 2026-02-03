@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote, Download } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -30,6 +30,7 @@ import { NewCalendar } from '@/components/ui/calendar';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { exportToCsv } from '@/lib/services/export.service';
 
 const transactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
@@ -227,7 +228,6 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       if (row.id.startsWith('ledger-')) {
         await cashService.deleteCashTransaction(row.realId);
       } else if (row.id.startsWith('svc-')) {
-        // Para servicios lo ideal es cancelarlos desde su módulo, pero permitimos borrar si es admin
         await serviceService.deleteService(row.realId);
       } else if (row.id.startsWith('sale-')) {
         await saleService.deleteSale(row.realId, null);
@@ -238,6 +238,41 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
     } catch (error) {
       toast({ title: "Error al eliminar", description: "No se pudo completar la acción.", variant: "destructive" });
     }
+  };
+
+  const handleExportCsv = () => {
+    if (fullFilteredData.length === 0) {
+      toast({ title: "No hay datos para exportar", variant: "destructive" });
+      return;
+    }
+
+    const dataToExport = fullFilteredData.map(row => ({
+      fecha: row.date ? format(row.date, 'dd/MM/yyyy HH:mm', { locale: es }) : 'N/A',
+      tipo: row.type,
+      origen: row.source,
+      concepto: row.concept,
+      metodo_pago: row.method,
+      monto: row.amount,
+      cliente_usuario: row.clientUser,
+      registrado_por: row.registeredBy || 'N/A',
+      notas: row.note || ''
+    }));
+
+    exportToCsv({
+      data: dataToExport,
+      headers: [
+        { key: 'fecha', label: 'Fecha' },
+        { key: 'tipo', label: 'Tipo' },
+        { key: 'origen', label: 'Origen' },
+        { key: 'concepto', label: 'Concepto' },
+        { key: 'metodo_pago', label: 'Método de Pago' },
+        { key: 'monto', label: 'Monto' },
+        { key: 'cliente_usuario', label: 'Cliente/Usuario' },
+        { key: 'registrado_por', label: 'Registrado Por' },
+        { key: 'notas', label: 'Notas' },
+      ],
+      fileName: `reporte_detallado_taller_${format(new Date(), 'yyyy-MM-dd')}`
+    });
   };
 
   const handleSort = (key: string) => {
@@ -338,6 +373,10 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                     {metodoOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
+
+                <Button onClick={handleExportCsv} variant="outline" size="icon" className="h-10 w-10 shrink-0 bg-white" title="Descargar CSV">
+                  <Download className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>
