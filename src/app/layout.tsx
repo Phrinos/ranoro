@@ -11,7 +11,6 @@ const inter = Inter({ subsets: ["latin"], display: "swap" });
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // Theme color adaptativo para Android/iOS
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#0b0b0b" },
@@ -55,7 +54,6 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
-      // ayuda a rich results/imágenes grandes
       "max-image-preview": "large",
       "max-video-preview": -1,
       "max-snippet": -1,
@@ -71,7 +69,7 @@ export const metadata: Metadata = {
       "Mantenimientos claros, trabajo garantizado y trato honesto. Especialistas en mecánica rápida, frenos, suspensión y pintura.",
     images: [
       {
-        url: "/og.jpg", // ⚠️ Coloca tu imagen OG 1200x630
+        url: "/og.jpg",
         width: 1200,
         height: 630,
         alt: "Ranoro Taller Automotriz en Aguascalientes",
@@ -80,12 +78,12 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    site: "@ranoromx", // ⚠️ cámbialo si no tienes X/Twitter
+    site: "@ranoromx",
     creator: "@ranoromx",
     title: "Ranoro Taller en Aguascalientes",
     description:
       "Mecánica, frenos, suspensión y pintura con trato honesto y garantía.",
-    images: ["/og.jpg"], // misma OG
+    images: ["/og.jpg"],
   },
   formatDetection: {
     telephone: true,
@@ -103,7 +101,7 @@ export const metadata: Metadata = {
     other: [
       {
         rel: "mask-icon",
-        url: "/safari-pinned-tab.svg", // ⚠️ icono vector para Safari
+        url: "/safari-pinned-tab.svg",
         color: "#0b0b0b",
       },
     ],
@@ -113,19 +111,15 @@ export const metadata: Metadata = {
     title: "Ranoro",
     statusBarStyle: "black-translucent",
   },
-  // Meta extra útil (no existe campo dedicado) 
   other: {
     "msapplication-TileColor": "#0b0b0b",
     "color-scheme": "light dark",
   },
-  // Si usas Search Console / Apple Domain Verification, añade aquí:
-  // verification: { google: "TU_TOKEN", apple: "TU_TOKEN" },
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // JSON-LD: negocio local (AutoRepair) para rich results
   const orgJsonLd = {
     "@context": "https://schema.org",
     "@type": "AutoRepair",
@@ -147,24 +141,14 @@ export default function RootLayout({
       "https://www.facebook.com/ranoromx",
       "https://www.instagram.com/ranoromx",
     ],
-    // Horarios opcionales (ejemplo):
-    // openingHoursSpecification: [
-    //   { "@type": "OpeningHoursSpecification", dayOfWeek: ["Monday","Tuesday","Wednesday","Thursday","Friday"], opens: "09:00", closes: "18:00" },
-    //   { "@type": "OpeningHoursSpecification", dayOfWeek: "Saturday", opens: "09:00", closes: "14:00" }
-    // ],
   };
 
   return (
     <html lang="es-MX" suppressHydrationWarning>
-      <head>
-        {/* Preload sugerido de OG si la usas mucho en home */}
-        <link rel="preload" as="image" href="/og.jpg" />
-      </head>
       <body className={inter.className}>
         {children}
         <Analytics />
         <SpeedInsights />
-        {/* JSON-LD de negocio local */}
         <Script
           id="ld-localbusiness"
           type="application/ld+json"

@@ -15,7 +15,7 @@ import {
   CardDescription,
   CardHeader,
 } from "@/components/ui/card";
-import { auth } from "@/lib/firebaseClient.js";
+import { auth } from "@/lib/firebaseClient";
 import { signInWithEmailAndPassword } from "firebase/auth";
 
 function LoginPageContent() {
@@ -52,17 +52,24 @@ function LoginPageContent() {
 
       const nextUrl = searchParams.get("next") || "/dashboard";
       router.push(nextUrl);
-      // No seteamos loading=false: dejamos que la navegación haga el swap.
     } catch (error: any) {
       console.error("Error en inicio de sesión:", error);
       const code = error?.code ?? "";
-      const errorMessage =
-        code === "auth/invalid-credential"
-          ? "Las credenciales son incorrectas. Verifica tu correo y contraseña."
-          : "Ocurrió un error inesperado al intentar iniciar sesión.";
+      const message = error?.message ?? "";
+      
+      let description = "Ocurrió un error inesperado al intentar iniciar sesión.";
+      
+      if (code === "auth/invalid-credential") {
+        description = "Las credenciales son incorrectas. Verifica tu correo y contraseña.";
+      } else if (code === "auth/network-request-failed") {
+        description = "Error de red. Revisa tu conexión a internet.";
+      } else if (code === "auth/unauthorized-domain") {
+        description = "Este dominio no está autorizado en la consola de Firebase. Contacta al administrador.";
+      }
+
       toast({
         title: "Error al iniciar sesión",
-        description: errorMessage,
+        description: `${description} (Código: ${code})`,
         variant: "destructive",
       });
       setIsLoading(false);
@@ -133,7 +140,6 @@ function LoginPageContent() {
               Ingresar al Sistema
             </Button>
 
-            {/* Link de ayuda (opcional) */}
             <p className="pt-2 text-center text-xs text-muted-foreground">
               ¿Olvidaste tu contraseña?{" "}
               <Link href="/recuperar" className="underline underline-offset-4">
