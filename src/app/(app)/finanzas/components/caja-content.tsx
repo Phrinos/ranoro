@@ -137,10 +137,12 @@ export default function CajaContent() {
       const d = toJsDate((t as any).date);
       if (!inRange(d)) return;
 
+      const isIncome = t.type === 'in' || t.type === 'Entrada';
+
       allRows.push({
         id: t.id,
         date: d,
-        type: t.type === 'in' ? 'Entrada' : 'Salida',
+        type: isIncome ? 'Entrada' : 'Salida',
         source: 'Libro',
         relatedType: (t as any).relatedType || 'Manual',
         refId: (t as any).relatedId,
@@ -179,11 +181,11 @@ export default function CajaContent() {
         .filter(t => t.paymentMethod === 'Efectivo');
         
     const allManualCashIncome = allManualCashFlow
-        .filter(t => t.type === 'in')
+        .filter(t => t.type === 'in' || t.type === 'Entrada')
         .reduce((s, r) => s + (r as any).amount, 0);
 
     const allManualCashOutcome = allManualCashFlow
-        .filter(t => t.type === 'out')
+        .filter(t => t.type === 'out' || t.type === 'Salida')
         .reduce((s, r) => s + (r as any).amount, 0);
         
     const currentTotalBalance = allManualCashIncome - allManualCashOutcome;

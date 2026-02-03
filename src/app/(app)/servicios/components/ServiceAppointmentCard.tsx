@@ -1,4 +1,3 @@
-
 // src/app/(app)/servicios/components/ServiceAppointmentCard.tsx
 "use client";
 
@@ -10,7 +9,7 @@ import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
 import { formatCurrency, getStatusInfo, getPaymentMethodVariant, cn } from '@/lib/utils';
-import { User as UserIcon, Clock, Wrench, Edit, Printer, Trash2, Phone, Share2, Wallet, CreditCard, Landmark, TrendingUp } from 'lucide-react';
+import { User as UserIcon, Clock, Wrench, Edit, Printer, Trash2, Phone, Wallet, CreditCard, Landmark, TrendingUp } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -93,18 +92,16 @@ export function ServiceAppointmentCard({
   const handleShowTicket = onShowTicket ?? noop;
 
   return (
-    <Card className={cn("shadow-sm overflow-hidden border-l-4", 
-      service.status === 'Cancelado' ? "bg-muted/60 opacity-80 border-l-destructive" : 
-      service.status === 'Entregado' ? "border-l-green-500" : "border-l-primary"
+    <Card className={cn("shadow-sm overflow-hidden", 
+      service.status === 'Cancelado' ? "bg-muted/60 opacity-80" : "bg-card"
     )}>
       <CardContent className="p-0">
         <div className="flex flex-col md:flex-row text-sm">
           {/* Fecha y Folio */}
           <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-40 flex-shrink-0 bg-muted/30 border-b md:border-b-0 md:border-r">
-            <p className="text-muted-foreground text-xs uppercase font-bold">{parsedDate && isValid(parsedDate) ? format(parsedDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
-            <p className="font-bold text-lg text-foreground">{parsedDate && isValid(parsedDate) ? format(parsedDate, "dd MMM", { locale: es }) : "N/A"}</p>
-            <p className="text-[10px] text-muted-foreground">{parsedDate && isValid(parsedDate) ? format(parsedDate, "yyyy", { locale: es }) : ""}</p>
-            <p className="font-mono font-bold text-primary text-xs mt-2 bg-primary/10 px-2 py-0.5 rounded">{(service as any).folio || service.id.slice(-6)}</p>
+            <p className="text-muted-foreground text-xs">{parsedDate && isValid(parsedDate) ? format(parsedDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
+            <p className="font-bold text-lg text-foreground">{parsedDate && isValid(parsedDate) ? format(parsedDate, "dd MMM yyyy", { locale: es }) : "N/A"}</p>
+            <p className="text-muted-foreground text-xs mt-1">#{(service as any).folio || service.id.slice(-6)}</p>
           </div>
 
           {/* Info Cliente y Vehículo */}
@@ -112,12 +109,6 @@ export function ServiceAppointmentCard({
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
               <UserIcon className="h-3 w-3" />
               <span className="font-medium">{vehicle?.ownerName || service.customerName || 'Cliente no registrado'}</span>
-              {(vehicle?.ownerPhone || service.customerPhone) && (
-                <>
-                  <Phone className="h-3 w-3 ml-2"/>
-                  <span>{vehicle?.ownerPhone || service.customerPhone}</span>
-                </>
-              )}
             </div>
             <p className="font-bold text-base leading-tight">
               {vehicle ? `${vehicle.licensePlate} — ${vehicle.make} ${vehicle.model}` : service.vehicleIdentifier}
@@ -128,54 +119,39 @@ export function ServiceAppointmentCard({
           </div>
 
           {/* Finanzas */}
-          <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-44 flex-shrink-0 space-y-1 border-b md:border-b-0 md:border-r bg-muted/10">
+          <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-44 flex-shrink-0 space-y-1 border-b md:border-b-0 md:border-r">
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase font-bold">Costo Cliente</p>
+              <p className="text-xs text-muted-foreground mb-1">Costo Cliente</p>
               <p className="font-bold text-xl text-primary">{formatCurrency(calculatedTotals.totalCost)}</p>
             </div>
             <div>
               <p className="font-semibold text-xs text-green-600 flex items-center gap-1 justify-end">
-                <TrendingUp className="h-3 w-3" /> {formatCurrency(calculatedTotals.serviceProfit)} <span className="text-[10px] text-muted-foreground font-normal">(Ganancia)</span>
+                <TrendingUp className="h-4 w-4" /> {formatCurrency(calculatedTotals.serviceProfit)}
               </p>
             </div>
-            {primaryPayment && !service.status.includes('Cotizacion') && (
-              <Badge variant={getPaymentMethodVariant(primaryPayment.method)} className="mt-1 text-[10px] px-2 py-0">
-                 {React.createElement(paymentMethodIcons[primaryPayment.method as keyof typeof paymentMethodIcons] ?? Wallet, { className: "h-2.5 w-2.5 mr-1" })}
+            {primaryPayment && (
+              <Badge variant={getPaymentMethodVariant(primaryPayment.method)} className="mt-1">
                 {primaryPayment.method}
               </Badge>
             )}
           </div>
 
           {/* Estatus y Acciones */}
-          <div className="p-4 flex flex-col justify-between items-center text-center w-full md:w-48 flex-shrink-0 bg-card">
+          <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0 bg-card space-y-2">
              <div className="w-full">
-                <Badge variant={color as any} className="w-full justify-center text-[10px] py-0.5">
-                  <Icon icon={typeof StatusIcon === 'string' ? StatusIcon : "mdi:information"} className="mr-1.5 h-3 w-3" />
+                <Badge variant={color as any} className="w-full justify-center">
+                  <Icon icon={typeof StatusIcon === 'string' ? StatusIcon : "mdi:information"} className="mr-1.5 h-4 w-4" />
                   {label}
                 </Badge>
-                {service.subStatus && (
-                  <p className='text-[10px] mt-1 text-muted-foreground font-semibold uppercase tracking-tighter'>{service.subStatus}</p>
-                )}
             </div>
             
-            <div className="text-[10px] text-muted-foreground mt-2 w-full space-y-0.5">
-              <p className="truncate"><span className="font-bold">A:</span> {advisor?.name || service.serviceAdvisorName || 'N/A'}</p>
-              <p className="truncate"><span className="font-bold">T:</span> {technician?.name || service.technicianName || 'N/A'}</p>
-            </div>
-
-             <div className="flex justify-center items-center gap-1 mt-3">
-                <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={onView} title="Compartir">
-                    <Share2 className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={onEdit} title="Editar">
-                    <Edit className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" title="Ticket" onClick={handleShowTicket}>
-                    <Printer className="h-4 w-4" />
-                </Button>
+             <div className="flex justify-center items-center gap-1 flex-wrap pt-2">
+                <Button variant="ghost" size="icon" onClick={onView} title="Ver Detalles"><Icon icon="mdi:eye" className="h-4 w-4"/></Button>
+                <Button variant="ghost" size="icon" onClick={onEdit} title="Editar"><Edit className="h-4 w-4" /></Button>
+                <Button variant="ghost" size="icon" title="Ticket" onClick={handleShowTicket}><Printer className="h-4 w-4" /></Button>
                 {onDelete && (
                     <ConfirmDialog
-                        triggerButton={<Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-destructive" title="Eliminar"><Trash2 className="h-4 w-4"/></Button>}
+                        triggerButton={<Button variant="ghost" size="icon" className="text-destructive" title="Eliminar"><Trash2 className="h-4 w-4"/></Button>}
                         title="¿Eliminar Registro?"
                         description="Esta acción eliminará el registro permanentemente."
                         onConfirm={onDelete}
