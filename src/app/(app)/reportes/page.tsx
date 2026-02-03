@@ -191,13 +191,15 @@ function ReportesPageInner() {
   ];
 
   return (
-    <TabbedPageLayout
-      title="Finanzas y Reportes"
-      description={<span className="text-primary-foreground/80">Control total de ingresos, egresos y utilidad neta de tu taller.</span>}
-      activeTab={activeTab}
-      onTabChange={handleTabChange}
-      tabs={tabs}
-    />
+    <>
+      <TabbedPageLayout
+        title="Reportes Taller"
+        description={<span className="text-primary-foreground/80">Control total de ingresos, egresos y utilidad neta de tu taller.</span>}
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        tabs={tabs}
+      />
+    </>
   );
 }
 

@@ -55,7 +55,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Compras', path: '/inventario/compras', icon: ShoppingCart, groupTag: 'Operaciones', permissions: ['purchases:manage'] },
   
   // Finanzas
-  { label: 'Finanzas y Reportes', path: '/reportes', icon: DollarSign, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
+  { label: 'Reportes Taller', path: '/reportes', icon: DollarSign, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
   { label: 'Reportes Flotilla', path: '/flotillareportes', icon: Truck, groupTag: 'Finanzas', permissions: ['fleet:manage'] },
   { label: 'Facturación', path: '/facturacion', icon: FileJson, groupTag: 'Finanzas', permissions: ['billing:manage'] },
 
@@ -272,7 +272,7 @@ function AppSidebarInner({
             <DropdownMenuItem asChild>
               <Link href="/opciones?tab=perfil"><Users className="mr-2 h-4 w-4" /> Mi Perfil</Link>
             </DropdownMenuItem>
-             <DropdownMenuItem asChild>
+            <DropdownMenuItem asChild>
                <Link href="/opciones?tab=manual"><LifeBuoy className="mr-2 h-4 w-4" /> Manual de Uso</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
