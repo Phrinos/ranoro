@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote, Download } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote, Download, Filter } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -31,6 +31,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { exportToCsv } from '@/lib/services/export.service';
+import { Checkbox } from "@/components/ui/checkbox";
 
 const transactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
@@ -81,6 +82,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
   const [dialogType, setDialogType] = useState<'Ingreso' | 'Egreso'>('Ingreso');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedMovement, setSelectedMovement] = useState<ReportRow | null>(null);
+  const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
@@ -200,6 +202,18 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       efectivoDelPeriodo: efectivoIngresoPeriodo - efectivoEgresoPeriodo
     };
   }, [fullFilteredData]);
+
+  const handleToggleMethod = (method: string) => {
+    const next = selectedMethods.includes(method)
+      ? selectedMethods.filter(m => m !== method)
+      : [...selectedMethods, method];
+    
+    setSelectedMethods(next);
+    tableManager.setOtherFilters(prev => ({ 
+      ...prev, 
+      method: next.length > 0 ? next : "all" 
+    }));
+  };
 
   const handleTransactionSubmit = async (values: TransactionFormValues) => {
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
@@ -362,17 +376,52 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                   </SelectContent>
                 </Select>
 
-                <Select 
-                  value={tableManager.otherFilters["method"] || "all"} 
-                  onValueChange={(val) => tableManager.setOtherFilters(prev => ({ ...prev, method: val }))}
-                >
-                  <SelectTrigger className="w-full md:w-[180px] bg-card h-10">
-                    <SelectValue placeholder="Método Pago" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {metodoOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full md:w-[180px] justify-between bg-card h-10">
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <Filter className="h-4 w-4 shrink-0 opacity-50" />
+                        <span className="truncate">
+                          {selectedMethods.length === 0 ? "Todos los Métodos" : 
+                           selectedMethods.length === 1 ? selectedMethods[0] : 
+                           `${selectedMethods.length} Métodos`}
+                        </span>
+                      </div>
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[200px] p-2" align="end">
+                    <div className="space-y-2">
+                      {metodoOptions.filter(o => o.value !== 'all').map(opt => (
+                        <div 
+                          key={opt.value} 
+                          className="flex items-center space-x-2 p-2 hover:bg-muted rounded-md cursor-pointer"
+                          onClick={() => handleToggleMethod(opt.value)}
+                        >
+                          <Checkbox 
+                            checked={selectedMethods.includes(opt.value)}
+                            onCheckedChange={() => {}} 
+                          />
+                          <span className="text-sm font-medium">{opt.label}</span>
+                        </div>
+                      ))}
+                      {selectedMethods.length > 0 && (
+                        <div className="border-t pt-2 mt-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="w-full text-xs h-8"
+                            onClick={() => {
+                              setSelectedMethods([]);
+                              tableManager.setOtherFilters(prev => ({ ...prev, method: "all" }));
+                            }}
+                          >
+                            Limpiar Filtros
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </PopoverContent>
+                </Popover>
 
                 <Button onClick={handleExportCsv} variant="outline" size="icon" className="h-10 w-10 shrink-0 bg-white" title="Descargar CSV">
                   <Download className="h-4 w-4" />

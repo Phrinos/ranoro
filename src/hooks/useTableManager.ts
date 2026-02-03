@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -41,7 +40,7 @@ export function useTableManager<T extends Record<string, any>>({
 }: UseTableManagerOptions<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<string>(initialSortOption);
-  const [otherFilters, setOtherFilters] = useState<Record<string, string | 'all'>>({});
+  const [otherFilters, setOtherFilters] = useState<Record<string, any>>({});
   const [currentPage, setCurrentPage] = useState(1);
   const [dateRange, setDateRange] = useState<DateRange | undefined>(initialDateRange);
 
@@ -88,10 +87,24 @@ export function useTableManager<T extends Record<string, any>>({
       if (value !== 'all' && value !== undefined) {
         data = data.filter(item => {
           const raw = getNestedValue(item, key);
-          if (Array.isArray(raw)) {
-            return raw.some(subItem => subItem && subItem.method === value);
+          
+          // Soporte para multi-select (si value es un array)
+          if (Array.isArray(value)) {
+            if (value.length === 0) return true;
+            if (Array.isArray(raw)) {
+               return raw.some(subItem => subItem && (value.includes(subItem.method) || value.includes(subItem)));
+            }
+            if (typeof raw === 'string') {
+                return value.some(v => raw.toLowerCase().includes(String(v).toLowerCase()));
+            }
+            return value.includes(raw);
           }
-          if (typeof raw === 'string') return raw.includes(value as string);
+
+          // Lógica existente para valor único
+          if (Array.isArray(raw)) {
+            return raw.some(subItem => subItem && (subItem.method === value || subItem === value));
+          }
+          if (typeof raw === 'string') return raw.toLowerCase().includes(String(value).toLowerCase());
           return raw === value;
         });
       }
