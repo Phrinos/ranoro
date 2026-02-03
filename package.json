@@ -22,7 +22,7 @@
     "@genkit-ai/core": "^1.27.0",
     "@genkit-ai/firebase": "^1.27.0",
     "@genkit-ai/google-cloud": "^1.27.0",
-    "@genkit-ai/googleai": "^1.27.0",
+    "@genkit-ai/google-genai": "^1.27.0",
     "@hookform/resolvers": "^5.2.2",
     "@iconify/react": "^6.0.2",
     "@opentelemetry/exporter-trace-otlp-http": "^0.208.0",

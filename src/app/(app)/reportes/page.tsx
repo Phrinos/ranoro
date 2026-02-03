@@ -24,7 +24,6 @@ function ReportesPageInner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  // El tab por defecto ahora es 'movimientos'
   const tab = searchParams.get('tab') || 'movimientos';
   
   const [activeTab, setActiveTab] = useState(tab);

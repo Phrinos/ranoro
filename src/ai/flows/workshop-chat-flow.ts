@@ -117,7 +117,8 @@ export const workshopChatFlow = ai.defineFlow(
     outputSchema: z.string(),
   },
   async (input) => {
-    // Usamos ai.generate con mensajes para manejar el historial en Genkit 1.x
+    // En Genkit 1.x, si ai.chat no está disponible en la instancia, 
+    // usamos ai.generate con la lista de mensajes (historial + nuevo mensaje)
     const response = await ai.generate({
       system: `Eres el Asistente Inteligente de Ranoro, un experto en gestión de talleres mecánicos. 
       Tienes acceso a los datos reales del taller mediante herramientas. 
