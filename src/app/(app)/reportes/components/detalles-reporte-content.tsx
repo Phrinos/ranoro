@@ -2,14 +2,14 @@
 
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, ChevronLeft, ChevronRight, PlusCircle, DollarSign, CalendarDays } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -124,22 +124,21 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
     return rows;
   }, [services, sales, cashTransactions]);
 
-  const { paginatedData, fullFilteredData, ...tableManager } = useTableManager<ReportRow>({
+  const { fullFilteredData, ...tableManager } = useTableManager<ReportRow>({
     initialData: mergedMovements,
     searchKeys: ['concept', 'clientUser', 'method', 'source'],
     dateFilterKey: 'date',
     initialSortOption: 'date_desc',
     initialDateRange: dateRange,
+    itemsPerPage: 10000, // Valor muy alto para evitar paginación
   });
 
   const kpis = useMemo(() => {
     const data = fullFilteredData;
     
-    // Totales brutos del periodo
     const ingresoTotal = data.filter(r => r.type === 'Ingreso').reduce((s, r) => s + r.amount, 0);
     const egresoTotal = data.filter(r => r.type === 'Egreso').reduce((s, r) => s + r.amount, 0);
     
-    // Filtrar solo movimientos en EFECTIVO dentro del periodo seleccionado
     const efectivoIngresoPeriodo = data
       .filter(r => r.type === 'Ingreso' && r.method.toLowerCase().includes('efectivo'))
       .reduce((s, r) => s + r.amount, 0);
@@ -153,7 +152,6 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       egresoTotal,
       efectivoIngreso: efectivoIngresoPeriodo,
       balanceNeto: ingresoTotal - egresoTotal,
-      // Ahora "Efectivo del Periodo" es el flujo neto de efectivo solo de este rango
       efectivoDelPeriodo: efectivoIngresoPeriodo - efectivoEgresoPeriodo
     };
   }, [fullFilteredData]);
@@ -273,8 +271,8 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedData.length > 0 ? (
-                  paginatedData.map(r => (
+                {fullFilteredData.length > 0 ? (
+                  fullFilteredData.map(r => (
                     <TableRow key={r.id}>
                       <TableCell className="text-xs">{r.date ? format(r.date, 'dd/MM/yy HH:mm', { locale: es }) : '—'}</TableCell>
                       <TableCell>
@@ -300,13 +298,6 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                 )}
               </TableBody>
             </Table>
-          </div>
-          <div className="p-4 flex items-center justify-between border-t">
-            <p className="text-xs text-muted-foreground">{tableManager.paginationSummary}</p>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious}><ChevronLeft className="h-4 w-4"/></Button>
-              <Button size="sm" variant="outline" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext}><ChevronRight className="h-4 w-4"/></Button>
-            </div>
           </div>
         </CardContent>
       </Card>
