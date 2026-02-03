@@ -434,7 +434,7 @@ function SearchItemDialog({
   }, [searchTerm, inventoryItems]);
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg p-0">
         <DialogHeader className="border-b p-6 pb-4">
           <DialogTitle>Buscar Artículo en Inventario</DialogTitle>
