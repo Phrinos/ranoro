@@ -12,12 +12,18 @@ import {
   where,
   orderBy,
   serverTimestamp,
+  getDocs,
+  writeBatch,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { RentalPayment, DailyRentalCharge, Driver, Vehicle, OwnerWithdrawal, VehicleExpense, PaymentMethod } from "@/types";
+import type { RentalPayment, DailyRentalCharge, Driver, Vehicle, OwnerWithdrawal, VehicleExpense, PaymentMethod, User } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { cashService } from './cash.service';
 import { inventoryService } from './inventory.service';
+import { adminService } from './admin.service';
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
+import { startOfDay, endOfDay } from 'date-fns';
 
 // --- Daily Rental Charges ---
 
@@ -43,6 +49,74 @@ const saveDailyCharge = async (id: string, data: { date: string; amount: number;
 const deleteDailyCharge = async (id: string): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     await deleteDoc(doc(db, 'dailyRentalCharges', id));
+};
+
+/**
+ * Genera manualmente los cargos de renta para todos los conductores activos en una fecha específica.
+ * Útil para recuperar cargos no generados por la función programada.
+ */
+const generateManualDailyCharges = async (targetDate: Date, currentUser: User): Promise<number> => {
+    if (!db) throw new Error("Database not initialized.");
+    const TZ = 'America/Mexico_City';
+
+    const zonedDate = toZonedTime(targetDate, TZ);
+    const dateKey = formatInTimeZone(zonedDate, TZ, 'yyyy-MM-dd');
+    
+    const start = startOfDay(zonedDate);
+    const end = endOfDay(zonedDate);
+
+    // 1. Obtener conductores activos con vehículo
+    const driversSnap = await getDocs(query(collection(db, 'drivers'), where('isArchived', '==', false)));
+    const batch = writeBatch(db);
+    let createdCount = 0;
+
+    const ops = driversSnap.docs.map(async (driverDoc) => {
+        const driver = driverDoc.data() as any;
+        const vehicleId = driver.assignedVehicleId;
+        if (!vehicleId) return false;
+
+        const vehicleSnap = await getDoc(doc(db, 'vehicles', vehicleId));
+        if (!vehicleSnap.exists()) return false;
+        
+        const vehicle = vehicleSnap.data() as any;
+        const amount = vehicle.dailyRentalCost;
+        if (!amount) return false;
+
+        const chargeId = `${driverDoc.id}_${dateKey}`;
+        const chargeRef = doc(db, 'dailyRentalCharges', chargeId);
+        const chargeSnap = await getDoc(chargeRef);
+
+        // Solo crear si no existe ya un cargo para ese chofer en esa fecha
+        if (!chargeSnap.exists()) {
+            batch.set(chargeRef, {
+                driverId: driverDoc.id,
+                vehicleId: vehicleId,
+                amount,
+                vehicleLicensePlate: vehicle.licensePlate || '',
+                date: Timestamp.fromDate(start),
+                dateKey,
+                dayStartUtc: Timestamp.fromDate(start),
+                dayEndUtc: Timestamp.fromDate(end),
+                note: `Generado manualmente para el ${dateKey}`
+            });
+            return true;
+        }
+        return false;
+    });
+
+    const results = await Promise.all(ops);
+    createdCount = results.filter(Boolean).length;
+
+    if (createdCount > 0) {
+        await batch.commit();
+        // Auditar la acción
+        await adminService.logAudit('Crear', `Generó manualmente ${createdCount} cargos de renta para la fecha ${dateKey}.`, {
+            entityType: 'Flotilla',
+            userId: currentUser.id,
+            userName: currentUser.name
+        });
+    }
+    return createdCount;
 };
 
 
@@ -207,4 +281,5 @@ export const rentalService = {
   addOwnerWithdrawal,
   onVehicleExpensesUpdate,
   addVehicleExpense,
+  generateManualDailyCharges,
 };
