@@ -1,8 +1,6 @@
-
-// src/app/(app)/flotilla/page.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useCallback, Suspense, lazy } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Loader2, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -10,7 +8,7 @@ import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { Button } from '@/components/ui/button';
 import { withSuspense } from '@/lib/withSuspense';
 
-import type { Vehicle, Driver, PaymentMethod, InventoryItem } from '@/types';
+import type { Driver, PaymentMethod } from '@/types';
 import { personnelService, rentalService, inventoryService } from '@/lib/services';
 import { useFlotillaData } from './useFlotillaData';
 

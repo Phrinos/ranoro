@@ -1,5 +1,3 @@
-
-// src/app/(app)/flotillareportes/components/detalles-flotilla-content.tsx
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -11,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency, cn } from "@/lib/utils";
-import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Info, Calendar, Tag, CreditCard, StickyNote } from 'lucide-react';
 import { parseDate } from '@/lib/forms';

@@ -1,5 +1,3 @@
-
-// src/app/(app)/pos/informe-pos/page.tsx
 "use client";
 
 import { withSuspense } from "@/lib/withSuspense";
@@ -7,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import type { SaleReceipt, InventoryItem, ServiceRecord } from '@/types';
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from 'lucide-react';
-import { inventoryService, saleService, serviceService, cashService } from '@/lib/services';
+import { inventoryService, saleService, serviceService } from '@/lib/services';
 import InformePosContent from '../components/informe-pos-content';
 
 function PageInner() {

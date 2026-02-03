@@ -1,9 +1,7 @@
-
-// src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { useForm, FormProvider, useFieldArray, type Resolver, useWatch, type Control } from "react-hook-form";
+import { useForm, FormProvider, useFieldArray, type Resolver, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
@@ -20,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, PackagePlus, DollarSign, PlusCircle, Trash2, CalendarIcon, Minus, Plus } from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
-import { formatCurrency, cn, getToday, CURRENCY_FORMATTER } from "@/lib/utils";
+import { formatCurrency, cn, getToday } from "@/lib/utils";
 import { InventoryItemDialog } from "@/app/(app)/inventario/components/inventory-item-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -28,19 +26,10 @@ import { Calendar } from "@/components/ui/calendar";
 import { format as formatDate } from "date-fns";
 import { es } from "date-fns/locale";
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
-import type { CalendarProps } from "react-calendar";
-import { Separator } from "@/components/ui/separator";
+import { nanoid } from "nanoid";
 import { registerPurchaseSchema, type RegisterPurchaseFormValues } from "@/schemas/register-purchase-schema";
 
 export type { RegisterPurchaseFormValues };
-
-const purchaseItemSchema = z.object({
-  inventoryItemId: z.string(),
-  itemName: z.string(),
-  quantity: z.coerce.number().min(0.01, "La cantidad debe ser mayor a 0."),
-  purchasePrice: z.coerce.number().min(0, "El costo debe ser un número positivo."),
-  totalPrice: z.coerce.number().optional(),
-});
 
 interface RegisterPurchaseDialogProps {
   open: boolean;
@@ -161,7 +150,7 @@ export function RegisterPurchaseDialog({
                         name="supplierId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Proveedor</Label>
+                            <FormLabel>Proveedor</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="bg-white">

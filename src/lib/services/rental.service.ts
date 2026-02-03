@@ -1,4 +1,3 @@
-
 // src/lib/services/rental.service.ts
 
 import {
@@ -9,22 +8,14 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
-  writeBatch,
   query,
   where,
-  getDocs,
   orderBy,
-  limit,
-  Timestamp,
-  runTransaction,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { RentalPayment, DailyRentalCharge, Driver, Vehicle, OwnerWithdrawal, VehicleExpense, PaymentMethod } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
-import { inventoryService } from './inventory.service';
-import { personnelService } from './personnel.service';
-import { startOfDay, differenceInCalendarDays, addDays, parseISO, format as formatDate } from 'date-fns';
 import { cashService } from './cash.service';
 
 // --- Daily Rental Charges ---

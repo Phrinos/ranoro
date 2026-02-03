@@ -1,5 +1,3 @@
-
-// src/app/(app)/servicios/components/ServiceForm.tsx
 "use client";
 
 import React from 'react';

@@ -1,4 +1,3 @@
-
 // src/lib/services/purchase.service.ts
 
 import {
@@ -9,9 +8,11 @@ import {
   getDoc,
   onSnapshot,
   query,
-  orderBy,
-  runTransaction,
+  getDocs,
+  where,
+  type WriteBatch,
   serverTimestamp,
+  orderBy,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { RegisterPurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';
@@ -190,9 +191,60 @@ const registerPurchase = async (data: RegisterPurchaseFormValues): Promise<void>
   });
 };
 
+const registerPayableAccountPayment = async (
+  accountId: string,
+  amount: number,
+  paymentMethod: PaymentMethod,
+  note?: string,
+  user?: User | null
+): Promise<void> => {
+  if (!db) throw new Error("Database not initialized.");
+
+  await runTransaction(db, async (transaction) => {
+    const accountRef = doc(db, "payableAccounts", accountId);
+    const accountSnap = await transaction.get(accountRef);
+
+    if (!accountSnap.exists()) throw new Error("Payable account not found.");
+
+    const data = accountSnap.data() as PayableAccount;
+    const paidAmount = (data.paidAmount || 0) + amount;
+    const totalAmount = data.totalAmount || 0;
+
+    let status = "Pagado Parcialmente";
+    if (Math.abs(paidAmount - totalAmount) < 0.01) {
+      status = "Pagado";
+    }
+
+    transaction.update(accountRef, { paidAmount, status });
+
+    const supplierRef = doc(db, "suppliers", data.supplierId);
+    const supplierSnap = await transaction.get(supplierRef);
+
+    if (supplierSnap.exists()) {
+      const currentDebt = supplierSnap.data().debtAmount || 0;
+      transaction.update(supplierRef, { debtAmount: Math.max(0, currentDebt - amount) });
+    }
+
+    if (paymentMethod === "Efectivo") {
+      const cashTxRef = doc(collection(db, "cashDrawerTransactions"));
+      transaction.set(cashTxRef, cleanObjectForFirestore({
+        date: new Date().toISOString(),
+        type: "Salida",
+        amount,
+        concept: `Pago a proveedor ${data.supplierName} - Factura ${data.invoiceId}`,
+        note,
+        userId: user?.id || "system",
+        userName: user?.name || "Sistema",
+        relatedType: "Manual",
+        paymentMethod: "Efectivo",
+      }));
+    }
+  });
+};
+
 export const purchaseService = {
   onPayableAccountsUpdate,
   onPurchasesUpdate,
   registerPurchase,
-  registerPayableAccountPayment: (purchaseService as any).registerPayableAccountPayment, // Assuming it's defined elsewhere or handled by previous logic
+  registerPayableAccountPayment,
 };

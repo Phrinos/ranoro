@@ -1,5 +1,3 @@
-
-// src/app/(app)/flotilla/conductores/components/DriverForm.tsx
 "use client";
 
 import { useEffect } from "react";
@@ -28,7 +26,7 @@ interface DriverFormProps {
 
 export function DriverForm({ id, initialData, onSubmit }: DriverFormProps) {
   const form = useForm<DriverFormValues>({
-    resolver: zodResolver(driverFormSchema) as Resolver<DriverFormValues, any>,
+    resolver: zodResolver(driverFormSchema) as Resolver<DriverFormValues>,
     defaultValues: {
       name: "",
       phone: "",

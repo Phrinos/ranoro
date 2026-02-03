@@ -1,9 +1,7 @@
-
-// src/app/(app)/finanzas/components/caja-content.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
-import type { CashDrawerTransaction, Payment, PaymentMethod } from '@/types';
+import type { CashDrawerTransaction, PaymentMethod } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, isWithinInterval, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { DollarSign, ArrowDown, ArrowUp, Loader2, Wallet, CreditCard, Landmark, ArrowLeft, ArrowRight } from 'lucide-react';
+import { DollarSign, ArrowDown, ArrowUp, Loader2, Wallet, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';

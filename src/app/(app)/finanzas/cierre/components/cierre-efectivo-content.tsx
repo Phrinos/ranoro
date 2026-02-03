@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -102,7 +101,7 @@ export default function CierreEfectivoContent({ transactions, summary }: CierreE
                 <DollarSign className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent><div className={cn("text-2xl font-bold", summary.cashNet >= 0 ? 'text-foreground' : 'text-destructive')}>{formatCurrency(summary.cashNet)}</div></CardContent>
-            </div>
+            </Card>
           </div>
 
           <div className="overflow-x-auto rounded-md border">

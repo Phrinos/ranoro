@@ -1,5 +1,3 @@
-
-// src/app/(app)/reportes/components/detalles-reporte-content.tsx
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -10,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency, cn } from "@/lib/utils";
-import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
+import { format, isValid, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote, Download, Filter, Landmark } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
@@ -570,7 +568,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
             <form onSubmit={form.handleSubmit(handleTransactionSubmit)} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
-                  control={form.control as any}
+                  control={form.control}
                   name="date"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
@@ -610,7 +608,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                 />
 
                 <FormField
-                  control={form.control as any}
+                  control={form.control}
                   name="paymentMethod"
                   render={({ field }) => (
                     <FormItem>
@@ -635,7 +633,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
               </div>
 
               <FormField
-                control={form.control as any}
+                control={form.control}
                 name="concept"
                 render={({ field }) => (
                   <FormItem>
@@ -646,7 +644,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                 )}
               />
               <FormField
-                control={form.control as any}
+                control={form.control}
                 name="amount"
                 render={({ field }) => (
                   <FormItem>
