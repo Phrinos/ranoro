@@ -25,7 +25,6 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 const FlotillaVehiculosTab = lazy(() => import('./vehiculos/components/FlotillaVehiculosTab').then(m => ({ default: m.FlotillaVehiculosTab })));
 const FlotillaConductoresTab = lazy(() => import('./conductores/components/FlotillaConductoresTab').then(m => ({ default: m.FlotillaConductoresTab })));
 const FlotillaBalanceTab = lazy(() => import('./balance/components/FlotillaBalanceTab').then(m => ({ default: m.FlotillaBalanceTab })));
-const FlotillaCajaTab = lazy(() => import('./caja/components/FlotillaCajaTab').then(m => ({ default: m.FlotillaCajaTab })));
 
 
 function PageInner() {
@@ -185,7 +184,6 @@ function PageInner() {
 
   const tabs = [
     { value: 'balance', label: 'Balance', content: <Suspense fallback={<Loader2 className="animate-spin m-auto"/>}><FlotillaBalanceTab drivers={drivers} vehicles={vehicles} dailyCharges={dailyCharges} payments={payments} manualDebts={manualDebts} /></Suspense> },
-    { value: 'caja', label: 'Caja', content: <Suspense fallback={<Loader2 className="animate-spin m-auto"/>}><FlotillaCajaTab payments={payments} withdrawals={withdrawals} expenses={expenses} drivers={drivers} vehicles={vehicles} allManualDebts={manualDebts} allDailyCharges={dailyCharges} onAddWithdrawal={() => setIsWithdrawalDialogOpen(true)} onAddExpense={() => setIsExpenseDialogOpen(true)} handleShowTicket={handleShowTicket} /></Suspense> },
     { value: 'conductores', label: 'Conductores', content: <Suspense fallback={<Loader2 className="animate-spin m-auto"/>}><FlotillaConductoresTab drivers={drivers} onAddDriver={handleAddDriver} /></Suspense> },
     { value: 'vehiculos', label: 'Vehículos', content: <Suspense fallback={<Loader2 className="animate-spin m-auto"/>}><FlotillaVehiculosTab vehicles={vehicles} onAddVehicle={() => setIsAddVehicleDialogOpen(true)} /></Suspense> },
   ];
