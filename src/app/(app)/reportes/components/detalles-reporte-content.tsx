@@ -16,7 +16,7 @@ import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
-import type { ServiceRecord, SaleReceipt, CashDrawerTransaction, User } from '@/types';
+import type { ServiceRecord, SaleReceipt, CashDrawerTransaction, User, PaymentMethod } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { cashService, serviceService, saleService } from '@/lib/services';
 import { useForm } from 'react-hook-form';
@@ -34,6 +34,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { exportToCsv } from '@/lib/services/export.service';
 import { Checkbox } from "@/components/ui/checkbox";
 import { usePermissions } from '@/hooks/usePermissions';
+import { Landmark } from 'lucide-react';
 
 const transactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
@@ -78,6 +79,14 @@ const metodoOptions = [
   { value: 'Transferencia', label: 'Transferencia' },
   { value: 'Transferencia/Contadora', label: 'Transferencia/Contadora' },
 ];
+
+const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
+  "Efectivo": Wallet,
+  "Tarjeta": CreditCard,
+  "Tarjeta MSI": CreditCard,
+  "Transferencia": Landmark,
+  "Transferencia/Contadora": Landmark,
+};
 
 export default function DetallesReporteContent({ services, sales, cashTransactions, users }: DetallesReporteProps) {
   const { toast } = useToast();
@@ -193,9 +202,17 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
     const ingresoTotal = data.filter(r => r.type === 'Ingreso').reduce((s, r) => s + r.amount, 0);
     const egresoTotal = data.filter(r => r.type === 'Egreso').reduce((s, r) => s + r.amount, 0);
     
-    const efectivoIngresoPeriodo = data
-      .filter(r => r.type === 'Ingreso' && r.method.toLowerCase().includes('efectivo'))
-      .reduce((s, r) => s + r.amount, 0);
+    const incomeByMethod: Record<string, number> = {};
+    data.filter(r => r.type === 'Ingreso').forEach(r => {
+      const methods = r.method.split(' / ');
+      const amountPerMethod = r.amount / methods.length;
+      methods.forEach(m => {
+        const cleanM = m.trim();
+        incomeByMethod[cleanM] = (incomeByMethod[cleanM] || 0) + amountPerMethod;
+      });
+    });
+
+    const efectivoIngresoPeriodo = incomeByMethod['Efectivo'] || 0;
       
     const efectivoEgresoPeriodo = data
       .filter(r => r.type === 'Egreso' && r.method.toLowerCase().includes('efectivo'))
@@ -204,7 +221,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
     return {
       ingresoTotal,
       egresoTotal,
-      efectivoIngreso: efectivoIngresoPeriodo,
+      incomeByMethod,
       balanceNeto: ingresoTotal - egresoTotal,
       efectivoDelPeriodo: efectivoIngresoPeriodo - efectivoEgresoPeriodo
     };
@@ -313,26 +330,68 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="border-green-200 bg-green-50/30">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium uppercase text-muted-foreground">Ingreso Efectivo</CardTitle></CardHeader>
-          <CardContent><div className="text-xl font-bold text-green-600">{formatCurrency(kpis.efectivoIngreso)}</div></CardContent>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Ingresos por Método */}
+        <Card className="lg:col-span-2 border-green-200 bg-green-50/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-medium uppercase text-muted-foreground">Ingresos por Método de Pago</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {Object.entries(kpis.incomeByMethod).map(([method, amount]) => {
+                const IconComp = paymentMethodIcons[method as PaymentMethod] || Wallet;
+                return (
+                  <div key={method} className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground uppercase flex items-center gap-1">
+                      <IconComp className="h-3 w-3" /> {method}
+                    </p>
+                    <p className="text-sm font-bold text-green-700">{formatCurrency(amount)}</p>
+                  </div>
+                )
+              })}
+              {Object.keys(kpis.incomeByMethod).length === 0 && (
+                <p className="text-sm text-muted-foreground col-span-full py-2">Sin ingresos en el periodo.</p>
+              )}
+            </div>
+          </CardContent>
         </Card>
+
+        {/* Card 2: Flujo Total (Unificado) */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium uppercase text-muted-foreground">Ingreso Total</CardTitle></CardHeader>
-          <CardContent><div className="text-xl font-bold flex items-center gap-2"><ArrowUpRight className="h-4 w-4 text-green-500"/>{formatCurrency(kpis.ingresoTotal)}</div></CardContent>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-medium uppercase text-muted-foreground">Flujo Operativo Total</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">Ingresos:</span>
+              <span className="text-sm font-bold text-green-600">+{formatCurrency(kpis.ingresoTotal)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">Egresos:</span>
+              <span className="text-sm font-bold text-red-600">-{formatCurrency(kpis.egresoTotal)}</span>
+            </div>
+            <Separator className="my-1" />
+            <div className="flex justify-between items-center">
+              <span className="text-xs font-semibold">Balance:</span>
+              <span className={cn("text-sm font-bold", kpis.balanceNeto >= 0 ? "text-primary" : "text-destructive")}>
+                {formatCurrency(kpis.balanceNeto)}
+              </span>
+            </div>
+          </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium uppercase text-muted-foreground">Egreso Total</CardTitle></CardHeader>
-          <CardContent><div className="text-xl font-bold flex items-center gap-2"><ArrowDownRight className="h-4 w-4 text-red-500"/>{formatCurrency(kpis.egresoTotal)}</div></CardContent>
-        </Card>
-        <Card className="bg-primary/5 border-primary/20">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium uppercase text-muted-foreground">Balance Neto</CardTitle></CardHeader>
-          <CardContent><div className={cn("text-xl font-bold", kpis.balanceNeto >= 0 ? "text-primary" : "text-destructive")}>{formatCurrency(kpis.balanceNeto)}</div></CardContent>
-        </Card>
+
+        {/* Card 3: Liquidez Efectivo */}
         <Card className="bg-blue-50 border-blue-200">
-          <CardHeader className="pb-2"><CardTitle className="text-xs font-medium uppercase text-muted-foreground">Efectivo Periodo</CardTitle></CardHeader>
-          <CardContent><div className={cn("text-xl font-bold flex items-center gap-2", kpis.efectivoDelPeriodo >= 0 ? "text-blue-700" : "text-destructive")}><Wallet className="h-4 w-4"/>{formatCurrency(kpis.efectivoDelPeriodo)}</div></CardContent>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-medium uppercase text-blue-800">Liquidez Efectivo</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className={cn("text-2xl font-bold flex items-center gap-2", kpis.efectivoDelPeriodo >= 0 ? "text-blue-700" : "text-destructive")}>
+              <Wallet className="h-5 w-5"/>
+              {formatCurrency(kpis.efectivoDelPeriodo)}
+            </div>
+            <p className="text-[10px] text-blue-600/70 mt-1 italic">Ingresos - Egresos (solo efectivo)</p>
+          </CardContent>
         </Card>
       </div>
 
