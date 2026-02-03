@@ -1,4 +1,3 @@
-
 export const PERMISSION_GROUPS = [
     {
         groupName: "General",
@@ -34,7 +33,9 @@ export const PERMISSION_GROUPS = [
     {
         groupName: "Flotilla y Rentas",
         permissions: [
-             { id: 'fleet:manage', label: 'Gestionar Flotilla (Vehículos y Conductores)' },
+             { id: 'fleet:manage', label: 'Gestionar Flotilla (General)' },
+             { id: 'drivers:create', label: 'Crear/Editar Conductores' },
+             { id: 'drivers:archive', label: 'Archivar/Restaurar Conductores' },
              { id: 'rentals:view', label: 'Ver Ingresos de Renta' },
              { id: 'rentals:manage', label: 'Registrar Pagos y Gastos de Renta' },
         ]

@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { rentalService } from '@/lib/services';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface FlotillaConductoresTabProps {
   drivers: Driver[];
@@ -25,6 +26,8 @@ export function FlotillaConductoresTab({ drivers, onAddDriver }: FlotillaConduct
   const router = useRouter();
   const [sortOption, setSortOption] = useState('name_asc');
   const [showArchived, setShowArchived] = useState(false);
+  const permissions = usePermissions();
+  const canCreate = permissions.has('drivers:create') || permissions.has('fleet:manage');
 
   const sortedDrivers = useMemo(() => {
     return [...drivers]
@@ -61,10 +64,12 @@ export function FlotillaConductoresTab({ drivers, onAddDriver }: FlotillaConduct
           {showArchived ? <EyeOff className="mr-2 h-4 w-4"/> : <Eye className="mr-2 h-4 w-4"/>}
           {showArchived ? 'Ocultar Inactivos' : 'Ver Inactivos'}
         </Button>
-        <Button onClick={onAddDriver} className="w-full sm:w-auto font-bold">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Añadir Conductor
-        </Button>
+        {canCreate && (
+          <Button onClick={onAddDriver} className="w-full sm:w-auto font-bold">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Añadir Conductor
+          </Button>
+        )}
       </div>
       <Card>
         <CardContent className="pt-6">

@@ -7,14 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { FileText, DollarSign, Edit } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { format, parseISO, isValid } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
 
 
 interface FinancialInfoCardProps {
   driver: Driver;
-  onEdit: () => void;
+  onEdit?: () => void;
 }
 
 export function FinancialInfoCard({ driver, onEdit }: FinancialInfoCardProps) {
@@ -33,9 +33,11 @@ export function FinancialInfoCard({ driver, onEdit }: FinancialInfoCardProps) {
           <CardTitle>Información Financiera y Contrato</CardTitle>
           <CardDescription>Detalles del acuerdo y estado financiero.</CardDescription>
         </div>
-        <Button variant="outline" size="icon" onClick={onEdit}>
-          <Edit className="h-4 w-4" />
-        </Button>
+        {onEdit && (
+          <Button variant="outline" size="icon" onClick={onEdit}>
+            <Edit className="h-4 w-4" />
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-3">
         {financialInfo.map(item => (

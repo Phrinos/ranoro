@@ -23,6 +23,7 @@ import { AssignedVehicleCard } from '../../components/AssignedVehicleCard';
 import { FinancialInfoCard } from '../../components/FinancialInfoCard';
 import { DocumentsCard } from '../../components/DocumentsCard';
 import { HistoryTabContent } from '../components/HistoryTabContent';
+import { usePermissions } from '@/hooks/usePermissions';
 
 function DriverProfilePage() {
   const params = useParams();
@@ -31,6 +32,9 @@ function DriverProfilePage() {
   const { toast } = useToast();
   
   const { vehicles, drivers, isLoading: isFlotillaLoading } = useFlotillaData();
+  const permissions = usePermissions();
+  const canCreate = permissions.has('drivers:create') || permissions.has('fleet:manage');
+  const canArchive = permissions.has('drivers:archive') || permissions.has('fleet:manage');
   
   const [driver, setDriver] = useState<Driver | null>(null);
   const [assignedVehicle, setAssignedVehicle] = useState<Vehicle | null>(null);
@@ -76,11 +80,6 @@ function DriverProfilePage() {
     }
   };
 
-  const handleDeleteDriver = async () => {
-      // Implement if needed, for now we just archive.
-      toast({ title: "Función no implementada", description: "Por seguridad, por favor archive al conductor en su lugar.", variant: "default"});
-  };
-
   if (isFlotillaLoading || !driver) {
     return (
         <div className="p-1 space-y-6">
@@ -106,17 +105,19 @@ function DriverProfilePage() {
         description={`Perfil del conductor de la flotilla. ID: ${driver.id}`}
         actions={
           <div className="flex gap-2">
-            <ConfirmDialog
-              triggerButton={
-                <Button variant={driver.isArchived ? "secondary" : "outline"} size="sm">
-                  {driver.isArchived ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
-                  {driver.isArchived ? "Restaurar" : "Archivar"}
-                </Button>
-              }
-              title={`¿${driver.isArchived ? 'Restaurar' : 'Archivar'} a ${driver.name}?`}
-              description={driver.isArchived ? "El conductor volverá a estar activo." : "El conductor se marcará como inactivo y se ocultará de las listas principales."}
-              onConfirm={handleArchiveDriver}
-            />
+            {canArchive && (
+              <ConfirmDialog
+                triggerButton={
+                  <Button variant={driver.isArchived ? "secondary" : "outline"} size="sm">
+                    {driver.isArchived ? <ArchiveRestore className="mr-2 h-4 w-4" /> : <Archive className="mr-2 h-4 w-4" />}
+                    {driver.isArchived ? "Restaurar" : "Archivar"}
+                  </Button>
+                }
+                title={`¿${driver.isArchived ? 'Restaurar' : 'Archivar'} a ${driver.name}?`}
+                description={driver.isArchived ? "El conductor volverá a estar activo." : "El conductor se marcará como inactivo y se ocultará de las listas principales."}
+                onConfirm={handleArchiveDriver}
+              />
+            )}
             <Button variant="outline" onClick={() => router.push('/flotilla?tab=conductores')}>
               <ArrowLeft className="mr-2 h-4 w-4" /> Volver
             </Button>
@@ -132,8 +133,8 @@ function DriverProfilePage() {
         <TabsContent value="overview" className="mt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-6">
-              <ContactInfoCard driver={driver} onEdit={() => setIsDriverDialogOpen(true)} />
-              <FinancialInfoCard driver={driver} onEdit={() => setIsDriverDialogOpen(true)} />
+              <ContactInfoCard driver={driver} onEdit={canCreate ? () => setIsDriverDialogOpen(true) : undefined} />
+              <FinancialInfoCard driver={driver} onEdit={canCreate ? () => setIsDriverDialogOpen(true) : undefined} />
             </div>
             <div className="space-y-6">
               <AssignedVehicleCard assignedVehicle={assignedVehicle} />

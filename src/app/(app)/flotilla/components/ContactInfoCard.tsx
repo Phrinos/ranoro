@@ -9,7 +9,7 @@ import { User, Phone, Home, AlertTriangle, Edit } from 'lucide-react';
 
 interface ContactInfoCardProps {
   driver: Driver;
-  onEdit: () => void;
+  onEdit?: () => void;
 }
 
 export function ContactInfoCard({ driver, onEdit }: ContactInfoCardProps) {
@@ -27,9 +27,11 @@ export function ContactInfoCard({ driver, onEdit }: ContactInfoCardProps) {
           <CardTitle>Información de Contacto</CardTitle>
           <CardDescription>Datos personales del conductor.</CardDescription>
         </div>
-        <Button variant="outline" size="icon" onClick={onEdit}>
-          <Edit className="h-4 w-4" />
-        </Button>
+        {onEdit && (
+          <Button variant="outline" size="icon" onClick={onEdit}>
+            <Edit className="h-4 w-4" />
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="space-y-3">
         {contactInfo.map(item => (
