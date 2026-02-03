@@ -54,7 +54,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Inventario', path: '/inventario', icon: Package, groupTag: 'Operaciones', permissions: ['inventory:view_public_info'] },
   { label: 'Compras', path: '/inventario/compras', icon: ShoppingCart, groupTag: 'Operaciones', permissions: ['purchases:manage'] },
   
-  // Finanzas
+  // Finanzas (Ahora consolidado en Reportes)
   { label: 'Finanzas y Reportes', path: '/reportes', icon: DollarSign, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
   { label: 'Reportes Flotilla', path: '/flotillareportes', icon: Truck, groupTag: 'Finanzas', permissions: ['fleet:manage'] },
   { label: 'Facturación', path: '/facturacion', icon: FileJson, groupTag: 'Finanzas', permissions: ['billing:manage'] },

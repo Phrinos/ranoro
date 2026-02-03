@@ -3,7 +3,7 @@ import { z } from "zod";
 import { PAYMENT_METHODS } from "@/types";
 
 const singlePaymentSchema = z.object({
-  method: z.enum(PAYMENT_METHODS), // <- usa tupla literal as const
+  method: z.enum(PAYMENT_METHODS),
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a cero.").optional(),
   folio: z.string().optional(),
 }).superRefine((data, ctx) => {

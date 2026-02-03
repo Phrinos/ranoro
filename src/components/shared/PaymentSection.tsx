@@ -69,14 +69,10 @@ export function PaymentSection({
   
   const remaining = Math.max(0, totalAmount - totalPaid);
 
-  const availablePaymentMethods = paymentMethods.filter(
-    (method) => !(watchedPayments ?? []).some((p) => p?.method === method)
-  );
-
   const handleAddPayment = () => {
     append({
-      method: availablePaymentMethods[0] ?? "Efectivo",
-      amount: undefined,
+      method: "Efectivo",
+      amount: remaining > 0 ? remaining : 0,
       folio: "",
     });
   };
@@ -147,10 +143,8 @@ export function PaymentSection({
                                     <SelectContent>
                                         {paymentMethods.map((method) => {
                                         const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons] ?? Wallet;
-                                        const disabled =
-                                            availablePaymentMethods.indexOf(method) === -1 && method !== selectedMethod;
                                         return (
-                                            <SelectItem key={method} value={method} disabled={disabled}>
+                                            <SelectItem key={method} value={method}>
                                             <div className="flex items-center gap-2">
                                                 {Icon && <Icon className="h-4 w-4" />}
                                                 <span>{method}</span>
@@ -213,7 +207,7 @@ export function PaymentSection({
                         );
                     })}
 
-                    {availablePaymentMethods.length > 0 && fields.length < paymentMethods.length && (
+                    {fields.length < paymentMethods.length && (
                         <div className="flex justify-end">
                         <Button type="button" variant="outline" size="sm" onClick={handleAddPayment}>
                             <PlusCircle className="mr-2 h-4 w-4" />
