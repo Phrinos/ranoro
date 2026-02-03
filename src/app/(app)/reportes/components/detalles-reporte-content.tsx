@@ -64,6 +64,7 @@ type ReportRow = {
   clientUser: string;
   note?: string;
   registeredBy?: string;
+  items?: any[];
 };
 
 const tipoOptions = [
@@ -133,6 +134,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
         clientUser: s.customerName || 'Cliente',
         note: s.notes,
         registeredBy: s.serviceAdvisorName || 'Sistema',
+        items: s.serviceItems,
       });
     });
 
@@ -156,6 +158,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
         clientUser: s.customerName || 'Cliente Mostrador',
         note: (s as any).note || (s as any).description,
         registeredBy: (s as any).registeredByName || 'Sistema',
+        items: s.items,
       });
     });
 
@@ -697,6 +700,29 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                 <Label className="text-xs text-muted-foreground">Concepto</Label>
                 <p className="text-sm font-semibold">{selectedMovement.concept}</p>
               </div>
+
+              {selectedMovement.items && selectedMovement.items.length > 0 && (
+                <>
+                  <Separator />
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                      <ShoppingCart className="h-3 w-3" /> Detalle de Venta / Servicio
+                    </Label>
+                    <div className="rounded-md border bg-muted/10 p-2 space-y-1.5 max-h-[200px] overflow-y-auto">
+                      {selectedMovement.items.map((it, idx) => (
+                        <div key={idx} className="flex justify-between items-start text-xs sm:text-sm">
+                          <span className="text-muted-foreground mr-4">
+                            <span className="font-semibold text-foreground">{it.quantity}x</span> {it.itemName || it.name}
+                          </span>
+                          <span className="font-medium shrink-0">
+                            {formatCurrency(it.total || it.sellingPrice || 0)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
