@@ -1,3 +1,4 @@
+
 // src/app/(app)/finanzas/components/movimientos-content.tsx
 
 "use client";
@@ -54,7 +55,7 @@ interface Movement {
   folio: string;
   type: "Venta" | "Servicio" | "Entrada" | "Salida";
   client: string;
-  method?: Payment["method"];  // solo para pagos
+  method?: PaymentMethod;
   total: number;               // siempre en positivo para UI
   isRefund?: boolean;          // pagos negativos
   description?: string;
@@ -97,7 +98,7 @@ const getAdvisorForService = (s: ServiceRecord): string => {
 function MovimientosTabContent({
   allSales,
   allServices,
-  allInventory, // sin uso aquí
+  allInventory, 
   allExpenses,
   dateRange,
   onDateRangeChange,
@@ -128,7 +129,7 @@ function MovimientosTabContent({
         return pays
           .filter((p) => typeof p?.amount === "number" && !Number.isNaN(p.amount))
           .map((p, idx) => {
-            const d = getPaymentDate(p) || parseDate(s.deliveryDateTime || new Date().toISOString()) || parseDate(s.serviceDate || new Date().toISOString());
+            const d = getPaymentDate(p) || parseDate(s.deliveryDateTime) || parseDate(s.serviceDate);
             const amt = Number(p.amount) || 0;
             const isRefund = amt < 0;
             const folio = (s as any).folio || s.id.slice(-6);
@@ -191,7 +192,7 @@ function MovimientosTabContent({
           client: (t as any).userName || (t as any).user || "Sistema",
           total: Math.abs(Number(t.amount) || 0),
           description: (t as any).description || (t as any).concept || "",
-          method: t.paymentMethod,
+          method: t.paymentMethod as any,
         };
       });
 
@@ -212,32 +213,28 @@ function MovimientosTabContent({
     }
   }, [dateRange, onDateRangeChangeCallback]);
 
-  // ---- KPI: Ingresos = pagos positivos (todos métodos) + entradas manuales; Egresos = Salidas de caja (ledger) ----
+  // ---- KPI Summary ----
   const summary = useMemo(() => {
     const rows = fullFilteredData;
     
-    // Total de ingresos (Ventas, Servicios y Entradas manuales)
     const ingresos = rows
       .filter((m) => (m.type === "Servicio" || m.type === "Venta" || m.type === "Entrada") && !m.isRefund)
       .reduce((sum, m) => sum + (m.total || 0), 0);
 
-    // Solo efectivo (para saber cuánto hay en caja física)
     const ingresosEfectivo = rows
       .filter((m) => (m.type === "Servicio" || m.type === "Venta" || m.type === "Entrada") && !m.isRefund && m.method === 'Efectivo')
       .reduce((sum, m) => sum + (m.total || 0), 0);
       
-    // Egresos (Salidas del ledger: compras, gastos, retiros)
     const egresos = rows
       .filter((m) => m.type === "Salida")
       .reduce((sum, m) => sum + (m.total || 0), 0);
 
-    const neto = ingresos - egresos;
     return {
       totalMovements: rows.length,
       totalIncome: ingresos,
       cashIncome: ingresosEfectivo,
       totalOutcome: egresos,
-      netBalance: neto,
+      netBalance: ingresos - egresos,
     };
   }, [fullFilteredData]);
 
@@ -266,7 +263,7 @@ function MovimientosTabContent({
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-center gap-2">
-        <Button variant="outline" size="sm" onClick={setRangeMonth} className="bg-card">Mes</Button>
+        <Button variant="outline" size="sm" onClick={setRangeMonth} className="bg-card">Mes Actual</Button>
         <Button variant="outline" size="sm" onClick={setRangeLastMonth} className="bg-card">Mes Pasado</Button>
         <div className="flex-1 w-full">
           <TableToolbar
@@ -282,7 +279,7 @@ function MovimientosTabContent({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-600">Ingresos en Efectivo</CardTitle>
+            <CardTitle className="text-sm font-medium text-green-600">Ingresos Efectivo</CardTitle>
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -300,7 +297,7 @@ function MovimientosTabContent({
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-red-600">Egresos del Periodo</CardTitle>
+            <CardTitle className="text-sm font-medium text-red-600">Egresos Totales</CardTitle>
             <ArrowLeft className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
@@ -309,11 +306,11 @@ function MovimientosTabContent({
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Balance del Periodo</CardTitle>
+            <CardTitle className="text-sm font-medium">Balance Neto</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(summary.netBalance)}</div>
+            <div className={cn("text-2xl font-bold", summary.netBalance >= 0 ? "text-blue-600" : "text-destructive")}>{formatCurrency(summary.netBalance)}</div>
           </CardContent>
         </Card>
       </div>
@@ -322,31 +319,35 @@ function MovimientosTabContent({
         <CardContent className="p-0">
           <div className="overflow-x-auto rounded-md border">
             <Table>
-              <TableHeader className="bg-background">
+              <TableHeader className="bg-black">
                 <TableRow className="hover:bg-transparent">
                   <SortableTableHeader
                     sortKey="date"
                     label="Fecha"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
+                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="type"
                     label="Tipo"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
+                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="client"
                     label="Cliente/Usuario"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
+                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="description"
                     label="Descripción"
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
+                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="total"
@@ -354,6 +355,7 @@ function MovimientosTabContent({
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
                     className="text-right"
+                    textClassName="text-white"
                   />
                   <SortableTableHeader
                     sortKey="method"
@@ -361,6 +363,7 @@ function MovimientosTabContent({
                     onSort={handleSort}
                     currentSort={tableManager.sortOption}
                     className="text-right"
+                    textClassName="text-white"
                   />
                 </TableRow>
               </TableHeader>
@@ -386,7 +389,7 @@ function MovimientosTabContent({
                         onClick={() => handleRowClick(m)}
                         className={
                           m.origin === "payment" && (m.type === "Venta" || m.type === "Servicio")
-                            ? "cursor-pointer"
+                            ? "cursor-pointer hover:bg-muted/50"
                             : ""
                         }
                       >
@@ -408,13 +411,13 @@ function MovimientosTabContent({
 
                         <TableCell>{m.client}</TableCell>
 
-                        <TableCell>{m.description || "Movimiento de caja"}</TableCell>
+                        <TableCell>{m.description || "Movimiento"}</TableCell>
 
                         <TableCell className={`text-right font-semibold ${amountClass}`}>
                           {formatCurrency(m.total)}
                         </TableCell>
                          <TableCell className="text-right">
-                          {m.method || ''}
+                          {m.method || '—'}
                         </TableCell>
                       </TableRow>
                     );
