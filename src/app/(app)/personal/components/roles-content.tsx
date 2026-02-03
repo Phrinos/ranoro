@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Label } from "@/components/ui/label"; // Importamos Label
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -166,8 +167,8 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                                 <FormField control={form.control} name="name" render={({ field }) => ( <FormItem><FormLabel>Nombre del Rol</FormLabel><FormControl><Input placeholder="Ej: Recepcionista" {...field} /></FormControl><FormMessage /></FormItem> )}/>
                                 
-                                <FormItem>
-                                    <FormLabel>Permisos</FormLabel>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-medium">Permisos</Label>
                                     <Card>
                                         <CardContent className="p-0">
                                             <Accordion type="multiple" className="w-full" defaultValue={PERMISSION_GROUPS.map(g => g.groupName)}>
@@ -227,7 +228,7 @@ export function RolesPageContent({ currentUser, initialRoles }: { currentUser: U
                                             </Accordion>
                                         </CardContent>
                                     </Card>
-                                </FormItem>
+                                </div>
 
                                 <div className="flex justify-end gap-2">
                                     <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancelar</Button>
