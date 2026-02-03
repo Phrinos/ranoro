@@ -16,7 +16,7 @@ import {
   runTransaction,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { RegisterPurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';
+import type { PurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';
 import type { User, PayableAccount, PaymentMethod } from '@/types';
 import { inventoryService } from './inventory.service';
 import { adminService } from './admin.service';
@@ -63,7 +63,7 @@ const isCredit = (m: string | PaymentMethod) => String(m).toLowerCase() === 'cr√
  * - Si es pago inmediato: crea salida en caja SOLO si paymentMethod === 'Efectivo' (vinculada).
  * - Log de auditor√≠a.
  */
-const registerPurchase = async (data: RegisterPurchaseFormValues): Promise<void> => {
+const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   if (!db) throw new Error('Database not initialized.');
 
   const batch = writeBatch(db);
