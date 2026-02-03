@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -11,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Info, Calendar, Tag, CreditCard, StickyNote } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Info, Calendar, Tag, CreditCard, StickyNote, TrendingDown as TrendingDownIcon, Wrench } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -41,6 +42,8 @@ interface DetallesFlotillaProps {
   expenses: VehicleExpense[];
   withdrawals: OwnerWithdrawal[];
   cashTransactions: CashDrawerTransaction[];
+  onAddWithdrawal: () => void;
+  onAddExpense: () => void;
 }
 
 type FlotillaReportRow = {
@@ -62,7 +65,7 @@ const tipoOptions = [
   { value: 'Egreso', label: 'Egresos' },
 ];
 
-export default function DetallesFlotillaContent({ payments, expenses, withdrawals, cashTransactions }: DetallesFlotillaProps) {
+export default function DetallesFlotillaContent({ payments, expenses, withdrawals, cashTransactions, onAddWithdrawal, onAddExpense }: DetallesFlotillaProps) {
   const { toast } = useToast();
   const permissions = usePermissions();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -250,13 +253,19 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
                   className="pl-8 bg-background"
                 />
               </div>
-              <div className="flex gap-2 w-full md:w-auto shrink-0">
+              <div className="flex gap-2 w-full md:w-auto shrink-0 flex-wrap justify-end">
                 {canManageFleetFinances && (
                   <>
-                    <Button onClick={() => { setDialogType('Ingreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="flex-1 md:flex-none text-green-600 border-green-600 hover:bg-green-50 bg-card">
+                    <Button onClick={onAddWithdrawal} variant="outline" size="sm" className="bg-white border-red-500 text-black font-bold hover:bg-red-50">
+                      <TrendingDownIcon className="mr-2 h-4 w-4 text-red-500" /> Retiro
+                    </Button>
+                    <Button onClick={onAddExpense} variant="outline" size="sm" className="bg-white border-red-500 text-black font-bold hover:bg-red-50">
+                      <Wrench className="mr-2 h-4 w-4 text-red-500" /> Gasto
+                    </Button>
+                    <Button onClick={() => { setDialogType('Ingreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="text-green-600 border-green-600 hover:bg-green-50 bg-card">
                       <PlusCircle className="mr-2 h-4 w-4" /> Ingreso Manual
                     </Button>
-                    <Button onClick={() => { setDialogType('Egreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="flex-1 md:flex-none text-red-600 border-red-600 hover:bg-red-50 bg-card">
+                    <Button onClick={() => { setDialogType('Egreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="text-red-600 border-red-600 hover:bg-red-50 bg-card">
                       <PlusCircle className="mr-2 h-4 w-4" /> Egreso Manual
                     </Button>
                   </>
