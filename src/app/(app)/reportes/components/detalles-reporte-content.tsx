@@ -1,4 +1,4 @@
-
+// src/app/(app)/reportes/components/detalles-reporte-content.tsx
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote, Download, Filter, Landmark } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote, Download, Filter } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -33,6 +33,7 @@ import { Separator } from '@/components/ui/separator';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { exportToCsv } from '@/lib/services/export.service';
 import { Checkbox } from "@/components/ui/checkbox";
+import { usePermissions } from '@/hooks/usePermissions';
 
 const transactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
@@ -80,11 +81,15 @@ const metodoOptions = [
 
 export default function DetallesReporteContent({ services, sales, cashTransactions, users }: DetallesReporteProps) {
   const { toast } = useToast();
+  const permissions = usePermissions();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'Ingreso' | 'Egreso'>('Ingreso');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedMovement, setSelectedMovement] = useState<ReportRow | null>(null);
   const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
+
+  const canManageManual = permissions.has('finances:manage_manual_entries') || permissions.has('workshop:manage');
+  const canDeleteEntries = permissions.has('finances:delete_entries') || permissions.has('workshop:manage');
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
@@ -345,12 +350,16 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                 />
               </div>
               <div className="flex gap-2 w-full md:w-auto shrink-0">
-                <Button onClick={() => { setDialogType('Ingreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="flex-1 md:flex-none text-green-600 border-green-600 hover:bg-green-50 bg-card">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Registrar Ingreso
-                </Button>
-                <Button onClick={() => { setDialogType('Egreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="flex-1 md:flex-none text-red-600 border-red-600 hover:bg-red-50 bg-card">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Registrar Egreso
-                </Button>
+                {canManageManual && (
+                  <>
+                    <Button onClick={() => { setDialogType('Ingreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="flex-1 md:flex-none text-green-600 border-green-600 hover:bg-green-50 bg-card">
+                      <PlusCircle className="mr-2 h-4 w-4" /> Registrar Ingreso
+                    </Button>
+                    <Button onClick={() => { setDialogType('Egreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="flex-1 md:flex-none text-red-600 border-red-600 hover:bg-red-50 bg-card">
+                      <PlusCircle className="mr-2 h-4 w-4" /> Registrar Egreso
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -668,7 +677,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
           )}
 
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            {selectedMovement && (
+            {selectedMovement && canDeleteEntries && (
               <ConfirmDialog
                 triggerButton={
                   <Button variant="destructive" className="w-full sm:w-auto">

@@ -34,6 +34,7 @@ export const PERMISSION_GROUPS = [
         groupName: "Flotilla y Rentas",
         permissions: [
              { id: 'fleet:manage', label: 'Gestionar Flotilla (General)' },
+             { id: 'fleet:manage_vehicles', label: 'Añadir/Quitar Vehículos de Flotilla' },
              { id: 'drivers:create', label: 'Crear/Editar Conductores' },
              { id: 'drivers:archive', label: 'Archivar/Restaurar Conductores' },
              { id: 'rentals:view', label: 'Ver Ingresos de Renta' },
@@ -46,6 +47,8 @@ export const PERMISSION_GROUPS = [
             { id: 'vehicles:manage', label: 'Gestionar Vehículos (General)' },
             { id: 'personnel:manage', label: 'Gestionar Personal (Técnicos/Asesores)' },
             { id: 'finances:view_report', label: 'Ver Reporte Financiero' },
+            { id: 'finances:manage_manual_entries', label: 'Registrar Ingresos/Egresos Manuales' },
+            { id: 'finances:delete_entries', label: 'Eliminar Registros Financieros' },
             { id: 'billing:manage', label: 'Gestionar Facturación (Admin)' },
             { id: 'messaging:manage', label: 'Configurar Mensajería (Admin)' },
             { id: 'audits:view', label: 'Ver Auditoría de Acciones (Admin)' },

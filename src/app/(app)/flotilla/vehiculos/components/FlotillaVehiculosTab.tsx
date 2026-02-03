@@ -8,28 +8,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PlusCircle, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { TableToolbar } from '@/components/shared/table-toolbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/ui/table';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
 import { Badge } from '@/components/ui/badge';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface FlotillaVehiculosTabProps {
   vehicles: Vehicle[];
   onAddVehicle: () => void;
 }
 
-const sortOptions = [
-  { value: 'licensePlate_asc', label: 'Placa (A-Z)' },
-  { value: 'licensePlate_desc', label: 'Placa (Z-A)' },
-  { value: 'make_asc', label: 'Marca (A-Z)' },
-  { value: 'model_asc', label: 'Modelo (A-Z)' },
-  { value: 'year_desc', label: 'Año (Más Reciente)' },
-  { value: 'assignedDriverName_asc', label: 'Conductor (A-Z)' },
-];
-
 export function FlotillaVehiculosTab({ vehicles, onAddVehicle }: FlotillaVehiculosTabProps) {
   const router = useRouter();
+  const permissions = usePermissions();
+  const canManageFleetVehicles = permissions.has('fleet:manage_vehicles') || permissions.has('fleet:manage');
   
   const fleetVehicles = useMemo(() => vehicles.filter(v => v.isFleetVehicle), [vehicles]);
 
@@ -52,10 +45,12 @@ export function FlotillaVehiculosTab({ vehicles, onAddVehicle }: FlotillaVehicul
   return (
     <div className="space-y-4">
         <div className="flex flex-col sm:flex-row justify-end gap-2">
-            <Button onClick={onAddVehicle} className="w-full sm:w-auto font-bold">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Añadir Vehículo a Flotilla
-            </Button>
+            {canManageFleetVehicles && (
+              <Button onClick={onAddVehicle} className="w-full sm:w-auto font-bold">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Añadir Vehículo a Flotilla
+              </Button>
+            )}
         </div>
       <Card>
         <CardHeader>
@@ -77,9 +72,9 @@ export function FlotillaVehiculosTab({ vehicles, onAddVehicle }: FlotillaVehicul
                 <TableHeader className="bg-black text-white">
                 <TableRow className="hover:bg-transparent">
                     <SortableTableHeader sortKey="licensePlate" label="Placa" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
-                    <SortableTableHeader sortKey="make" label="Marca" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden md:table-cell" />
-                    <SortableTableHeader sortKey="model" label="Modelo" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden md:table-cell" />
-                    <SortableTableHeader sortKey="year" label="Año" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden lg:table-cell" />
+                    <SortableTableHeader sortKey="make" label="Marca" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden md:table-cell" textClassName="text-white" />
+                    <SortableTableHeader sortKey="model" label="Modelo" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden md:table-cell" textClassName="text-white" />
+                    <SortableTableHeader sortKey="year" label="Año" onSort={handleSort} currentSort={tableManager.sortOption} className="hidden lg:table-cell" textClassName="text-white" />
                     <SortableTableHeader sortKey="assignedDriverName" label="Conductor Asignado" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
                 </TableRow>
                 </TableHeader>

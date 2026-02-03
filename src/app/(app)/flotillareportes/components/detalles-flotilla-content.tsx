@@ -1,4 +1,4 @@
-
+// src/app/(app)/flotillareportes/components/detalles-flotilla-content.tsx
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -28,6 +28,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const transactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
@@ -71,9 +72,12 @@ const metodoOptions = [
 
 export default function DetallesFlotillaContent({ payments, expenses, withdrawals, cashTransactions }: DetallesFlotillaProps) {
   const { toast } = useToast();
+  const permissions = usePermissions();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'Ingreso' | 'Egreso'>('Ingreso');
   const [selectedMovement, setSelectedMovement] = useState<FlotillaReportRow | null>(null);
+
+  const canManageFleetFinances = permissions.has('finances:manage_manual_entries') || permissions.has('fleet:manage');
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
@@ -255,12 +259,16 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
                 />
               </div>
               <div className="flex gap-2 w-full md:w-auto shrink-0">
-                <Button onClick={() => { setDialogType('Ingreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="flex-1 md:flex-none text-green-600 border-green-600 hover:bg-green-50 bg-card">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Ingreso Manual
-                </Button>
-                <Button onClick={() => { setDialogType('Egreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="flex-1 md:flex-none text-red-600 border-red-600 hover:bg-red-50 bg-card">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Egreso Manual
-                </Button>
+                {canManageFleetFinances && (
+                  <>
+                    <Button onClick={() => { setDialogType('Ingreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="flex-1 md:flex-none text-green-600 border-green-600 hover:bg-green-50 bg-card">
+                      <PlusCircle className="mr-2 h-4 w-4" /> Ingreso Manual
+                    </Button>
+                    <Button onClick={() => { setDialogType('Egreso'); setIsDialogOpen(true); }} variant="outline" size="sm" className="flex-1 md:flex-none text-red-600 border-red-600 hover:bg-red-50 bg-card">
+                      <PlusCircle className="mr-2 h-4 w-4" /> Egreso Manual
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -276,7 +284,7 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
                   value={tableManager.otherFilters["type"] || "all"} 
                   onValueChange={(val) => tableManager.setOtherFilters(prev => ({ ...prev, type: val }))}
                 >
-                  <SelectTrigger className="w-full md:w-[150px] bg-card"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                  <SelectTrigger className="w-full md:w-[150px] bg-card h-10"><SelectValue placeholder="Tipo" /></SelectTrigger>
                   <SelectContent>{tipoOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
                 </Select>
 
@@ -284,7 +292,7 @@ export default function DetallesFlotillaContent({ payments, expenses, withdrawal
                   value={tableManager.otherFilters["method"] || "all"} 
                   onValueChange={(val) => tableManager.setOtherFilters(prev => ({ ...prev, method: val }))}
                 >
-                  <SelectTrigger className="w-full md:w-[180px] bg-card"><SelectValue placeholder="Método Pago" /></SelectTrigger>
+                  <SelectTrigger className="w-full md:w-[180px] bg-card h-10"><SelectValue placeholder="Método Pago" /></SelectTrigger>
                   <SelectContent>{metodoOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
