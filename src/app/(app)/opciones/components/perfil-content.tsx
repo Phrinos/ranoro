@@ -10,7 +10,8 @@ import { useRouter } from 'next/navigation';
 import { storage } from '@/lib/firebaseClient.js';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
@@ -140,12 +141,12 @@ export function PerfilPageContent() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Correo Electrónico</FormLabel><FormControl><Input type="email" {...field} value={field.value ?? ''} disabled /></FormControl><FormDescription>El correo electrónico no se puede cambiar.</FormDescription></FormItem>)}/>
+                <FormField control={form.control} name="email" render={({ field }) => (<FormItem><FormLabel>Correo Electrónico</FormLabel><FormControl><Input type="email" {...field} value={field.value ?? ''} disabled /></FormControl><p className="text-[0.8rem] text-muted-foreground">El correo electrónico no se puede cambiar.</p></FormItem>)}/>
                 <FormField control={form.control} name="phone" render={({ field }) => (<FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input type="tel" {...field} value={field.value ?? ''} /></FormControl></FormItem>)}/>
                 
                 <Card className="pt-4 border-dashed"><CardContent className="space-y-2">
-                  <FormLabel>Firma Digital</FormLabel>
-                  <FormDescription>Esta firma se usará en los documentos que generes.</FormDescription>
+                  <Label>Firma Digital</Label>
+                  <p className="text-sm text-muted-foreground">Esta firma se usará en los documentos que generes.</p>
                   <div className="mt-2 p-2 min-h-[100px] border rounded-md bg-muted/50 flex items-center justify-center">
                       {form.watch('signatureDataUrl') ? 
                           <Image src={form.watch('signatureDataUrl')!} alt="Firma guardada" className="max-w-[250px] max-h-[125px] object-contain" width={250} height={125}/> : 
