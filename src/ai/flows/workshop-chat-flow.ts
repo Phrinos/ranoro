@@ -117,21 +117,19 @@ export const workshopChatFlow = ai.defineFlow(
     outputSchema: z.string(),
   },
   async (input) => {
-    // Usamos ai.chat para manejar el historial de forma correcta en Genkit 1.x
-    const chat = ai.chat({
+    const response = await ai.generate({
       system: `Eres el Asistente Inteligente de Ranoro, un experto en gestión de talleres mecánicos. 
       Tienes acceso a los datos reales del taller mediante herramientas. 
       Tu objetivo es responder preguntas sobre el negocio, como estadísticas de vehículos, servicios más comunes o estado del inventario.
       Responde siempre de forma amable, profesional y en español. 
       Si no tienes una herramienta para responder algo específico, indícalo cortésmente.`,
-      history: input.history?.map(m => ({ 
-        role: m.role as any, 
-        content: [{ text: m.content }] 
-      })),
-    });
-
-    const response = await chat.send({
-      text: input.message,
+      messages: [
+        ...(input.history?.map(m => ({ 
+          role: m.role as any, 
+          content: [{ text: m.content }] 
+        })) || []),
+        { role: 'user', content: [{ text: input.message }] }
+      ],
       tools: [getVehicleStats, getServiceStats, getInventorySummary],
     });
 
