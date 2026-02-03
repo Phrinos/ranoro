@@ -25,7 +25,7 @@ import {
   LogOut,
   LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, 
   Truck, LineChart, Shield, PlusCircle, Landmark, LayoutGrid, CalendarDays, 
-  MessageSquare, Car, ShoppingCart, FileJson, Building, BarChart3, Wallet, BrainCircuit, LifeBuoy, Tags
+  MessageSquare, Car, ShoppingCart, FileJson, Building, BarChart3, Wallet, BrainCircuit, LifeBuoy, Tags, FileBarChart
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -55,9 +55,10 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Inventario', path: '/inventario', icon: Package, groupTag: 'Operaciones', permissions: ['inventory:view_public_info'] },
   { label: 'Compras', path: '/inventario/compras', icon: ShoppingCart, groupTag: 'Operaciones', permissions: ['purchases:manage'] },
   
-  // Finanzas (Nueva Categoría)
+  // Finanzas
   { label: 'Finanzas', path: '/finanzas', icon: DollarSign, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
   { label: 'Cierres', path: '/finanzas/cierre', icon: BarChart3, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
+  { label: 'Reportes', path: '/reportes', icon: FileBarChart, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
   { label: 'Facturación', path: '/facturacion', icon: FileJson, groupTag: 'Finanzas', permissions: ['billing:manage'] },
 
   // Opciones
@@ -240,7 +241,6 @@ function AppSidebarInner({
         ))}
       </SidebarContent>
       <SidebarFooter className="mt-auto border-t border-sidebar-border p-2 flex flex-col gap-1">
-        {/* User Area */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
