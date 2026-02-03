@@ -1,10 +1,9 @@
+
 // app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -147,8 +146,6 @@ export default function RootLayout({
     <html lang="es-MX" suppressHydrationWarning>
       <body className={inter.className}>
         {children}
-        <Analytics />
-        <SpeedInsights />
         <Script
           id="ld-localbusiness"
           type="application/ld+json"

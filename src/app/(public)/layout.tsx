@@ -3,8 +3,6 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Analytics } from '@vercel/analytics/react';
-import { SpeedInsights } from '@vercel/speed-insights/next';
 
 export const metadata: Metadata = {
   title: 'Ranoro Taller en Aguascalientes | Mecánica, Hojalatería y Pintura',
@@ -32,8 +30,6 @@ export default function PublicPageLayout({
     <div className="flex min-h-screen flex-col bg-muted/30">
         <main className="flex-1">
             {children}
-            <Analytics />
-            <SpeedInsights />
         </main>
         <footer className="bg-gray-900 text-white print:hidden">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-500 text-xs">
