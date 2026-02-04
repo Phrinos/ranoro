@@ -8,7 +8,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getAdminDb } from '@/lib/firebaseAdmin';
-import { startOfMonth, endOfMonth, isValid } from 'date-fns';
+import { startOfMonth, endOfMonth, isValid, isWithinInterval } from 'date-fns';
 
 // --- Helper para manejar fechas de Firestore ---
 const parseDate = (dateVal: any): Date => {
@@ -56,8 +56,6 @@ const getServiceReport = ai.defineTool(
     // Consulta optimizada directamente en Firestore filtrando por fecha
     const servicesSnap = await db.collection('serviceRecords')
         .where('status', '==', 'Entregado')
-        .where('deliveryDateTime', '>=', start.toISOString())
-        .where('deliveryDateTime', '<=', end.toISOString())
         .get();
     
     let filtered = servicesSnap.docs.map(doc => {
@@ -71,7 +69,7 @@ const getServiceReport = ai.defineTool(
         total: Number(data.totalCost || data.total || 0),
         dateObj: dateObj
       };
-    });
+    }).filter(s => isWithinInterval(s.dateObj, { start, end }));
 
     if (serviceType) {
       const q = serviceType.toLowerCase();
@@ -113,19 +111,29 @@ const getFinancialStats = ai.defineTool(
 
     const servicesSnap = await db.collection('serviceRecords')
       .where('status', '==', 'Entregado')
-      .where('deliveryDateTime', '>=', start.toISOString())
-      .where('deliveryDateTime', '<=', end.toISOString())
       .get();
 
-    const income = servicesSnap.docs.reduce((sum, doc) => sum + (Number(doc.data().totalCost || doc.data().total || 0)), 0);
+    const income = servicesSnap.docs.reduce((sum, doc) => {
+        const data = doc.data();
+        const date = parseDate(data.deliveryDateTime || data.serviceDate);
+        if (date && isWithinInterval(date, { start, end })) {
+            return sum + (Number(data.totalCost || data.total || 0));
+        }
+        return sum;
+    }, 0);
 
     const cashSnap = await db.collection('cashDrawerTransactions')
       .where('type', 'in', ['out', 'Salida', 'expense'])
-      .where('date', '>=', start.toISOString())
-      .where('date', '<=', end.toISOString())
       .get();
 
-    const expenses = cashSnap.docs.reduce((sum, doc) => sum + (Number(doc.data().amount) || 0), 0);
+    const expenses = cashSnap.docs.reduce((sum, doc) => {
+        const data = doc.data();
+        const date = parseDate(data.date);
+        if (date && isWithinInterval(date, { start, end })) {
+            return sum + (Number(data.amount) || 0);
+        }
+        return sum;
+    }, 0);
 
     return { totalIncome: income, totalExpenses: expenses, netProfit: income - expenses };
   }
@@ -180,8 +188,8 @@ const workshopChatFlow = ai.defineFlow(
         content: [{ text: m.content }]
     }));
 
+    // Se eliminó la línea 'model: ...' para usar el gemini15Pro configurado en genkit.ts
     const response = await ai.generate({
-      // El modelo se hereda de la configuración predeterminada en genkit.ts
       system: `Eres el Asistente Inteligente de Ranoro, el experto administrativo del taller.
       Usa las herramientas para dar datos reales de la base de datos de Firestore.
       Responde siempre de forma amable, profesional, corta y en español (pesos mexicanos).`,
@@ -214,9 +222,7 @@ export async function sendChatMessage(message: string, history: any[] = []): Pro
         return await workshopChatFlow({ message, history: cleanHistory });
     } catch (error: any) {
         console.error("🔥 ERROR GENKIT SERVER:", error);
-        if (error.message?.includes('404')) {
-            throw new Error(`Error de configuración de IA (404): No se encontró el modelo. Verifica src/ai/genkit.ts.`);
-        }
-        throw new Error(`Error técnico de IA: ${error.message || "No pude conectar con el servidor."}`);
+        // Mensaje limpio para el frontend con detalle técnico para diagnóstico
+        throw new Error(`Error: ${error.message || "La IA no pudo responder. Verifica la configuración del modelo."}`);
     }
 }
