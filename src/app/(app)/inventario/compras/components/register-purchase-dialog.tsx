@@ -53,6 +53,16 @@ import { Badge } from "@/components/ui/badge";
 
 export type PurchaseFormValues = RegisterPurchaseFormValues;
 
+interface RegisterPurchaseDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  suppliers: Supplier[];
+  inventoryItems: InventoryItem[];
+  categories: InventoryCategory[];
+  onSave: (data: RegisterPurchaseFormValues) => void;
+  onInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
+}
+
 const buildDefaults = (): RegisterPurchaseFormValues => ({
   supplierId: "",
   purchaseDate: getToday(),
@@ -194,7 +204,7 @@ export function RegisterPurchaseDialog({
                                         <CommandItem
                                           key={s.id}
                                           value={`${s.name} ${s.id}`}
-                                          onMouseDown={(e) => {
+                                          onPointerDown={(e) => {
                                             e.preventDefault();
                                             e.stopPropagation();
                                             setValue("supplierId", s.id, { shouldValidate: true, shouldDirty: true });
@@ -586,14 +596,4 @@ function SearchItemDialog({
       </DialogContent>
     </Dialog>
   );
-}
-
-interface RegisterPurchaseDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  suppliers: Supplier[];
-  inventoryItems: InventoryItem[];
-  categories: InventoryCategory[];
-  onSave: (data: RegisterPurchaseFormValues) => void;
-  onInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
 }
