@@ -55,7 +55,7 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
   );
 
   const form = useForm<VehicleInfoFormValues>({
-    resolver: zodResolver(vehicleInfoSchema),
+    resolver: zodResolver(vehicleInfoSchema) as any,
     defaultValues: defaults,
   });
 

@@ -69,7 +69,7 @@ export function RegisterPaymentDialog({
 }: RegisterPaymentDialogProps) {
   const { toast } = useToast();
   const form = useForm<RegisterPaymentFormValues>({
-    resolver: zodResolver(registerPaymentSchema),
+    resolver: zodResolver(registerPaymentSchema) as any,
     defaultValues: buildDefaults(infraction, paymentToEdit),
   });
 

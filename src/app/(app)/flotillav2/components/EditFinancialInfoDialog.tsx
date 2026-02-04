@@ -42,7 +42,7 @@ interface EditFinancialInfoDialogProps {
 export function EditFinancialInfoDialog({ open, onOpenChange, onSave, driver }: EditFinancialInfoDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<FinancialInfoFormValues>({
-    resolver: zodResolver(financialInfoSchema),
+    resolver: zodResolver(financialInfoSchema) as any,
     defaultValues: {
       contractDate: new Date(),
       requiredDepositAmount: 0,

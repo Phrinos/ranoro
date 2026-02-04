@@ -69,7 +69,7 @@ export function EditDailyChargeDialog({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const form = useForm<DailyChargeFormValues>({
-    resolver: zodResolver(chargeSchema),
+    resolver: zodResolver(chargeSchema) as any,
     defaultValues: {
       date: new Date(),
       amount: 0,

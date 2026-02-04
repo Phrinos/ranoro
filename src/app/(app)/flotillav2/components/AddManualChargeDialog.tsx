@@ -67,7 +67,7 @@ export function AddManualChargeDialog({
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const form = useForm<ManualChargeFormValues>({
-    resolver: zodResolver(chargeSchema),
+    resolver: zodResolver(chargeSchema) as any,
     defaultValues: {
       date: toMidday(new Date()),
       amount: debtToEdit?.amount ?? undefined,
@@ -198,7 +198,7 @@ export function AddManualChargeDialog({
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditing ? "Actualizar Cargo" : "Guardar Cargo"}
+                {isEditing ? "Actualizar" : "Guardar"}
               </Button>
             </DialogFooter>
           </form>

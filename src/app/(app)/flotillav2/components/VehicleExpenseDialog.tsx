@@ -37,7 +37,7 @@ interface VehicleExpenseDialogProps {
 
 export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: VehicleExpenseDialogProps) {
   const form = useForm<VehicleExpenseFormValues>({
-    resolver: zodResolver(expenseSchema),
+    resolver: zodResolver(expenseSchema) as any,
     defaultValues: {
       vehicleId: "",
       amount: undefined,

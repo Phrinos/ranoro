@@ -38,7 +38,7 @@ export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<RentalSystemFormValues>({
-    resolver: zodResolver(rentalSystemSchema),
+    resolver: zodResolver(rentalSystemSchema) as any,
     defaultValues: {
       dailyRentalCost: vehicle.dailyRentalCost || 0,
       gpsCost: vehicle.gpsCost || 0,
@@ -81,7 +81,7 @@ export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: 
             )}/>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin" /> : "Guardar"}</Button>
+              <Button type="submit" disabled={isSubmitting}>{isSubmitting ? <Loader2 className="animate-spin h-4 w-4" /> : "Guardar"}</Button>
             </DialogFooter>
           </form>
         </Form>

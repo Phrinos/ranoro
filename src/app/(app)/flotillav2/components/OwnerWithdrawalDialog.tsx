@@ -42,7 +42,7 @@ const buildDefaults = (): OwnerWithdrawalFormValues => ({
 
 export function OwnerWithdrawalDialog({ open, onOpenChange, onSave, owners }: OwnerWithdrawalDialogProps) {
   const form = useForm<OwnerWithdrawalFormValues>({
-    resolver: zodResolver(ownerWithdrawalSchema),
+    resolver: zodResolver(ownerWithdrawalSchema) as any,
     defaultValues: buildDefaults(),
   });
 

@@ -54,7 +54,7 @@ export function PaperworkDialog({ open, onOpenChange, paperwork, onSave }: Paper
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const form = useForm<PaperworkFormValues>({
-    resolver: zodResolver(paperworkSchema),
+    resolver: zodResolver(paperworkSchema) as any,
     defaultValues: {
       name: "",
       dueDate: toMidday(new Date()),
