@@ -191,7 +191,7 @@ export function InventorySearchDialog({
                             <span className="font-bold text-base truncate">{item.name}</span>
                           </div>
                           <div className="text-right shrink-0">
-                            <span className="font-black text-primary text-lg">
+                            <span className="font-bold text-primary text-lg">
                               {formatCurrency(item.sellingPrice ?? 0)}
                             </span>
                           </div>

@@ -336,7 +336,7 @@ export function RegisterPurchaseDialog({
                     {/* LÍNEA 3: ARTÍCULOS COMPRADOS */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <Label className="text-base font-black flex items-center gap-2">
+                        <Label className="text-base font-bold flex items-center gap-2">
                           <Receipt className="h-5 w-5 text-primary" />
                           Detalle de Artículos
                         </Label>
@@ -433,7 +433,7 @@ export function RegisterPurchaseDialog({
                                   />
                                 </td>
                                 <td className="px-2 py-3 text-right">
-                                  <span className="font-black text-foreground">
+                                  <span className="font-bold text-foreground">
                                     {formatCurrency(Number(watch(`items.${index}.totalPrice`) || 0))}
                                   </span>
                                 </td>
@@ -466,7 +466,7 @@ export function RegisterPurchaseDialog({
                   <DialogFooter className="flex w-full flex-col-reverse items-center border-t bg-white p-6 pt-4 sm:flex-row sm:justify-between">
                       <div className="flex flex-col">
                         <span className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">Total Compra</span>
-                        <div className="text-2xl font-black text-primary">
+                        <div className="text-2xl font-bold text-primary">
                             {formatCurrency(watch("invoiceTotal") || 0)}
                         </div>
                       </div>

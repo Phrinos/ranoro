@@ -186,7 +186,7 @@ function QuickAddItemDialog({
                       <CommandItem
                         key={key}
                         value={label}
-                        onMouseDown={(e) => {
+                        onMouseDownCapture={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
                           onSelectItem(it);
@@ -468,9 +468,10 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
           });
         }
 
-        if (ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
-          await navigator.clipboard.write([
-            new ClipboardItem({ "image/png": blob }),
+        const _ClipboardItem = (window as any).ClipboardItem ?? (globalThis as any).ClipboardItem;
+        if (_ClipboardItem && navigator.clipboard && (navigator.clipboard as any).write) {
+          await (navigator.clipboard as any).write([
+            new _ClipboardItem({ "image/png": blob }),
           ]);
           toast({
             title: "Copiado",
