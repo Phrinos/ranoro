@@ -3,85 +3,100 @@
 
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Accordion } from "@/components/ui/accordion";
-import { VehicleMakeAccordion } from '@/app/(app)/precios/components/VehicleMakeAccordion';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, Trash2, LayoutGrid, Loader2 } from 'lucide-react';
 import { inventoryService } from '@/lib/services';
-import type { EngineData } from '@/lib/data/vehicle-database-types';
 import { useToast } from '@/hooks/use-toast';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebaseClient';
-import { VEHICLE_COLLECTION } from '@/lib/vehicle-constants';
+import { VehicleCatalogEditor } from '@/app/(app)/precios/components/VehicleCatalogEditor';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { Button } from '@/components/ui/button';
 
 interface CatalogTabProps {
   priceLists: any[];
 }
 
 export default function CatalogTab({ priceLists }: CatalogTabProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedMake, setSelectedMake] = useState<string>('');
   const { toast } = useToast();
 
-  const filteredMakes = useMemo(() => {
-    const makes = priceLists.map(pl => pl.make).sort();
-    if (!searchTerm.trim()) return makes;
-    const q = searchTerm.toLowerCase();
-    return makes.filter(m => m.toLowerCase().includes(q));
-  }, [priceLists, searchTerm]);
+  const sortedMakes = useMemo(() => {
+    return priceLists.map(pl => pl.make).sort();
+  }, [priceLists]);
 
-  const handleEngineDataSave = async (makeName: string, modelName: string, generationIndex: number, engineIndex: number, updatedEngineData: EngineData) => {
-    if (!db) return;
+  const handleDeleteMake = async () => {
+    if (!selectedMake) return;
     try {
-        const makeDocRef = doc(db, VEHICLE_COLLECTION, makeName);
-        const makeDocSnap = await getDoc(makeDocRef);
-        if (!makeDocSnap.exists()) return;
-
-        const makeDocData = makeDocSnap.data();
-        const modelIndex = makeDocData.models.findIndex((m: any) => m.name === modelName);
-        if (modelIndex === -1) return;
-            
-        const updatedModels = [...makeDocData.models];
-        const updatedGenerations = [...updatedModels[modelIndex].generations];
-        const updatedEngines = [...updatedGenerations[generationIndex].engines];
-            
-        updatedEngines[engineIndex] = updatedEngineData;
-        updatedGenerations[generationIndex] = { ...updatedGenerations[generationIndex], engines: updatedEngines };
-        updatedModels[modelIndex] = { ...updatedModels[modelIndex], generations: updatedGenerations };
-            
-        await setDoc(makeDocRef, { models: updatedModels }, { merge: true });
-        toast({ title: 'Guardado', description: `Se actualizaron los datos para ${updatedEngineData.name}.` });
-    } catch (error) {
-        console.error("Error saving engine data:", error);
-        toast({ title: 'Error', description: 'No se pudieron guardar los cambios.', variant: 'destructive' });
+      await inventoryService.deleteMake(selectedMake);
+      toast({ title: 'Marca eliminada', description: `Se ha borrado ${selectedMake} del catálogo.` });
+      setSelectedMake('');
+    } catch (e) {
+      toast({ title: 'Error', description: 'No se pudo eliminar la marca.', variant: 'destructive' });
     }
   };
 
   return (
     <div className="space-y-6">
-      <div className="relative max-w-md">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Buscar marca..."
-          className="pl-8 bg-card"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <CardTitle>Editor de Catálogo Maestro</CardTitle>
+              <CardDescription>Selecciona una marca para gestionar sus modelos y motores.</CardDescription>
+            </div>
+            {selectedMake && (
+              <ConfirmDialog
+                triggerButton={
+                  <Button variant="destructive" size="sm">
+                    <Trash2 className="mr-2 h-4 w-4" /> Eliminar Marca
+                  </Button>
+                }
+                title={`¿Eliminar marca ${selectedMake}?`}
+                description="Esta acción borrará todos los modelos y configuraciones asociadas a esta marca de forma permanente."
+                onConfirm={handleDeleteMake}
+              />
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="max-w-md space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Seleccionar Marca para Editar</label>
+              <Select value={selectedMake} onValueChange={setSelectedMake}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue placeholder="Busca o selecciona una marca..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {sortedMakes.length > 0 ? (
+                    sortedMakes.map(make => (
+                      <SelectItem key={make} value={make}>{make}</SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-sm text-muted-foreground">Catálogo vacío.</div>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4">
-        {filteredMakes.length > 0 ? (
-          <Accordion type="multiple" className="w-full space-y-2">
-            {filteredMakes.map(make => (
-              <VehicleMakeAccordion 
-                key={make} 
-                make={make} 
-                onEngineDataSave={handleEngineDataSave}
-              />
-            ))}
-          </Accordion>
+        {selectedMake ? (
+          <VehicleCatalogEditor make={selectedMake} />
         ) : (
-          <div className="text-center py-12 border-2 border-dashed rounded-lg text-muted-foreground">
-            {searchTerm ? "No se encontraron marcas con ese nombre." : "El catálogo está vacío. Crea tu primera marca."}
+          <div className="text-center py-24 border-2 border-dashed rounded-3xl bg-muted/5 text-muted-foreground">
+            <LayoutGrid className="mx-auto h-12 w-12 opacity-20 mb-4" />
+            <h3 className="text-lg font-medium text-foreground/60">Ninguna marca seleccionada</h3>
+            <p className="max-w-xs mx-auto mt-2 text-sm">
+              Selecciona una marca arriba o crea una nueva usando el botón en la cabecera para empezar a poblar tu catálogo.
+            </p>
           </div>
         )}
       </div>

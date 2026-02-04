@@ -375,6 +375,11 @@ const createNewMake = async (makeName: string): Promise<void> => {
     await setDoc(makeRef, { models: [] }, { merge: false });
 };
 
+const deleteMake = async (makeName: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await fbDeleteDoc(doc(db, VEHICLE_COLLECTION, makeName));
+};
+
 
 export const inventoryService = {
   getDocById,
@@ -417,4 +422,5 @@ export const inventoryService = {
   saveVehicleGroup,
   deleteVehicleGroup,
   createNewMake,
+  deleteMake,
 };
