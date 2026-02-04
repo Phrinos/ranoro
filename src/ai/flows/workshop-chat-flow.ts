@@ -2,18 +2,34 @@
 /**
  * @fileOverview Flow de Chat Inteligente Unificado para Ranoro.
  * Proporciona a Gemini acceso a herramientas para consultar datos reales del taller.
+ *
+ * - sendChatMessage - Función que maneja el proceso de chat con el asistente.
+ * - WorkshopChatInput - El tipo de entrada para la función sendChatMessage.
+ * - WorkshopChatOutput - El tipo de retorno para la función sendChatMessage.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getAdminDb } from '@/lib/firebaseAdmin';
-import { startOfMonth, endOfMonth, parseISO, isWithinInterval } from 'date-fns';
+import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+
+// --- Esquemas de Datos ---
+
+const MessageSchema = z.object({
+    role: z.enum(['user', 'model', 'system']),
+    content: z.string(),
+});
+
+const WorkshopChatInputSchema = z.object({
+  history: z.array(MessageSchema).optional(),
+  message: z.string(),
+});
+export type WorkshopChatInput = z.infer<typeof WorkshopChatInputSchema>;
+
+export type WorkshopChatOutput = string;
 
 // --- Herramientas de Datos para la IA ---
 
-/**
- * Consulta estadísticas detalladas de servicios realizados.
- */
 const getServiceReport = ai.defineTool(
   {
     name: 'getServiceReport',
@@ -74,9 +90,6 @@ const getServiceReport = ai.defineTool(
   }
 );
 
-/**
- * Obtiene un resumen financiero completo.
- */
 const getFinancialStats = ai.defineTool(
   {
     name: 'getFinancialStats',
@@ -86,10 +99,6 @@ const getFinancialStats = ai.defineTool(
   },
   async () => {
     const db = getAdminDb();
-    const now = new Date();
-    const start = startOfMonth(now);
-    const end = endOfMonth(now);
-
     const servicesSnap = await db.collection('serviceRecords').where('status', '==', 'Entregado').get();
     const income = servicesSnap.docs.reduce((sum, doc) => sum + (doc.data().totalCost || 0), 0);
 
@@ -100,9 +109,6 @@ const getFinancialStats = ai.defineTool(
   }
 );
 
-/**
- * Consulta el estado del inventario.
- */
 const getInventoryStatus = ai.defineTool(
   {
     name: 'getInventoryStatus',
@@ -131,25 +137,16 @@ const getInventoryStatus = ai.defineTool(
   }
 );
 
-// --- Definición del Flow de Chat ---
+// --- Definición del Flow ---
 
-const MessageSchema = z.object({
-    role: z.enum(['user', 'model', 'system']),
-    content: z.string(),
-});
-
-export const workshopChatFlow = ai.defineFlow(
+const workshopChatFlow = ai.defineFlow(
   {
     name: 'workshopChatFlow',
-    inputSchema: z.object({
-      history: z.array(MessageSchema).optional(),
-      message: z.string(),
-    }),
+    inputSchema: WorkshopChatInputSchema,
     outputSchema: z.string(),
   },
   async (input) => {
     const response = await ai.generate({
-      model: 'googleai/gemini-1.5-flash',
       system: `Eres el Asistente Inteligente de Ranoro, el experto administrativo del taller.
       Tienes acceso a los datos reales mediante herramientas. 
       Tu misión es ayudar al dueño del taller a entender su negocio.
@@ -171,6 +168,9 @@ export const workshopChatFlow = ai.defineFlow(
   }
 );
 
-export async function sendChatMessage(message: string, history: any[] = []) {
+/**
+ * Función wrapper para interactuar con el asistente de chat.
+ */
+export async function sendChatMessage(message: string, history: any[] = []): Promise<WorkshopChatOutput> {
     return await workshopChatFlow({ message, history });
 }
