@@ -30,7 +30,9 @@ import {
   TrendingUp,
   Receipt,
   Search as SearchIcon,
-  Loader2
+  Loader2,
+  Plus,
+  Minus
 } from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
 import { formatCurrency, cn, getToday } from "@/lib/utils";
@@ -213,12 +215,14 @@ export function RegisterPurchaseDialog({
                                 <PopoverContent 
                                   className="w-[var(--radix-popover-trigger-width)] p-0" 
                                   align="start"
+                                  onOpenAutoFocus={(e) => e.preventDefault()}
                                 >
                                   <Command shouldFilter={false}>
                                     <CommandInput 
                                       placeholder="Escribe nombre o RFC..." 
                                       value={supplierSearchQuery}
                                       onValueChange={setSupplierSearchQuery}
+                                      autoFocus
                                     />
                                     <CommandList>
                                       <CommandEmpty>No se encontró el proveedor.</CommandEmpty>
@@ -358,7 +362,7 @@ export function RegisterPurchaseDialog({
                           <thead className="bg-black text-white">
                             <tr>
                               <th className="px-4 py-3 text-left">Artículo</th>
-                              <th className="px-2 py-3 text-center w-24">Cantidad</th>
+                              <th className="px-2 py-3 text-center w-36">Cantidad</th>
                               <th className="px-2 py-3 text-right w-32">Costo (Taller)</th>
                               <th className="px-2 py-3 text-right w-32">Venta (Público)</th>
                               <th className="px-2 py-3 text-right w-32">Total</th>
@@ -374,23 +378,53 @@ export function RegisterPurchaseDialog({
                                   </p>
                                 </td>
                                 <td className="px-2 py-3">
-                                  <FormField
-                                    control={control as any}
-                                    name={`items.${index}.quantity`}
-                                    render={({ field }) => (
-                                      <Input
-                                        type="number"
-                                        step="0.01"
-                                        className="h-9 text-center bg-white"
-                                        {...field}
-                                        value={(field.value as any) ?? ""}
-                                        onChange={(e) => {
-                                          field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value));
-                                          updateLineTotals(index);
-                                        }}
-                                      />
-                                    )}
-                                  />
+                                  <div className="flex items-center justify-center gap-1">
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8 bg-white shrink-0"
+                                      onClick={() => {
+                                        const curr = Number(getValues(`items.${index}.quantity`)) || 0;
+                                        const next = Math.max(0, curr - 1);
+                                        setValue(`items.${index}.quantity`, next, { shouldDirty: true });
+                                        updateLineTotals(index);
+                                      }}
+                                    >
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <FormField
+                                      control={control as any}
+                                      name={`items.${index}.quantity`}
+                                      render={({ field }) => (
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          className="h-9 w-16 text-center bg-white"
+                                          {...field}
+                                          value={(field.value as any) ?? ""}
+                                          onChange={(e) => {
+                                            field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value));
+                                            updateLineTotals(index);
+                                          }}
+                                        />
+                                      )}
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="icon"
+                                      className="h-8 w-8 bg-white shrink-0"
+                                      onClick={() => {
+                                        const curr = Number(getValues(`items.${index}.quantity`)) || 0;
+                                        const next = curr + 1;
+                                        setValue(`items.${index}.quantity`, next, { shouldDirty: true });
+                                        updateLineTotals(index);
+                                      }}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
                                 </td>
                                 <td className="px-2 py-3">
                                   <FormField
@@ -424,7 +458,7 @@ export function RegisterPurchaseDialog({
                                         <Input
                                           type="number"
                                           step="0.01"
-                                          className="h-9 pl-7 text-right bg-white font-semibold text-green-700"
+                                          className="h-9 pl-7 text-right bg-white font-bold text-green-700"
                                           {...field}
                                           value={(field.value as any) ?? ""}
                                           onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
