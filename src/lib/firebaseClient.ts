@@ -1,3 +1,4 @@
+
 // src/lib/firebaseClient.ts
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
@@ -26,10 +27,17 @@ export const storage: FirebaseStorage = getStorage(app);
 export const auth: Auth | null = typeof window !== 'undefined' ? getAuth(app) : null;
 
 // Ensure persistence is set if auth is initialized
-if (auth) {
-  setPersistence(auth, browserLocalPersistence).catch((err) => {
-    console.error("[FIREBASE] Persistence error:", err);
-  });
+if (typeof window !== 'undefined' && auth) {
+  console.log("[AUTH-AUDIT] Initializing client-side auth persistence...");
+  setPersistence(auth, browserLocalPersistence)
+    .then(() => {
+      console.log("[AUTH-AUDIT] Auth persistence set to 'LOCAL' successfully.");
+    })
+    .catch((err) => {
+      console.error("[AUTH-AUDIT] Critical error setting auth persistence:", err);
+    });
+} else {
+  console.warn("[AUTH-AUDIT] Auth initialization skipped (possible Server Side execution).");
 }
 
 // Export the Firebase app instance if needed elsewhere

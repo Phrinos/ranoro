@@ -17,7 +17,7 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { auth } from "@/lib/firebaseClient";
-import { signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from "firebase/auth";
+import { signInWithEmailAndPassword } from "firebase/auth";
 
 function LoginPageContent() {
   const [emailLogin, setEmailLogin] = useState("");
@@ -28,17 +28,27 @@ function LoginPageContent() {
   const { toast } = useToast();
 
   useEffect(() => {
-    console.log("[AUTH-AUDIT] Login Page mounted. Auth initialized:", !!auth);
+    console.log("[AUTH-AUDIT] Login Page component mounted.");
+    console.log("[AUTH-AUDIT] Auth object status:", auth ? "INITIALIZED" : "NULL");
   }, []);
 
   const handleLogin = async (event: React.FormEvent) => {
+    console.log("[AUTH-AUDIT] handleLogin function triggered via Form Submit.");
     event.preventDefault();
-    if (isLoading) return;
     
-    console.log("[AUTH-AUDIT] Starting login process...");
+    if (isLoading) {
+      console.log("[AUTH-AUDIT] handleLogin aborted: already loading.");
+      return;
+    }
+    
     setIsLoading(true);
 
-    if (!emailLogin.trim() || !passwordLogin.trim()) {
+    const email = emailLogin.trim();
+    const password = passwordLogin.trim();
+
+    console.log("[AUTH-AUDIT] Validating credentials format...");
+    if (!email || !password) {
+      console.warn("[AUTH-AUDIT] Validation failed: empty fields.");
       toast({
         title: "Campos incompletos",
         description: "Ingresa tu correo y contraseña.",
@@ -49,44 +59,44 @@ function LoginPageContent() {
     }
 
     try {
-      if (!auth) throw new Error("Firebase Auth no está inicializado.");
+      if (!auth) {
+        throw new Error("El módulo Firebase Auth no está disponible en este momento.");
+      }
 
-      // Forzar persistencia local para producción
-      console.log("[AUTH-AUDIT] Setting persistence...");
-      await setPersistence(auth, browserLocalPersistence);
+      console.log("[AUTH-AUDIT] Attempting Firebase sign-in for:", email);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
-      console.log("[AUTH-AUDIT] Attempting sign in with email:", emailLogin);
-      await signInWithEmailAndPassword(auth, emailLogin, passwordLogin);
-
-      console.log("[AUTH-AUDIT] Sign in success. Notifying user...");
+      console.log("[AUTH-AUDIT] Sign-in SUCCESS for UID:", userCredential.user.uid);
+      
       toast({
         title: "Inicio de sesión exitoso",
         description: "¡Bienvenido de nuevo!",
       });
 
       const nextUrl = searchParams.get("next") || "/dashboard";
-      console.log("[AUTH-AUDIT] Redirecting to:", nextUrl);
+      console.log("[AUTH-AUDIT] Navigating to target URL:", nextUrl);
+      
       router.push(nextUrl);
     } catch (error: any) {
-      console.error("[AUTH-AUDIT] Login error detected:", error);
-      const code = error?.code ?? "";
-      let description = "Ocurrió un error inesperado al intentar iniciar sesión.";
+      console.error("[AUTH-AUDIT] Login EXCEPTION detected:", error);
+      
+      const code = error?.code ?? "unknown";
+      let description = "No se pudo completar el acceso. Verifica tu conexión.";
       
       if (code === "auth/invalid-credential") {
-        description = "Las credenciales son incorrectas. Verifica tu correo y contraseña.";
+        description = "Correo o contraseña incorrectos.";
       } else if (code === "auth/network-request-failed") {
-        description = "Error de red. Revisa tu conexión a internet o el bloqueo de tu navegador.";
-      } else if (code === "auth/unauthorized-domain") {
-        description = "Este dominio (ranoro.mx) no está autorizado en la consola de Firebase.";
+        description = "Fallo de red. Revisa si tienes internet o si el dominio está bloqueado.";
       } else if (code === "auth/too-many-requests") {
-        description = "Demasiados intentos fallidos. La cuenta ha sido bloqueada temporalmente.";
+        description = "Cuenta bloqueada temporalmente por demasiados intentos.";
       }
 
       toast({
-        title: "Error al iniciar sesión",
+        title: "Error al entrar",
         description: `${description} (${code})`,
         variant: "destructive",
       });
+      
       setIsLoading(false);
     }
   };
@@ -148,11 +158,16 @@ function LoginPageContent() {
               />
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              className="w-full font-bold" 
+              disabled={isLoading}
+              onClick={() => console.log("[AUTH-AUDIT] Login Button CLICKED")}
+            >
               {isLoading && (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
               )}
-              Ingresar al Sistema
+              {isLoading ? "Validando..." : "Ingresar al Sistema"}
             </Button>
 
             <p className="pt-2 text-center text-xs text-muted-foreground">
