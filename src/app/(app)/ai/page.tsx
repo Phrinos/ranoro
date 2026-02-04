@@ -67,7 +67,7 @@ export default function AiHubPage() {
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-120px)] max-w-5xl mx-auto space-y-4">
+        <div className="flex flex-col h-[calc(100vh-120px)] max-w-6xl mx-auto space-y-4 px-2">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-2">
                 <div className="space-y-1">
                     <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
@@ -76,23 +76,23 @@ export default function AiHubPage() {
                         </div>
                         Asistente Inteligente
                     </h1>
-                    <p className="text-sm text-muted-foreground ml-1">Tu taller, analizado por inteligencia artificial avanzada</p>
+                    <p className="text-sm text-muted-foreground ml-1">Análisis operativo y financiero con inteligencia artificial</p>
                 </div>
                 <div className="flex items-center gap-2 bg-gradient-to-r from-purple-500/10 to-blue-500/10 text-primary border border-primary/20 px-4 py-2 rounded-2xl text-xs font-bold shadow-sm">
                     <Sparkles className="h-4 w-4 animate-pulse text-purple-600" />
-                    Gemini 1.5 Pro Business
+                    Gemini 2.5 Pro
                 </div>
             </div>
 
             <Card className="flex-1 overflow-hidden flex flex-col shadow-2xl border-primary/10 bg-muted/5 rounded-3xl">
                 <CardContent className="p-0 flex-1 flex flex-col">
-                    <ScrollArea ref={scrollRef} className="flex-1 p-4 sm:p-8">
-                        <div className="space-y-6 max-w-4xl mx-auto pb-10">
+                    <ScrollArea ref={scrollRef} className="flex-1 p-4 sm:p-8 bg-white/40 backdrop-blur-sm">
+                        <div className="space-y-6 max-w-5xl mx-auto pb-10">
                             {messages.map((m, i) => (
                                 <div 
                                     key={i} 
                                     className={cn(
-                                        "flex gap-4 max-w-[90%] sm:max-w-[85%]",
+                                        "flex gap-4 max-w-[92%] sm:max-w-[85%]",
                                         m.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
                                     )}
                                 >
@@ -103,10 +103,10 @@ export default function AiHubPage() {
                                         {m.role === 'user' ? <User className="h-5 w-5" /> : <Bot className="h-5 w-5" />}
                                     </div>
                                     <div className={cn(
-                                        "rounded-3xl px-6 py-4 text-sm shadow-md",
+                                        "rounded-3xl px-6 py-4 text-sm shadow-md transition-all duration-300",
                                         m.role === 'user' 
                                             ? "bg-primary text-primary-foreground rounded-tr-none" 
-                                            : "bg-white border rounded-tl-none text-foreground"
+                                            : "bg-white border border-primary/5 rounded-tl-none text-foreground"
                                     )}>
                                         <p className="leading-relaxed whitespace-pre-wrap">{m.content}</p>
                                     </div>
@@ -130,13 +130,13 @@ export default function AiHubPage() {
                     </ScrollArea>
 
                     <div className="p-6 border-t bg-white rounded-b-3xl">
-                        <form onSubmit={handleSendMessage} className="flex gap-3 max-w-4xl mx-auto items-center">
+                        <form onSubmit={handleSendMessage} className="flex gap-3 max-w-5xl mx-auto items-center">
                             <Input 
-                                placeholder="Pregunta sobre finanzas, servicios o inventario..."
+                                placeholder="Escribe tu pregunta sobre el taller aquí..."
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 disabled={isLoading}
-                                className="h-16 text-lg bg-muted/20 border-none focus-visible:ring-primary shadow-inner rounded-2xl px-8"
+                                className="h-16 text-lg bg-muted/20 border-none focus-visible:ring-primary shadow-inner rounded-2xl px-8 flex-1"
                             />
                             <Button type="submit" size="icon" className="h-16 w-16 shrink-0 rounded-2xl shadow-lg transition-transform active:scale-95 bg-primary hover:bg-primary/90" disabled={isLoading || !input.trim()}>
                                 {isLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : <Send className="h-8 w-8" />}
@@ -144,7 +144,7 @@ export default function AiHubPage() {
                         </form>
                         <p className="text-[10px] text-center text-muted-foreground mt-3 italic flex items-center justify-center gap-1">
                             <MessageSquare className="h-3 w-3" />
-                            La IA analiza los datos de tu taller para darte respuestas precisas.
+                            La IA analiza los datos de tu taller para darte respuestas precisas y procesar reportes en segundos.
                         </p>
                     </div>
                 </CardContent>
