@@ -24,7 +24,7 @@ import {
   Settings,
   LogOut,
   LayoutGrid, Wrench, Receipt, Package, DollarSign, Users, 
-  Truck, PlusCircle, ShoppingCart, FileJson, BrainCircuit, LifeBuoy, Tags, Car
+  Truck, PlusCircle, ShoppingCart, FileJson, BrainCircuit, LifeBuoy, Tags, Car, ListOrdered
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -47,6 +47,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Servicios', path: '/servicios', icon: Wrench, groupTag: 'Mi Taller', permissions: ['services:view_history'] },
   { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: 'Mi Taller', permissions: ['vehicles:manage'] },
   { label: 'Precios', path: '/precios', icon: Tags, groupTag: 'Mi Taller', permissions: ['inventory:view_public_info'] },
+  { label: 'Catálogo Maestro', path: '/listadeprecios', icon: ListOrdered, groupTag: 'Mi Taller', permissions: ['inventory:manage'] },
   { label: 'Flotilla', path: '/flotillav2', icon: Truck, groupTag: 'Mi Taller', permissions: ['fleet:manage'] },
 
   // Operaciones

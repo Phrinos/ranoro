@@ -48,11 +48,9 @@ export type ServiceSubStatus =
 export type SafetyCheckStatus = "ok" | "atencion" | "inmediata" | "na";
 
 export type SafetyCheckValue = {
-  // si ya tienes fields, déjalos y solo agrega lo que falte
   status?: SafetyCheckStatus;
   note?: string;
   photos?: string[];
-  // value?: boolean | string | number; // opcional si ya lo manejas así
 };
 
 export type SafetyInspection = {
@@ -66,8 +64,8 @@ export type ServiceItem = {
   id?: string;
   name?: string;
   quantity?: number;
-  sellingPrice?: number; // <-- clave
-  price?: number;        // fallback si hay data vieja
+  sellingPrice?: number;
+  price?: number;
   suppliesUsed?: any[];
   itemName?: string;
   [k: string]: any;
@@ -76,44 +74,32 @@ export type ServiceItem = {
 export type Payment = {
   id?: string;
   date?: string;
-
-  // nombre “nuevo” usado en UI:
   method: PaymentMethod;
   amount: number;
   folio?: string;
-
-  // nombre legacy si existe en algún lugar:
   paymentMethod?: PaymentMethod;
-
   [k: string]: any;
 };
 
-// ✅ ServiceRecord: tu UI lee appointmentStatus, paymentMethod, cardCommission, safetyInspection, vehicleId
+// ✅ ServiceRecord
 export type ServiceRecord = {
   id: string;
-
-  appointmentStatus?: string; // lo usas en UI
+  appointmentStatus?: string;
   subStatus?: ServiceSubStatus;
-
   payments?: Payment[];
   paymentMethod?: PaymentMethod;
   cardCommission?: number;
-
   serviceItems: ServiceItem[];
-
   vehicleId?: string;
-  vehicle?: any; // si tu Vehicle ya está tipado, cambia any por Vehicle
-
-  safetyInspection?: SafetyInspection[]; // <-- tu UI lo pasa como array
-
+  vehicle?: any;
+  safetyInspection?: SafetyInspection[];
   totalAmount?: number;
   totalCost?: number;
   serviceProfit?: number;
-
   [k: string]: any;
 };
 
-// ✅ SaleReceipt.items: pos profit espera itemId,itemName,quantity,total
+// ✅ SaleReceipt
 export type SaleLineItem = {
   itemId: string;
   itemName: string;
@@ -134,7 +120,7 @@ export type SaleReceipt = {
 
 export type TicketType = ServiceRecord | SaleReceipt;
 
-// ✅ Cash drawer types: tus pantallas usan Entrada/Salida/Venta/Servicio y también hay código con "in"/"out"
+// ✅ Cash drawer types
 export type CashDrawerTransactionType =
   | "Entrada"
   | "Salida"
@@ -143,22 +129,18 @@ export type CashDrawerTransactionType =
   | "in"
   | "out";
 
-// ✅ Cash drawer transaction: rental.service manda userId, así que agréguelo
 export type CashDrawerTransaction = {
   id: string;
   date: string;
   type: CashDrawerTransactionType;
   amount: number;
   note?: string;
-
   userId?: string;
   userName?: string;
-
   [k: string]: any;
 };
 
-
-// ✅ AuditLog: estás mandando entityType/entityId/userId/userName en logAudit
+// ✅ AuditLog
 export type AuditLogAction =
   | "Crear"
   | "Editar"
@@ -182,12 +164,10 @@ export type AuditLog = {
   actionType: AuditLogAction;
   description: string;
   createdAt: string;
-
   entityType?: string;
   entityId?: string;
   userId?: string;
   userName?: string;
-
   [k: string]: any;
 };
 
@@ -213,7 +193,7 @@ export interface InventoryItem {
   id: string;
   name: string;
   category: string;
-  supplier: string; // ID del proveedor
+  supplier: string;
   purchasePrice?: number;
   salePrice?: number;
   quantity: number;
@@ -229,7 +209,6 @@ export interface InventoryItem {
   itemName?: string;
   inventoryItemId?: string;
 }
-
 
 export interface MonthlyFixedExpense {
   id: string;
@@ -251,13 +230,6 @@ export interface User {
   hireDate?: string;
   signatureDataUrl?: string;
   email?: string;
-}
-
-export interface CapacityAnalysisOutput {
-  capacityPercentage?: number;
-  totalRequiredHours?: number;
-  totalAvailableHours?: number;
-  recommendation?: string;
 }
 
 export interface Personnel {
@@ -287,7 +259,6 @@ export interface VehicleExpense {
   [k: string]: any;
 }
 
-
 export interface DailyRentalCharge {
   id: string;
   driverId: string;
@@ -296,7 +267,6 @@ export interface DailyRentalCharge {
   vehicleLicensePlate?: string;
 }
 
-// ✅ RentalPayment: rental.service debe regresar date, así que mantenlo required
 export type RentalPayment = {
   id: string;
   date: string;
@@ -320,7 +290,6 @@ export interface ManualDebtEntry {
   note?: string;
 }
 
-// ✅ Fines: tu UI está creando un Fine sin description -> dale required pero crea con ""
 export type Fine = {
   id: string;
   date: string;
@@ -329,8 +298,6 @@ export type Fine = {
   description: string;
 };
 
-// ✅ Paperwork: en flotilla/vehiculos estás guardando {dueDate,name} sin expirationDate.
-// Haz expirationDate opcional para no pelearte con todos los forms.
 export type Paperwork = {
   id: string;
   name: string;
@@ -341,7 +308,7 @@ export type Paperwork = {
 
 export type FineCheck = {
   id: string;
-  checkDate: string; // ISO
+  checkDate: string;
   status: "Sin Multas" | "Con Multas" | "Pendiente";
   note?: string;
   fines?: Fine[];
@@ -349,7 +316,6 @@ export type FineCheck = {
   [k: string]: any;
 };
 
-// ✅ Driver.documents NO es array; lo usas como map { [docType]: url }
 export interface Driver {
   id: string;
   name: string;
@@ -399,7 +365,21 @@ export interface Vehicle {
   assignedDriverName?: string;
 }
 
-
+// ✅ Nuevo tipo para Grupos de Vehículos (Hermanados)
+export interface VehicleGroup {
+  id: string;
+  name: string;
+  description?: string;
+  sharedEngineData?: any; // EngineData
+  members: {
+    make: string;
+    model: string;
+    startYear?: number;
+    endYear?: number;
+  }[];
+  createdAt?: string;
+  updatedAt?: string;
+}
 
 export interface NextServiceInfo {
   date?: string;
@@ -419,7 +399,6 @@ export interface ServiceTypeRecord {
   estimatedHours?: number;
 }
 
-// ✅ PayableAccount: agrega supplierId (purchase.service lo usa así)
 export type PayableAccount = {
   id: string;
   supplierId: string;
@@ -441,16 +420,6 @@ export interface NavigationEntry {
   icon?: React.ElementType;
   groupTag?: string;
   permissions?: string[];
-}
-
-export interface Technician {
-  id: string;
-  name: string;
-}
-
-export interface AdministrativeStaff {
-  id: string;
-  name: string;
 }
 
 export interface Area {
@@ -477,18 +446,4 @@ export interface Infraction {
   totalAmount: number;
   paidAmount: number;
   payments: Payment[];
-}
-
-export interface SimplifiedSale {
-  id: string;
-  totalAmount: number;
-  items: { itemId: string; itemName: string; quantity: number; total: number }[];
-  [k: string]: any;
-}
-
-export interface LegacySale {
-    id: string;
-    totalAmount: number;
-    items: { itemId: string; itemName: string; quantity: number; total: number }[];
-    [k: string]: any;
 }

@@ -15,9 +15,10 @@ import {
   where,
   type WriteBatch,
   serverTimestamp,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense, Paperwork, FineCheck, ServiceItem } from "@/types";
+import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense, Paperwork, FineCheck, ServiceItem, VehicleGroup } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { nanoid } from 'nanoid';
 import { VEHICLE_COLLECTION } from '../vehicle-constants';
@@ -343,6 +344,37 @@ const onVehicleDataUpdate = (callback: (data: any[]) => void): (() => void) => {
     });
 };
 
+// --- Vehicle Groups ---
+
+const onVehicleGroupsUpdate = (callback: (groups: VehicleGroup[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, "vehicleGroups"));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as VehicleGroup)));
+    });
+};
+
+const saveVehicleGroup = async (group: Partial<VehicleGroup>, id?: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const dataToSave = { ...cleanObjectForFirestore(group), updatedAt: serverTimestamp() };
+    if (id) {
+        await updateDoc(doc(db, 'vehicleGroups', id), dataToSave);
+    } else {
+        await addDoc(collection(db, 'vehicleGroups'), { ...dataToSave, createdAt: serverTimestamp() });
+    }
+};
+
+const deleteVehicleGroup = async (id: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await fbDeleteDoc(doc(db, "vehicleGroups", id));
+};
+
+const createNewMake = async (makeName: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const makeRef = doc(db, VEHICLE_COLLECTION, makeName.toUpperCase().trim());
+    await setDoc(makeRef, { models: [] }, { merge: false });
+};
+
 
 export const inventoryService = {
   getDocById,
@@ -380,6 +412,9 @@ export const inventoryService = {
   deleteFixedExpense,
   onVehicleDataUpdate,
   deleteCollectionDoc,
+  // New Group Functions
+  onVehicleGroupsUpdate,
+  saveVehicleGroup,
+  deleteVehicleGroup,
+  createNewMake,
 };
-
-    
