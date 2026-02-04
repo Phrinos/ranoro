@@ -1,8 +1,9 @@
+
 // src/app/(app)/inventario/compras/page.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback, Suspense, useMemo } from "react";
-import { PlusCircle, Filter, Check, Loader2, Search } from "lucide-react";
+import { PlusCircle, Filter, Check, Loader2, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type {
   User,
@@ -23,7 +24,7 @@ import { SuppliersTable } from "./components/suppliers-table";
 import { TableToolbar } from "@/components/shared/table-toolbar";
 import { useTableManager } from "@/hooks/useTableManager";
 import dynamic from "next/dynamic";
-import { PurchaseDetailDialog } from "./components/purchase-detail-dialog";
+import { PurchaseDetailDialog } from "./purchase-detail-dialog";
 import { PurchasesTable } from "./components/purchases-table";
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Checkbox } from "@/components/ui/checkbox";
@@ -32,6 +33,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { parseDate } from "@/lib/forms";
+import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 
 const CuentasPorPagarContent = dynamic(
   () =>
@@ -150,6 +152,7 @@ function ComprasTabContent({
     searchKeys: ['invoiceId', 'supplierName', 'items.itemName'],
     dateFilterKey: (item) => parseDate(item.invoiceDate || item.createdAt),
     initialSortOption: 'invoiceDate_desc',
+    itemsPerPage: 25,
   });
 
   const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
@@ -196,7 +199,8 @@ function ComprasTabContent({
   return (
     <div className="space-y-4 pt-4">
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col md:flex-row gap-2 items-center">
+        {/* Linea 1: buscador, filtro proveedores, filtro metodos pago */}
+        <div className="flex flex-col lg:flex-row gap-2 items-center">
           <div className="relative flex-grow w-full">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -206,22 +210,7 @@ function ComprasTabContent({
               className="pl-8 bg-card h-10"
             />
           </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-2 items-center justify-end">
           <div className="flex gap-2 w-full sm:w-auto">
-            <Button variant="outline" size="sm" onClick={setThisMonth} className="flex-1 sm:flex-none bg-card">
-              Este Mes
-            </Button>
-            <Button variant="outline" size="sm" onClick={setLastMonth} className="flex-1 sm:flex-none bg-card">
-              Mes Pasado
-            </Button>
-          </div>
-          <TableToolbar
-            dateRange={tableManager.dateRange}
-            onDateRangeChange={tableManager.onDateRangeChange}
-          />
-          <div className="flex gap-2 w-full md:w-auto">
             <MultiSelectFilter 
               label="Proveedores"
               options={supplierOptions}
@@ -238,6 +227,21 @@ function ComprasTabContent({
             />
           </div>
         </div>
+
+        {/* Linea 2: este mes, mes pasado, selector rango */}
+        <div className="flex flex-col md:flex-row gap-2 items-center justify-start">
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" size="sm" onClick={setThisMonth} className="flex-1 sm:flex-none bg-card h-10 px-4">
+              Este Mes
+            </Button>
+            <Button variant="outline" size="sm" onClick={setLastMonth} className="flex-1 sm:flex-none bg-card h-10 px-4">
+              Mes Pasado
+            </Button>
+          </div>
+          <div className="w-full sm:w-auto">
+            <DatePickerWithRange date={tableManager.dateRange} onDateChange={tableManager.onDateRangeChange} />
+          </div>
+        </div>
       </div>
 
       <PurchasesTable 
@@ -246,6 +250,19 @@ function ComprasTabContent({
         sortOption={tableManager.sortOption}
         onSortOptionChange={tableManager.onSortOptionChange}
       />
+
+      {/* Paginación */}
+      <div className="flex items-center justify-between pt-2">
+          <p className="text-sm text-muted-foreground">{tableManager.paginationSummary}</p>
+          <div className="flex items-center space-x-2">
+              <Button size="sm" onClick={tableManager.goToPreviousPage} disabled={!tableManager.canGoPrevious} variant="outline" className="bg-card">
+                  <ChevronLeft className="h-4 w-4" /> Anterior
+              </Button>
+              <Button size="sm" onClick={tableManager.goToNextPage} disabled={!tableManager.canGoNext} variant="outline" className="bg-card">
+                  Siguiente <ChevronRight className="h-4 w-4" />
+              </Button>
+          </div>
+      </div>
     </div>
   );
 }
@@ -474,7 +491,7 @@ export default function ComprasUnificadasPage() {
     },
     {
       value: "cuentas_por_pagar",
-      label: "Cuentas por Pagar",
+      label: "Crédito",
       content: (
         <CuentasPorPagarContent
           accounts={payableAccounts}
