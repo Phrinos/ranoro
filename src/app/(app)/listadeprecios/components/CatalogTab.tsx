@@ -1,10 +1,9 @@
-
+// src/app/(app)/listadeprecios/components/CatalogTab.tsx
 "use client";
 
 import React, { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Search, Trash2, LayoutGrid, Loader2 } from 'lucide-react';
+import { Trash2, LayoutGrid } from 'lucide-react';
 import { inventoryService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import { VehicleCatalogEditor } from '@/app/(app)/precios/components/VehicleCatalogEditor';
@@ -17,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Button } from '@/components/ui/button';
+import { MASTER_CATALOG_COLLECTION } from '@/lib/vehicle-constants';
 
 interface CatalogTabProps {
   priceLists: any[];
@@ -33,8 +33,8 @@ export default function CatalogTab({ priceLists }: CatalogTabProps) {
   const handleDeleteMake = async () => {
     if (!selectedMake) return;
     try {
-      await inventoryService.deleteMake(selectedMake);
-      toast({ title: 'Marca eliminada', description: `Se ha borrado ${selectedMake} del catálogo.` });
+      await inventoryService.deleteMasterMake(selectedMake);
+      toast({ title: 'Marca eliminada', description: `Se ha borrado ${selectedMake} del catálogo maestro.` });
       setSelectedMake('');
     } catch (e) {
       toast({ title: 'Error', description: 'No se pudo eliminar la marca.', variant: 'destructive' });
@@ -47,8 +47,8 @@ export default function CatalogTab({ priceLists }: CatalogTabProps) {
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
-              <CardTitle>Editor de Catálogo Maestro</CardTitle>
-              <CardDescription>Selecciona una marca para gestionar sus modelos y motores.</CardDescription>
+              <CardTitle>Editor del Catálogo Maestro</CardTitle>
+              <CardDescription>Gestiona modelos y motores en esta base de datos independiente.</CardDescription>
             </div>
             {selectedMake && (
               <ConfirmDialog
@@ -58,7 +58,7 @@ export default function CatalogTab({ priceLists }: CatalogTabProps) {
                   </Button>
                 }
                 title={`¿Eliminar marca ${selectedMake}?`}
-                description="Esta acción borrará todos los modelos y configuraciones asociadas a esta marca de forma permanente."
+                description="Esta acción borrará todos los modelos y configuraciones de esta marca de forma permanente en el catálogo maestro."
                 onConfirm={handleDeleteMake}
               />
             )}
@@ -78,7 +78,7 @@ export default function CatalogTab({ priceLists }: CatalogTabProps) {
                       <SelectItem key={make} value={make}>{make}</SelectItem>
                     ))
                   ) : (
-                    <div className="p-4 text-center text-sm text-muted-foreground">Catálogo vacío.</div>
+                    <div className="p-4 text-center text-sm text-muted-foreground">Catálogo maestro vacío. Crea una marca primero.</div>
                   )}
                 </SelectContent>
               </Select>
@@ -89,13 +89,16 @@ export default function CatalogTab({ priceLists }: CatalogTabProps) {
 
       <div className="grid gap-4">
         {selectedMake ? (
-          <VehicleCatalogEditor make={selectedMake} />
+          <VehicleCatalogEditor 
+            make={selectedMake} 
+            collectionName={MASTER_CATALOG_COLLECTION}
+          />
         ) : (
           <div className="text-center py-24 border-2 border-dashed rounded-3xl bg-muted/5 text-muted-foreground">
             <LayoutGrid className="mx-auto h-12 w-12 opacity-20 mb-4" />
-            <h3 className="text-lg font-medium text-foreground/60">Ninguna marca seleccionada</h3>
+            <h3 className="text-lg font-medium text-foreground/60">Catálogo Maestro Vacío</h3>
             <p className="max-w-xs mx-auto mt-2 text-sm">
-              Selecciona una marca arriba o crea una nueva usando el botón en la cabecera para empezar a poblar tu catálogo.
+              Selecciona una marca arriba o crea una nueva para empezar a construir tu base de datos técnica independiente.
             </p>
           </div>
         )}

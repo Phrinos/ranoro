@@ -1,10 +1,10 @@
-
+// src/app/(app)/listadeprecios/page.tsx
 "use client";
 
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { withSuspense } from "@/lib/withSuspense";
-import { Loader2, PlusCircle, Search, Tags, Wrench } from 'lucide-react';
+import { Loader2, PlusCircle } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { inventoryService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
@@ -13,7 +13,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-// Lazy loading component components
 const CatalogTab = lazy(() => import('./components/CatalogTab'));
 const GroupsTab = lazy(() => import('./components/GroupsTab'));
 
@@ -33,8 +32,9 @@ function ListaDePreciosPage() {
 
   useEffect(() => {
     setIsLoading(true);
+    // Escuchar el catálogo maestro independiente
     const unsubs = [
-      inventoryService.onVehicleDataUpdate(setPriceLists),
+      inventoryService.onMasterVehicleDataUpdate(setPriceLists),
       inventoryService.onVehicleGroupsUpdate((data) => {
         setGroups(data);
         setIsLoading(false);
@@ -45,7 +45,7 @@ function ListaDePreciosPage() {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
-    const params = new URLSearchParams(searchParams);
+    const params = new URLSearchParams(searchParams.toString());
     params.set('tab', tab);
     router.push(`/listadeprecios?${params.toString()}`, { scroll: false });
   };
@@ -53,8 +53,9 @@ function ListaDePreciosPage() {
   const handleCreateMake = async () => {
     if (!newMakeName.trim()) return;
     try {
-      await inventoryService.createNewMake(newMakeName);
-      toast({ title: "Marca creada", description: `Se ha añadido ${newMakeName} al catálogo.` });
+      // Crear marca en el catálogo maestro
+      await inventoryService.createMasterMake(newMakeName);
+      toast({ title: "Marca creada", description: `Se ha añadido ${newMakeName} al catálogo maestro.` });
       setIsNewMakeDialogOpen(false);
       setNewMakeName('');
     } catch (e) {
@@ -65,7 +66,7 @@ function ListaDePreciosPage() {
   const tabs = [
     { 
       value: 'catalogo', 
-      label: 'Catálogo por Marca', 
+      label: 'Catálogo Maestro', 
       content: <CatalogTab priceLists={priceLists} /> 
     },
     { 
@@ -90,8 +91,8 @@ function ListaDePreciosPage() {
   return (
     <>
       <TabbedPageLayout
-        title="Catálogo Maestro de Precios"
-        description="Gestiona la base de datos técnica de vehículos y agrupa modelos con refacciones compatibles."
+        title="Catálogo Maestro Independiente"
+        description="Gestión técnica de vehículos. Los datos aquí son independientes del catálogo de cotizaciones general."
         activeTab={activeTab}
         onTabChange={handleTabChange}
         tabs={tabs}
@@ -101,8 +102,8 @@ function ListaDePreciosPage() {
       <Dialog open={isNewMakeDialogOpen} onOpenChange={setIsNewMakeDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nueva Marca de Vehículo</DialogTitle>
-            <DialogDescription>Añade una nueva marca al catálogo para empezar a cargar sus modelos.</DialogDescription>
+            <DialogTitle>Nueva Marca (Maestra)</DialogTitle>
+            <DialogDescription>Añade una nueva marca a tu catálogo técnico independiente.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">

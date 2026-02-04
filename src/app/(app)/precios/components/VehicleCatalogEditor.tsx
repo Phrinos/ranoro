@@ -50,6 +50,7 @@ type GenerationForm = ModelForm["generations"][number];
 
 export interface VehicleCatalogEditorProps {
   make: string;
+  collectionName?: string;
 }
 
 const stripUndefinedDeep = (v: any): any => {
@@ -237,7 +238,7 @@ function GenerationBlock({
   );
 }
 
-export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
+export function VehicleCatalogEditor({ make, collectionName = VEHICLE_COLLECTION }: VehicleCatalogEditorProps) {
   const { toast } = useToast();
   const methods = useForm<MakeDocForm>({
     defaultValues: { make, models: [] },
@@ -256,19 +257,19 @@ export function VehicleCatalogEditor({ make }: VehicleCatalogEditorProps) {
   }>({ open: false });
 
   useEffect(() => {
-    const ref = doc(db, VEHICLE_COLLECTION, make);
+    const ref = doc(db, collectionName, make);
     const unsub = onSnapshot(
       ref,
       (snap) => reset(toFormDoc(make, snap.data() ?? null)),
-      (err) => console.error(`onSnapshot ${VEHICLE_COLLECTION}/${make}:`, err)
+      (err) => console.error(`onSnapshot ${collectionName}/${make}:`, err)
     );
     return () => unsub();
-  }, [make, reset]);
+  }, [make, reset, collectionName]);
 
   const onSaveAll = async (form: MakeDocForm) => {
     try {
       const payload = stripUndefinedDeep(toFirestoreDoc(form));
-      await setDoc(doc(db, VEHICLE_COLLECTION, make), payload, { merge: true });
+      await setDoc(doc(db, collectionName, make), payload, { merge: true });
       toast({ description: "Catálogo actualizado correctamente." });
     } catch (e) {
       console.error("Error saving catalog:", e);

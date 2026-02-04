@@ -1,4 +1,3 @@
-
 // src/lib/services/inventory.service.ts
 
 import {
@@ -21,7 +20,7 @@ import { db } from '../firebaseClient';
 import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense, Paperwork, FineCheck, ServiceItem, VehicleGroup } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import { nanoid } from 'nanoid';
-import { VEHICLE_COLLECTION } from '../vehicle-constants';
+import { VEHICLE_COLLECTION, MASTER_CATALOG_COLLECTION } from '../vehicle-constants';
 
 const getDocById = async (collectionName: string, id: string): Promise<any> => {
     if (!db) throw new Error("Database not initialized.");
@@ -344,6 +343,27 @@ const onVehicleDataUpdate = (callback: (data: any[]) => void): (() => void) => {
     });
 };
 
+// --- Master Catalog Dedicados ---
+
+const onMasterVehicleDataUpdate = (callback: (data: any[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, MASTER_CATALOG_COLLECTION));
+    return onSnapshot(q, (snapshot) => {
+      callback(snapshot.docs.map(doc => ({ make: doc.id, ...doc.data() })));
+    });
+};
+
+const createMasterMake = async (makeName: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const makeRef = doc(db, MASTER_CATALOG_COLLECTION, makeName.toUpperCase().trim());
+    await setDoc(makeRef, { models: [] }, { merge: false });
+};
+
+const deleteMasterMake = async (makeName: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await fbDeleteDoc(doc(db, MASTER_CATALOG_COLLECTION, makeName));
+};
+
 // --- Vehicle Groups ---
 
 const onVehicleGroupsUpdate = (callback: (groups: VehicleGroup[]) => void): (() => void) => {
@@ -423,4 +443,8 @@ export const inventoryService = {
   deleteVehicleGroup,
   createNewMake,
   deleteMake,
+  // Master Catalog
+  onMasterVehicleDataUpdate,
+  createMasterMake,
+  deleteMasterMake,
 };
