@@ -106,7 +106,7 @@ export default function VehicleProfilePageV2() {
     router.push('/flotillav2?tab=vehiculos');
   };
 
-  if (isLoading || !vehicle) return <div className="p-8"><Loader2 className="animate-spin h-8 w-8 mx-auto" /></div>;
+  if (isLoading || !vehicle) return <div className="p-8 flex justify-center"><Loader2 className="animate-spin h-8 w-8" /></div>;
 
   return (
     <div className="space-y-6">

@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useEffect, useMemo } from "react";
-import { useForm, type Resolver } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarIcon } from "lucide-react";
 import { format as formatDate } from "date-fns";
 import { es } from "date-fns/locale";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 
 import {
   Dialog,
@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { NewCalendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { cn, CURRENCY_FORMATTER, getToday } from "@/lib/utils";
@@ -67,13 +67,13 @@ export function RegisterPaymentDialog({
   infraction,
   paymentToEdit,
 }: RegisterPaymentDialogProps) {
+  const { toast } = useToast();
   const form = useForm<RegisterPaymentFormValues>({
     resolver: zodResolver(registerPaymentSchema),
     defaultValues: buildDefaults(infraction, paymentToEdit),
   });
 
   const { handleSubmit, reset, formState, watch } = form;
-  const amount = watch("amount");
 
   useEffect(() => {
     if (open) reset(buildDefaults(infraction, paymentToEdit));
@@ -87,18 +87,18 @@ export function RegisterPaymentDialog({
   const handleSave = async (data: RegisterPaymentFormValues) => {
     try {
       if (infraction && data.amount > remainingAmount) {
-        toast.error("El monto a pagar no puede ser mayor al monto restante");
+        toast({ title: "Monto excedido", description: "El monto a pagar no puede ser mayor al monto restante", variant: "destructive" });
         return;
       }
       await onSave(data);
     } catch {
-      toast.error("Error al registrar el pago");
+      toast({ title: "Error", description: "Error al registrar el pago", variant: "destructive" });
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{paymentToEdit ? "Editar pago" : "Registrar pago"}</DialogTitle>
           {infraction && (
@@ -122,7 +122,7 @@ export function RegisterPaymentDialog({
                         <Button
                           type="button"
                           variant="outline"
-                          className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")}
+                          className={cn("justify-start text-left font-normal bg-white", !field.value && "text-muted-foreground")}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {field.value ? formatDate(field.value, "PPP", { locale: es }) : "Selecciona una fecha"}
@@ -130,11 +130,10 @@ export function RegisterPaymentDialog({
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={(d: Date | undefined) => field.onChange(d ?? new Date())}
-                        initialFocus
+                      <NewCalendar
+                        value={field.value}
+                        onChange={(d: any) => field.onChange(d)}
+                        locale="es-MX"
                       />
                     </PopoverContent>
                   </Popover>

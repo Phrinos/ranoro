@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Archive, ArchiveRestore, Loader2 } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { personnelService, inventoryService } from '@/lib/services';
@@ -17,7 +17,6 @@ import { AssignedVehicleCard } from '../../components/AssignedVehicleCard';
 import { FinancialInfoCard } from '../../components/FinancialInfoCard';
 import { DocumentsCard } from '../../components/DocumentsCard';
 import { HistoryTabContent } from '../../components/HistoryTabContent';
-import { DriverDialog } from '../../components/DriverDialog';
 import { EditContactInfoDialog } from '../../components/EditContactInfoDialog';
 import { EditFinancialInfoDialog } from '../../components/EditFinancialInfoDialog';
 import { ContractGeneratorCard } from '../../components/ContractGeneratorCard';
@@ -78,7 +77,7 @@ export default function DriverProfilePageV2() {
   };
 
   if (isLoading || !driver) {
-    return <div className="p-8"><Loader2 className="animate-spin h-8 w-8 mx-auto" /></div>;
+    return <div className="p-8 flex justify-center"><Loader2 className="animate-spin h-8 w-8" /></div>;
   }
 
   return (
