@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview Flow de Chat Inteligente Unificado para Ranoro.
- * Proporciona a Gemini acceso a herramientas para consultar datos reales del taller.
+ * Proporciona a Gemini acceso a herramientas para consultar datos reales del taller mediante Vertex AI.
  *
  * - sendChatMessage - Función que maneja el proceso de chat con el asistente.
  */
@@ -9,9 +9,9 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getAdminDb } from '@/lib/firebaseAdmin';
-import { startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
 
-// --- Helper para arreglar fechas de Firebase ---
+// --- Helper para manejar fechas de Firestore ---
 const parseDate = (dateVal: any): Date => {
   if (!dateVal) return new Date();
   if (typeof dateVal.toDate === 'function') return dateVal.toDate();
@@ -20,7 +20,8 @@ const parseDate = (dateVal: any): Date => {
     const nanoseconds = dateVal.nanoseconds ?? dateVal._nanoseconds ?? 0;
     return new Date(seconds * 1000 + nanoseconds / 1000000);
   }
-  return new Date(dateVal);
+  const d = new Date(dateVal);
+  return isValid(d) ? d : new Date();
 };
 
 // --- Herramientas de Datos (Tools) ---
@@ -59,7 +60,7 @@ const getServiceReport = ai.defineTool(
     
     let filtered = servicesSnap.docs.map(doc => {
       const data = doc.data();
-      const dateObj = parseDate(data.deliveryDateTime || data.serviceDate);
+      const dateObj = parseDate(data.deliveryDateTime || data.serviceDate || data.createdAt);
 
       return {
         id: doc.id,
@@ -99,9 +100,9 @@ const getFinancialStats = ai.defineTool(
   async () => {
     const db = getAdminDb();
     const servicesSnap = await db.collection('serviceRecords').where('status', '==', 'Entregado').get();
-    const income = servicesSnap.docs.reduce((sum, doc) => sum + (Number(doc.data().totalCost) || 0), 0);
+    const income = servicesSnap.docs.reduce((sum, doc) => sum + (Number(doc.data().totalCost || doc.data().total || 0)), 0);
 
-    const cashSnap = await db.collection('cashDrawerTransactions').where('type', '==', 'out').get();
+    const cashSnap = await db.collection('cashDrawerTransactions').where('type', 'in', ['out', 'Salida']).get();
     const expenses = cashSnap.docs.reduce((sum, doc) => sum + (Number(doc.data().amount) || 0), 0);
 
     return { totalIncome: income, totalExpenses: expenses, netProfit: income - expenses };
@@ -140,13 +141,16 @@ const MessageSchema = z.object({
     content: z.string()
 });
 
+const WorkshopChatInputSchema = z.object({
+  history: z.array(MessageSchema).optional(),
+  message: z.string(),
+});
+export type WorkshopChatInput = z.infer<typeof WorkshopChatInputSchema>;
+
 const workshopChatFlow = ai.defineFlow(
   {
     name: 'workshopChatFlow',
-    inputSchema: z.object({
-      history: z.array(MessageSchema).optional(),
-      message: z.string(),
-    }),
+    inputSchema: WorkshopChatInputSchema,
     outputSchema: z.string(),
   },
   async (input) => {
@@ -189,8 +193,9 @@ export async function sendChatMessage(message: string, history: any[] = []): Pro
         }));
 
         return await workshopChatFlow({ message, history: cleanHistory as any });
-    } catch (error) {
-        console.error("Error en IA:", error);
-        throw new Error("No pude consultar la base de datos.");
+    } catch (error: any) {
+        console.error("Error detallado en flujo de IA:", error);
+        // Lanzamos un error descriptivo pero capturable
+        throw new Error(error.message || "No pude consultar la base de datos.");
     }
 }
