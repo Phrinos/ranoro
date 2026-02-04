@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -20,10 +19,16 @@ export function RegistrarAbono({ drivers, vehicles }: RegistrarAbonoProps) {
 
   const handleSave = async (data: GlobalTransactionFormValues) => {
     const driver = drivers.find(d => d.id === data.driverId);
-    if (!driver) return toast({ title: "Error", description: "Conductor no encontrado.", variant: "destructive" });
+    if (!driver) {
+        toast({ title: "Error", description: "Conductor no encontrado.", variant: "destructive" });
+        return;
+    }
     
     const vehicle = vehicles.find(v => v.id === driver.assignedVehicleId);
-    if (!vehicle) return toast({ title: "Error", description: "El conductor no tiene un vehículo asignado.", variant: "destructive" });
+    if (!vehicle) {
+        toast({ title: "Error", description: "El conductor no tiene un vehículo asignado.", variant: "destructive" });
+        return;
+    }
 
     try {
         await rentalService.addRentalPayment(driver, vehicle, data.amount, data.note, data.date, data.paymentMethod as PaymentMethod);

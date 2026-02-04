@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -52,10 +51,14 @@ export default function VehicleProfilePageV2() {
       setIsLoading(false);
     });
 
-    personnelService.onDriversUpdate(setAllDrivers);
-    serviceService.onServicesForVehicleUpdate(vehicleId, setServiceHistory);
+    const unsubDrivers = personnelService.onDriversUpdate(setAllDrivers);
+    const unsubServices = serviceService.onServicesForVehicleUpdate(vehicleId, setServiceHistory);
 
-    return () => unsubVeh();
+    return () => {
+        unsubVeh();
+        unsubDrivers();
+        unsubServices();
+    };
   }, [vehicleId]);
 
   const handleSaveVehicleInfo = async (data: any) => {
@@ -152,7 +155,7 @@ export default function VehicleProfilePageV2() {
       </div>
 
       <EditVehicleInfoDialog open={isInfoOpen} onOpenChange={setIsInfoOpen} vehicle={vehicle} onSave={handleSaveVehicleInfo} />
-      <EditRentalSystemDialog open={isRentalOpen} onOpenChange={isRentalOpen} vehicle={vehicle} onSave={handleSaveRentalSystem} />
+      <EditRentalSystemDialog open={isRentalOpen} onOpenChange={setIsRentalOpen} vehicle={vehicle} onSave={handleSaveRentalSystem} />
       <PaperworkDialog open={isPaperOpen} onOpenChange={setIsPaperOpen} paperwork={editingPaperwork} onSave={handleSavePaperwork} />
       <FineCheckDialog 
         open={isFineOpen} 

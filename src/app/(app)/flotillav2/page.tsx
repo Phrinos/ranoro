@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, Suspense, lazy } from 'react';
@@ -6,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { withSuspense } from "@/lib/withSuspense";
 import { Loader2 } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
-import { useFlotillaData } from '../flotilla/useFlotillaData';
 import { RegistrarAbono } from './components/RegistrarAbono';
 import { inventoryService, personnelService, rentalService, cashService } from '@/lib/services';
 import type { Driver, Vehicle, DailyRentalCharge, RentalPayment, ManualDebtEntry, OwnerWithdrawal, VehicleExpense, CashDrawerTransaction } from '@/types';

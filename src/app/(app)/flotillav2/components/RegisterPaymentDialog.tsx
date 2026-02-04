@@ -73,7 +73,7 @@ export function RegisterPaymentDialog({
     defaultValues: buildDefaults(infraction, paymentToEdit),
   });
 
-  const { handleSubmit, reset, formState, watch } = form;
+  const { handleSubmit, reset, formState } = form;
 
   useEffect(() => {
     if (open) reset(buildDefaults(infraction, paymentToEdit));
@@ -153,7 +153,7 @@ export function RegisterPaymentDialog({
                       type="number"
                       className="bg-white"
                       value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                      onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)}
                     />
                   </FormControl>
                   <FormMessage />

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useForm, type Resolver } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CalendarIcon } from 'lucide-react';
 import { format as formatDate } from 'date-fns';
@@ -112,11 +112,11 @@ export function EditFinancialInfoDialog({ open, onOpenChange, onSave, driver }: 
             />
 
             <FormField control={form.control} name="requiredDepositAmount" render={({ field }) => (
-              <FormItem><FormLabel>Depósito Requerido ($)</FormLabel><FormControl><Input type="number" {...field} className="bg-white"/></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Depósito Requerido ($)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)} className="bg-white"/></FormControl><FormMessage /></FormItem>
             )}/>
 
             <FormField control={form.control} name="depositAmount" render={({ field }) => (
-              <FormItem><FormLabel>Depósito Entregado ($)</FormLabel><FormControl><Input type="number" {...field} className="bg-white"/></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Depósito Entregado ($)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)} className="bg-white"/></FormControl><FormMessage /></FormItem>
             )}/>
 
             <DialogFooter className="pt-4">

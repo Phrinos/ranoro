@@ -35,7 +35,7 @@ const paperworkSchema = z.object({
   dueDate: z.coerce.date({ message: "La fecha de vencimiento es obligatoria." }),
 });
 
-export type PaperworkFormValues = z.output<typeof paperworkSchema>;
+export type PaperworkFormValues = z.infer<typeof paperworkSchema>;
 
 interface PaperworkDialogProps {
   open: boolean;
@@ -62,11 +62,12 @@ export function PaperworkDialog({ open, onOpenChange, paperwork, onSave }: Paper
   });
 
   useEffect(() => {
-    if (!open) return;
-    form.reset({
-      name: paperwork?.name ?? "",
-      dueDate: paperwork?.dueDate ? new Date(paperwork.dueDate) : toMidday(new Date()),
-    });
+    if (open) {
+      form.reset({
+        name: paperwork?.name ?? "",
+        dueDate: paperwork?.dueDate ? new Date(paperwork.dueDate) : toMidday(new Date()),
+      });
+    }
   }, [open, paperwork, form]);
 
   return (
@@ -76,8 +77,41 @@ export function PaperworkDialog({ open, onOpenChange, paperwork, onSave }: Paper
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSave)} className="space-y-4 pt-2">
             <FormField control={form.control} name="name" render={({ field }) => (
-              <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} value={field.value ?? ""} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
+            <FormField
+              control={form.control}
+              name="dueDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Vencimiento</FormLabel>
+                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn("w-full pl-3 text-left font-normal bg-white", !field.value && "text-muted-foreground")}
+                        >
+                          {field.value ? format(field.value, "PPP", { locale: es }) : "Seleccione fecha"}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <NewCalendar
+                        value={field.value}
+                        onChange={(d: any) => {
+                          field.onChange(d);
+                          setIsCalendarOpen(false);
+                        }}
+                        locale="es-MX"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
               <Button type="submit">Guardar</Button>

@@ -34,7 +34,7 @@ const chargeSchema = z.object({
   note: z.string().optional(),
 });
 
-type ManualChargeFormValues = z.infer<typeof chargeSchema>;
+export type ManualChargeFormValues = z.infer<typeof chargeSchema>;
 
 interface AddManualChargeDialogProps {
   open: boolean;
@@ -72,16 +72,18 @@ export function AddManualChargeDialog({
       date: toMidday(new Date()),
       amount: debtToEdit?.amount ?? undefined,
       note: debtToEdit?.note ?? "",
-    } as any,
+    },
   });
 
   useEffect(() => {
-    const base = toMidday(toDate(debtToEdit?.date) ?? new Date());
-    form.reset({
-      date: base,
-      amount: debtToEdit?.amount ?? undefined,
-      note: debtToEdit?.note ?? "",
-    } as any);
+    if (open) {
+      const base = toMidday(toDate(debtToEdit?.date) ?? new Date());
+      form.reset({
+        date: base,
+        amount: debtToEdit?.amount ?? undefined,
+        note: debtToEdit?.note ?? "",
+      });
+    }
   }, [open, debtToEdit, form]);
 
   const handleSubmit = async (values: ManualChargeFormValues) => {
@@ -165,7 +167,7 @@ export function AddManualChargeDialog({
                       min="0.01"
                       inputMode="decimal"
                       {...field}
-                      value={(field.value as number | undefined) ?? ""}
+                      value={field.value ?? ""}
                       onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)}
                       className="bg-white"
                       placeholder="0.00"

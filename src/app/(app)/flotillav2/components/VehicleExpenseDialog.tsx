@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -47,8 +46,9 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
   });
 
   useEffect(() => {
-    if (!open) return;
-    form.reset({ vehicleId: "", amount: undefined, description: "" });
+    if (open) {
+      form.reset({ vehicleId: "", amount: undefined, description: "" });
+    }
   }, [open, form]);
 
   return (
@@ -99,7 +99,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
                       type="number"
                       step="0.01"
                       className="bg-white"
-                      value={(field.value as any) ?? ""}
+                      value={field.value ?? ""}
                       onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
                     />
                   </FormControl>
@@ -117,6 +117,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
                   <FormControl>
                     <Textarea
                       {...field}
+                      value={field.value ?? ""}
                       placeholder="Ej: Cambio de aceite, llanta..."
                       className="bg-white"
                     />

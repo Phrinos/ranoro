@@ -1,8 +1,7 @@
-
 "use client";
 
 import React, { useEffect } from "react";
-import { useForm, type Resolver } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarIcon } from "lucide-react";
 import { format as formatDate } from "date-fns";
@@ -126,7 +125,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, onSave, owners }: Ow
                     <Input
                       type="number"
                       className="bg-white"
-                      value={Number.isFinite(field.value) ? field.value : ""}
+                      value={field.value ?? ""}
                       onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)}
                     />
                   </FormControl>

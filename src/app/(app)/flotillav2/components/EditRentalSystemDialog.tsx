@@ -77,7 +77,7 @@ export function EditRentalSystemDialog({ open, onOpenChange, vehicle, onSave }: 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
             <FormField control={form.control} name="dailyRentalCost" render={({ field }) => (
-              <FormItem><FormLabel>Renta Diaria ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} className="bg-white" /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Renta Diaria ($)</FormLabel><FormControl><Input type="number" step="0.01" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>

@@ -30,7 +30,7 @@ const chargeSchema = z.object({
   note: z.string().optional(),
 });
 
-export type DailyChargeFormValues = z.output<typeof chargeSchema>;
+export type DailyChargeFormValues = z.infer<typeof chargeSchema>;
 
 const toMidday = (d: Date) => {
   const n = new Date(d);
@@ -170,7 +170,7 @@ export function EditDailyChargeDialog({
                       min={0}
                       className="bg-white"
                       value={field.value ?? ""}
-                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                      onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -185,7 +185,7 @@ export function EditDailyChargeDialog({
                 <FormItem>
                   <FormLabel>Descripción</FormLabel>
                   <FormControl>
-                    <Textarea {...field} value={(field.value as any) ?? ""} className="bg-white" placeholder="Ej: Renta diaria" />
+                    <Textarea {...field} value={field.value ?? ""} className="bg-white" placeholder="Ej: Renta diaria" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

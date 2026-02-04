@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useForm, type Resolver } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import type { Vehicle } from "@/types";
@@ -56,12 +56,12 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
 
   const form = useForm<VehicleInfoFormValues>({
     resolver: zodResolver(vehicleInfoSchema),
-    defaultValues: defaults as any,
+    defaultValues: defaults,
   });
 
   useEffect(() => {
     if (!open) return;
-    form.reset(defaults as any);
+    form.reset(defaults);
   }, [open, defaults, form]);
 
   const handleFormSubmit = async (values: VehicleInfoFormValues) => {
@@ -92,7 +92,7 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
                   <FormItem>
                     <FormLabel>Marca</FormLabel>
                     <FormControl>
-                      <Input {...field} className="bg-white" />
+                      <Input {...field} value={field.value ?? ""} className="bg-white" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -105,13 +105,54 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
                   <FormItem>
                     <FormLabel>Modelo</FormLabel>
                     <FormControl>
-                      <Input {...field} className="bg-white" />
+                      <Input {...field} value={field.value ?? ""} className="bg-white" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="year"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Año</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)} className="bg-white" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="color"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Color</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ""} className="bg-white" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormField
+              control={form.control}
+              name="ownerName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre del Propietario</FormLabel>
+                  <FormControl>
+                    <Input {...field} value={field.value ?? ""} className="bg-white" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancelar
