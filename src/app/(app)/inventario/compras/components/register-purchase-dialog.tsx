@@ -16,12 +16,31 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, PackagePlus, DollarSign, PlusCircle, Trash2, CalendarIcon, Minus, Plus } from "lucide-react";
+import { 
+  Search, 
+  PackagePlus, 
+  DollarSign, 
+  PlusCircle, 
+  Trash2, 
+  CalendarIcon, 
+  Minus, 
+  Plus,
+  Check,
+  ChevronsUpDown
+} from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
 import { formatCurrency, cn, getToday } from "@/lib/utils";
 import { InventoryItemDialog } from "@/app/(app)/inventario/components/inventory-item-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { 
+  Command, 
+  CommandEmpty, 
+  CommandGroup, 
+  CommandInput, 
+  CommandItem, 
+  CommandList 
+} from "@/components/ui/command";
 import { Calendar } from "@/components/ui/calendar";
 import { format as formatDate } from "date-fns";
 import { es } from "date-fns/locale";
@@ -74,6 +93,11 @@ export function RegisterPurchaseDialog({
   const paymentMethod = watch("paymentMethod");
   const itemsWatch = useWatch({ control, name: "items" });
 
+  const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
+  const [isItemSearchOpen, setIsItemSearchOpen] = useState(false);
+  const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
+  const [newItemSearchTerm, setNewItemSearchTerm] = useState("");
+
   useEffect(() => {
     const total = (itemsWatch ?? []).reduce((sum: number, i: any) => {
       const qty = Number(i?.quantity) || 0;
@@ -124,10 +148,6 @@ export function RegisterPurchaseDialog({
     setIsNewItemDialogOpen(false);
   };
 
-  const [isItemSearchOpen, setIsItemSearchOpen] = useState(false);
-  const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
-  const [newItemSearchTerm, setNewItemSearchTerm] = useState("");
-
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -135,7 +155,7 @@ export function RegisterPurchaseDialog({
           <DialogHeader className="border-b p-6 pb-4 bg-white">
             <DialogTitle>Registrar Nueva Compra</DialogTitle>
             <DialogDescription>
-              Seleccione un proveedor, añada los productos comprados y especifique los detalles del pago.
+              Busque un proveedor, añada los productos comprados y especifique los detalles del pago.
             </DialogDescription>
           </DialogHeader>
 
@@ -148,24 +168,55 @@ export function RegisterPurchaseDialog({
                         control={control as any}
                         name="supplierId"
                         render={({ field }) => (
-                          <FormItem>
+                          <FormItem className="flex flex-col">
                             <FormLabel>Proveedor</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="bg-white">
-                                  <SelectValue placeholder="Seleccione un proveedor" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <ScrollArea className="h-48">
-                                  {suppliers.map((s) => (
-                                    <SelectItem key={s.id} value={s.id}>
-                                      {s.name}
-                                    </SelectItem>
-                                  ))}
-                                </ScrollArea>
-                              </SelectContent>
-                            </Select>
+                            <Popover open={isSupplierSearchOpen} onOpenChange={setIsSupplierSearchOpen}>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className={cn(
+                                      "w-full justify-between bg-white",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    {field.value
+                                      ? suppliers.find((s) => s.id === field.value)?.name
+                                      : "Buscar proveedor..."}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                                <Command>
+                                  <CommandInput placeholder="Nombre del proveedor..." />
+                                  <CommandList>
+                                    <CommandEmpty>No se encontró el proveedor.</CommandEmpty>
+                                    <CommandGroup>
+                                      {suppliers.map((s) => (
+                                        <CommandItem
+                                          value={s.name}
+                                          key={s.id}
+                                          onSelect={() => {
+                                            setValue("supplierId", s.id, { shouldValidate: true, shouldDirty: true });
+                                            setIsSupplierSearchOpen(false);
+                                          }}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              s.id === field.value ? "opacity-100" : "opacity-0"
+                                            )}
+                                          />
+                                          {s.name}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
                             <FormMessage />
                           </FormItem>
                         )}
