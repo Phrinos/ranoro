@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, {
@@ -21,7 +20,7 @@ import type {
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { inventoryService, saleService } from "@/lib/services";
-import { Loader2, Copy, Printer, Share2, Tags, Package, Car } from "lucide-react";
+import { Loader2, Copy, Printer, Share2, Tags, Package, Car, Search as SearchIcon } from "lucide-react";
 import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import { db } from "@/lib/firebaseClient";
 import { writeBatch, doc, collection } from "firebase/firestore";
@@ -114,7 +113,10 @@ function QuickAddItemDialog({
   const [q, setQ] = React.useState("");
 
   const filtered = React.useMemo(() => {
-    const n = normalize(q);
+    const trimmed = q.trim();
+    if (trimmed.length > 0 && trimmed.length < 3) return [];
+    
+    const n = normalize(trimmed);
     if (!n) return inventoryItems.slice(0, 200);
     return inventoryItems.filter((it) => {
       const haystack = [
@@ -143,7 +145,7 @@ function QuickAddItemDialog({
         <DialogHeader className="p-6 pb-3 border-b bg-white">
           <DialogTitle>Buscar y añadir artículo</DialogTitle>
           <DialogDescription>
-            Selecciona productos o servicios para agregar al ticket de venta.
+            Busca por nombre, SKU o categoría. Mínimo 3 caracteres.
           </DialogDescription>
         </DialogHeader>
 
@@ -156,75 +158,83 @@ function QuickAddItemDialog({
               className="h-12"
             />
             <CommandList className="max-h-[450px] overflow-auto">
-              <CommandEmpty>Sin resultados para &quot;{q}&quot;</CommandEmpty>
-              <CommandGroup heading="Artículos e Insumos Disponibles">
-                {filtered.map((it) => {
-                  const price =
-                    (it as any).sellingPrice ??
-                    (it as any).price ??
-                    (it as any).unitPrice ??
-                    0;
-                  const key =
-                    (it as any).id ??
-                    (it as any).sku ??
-                    String(price) + Math.random();
-                  const label = (it as any).name ?? (it as any).sku ?? "Artículo";
-                  const isLowStock = !it.isService && it.quantity <= (it.lowStockThreshold || 0);
+              {q.trim().length > 0 && q.trim().length < 3 ? (
+                <div className="p-10 text-center text-muted-foreground flex flex-col items-center gap-2">
+                  <SearchIcon className="h-8 w-8 opacity-20" />
+                  <p className="text-sm font-medium">Escribe al menos 3 caracteres para buscar...</p>
+                </div>
+              ) : filtered.length === 0 ? (
+                <CommandEmpty>Sin resultados para &quot;{q}&quot;</CommandEmpty>
+              ) : (
+                <CommandGroup heading="Artículos e Insumos Disponibles">
+                  {filtered.map((it) => {
+                    const price =
+                      (it as any).sellingPrice ??
+                      (it as any).price ??
+                      (it as any).unitPrice ??
+                      0;
+                    const key =
+                      (it as any).id ??
+                      (it as any).sku ??
+                      String(price) + Math.random();
+                    const label = (it as any).name ?? (it as any).sku ?? "Artículo";
+                    const isLowStock = !it.isService && it.quantity <= (it.lowStockThreshold || 0);
 
-                  return (
-                    <CommandItem
-                      key={key}
-                      value={label}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        onSelectItem(it);
-                        onOpenChange(false);
-                      }}
-                      className={cn(
-                        "flex items-center cursor-pointer p-3 border-b last:border-0 hover:bg-muted/50",
-                        "[&[data-disabled]]:opacity-100 [&[data-disabled]]:pointer-events-auto"
-                      )}
-                    >
-                      <div className="flex flex-col w-full gap-1.5">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <Badge variant="secondary" className="shrink-0 text-[10px] font-bold uppercase tracking-wider h-5">
-                              {it.category || 'General'}
-                            </Badge>
-                            <span className="font-bold text-base truncate">{label}</span>
+                    return (
+                      <CommandItem
+                        key={key}
+                        value={label}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onSelectItem(it);
+                          onOpenChange(false);
+                        }}
+                        className={cn(
+                          "flex items-center cursor-pointer p-3 border-b last:border-0 hover:bg-muted/50",
+                          "[&[data-disabled]]:opacity-100 [&[data-disabled]]:pointer-events-auto"
+                        )}
+                      >
+                        <div className="flex flex-col w-full gap-1.5">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <Badge variant="secondary" className="shrink-0 text-[10px] font-bold uppercase tracking-wider h-5">
+                                {it.category || 'General'}
+                              </Badge>
+                              <span className="font-bold text-base truncate">{label}</span>
+                            </div>
+                            <div className="text-right shrink-0">
+                              <span className="font-bold text-primary text-lg">
+                                {formatCurrency(price)}
+                              </span>
+                            </div>
                           </div>
-                          <div className="text-right shrink-0">
-                            <span className="font-black text-primary text-lg">
-                              {formatCurrency(price)}
-                            </span>
+                          <div className="flex items-center gap-6 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <Tags className="h-3.5 w-3.5 opacity-50" />
+                              <span>SKU: <span className="font-medium text-foreground">{it.sku || '—'}</span></span>
+                            </div>
+                            {!it.isService && (
+                              <div className="flex items-center gap-1.5">
+                                <Package className="h-3.5 w-3.5 opacity-50" />
+                                <span>Stock: <span className={cn("font-bold", isLowStock ? "text-destructive" : "text-foreground")}>
+                                  {it.quantity}
+                                </span></span>
+                              </div>
+                            )}
+                            {it.brand && (
+                              <div className="flex items-center gap-1.5">
+                                <Car className="h-3.5 w-3.5 opacity-50" />
+                                <span>Marca: <span className="font-medium text-foreground">{it.brand}</span></span>
+                              </div>
+                            )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-6 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1.5">
-                            <Tags className="h-3.5 w-3.5 opacity-50" />
-                            <span>SKU: <span className="font-medium text-foreground">{it.sku || '—'}</span></span>
-                          </div>
-                          {!it.isService && (
-                            <div className="flex items-center gap-1.5">
-                              <Package className="h-3.5 w-3.5 opacity-50" />
-                              <span>Stock: <span className={cn("font-bold", isLowStock ? "text-destructive" : "text-foreground")}>
-                                {it.quantity}
-                              </span></span>
-                            </div>
-                          )}
-                          {it.brand && (
-                            <div className="flex items-center gap-1.5">
-                              <Car className="h-3.5 w-3.5 opacity-50" />
-                              <span>Marca: <span className="font-medium text-foreground">{it.brand}</span></span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </CommandItem>
-                  );
-                })}
-              </CommandGroup>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              )}
             </CommandList>
           </Command>
         </div>

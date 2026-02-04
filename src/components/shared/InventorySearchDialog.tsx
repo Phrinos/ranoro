@@ -1,11 +1,10 @@
-
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
-import { PackagePlus, Tags, Package, Car } from "lucide-react";
+import { PackagePlus, Tags, Package, Car, Search as SearchIcon } from "lucide-react";
 import type { InventoryItem } from "@/types";
 import { formatCurrency, cn } from "@/lib/utils";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
@@ -39,7 +38,7 @@ export function InventorySearchDialog({
   // Si no recibimos inventoryItems, cargamos de Firestore
   useEffect(() => {
     if (inventoryItems && inventoryItems.length > 0) {
-      setAutoLoaded(null); // Clear auto-loaded if items are passed via props
+      setAutoLoaded(null);
       setIsLoading(false);
       return;
     }
@@ -75,7 +74,10 @@ export function InventorySearchDialog({
   );
 
   const filteredItems = useMemo(() => {
-    const q = normalize(searchTerm.trim());
+    const trimmed = searchTerm.trim();
+    if (trimmed.length > 0 && trimmed.length < 3) return []; // Mínimo 3 caracteres
+    
+    const q = normalize(trimmed);
     if (!q) return frequentItems;
 
     const tokens = q.split(/\s+/).filter(Boolean);
@@ -110,7 +112,7 @@ export function InventorySearchDialog({
       <DialogContent className="sm:max-w-4xl p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-2 border-b bg-white">
           <DialogTitle>Buscar en Inventario</DialogTitle>
-          <DialogDescription>Busca y selecciona un producto o servicio para añadir.</DialogDescription>
+          <DialogDescription>Busca por nombre, categoría o SKU. Mínimo 3 caracteres.</DialogDescription>
         </DialogHeader>
 
         <div className="px-6 py-6">
@@ -123,7 +125,7 @@ export function InventorySearchDialog({
             )}
           >
             <CommandInput
-              placeholder="Escribe para buscar por nombre, SKU, marca..."
+              placeholder="Escribe al menos 3 caracteres (nombre, SKU, categoría...)"
               value={searchTerm}
               onValueChange={setSearchTerm}
             />
@@ -133,6 +135,11 @@ export function InventorySearchDialog({
                 <div className="p-10 text-center flex flex-col items-center gap-2">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   <p className="text-sm text-muted-foreground font-medium">Cargando catálogo...</p>
+                </div>
+              ) : searchTerm.trim().length > 0 && searchTerm.trim().length < 3 ? (
+                <div className="p-10 text-center text-muted-foreground flex flex-col items-center gap-2">
+                  <SearchIcon className="h-8 w-8 opacity-20" />
+                  <p className="text-sm font-medium">Ingresa al menos 3 caracteres para buscar...</p>
                 </div>
               ) : filteredItems.length === 0 ? (
                 <CommandEmpty>

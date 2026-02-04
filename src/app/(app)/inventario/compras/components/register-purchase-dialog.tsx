@@ -30,7 +30,8 @@ import {
   Package,
   Car,
   TrendingUp,
-  Receipt
+  Receipt,
+  Search as SearchIcon
 } from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
 import { formatCurrency, cn, getToday } from "@/lib/utils";
@@ -527,12 +528,16 @@ function SearchItemDialog({
 
   const filteredItems = useMemo(() => {
     const physical = inventoryItems.filter((i) => !i.isService);
-    if (!searchTerm.trim()) return physical.slice(0, 50);
-    const q = normalize(searchTerm.trim());
+    const trimmed = searchTerm.trim();
+    if (trimmed.length > 0 && trimmed.length < 3) return [];
+    
+    if (!trimmed) return physical.slice(0, 50);
+    const q = normalize(trimmed);
     return physical.filter(
       (i) =>
         normalize(i.name).includes(q) ||
-        (i.sku && normalize(i.sku).includes(q))
+        (i.sku && normalize(i.sku).includes(q)) ||
+        (i.category && normalize(i.category).includes(q))
     ).slice(0, 100);
   }, [searchTerm, inventoryItems]);
 
@@ -542,7 +547,7 @@ function SearchItemDialog({
         <DialogHeader className="p-6 pb-4 bg-white">
           <DialogTitle>Buscar Artículo en Inventario</DialogTitle>
           <DialogDescription>
-            Seleccione un artículo para añadir a la compra o cree uno nuevo.
+            Busca por nombre, SKU o categoría. Mínimo 3 caracteres.
           </DialogDescription>
         </DialogHeader>
 
@@ -550,7 +555,7 @@ function SearchItemDialog({
           <div className="relative">
             <Search className="text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4" />
             <Input
-              placeholder="Buscar por nombre o SKU..."
+              placeholder="Escribe al menos 3 caracteres..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-8"
@@ -563,64 +568,71 @@ function SearchItemDialog({
           <ScrollArea className="h-[450px] rounded-md border bg-white shadow-inner">
             <div className="p-2">
               <div className="grid grid-cols-1 gap-1">
-                {filteredItems.map((item) => {
-                  const isLowStock = item.quantity <= (item.lowStockThreshold || 0);
-                  const price = item.sellingPrice ?? item.unitPrice ?? 0;
+                {searchTerm.trim().length > 0 && searchTerm.trim().length < 3 ? (
+                  <div className="p-10 text-center text-muted-foreground flex flex-col items-center gap-2">
+                    <SearchIcon className="h-8 w-8 opacity-20" />
+                    <p className="text-sm font-medium">Ingresa al menos 3 caracteres para buscar...</p>
+                  </div>
+                ) : filteredItems.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <p className="text-muted-foreground mb-4">No se encontraron artículos que coincidan.</p>
+                    {searchTerm.trim().length >= 3 && (
+                      <Button variant="outline" onClick={() => onNewItemRequest(searchTerm)}>
+                        <PackagePlus className="mr-2 h-4 w-4" />
+                        Crear Nuevo Artículo &quot;{searchTerm}&quot;
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  filteredItems.map((item) => {
+                    const isLowStock = item.quantity <= (item.lowStockThreshold || 0);
+                    const price = item.sellingPrice ?? item.unitPrice ?? 0;
 
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className="w-full text-left p-3 rounded-lg hover:bg-muted/50 border-b last:border-0 transition-colors group"
-                      onClick={() => onItemSelected(item)}
-                    >
-                      <div className="flex flex-col gap-1.5">
-                        <div className="flex items-center justify-between gap-4">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <Badge variant="secondary" className="shrink-0 text-[10px] font-bold uppercase tracking-wider h-5">
-                              {item.category || 'General'}
-                            </Badge>
-                            <span className="font-bold text-base truncate">{item.name}</span>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <span className="font-bold text-primary text-lg">
-                              {formatCurrency(price)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-6 text-xs text-muted-foreground">
-                          <div className="flex items-center gap-1.5">
-                            <Tags className="h-3.5 w-3.5 opacity-50" />
-                            <span>SKU: <span className="font-medium text-foreground">{item.sku || '—'}</span></span>
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            <Package className="h-3.5 w-3.5 opacity-50" />
-                            <span>Stock: <span className={cn("font-bold", isLowStock ? "text-destructive" : "text-foreground")}>
-                              {item.quantity}
-                            </span></span>
-                          </div>
-                          {item.brand && (
-                            <div className="flex items-center gap-1.5">
-                              <Car className="h-3.5 w-3.5 opacity-50" />
-                              <span>Marca: <span className="font-medium text-foreground">{item.brand}</span></span>
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="w-full text-left p-3 rounded-lg hover:bg-muted/50 border-b last:border-0 transition-colors group"
+                        onClick={() => onItemSelected(item)}
+                      >
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <Badge variant="secondary" className="shrink-0 text-[10px] font-bold uppercase tracking-wider h-5">
+                                {item.category || 'General'}
+                              </Badge>
+                              <span className="font-bold text-base truncate">{item.name}</span>
                             </div>
-                          )}
+                            <div className="text-right shrink-0">
+                              <span className="font-bold text-primary text-lg">
+                                {formatCurrency(price)}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-6 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1.5">
+                              <Tags className="h-3.5 w-3.5 opacity-50" />
+                              <span>SKU: <span className="font-medium text-foreground">{item.sku || '—'}</span></span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <Package className="h-3.5 w-3.5 opacity-50" />
+                              <span>Stock: <span className={cn("font-bold", isLowStock ? "text-destructive" : "text-foreground")}>
+                                {item.quantity}
+                              </span></span>
+                            </div>
+                            {item.brand && (
+                              <div className="flex items-center gap-1.5">
+                                <Car className="h-3.5 w-3.5 opacity-50" />
+                                <span>Marca: <span className="font-medium text-foreground">{item.brand}</span></span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </button>
-                  )
-                })}
+                      </button>
+                    )
+                  })
+                )}
               </div>
-
-              {searchTerm && filteredItems.length === 0 && (
-                <div className="p-8 text-center">
-                  <p className="text-muted-foreground mb-4">No se encontraron artículos que coincidan.</p>
-                  <Button variant="outline" onClick={() => onNewItemRequest(searchTerm)}>
-                    <PackagePlus className="mr-2 h-4 w-4" />
-                    Crear Nuevo Artículo &quot;{searchTerm}&quot;
-                  </Button>
-                </div>
-              )}
             </div>
           </ScrollArea>
         </div>
