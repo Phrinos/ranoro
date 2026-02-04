@@ -1,3 +1,4 @@
+
 "use client";
 import { usePathname, useRouter } from "next/navigation";
 import { withSuspense } from "@/lib/withSuspense";
@@ -22,9 +23,8 @@ import { Button } from "@/components/ui/button";
 import {
   Settings,
   LogOut,
-  LayoutDashboard, Wrench, FileText, Receipt, Package, DollarSign, Users, 
-  Truck, LineChart, Shield, PlusCircle, Landmark, LayoutGrid, CalendarDays, 
-  MessageSquare, Car, ShoppingCart, FileJson, Building, BarChart3, Wallet, BrainCircuit, LifeBuoy, Tags, FileBarChart
+  LayoutGrid, Wrench, Receipt, Package, DollarSign, Users, 
+  Truck, PlusCircle, ShoppingCart, FileJson, BrainCircuit, LifeBuoy, Tags, Car
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -35,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { User, AppRole, NavigationEntry } from "@/types";
-import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { adminService } from '@/lib/services';
 import { ALL_PERMISSIONS } from '@/lib/permissions';
 
@@ -47,7 +47,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   { label: 'Servicios', path: '/servicios', icon: Wrench, groupTag: 'Mi Taller', permissions: ['services:view_history'] },
   { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: 'Mi Taller', permissions: ['vehicles:manage'] },
   { label: 'Precios', path: '/precios', icon: Tags, groupTag: 'Mi Taller', permissions: ['inventory:view_public_info'] },
-  { label: 'Flotilla', path: '/flotilla', icon: Truck, groupTag: 'Mi Taller', permissions: ['fleet:manage'] },
+  { label: 'Flotilla', path: '/flotillav2', icon: Truck, groupTag: 'Mi Taller', permissions: ['fleet:manage'] },
 
   // Operaciones
   { label: 'Punto de Venta', path: '/pos', icon: Receipt, groupTag: 'Operaciones', permissions: ['pos:view_sales'] },
@@ -56,7 +56,6 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Finanzas
   { label: 'Reportes Taller', path: '/reportes', icon: DollarSign, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
-  { label: 'Reportes Flotilla', path: '/flotillareportes', icon: Truck, groupTag: 'Finanzas', permissions: ['fleet:manage'] },
   { label: 'Facturación', path: '/facturacion', icon: FileJson, groupTag: 'Finanzas', permissions: ['billing:manage'] },
 
   // Opciones
@@ -98,57 +97,10 @@ const useNavigation = (): NavigationEntry[] => {
     return BASE_NAV_STRUCTURE.filter(item => item.permissions?.some(p => userPermissions.has(p)));
   }, [currentUser, userPermissions]);
 
-  const entriesWithActiveState = filteredNavStructure.map(entry => {
-    let isActive = false;
-    if (!entry.path) return { ...entry, isActive };
-
-    const cleanPathname = pathname.split('?')[0];
-    const cleanEntryPath = entry.path.split('?')[0];
-
-    if (cleanPathname === cleanEntryPath) {
-        isActive = true;
-    }
-
-    const parentRoutes = ['/servicios', '/vehiculos', '/pos', '/inventario', '/inventario/proveedores', '/inventario/compras', '/personal', '/opciones', '/facturacion', '/ai', '/flotilla', '/reportes', '/precios', '/flotillareportes'];
-    
-    if (parentRoutes.includes(cleanEntryPath) && cleanPathname.startsWith(cleanEntryPath)) {
-        if (cleanPathname === cleanEntryPath) {
-            isActive = true;
-        } else if (cleanPathname.startsWith(cleanEntryPath + '/')) {
-            const isMoreSpecificEntryActive = filteredNavStructure.some(e => e.path === cleanPathname);
-            if (!isMoreSpecificEntryActive) {
-                isActive = true;
-            }
-        }
-    }
-    
-    if (pathname === '/servicios/nuevo' && entry.path === '/servicios') {
-      isActive = false;
-    }
-
-    return { ...entry, isActive };
-  });
-  
-  const groupedByTag = entriesWithActiveState.reduce((acc, item) => {
-      const tag = item.groupTag ?? 'Otros';
-      if (!acc[tag]) acc[tag] = [];
-      acc[tag].push(item);
-      return acc;
-    }, {} as Record<string, NavigationEntry[]>);
-
-  const sortedGroupEntries = DESIRED_GROUP_ORDER.reduce((acc, groupName) => {
-    if (groupedByTag[groupName]) {
-      const groupItems = groupedByTag[groupName].sort((a, b) => {
-        const indexA = BASE_NAV_STRUCTURE.findIndex(nav => nav.path === a.path && nav.groupTag === a.groupTag);
-        const indexB = BASE_NAV_STRUCTURE.findIndex(nav => nav.path === b.path && nav.groupTag === b.groupTag);
-        return indexA - indexB;
-      });
-      acc.push(...groupItems);
-    }
-    return acc;
-  }, [] as NavigationEntry[]);
-  
-  return sortedGroupEntries;
+  return filteredNavStructure.map(entry => ({
+    ...entry,
+    isActive: pathname === entry.path || (entry.path !== '/' && pathname.startsWith(entry.path!))
+  }));
 };
 
 function AppSidebarInner({
@@ -159,8 +111,6 @@ function AppSidebarInner({
   onLogout: () => void;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
-
   const navItems = useNavigation();
   const { isMobile, setOpenMobile } = useSidebar();
 
@@ -172,9 +122,7 @@ function AppSidebarInner({
   const groupedByTag = React.useMemo(() => {
     return navItems.reduce((acc, item) => {
       const tag = item.groupTag ?? 'Otros';
-      if (!acc[tag]) {
-        acc[tag] = [];
-      }
+      if (!acc[tag]) acc[tag] = [];
       acc[tag].push(item);
       return acc;
     }, {} as Record<string, NavigationEntry[]>);
@@ -210,7 +158,7 @@ function AppSidebarInner({
         {sortedGroupEntries.map(([tag, entriesInGroup]) => (
           <SidebarGroup key={tag as string} className="p-2">
             <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-              <span className="group-data-[collapsible=icon]:hidden">
+              <span className="group-data-[collapsible=icon]:hidden uppercase text-[10px] tracking-widest font-bold">
                 {tag as string}
               </span>
             </SidebarGroupLabel>
@@ -222,7 +170,6 @@ function AppSidebarInner({
                       asChild
                       isActive={entry.isActive}
                       tooltipLabel={entry.label}
-                      tooltipClassName="group-data-[collapsible=icon]:block hidden"
                     >
                       <Link href={entry.path!} onClick={() => { if(isMobile) setOpenMobile(false) }}>
                         {React.createElement(entry.icon as any)}
@@ -238,48 +185,35 @@ function AppSidebarInner({
           </SidebarGroup>
         ))}
       </SidebarContent>
-      <SidebarFooter className="mt-auto border-t border-sidebar-border p-2 flex flex-col gap-1">
+      <SidebarFooter className="mt-auto border-t border-sidebar-border p-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="h-auto w-full justify-start gap-2 py-2 text-left text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12 group-data-[collapsible=icon]:justify-center"
+              className="h-auto w-full justify-start gap-2 py-2 text-left hover:bg-sidebar-accent group-data-[collapsible=icon]:justify-center"
             >
-              <div className="group-data-[collapsible=icon]:hidden flex flex-col items-start">
-                  <span className="text-sm font-semibold leading-none">
+              <div className="group-data-[collapsible=icon]:hidden flex flex-col items-start overflow-hidden">
+                  <span className="text-sm font-semibold truncate w-full">
                       {currentUser?.name || "Mi Cuenta"}
                   </span>
-                  <span className="text-xs text-sidebar-foreground/80 leading-none">
-                      {String(currentUser?.role ?? 'Rol')}
+                  <span className="text-[10px] uppercase opacity-70">
+                      {String(currentUser?.role ?? 'Usuario')}
                   </span>
               </div>
               <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center h-8 w-8 rounded-full bg-sidebar-accent">
-                 <span className="text-sm font-semibold">
+                 <span className="text-sm font-bold">
                     {currentUser?.name?.[0]?.toUpperCase() || 'U'}
                  </span>
               </div>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            side="top"
-            className="mb-1 w-[var(--sidebar-width-icon)] group-data-[state=expanded]:w-[var(--sidebar-width)] sm:w-[var(--sidebar-width-mobile)] md:w-56"
-          >
-            <DropdownMenuLabel>
-              {currentUser?.name || "Mi Cuenta"}
-            </DropdownMenuLabel>
+          <DropdownMenuContent align="end" side="top" className="w-56">
+            <DropdownMenuLabel>{currentUser?.name || "Mi Cuenta"}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href="/opciones?tab=perfil"><Users className="mr-2 h-4 w-4" /> Mi Perfil</Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-               <Link href="/opciones?tab=manual"><LifeBuoy className="mr-2 h-4 w-4" /> Manual de Uso</Link>
-            </DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/opciones?tab=perfil"><Users className="mr-2 h-4 w-4" /> Mi Perfil</Link></DropdownMenuItem>
+            <DropdownMenuItem asChild><Link href="/opciones?tab=manual"><LifeBuoy className="mr-2 h-4 w-4" /> Manual</Link></DropdownMenuItem>
             <DropdownMenuSeparator />
-                 <DropdownMenuItem onClick={handleLogout}>
-                   <LogOut className="mr-2 h-4 w-4 text-destructive" />
-                   <span className="text-destructive">Salir</span>
-                 </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout} className="text-destructive"><LogOut className="mr-2 h-4 w-4" /> Salir</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarFooter>
@@ -287,5 +221,5 @@ function AppSidebarInner({
   );
 }
 
-export const AppSidebar = withSuspense(AppSidebarInner, <div className="w-64 p-4">Cargando menú…</div>);
+export const AppSidebar = withSuspense(AppSidebarInner, <div className="w-64 p-4">Cargando...</div>);
 export default AppSidebar;
