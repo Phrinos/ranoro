@@ -29,7 +29,7 @@ export type QuoteSuggestionOutput = z.infer<typeof QuoteSuggestionOutputSchema>;
 
 export async function suggestQuote(input: QuoteSuggestionInput): Promise<QuoteSuggestionOutput> {
   const { output } = await ai.generate({
-    model: 'googleai/gemini-2.0-flash-exp',
+    model: 'googleai/gemini-1.5-flash',
     system: `Eres un experto cotizador de taller mecánico. Tu tarea es generar una lista de trabajos y refacciones basada en la solicitud del cliente.
     Reglas:
     1. Divide la cotización en 'work' (mano de obra) y 'part' (refacciones).
