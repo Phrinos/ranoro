@@ -13,7 +13,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import type { MonthlyFixedExpense } from "@/types";
 import { DollarSign } from "lucide-react";
 import {
@@ -34,7 +33,6 @@ const fixedExpenseFormSchema = z.object({
 });
 
 export type FixedExpenseFormValues = z.infer<typeof fixedExpenseFormSchema>;
-type FixedExpenseFormInput = z.input<typeof fixedExpenseFormSchema>;
 
 interface FixedExpenseFormProps {
   initialData?: MonthlyFixedExpense | null;
@@ -43,16 +41,14 @@ interface FixedExpenseFormProps {
 }
 
 export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpenseFormProps) {
-  const form = useForm<FixedExpenseFormInput, any, FixedExpenseFormValues>({
-    // Se usa 'as any' para evitar conflictos de tipos entre la entrada (Input) y salida (Output) de Zod
-    // causados por z.coerce.number() al integrarse con el genérico de react-hook-form.
+  const form = useForm<FixedExpenseFormValues>({
     resolver: zodResolver(fixedExpenseFormSchema) as any,
     defaultValues: {
       name: initialData?.name ?? "",
       amount: initialData?.amount ?? undefined,
       category: (initialData as any)?.category ?? "Otros",
       notes: (initialData as any)?.notes ?? "",
-    },
+    } as any,
   });
 
   return (
@@ -64,7 +60,9 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
           render={({ field }) => (
             <FormItem>
               <FormLabel>Nombre del Gasto</FormLabel>
-              <FormControl><Input placeholder="Ej: Renta del Local" {...field} /></FormControl>
+              <FormControl>
+                <Input placeholder="Ej: Renta del Local" {...field} value={field.value ?? ""} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -75,12 +73,21 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
           render={({ field }) => (
             <FormItem>
               <FormLabel>Categoría</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+              <Select onValueChange={field.onChange} value={field.value || ""}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccione categoría" />
+                  </SelectTrigger>
+                </FormControl>
                 <SelectContent>
-                  {expenseCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  {expenseCategories.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              <FormMessage />
             </FormItem>
           )}
         />
@@ -93,12 +100,12 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
               <FormControl>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    type="number" 
-                    step="0.01" 
-                    className="pl-8" 
-                    {...field} 
-                    value={field.value ?? ""}
+                  <Input
+                    type="number"
+                    step="0.01"
+                    className="pl-8"
+                    {...field}
+                    value={(field.value as any) ?? ""}
                     onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)}
                   />
                 </div>
@@ -108,7 +115,9 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
           )}
         />
         <div className="flex justify-end gap-2 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
           <Button type="submit">Guardar Gasto</Button>
         </div>
       </form>
