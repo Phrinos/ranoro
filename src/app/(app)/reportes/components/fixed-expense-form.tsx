@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, type Resolver } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,7 +44,9 @@ interface FixedExpenseFormProps {
 
 export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpenseFormProps) {
   const form = useForm<FixedExpenseFormInput, any, FixedExpenseFormValues>({
-    resolver: zodResolver(fixedExpenseFormSchema) as Resolver<FixedExpenseFormInput, any>,
+    // Se usa 'as any' para evitar conflictos de tipos entre la entrada (Input) y salida (Output) de Zod
+    // causados por z.coerce.number() al integrarse con el genérico de react-hook-form.
+    resolver: zodResolver(fixedExpenseFormSchema) as any,
     defaultValues: {
       name: initialData?.name ?? "",
       amount: initialData?.amount ?? undefined,
@@ -57,7 +59,7 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
-          control={form.control as any}
+          control={form.control}
           name="name"
           render={({ field }) => (
             <FormItem>
@@ -68,7 +70,7 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
           )}
         />
         <FormField
-          control={form.control as any}
+          control={form.control}
           name="category"
           render={({ field }) => (
             <FormItem>
@@ -83,7 +85,7 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
           )}
         />
         <FormField
-          control={form.control as any}
+          control={form.control}
           name="amount"
           render={({ field }) => (
             <FormItem>
