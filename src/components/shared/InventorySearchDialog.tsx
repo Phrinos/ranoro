@@ -2,14 +2,15 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
-import { PackagePlus } from "lucide-react";
+import { PackagePlus, Tags, Package, Car } from "lucide-react";
 import type { InventoryItem } from "@/types";
 import { formatCurrency, cn } from "@/lib/utils";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
+import { Badge } from "@/components/ui/badge";
 
 interface InventorySearchDialogProps {
   open: boolean;
@@ -21,7 +22,7 @@ interface InventorySearchDialogProps {
 }
 
 const normalize = (s?: string) =>
-  (s ?? "").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
+  (s ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 export function InventorySearchDialog({
   open,
@@ -106,38 +107,41 @@ export function InventorySearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-xl p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-2">
+      <DialogContent className="sm:max-w-4xl p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-2 border-b bg-white">
           <DialogTitle>Buscar en Inventario</DialogTitle>
-          <DialogDescription>Busca y selecciona un producto o servicio.</DialogDescription>
+          <DialogDescription>Busca y selecciona un producto o servicio para añadir.</DialogDescription>
         </DialogHeader>
 
-        <div className="px-6 pb-6">
+        <div className="px-6 py-6">
           <Command
             shouldFilter={false}
             className={cn(
-              "rounded-lg border bg-white",
+              "rounded-lg border bg-white shadow-sm overflow-hidden",
               "[&_[cmdk-input-wrapper]]:px-3 [&_[cmdk-input-wrapper]]:h-12",
               "[&_[cmdk-input]]:text-sm [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-3"
             )}
           >
             <CommandInput
-              placeholder="Buscar por nombre, SKU, marca..."
+              placeholder="Escribe para buscar por nombre, SKU, marca..."
               value={searchTerm}
               onValueChange={setSearchTerm}
             />
 
             <CommandList className="max-h-[52vh] overflow-y-auto">
               {isLoading ? (
-                <div className="p-4 text-center">Cargando…</div>
+                <div className="p-10 text-center flex flex-col items-center gap-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-sm text-muted-foreground font-medium">Cargando catálogo...</p>
+                </div>
               ) : filteredItems.length === 0 ? (
                 <CommandEmpty>
-                  <div className="text-center p-4">
-                    <p>No se encontraron artículos.</p>
+                  <div className="text-center p-8">
+                    <p className="text-muted-foreground">No se encontraron artículos que coincidan.</p>
                     {!!onNewItemRequest && (
-                      <Button variant="link" onClick={() => onNewItemRequest(searchTerm)} className="mt-2">
+                      <Button variant="link" onClick={() => onNewItemRequest(searchTerm)} className="mt-2 font-bold text-primary">
                         <PackagePlus className="mr-2 h-4 w-4" />
-                        Registrar Nuevo Artículo{searchTerm ? ` “${searchTerm}”` : ""}
+                        ¿Registrar como Nuevo Artículo?
                       </Button>
                     )}
                   </div>
@@ -145,8 +149,8 @@ export function InventorySearchDialog({
               ) : (
                 <CommandGroup>
                   {!searchTerm.trim() && (
-                    <li className="px-2 py-1.5 text-xs text-muted-foreground font-medium">
-                      Sugeridos (más frecuentes)
+                    <li className="px-3 py-2 text-[10px] text-muted-foreground font-bold uppercase tracking-widest bg-muted/30">
+                      Sugerencias frecuentes
                     </li>
                   )}
 
@@ -159,19 +163,51 @@ export function InventorySearchDialog({
                       (item as any).keywords,
                     ].filter(Boolean).join(" ");
 
+                    const isLowStock = !item.isService && item.quantity <= (item.lowStockThreshold || 0);
+
                     return (
                       <CommandItem
                         key={item.id}
                         value={valueForCmdk}
                         onSelect={() => handleSelect(item)}
-                        className="flex flex-col items-start gap-1 cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
+                        className="flex flex-col items-start gap-1.5 cursor-pointer border-b last:border-0 hover:bg-muted/50 data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
                       >
-                        <p className="font-semibold">
-                          {(item.category ?? "Sin categoría")} - {item.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          SKU: {item.sku || 'N/A'} | Stock: {item.isService ? "N/A" : (item.quantity ?? 0)} | Costo: {formatCurrency(item.unitPrice ?? 0)} | <span className="font-bold text-foreground">Venta: {formatCurrency(item.sellingPrice ?? 0)}</span>
-                        </p>
+                        <div className="flex items-center justify-between w-full gap-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Badge variant="secondary" className="shrink-0 text-[9px] font-bold uppercase tracking-wider h-5">
+                              {item.category || 'General'}
+                            </Badge>
+                            <span className="font-bold text-base truncate">{item.name}</span>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="font-black text-primary text-lg">
+                              {formatCurrency(item.sellingPrice ?? 0)}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-6 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1.5">
+                            <Tags className="h-3.5 w-3.5 opacity-50" />
+                            <span>SKU: <span className="font-medium text-foreground">{item.sku || '—'}</span></span>
+                          </div>
+                          
+                          {!item.isService && (
+                            <div className="flex items-center gap-1.5">
+                              <Package className="h-3.5 w-3.5 opacity-50" />
+                              <span>Stock: <span className={cn("font-bold", isLowStock ? "text-destructive" : "text-foreground")}>
+                                {item.quantity}
+                              </span></span>
+                            </div>
+                          )}
+
+                          {(item as any).brand && (
+                            <div className="flex items-center gap-1.5">
+                              <Car className="h-3.5 w-3.5 opacity-50" />
+                              <span>Marca: <span className="font-medium text-foreground">{(item as any).brand}</span></span>
+                            </div>
+                          )}
+                        </div>
                       </CommandItem>
                     );
                   })}
@@ -180,6 +216,10 @@ export function InventorySearchDialog({
             </CommandList>
           </Command>
         </div>
+
+        <DialogFooter className="p-4 border-t bg-muted/10">
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>Cancelar</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
