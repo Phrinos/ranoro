@@ -181,131 +181,136 @@ export function RegisterPurchaseDialog({
                 <form onSubmit={handleSubmit(onSave)} id="purchase-form" className="space-y-0">
                   <div className="max-h-[calc(80vh-150px)] space-y-6 overflow-y-auto px-6 py-6 bg-muted/50">
                     
-                    {/* LÍNEA 1: PROVEEDOR */}
-                    <div className="grid grid-cols-1">
-                      <FormField
-                        control={control as any}
-                        name="supplierId"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-col">
-                            <Label className="font-bold">Proveedor</Label>
-                            <Popover open={isSupplierSearchOpen} onOpenChange={setIsSupplierSearchOpen}>
-                              <PopoverTrigger asChild>
+                    {/* CABECERA UNIFICADA: PROVEEDOR, FOLIO, METODO */}
+                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                      <div className="md:col-span-6">
+                        <FormField
+                          control={control as any}
+                          name="supplierId"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                              <Label className="font-bold mb-1">Proveedor</Label>
+                              <Popover open={isSupplierSearchOpen} onOpenChange={setIsSupplierSearchOpen}>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant="outline"
+                                      role="combobox"
+                                      className={cn(
+                                        "w-full justify-between bg-white text-left font-normal h-10",
+                                        !field.value && "text-muted-foreground"
+                                      )}
+                                    >
+                                      <span className="truncate text-sm">
+                                        {field.value
+                                          ? suppliers.find((s) => s.id === field.value)?.name
+                                          : "Buscar proveedor..."}
+                                      </span>
+                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent 
+                                  className="w-[var(--radix-popover-trigger-width)] p-0" 
+                                  align="start"
+                                >
+                                  <Command shouldFilter={false}>
+                                    <CommandInput 
+                                      placeholder="Escribe nombre o RFC..." 
+                                      value={supplierSearchQuery}
+                                      onValueChange={setSupplierSearchQuery}
+                                    />
+                                    <CommandList>
+                                      <CommandEmpty>No se encontró el proveedor.</CommandEmpty>
+                                      <CommandGroup>
+                                        {filteredSuppliers.map((s) => (
+                                          <CommandItem
+                                            key={s.id}
+                                            value={`${s.name} ${s.rfc ?? ""}`.trim()}
+                                            onSelect={() => {
+                                              setValue("supplierId", String(s.id), { shouldValidate: true, shouldDirty: true });
+                                              setIsSupplierSearchOpen(false);
+                                              setSupplierSearchQuery("");
+                                            }}
+                                          >
+                                            <Check
+                                              className={cn(
+                                                "mr-2 h-4 w-4",
+                                                String(s.id) === String(field.value) ? "opacity-100" : "opacity-0"
+                                              )}
+                                            />
+                                            {s.name}
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    </CommandList>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="md:col-span-3">
+                        <FormField
+                          control={control as any}
+                          name="invoiceId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <Label className="font-bold mb-1">Folio Factura</Label>
+                              <FormControl>
+                                <Input placeholder="F-12345" {...field} value={field.value ?? ""} className="bg-white h-10 text-sm" />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="md:col-span-3">
+                        <FormField
+                          control={control as any}
+                          name="paymentMethod"
+                          render={({ field }) => (
+                            <FormItem>
+                              <Label className="font-bold mb-1">Método de Pago</Label>
+                              <Select onValueChange={field.onChange} value={field.value}>
                                 <FormControl>
-                                  <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    className={cn(
-                                      "w-full justify-between bg-white text-left font-normal h-11",
-                                      !field.value && "text-muted-foreground"
-                                    )}
-                                  >
-                                    <span className="truncate">
-                                      {field.value
-                                        ? suppliers.find((s) => s.id === field.value)?.name
-                                        : "Buscar o seleccionar proveedor..."}
-                                    </span>
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                  </Button>
+                                  <SelectTrigger className="bg-white h-10 text-sm">
+                                    <SelectValue />
+                                  </SelectTrigger>
                                 </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent 
-                                className="w-[var(--radix-popover-trigger-width)] p-0" 
-                                align="start"
-                              >
-                                <Command shouldFilter={false}>
-                                  <CommandInput 
-                                    placeholder="Escribe nombre o RFC..." 
-                                    value={supplierSearchQuery}
-                                    onValueChange={setSupplierSearchQuery}
-                                  />
-                                  <CommandList>
-                                    <CommandEmpty>No se encontró el proveedor.</CommandEmpty>
-                                    <CommandGroup>
-                                      {filteredSuppliers.map((s) => (
-                                        <CommandItem
-                                          key={s.id}
-                                          value={`${s.name} ${s.rfc ?? ""}`.trim()}
-                                          onSelect={() => {
-                                            setValue("supplierId", String(s.id), { shouldValidate: true, shouldDirty: true });
-                                            setIsSupplierSearchOpen(false);
-                                            setSupplierSearchQuery("");
-                                          }}
-                                        >
-                                          <Check
-                                            className={cn(
-                                              "mr-2 h-4 w-4",
-                                              String(s.id) === String(field.value) ? "opacity-100" : "opacity-0"
-                                            )}
-                                          />
-                                          {s.name}
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
-                                  </CommandList>
-                                </Command>
-                              </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                                <SelectContent>
+                                  <SelectItem value="Efectivo">Efectivo</SelectItem>
+                                  <SelectItem value="Tarjeta">Tarjeta</SelectItem>
+                                  <SelectItem value="Tarjeta MSI">Tarjeta MSI</SelectItem>
+                                  <SelectItem value="Transferencia">Transferencia</SelectItem>
+                                  <SelectItem value="Crédito">Crédito</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
                     </div>
 
-                    {/* LÍNEA 2: MÉTODO DE PAGO Y FOLIO */}
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                      <FormField
-                        control={control as any}
-                        name="paymentMethod"
-                        render={({ field }) => (
-                          <FormItem>
-                            <Label className="font-bold">Método de Pago</Label>
-                            <Select onValueChange={field.onChange} value={field.value}>
-                              <FormControl>
-                                <SelectTrigger className="bg-white h-11">
-                                  <SelectValue />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="Efectivo">Efectivo</SelectItem>
-                                <SelectItem value="Tarjeta">Tarjeta</SelectItem>
-                                <SelectItem value="Tarjeta MSI">Tarjeta MSI</SelectItem>
-                                <SelectItem value="Transferencia">Transferencia</SelectItem>
-                                <SelectItem value="Crédito">Crédito</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={control as any}
-                        name="invoiceId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <Label className="font-bold">Folio de Factura / Ticket</Label>
-                            <FormControl>
-                              <Input placeholder="Ej: F-12345" {...field} value={field.value ?? ""} className="bg-white h-11" />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-
-                      {paymentMethod === "Crédito" && (
+                    {paymentMethod === "Crédito" && (
+                      <div className="flex justify-end">
                         <FormField
                           control={control as any}
                           name="dueDate"
                           render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                              <Label className="font-bold">Vencimiento</Label>
+                            <FormItem className="flex flex-col w-full md:w-1/4">
+                              <Label className="font-bold mb-1">Fecha de Vencimiento</Label>
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <FormControl>
                                     <Button
                                       variant="outline"
                                       className={cn(
-                                        "pl-3 text-left font-normal bg-white h-11",
+                                        "pl-3 text-left font-normal bg-white h-10 text-sm",
                                         !field.value && "text-muted-foreground"
                                       )}
                                     >
@@ -330,26 +335,22 @@ export function RegisterPurchaseDialog({
                             </FormItem>
                           )}
                         />
-                      )}
-                    </div>
+                      </div>
+                    )}
 
-                    {/* LÍNEA 3: ARTÍCULOS COMPRADOS */}
+                    {/* SECCIÓN ARTÍCULOS */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <Label className="text-base font-bold flex items-center gap-2">
                           <Receipt className="h-5 w-5 text-primary" />
                           Detalle de Artículos
                         </Label>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => setIsItemSearchOpen(true)}
-                          className="h-9 gap-2 shadow-sm"
-                        >
-                          <PlusCircle className="h-4 w-4" />
-                          Añadir Artículo
-                        </Button>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">Total Actual</span>
+                          <span className="text-xl font-bold text-primary">
+                            {formatCurrency(watch("invoiceTotal") || 0)}
+                          </span>
+                        </div>
                       </div>
 
                       <div className="rounded-xl border bg-card shadow-inner overflow-hidden">
@@ -460,17 +461,22 @@ export function RegisterPurchaseDialog({
                           </tbody>
                         </table>
                       </div>
+
+                      <div className="flex justify-start">
+                        <Button
+                          type="button"
+                          onClick={() => setIsItemSearchOpen(true)}
+                          className="h-10 gap-2 shadow-md bg-red-600 hover:bg-red-700 text-white font-bold"
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                          Añadir Artículo/Insumo
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
-                  <DialogFooter className="flex w-full flex-col-reverse items-center border-t bg-white p-6 pt-4 sm:flex-row sm:justify-between">
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">Total Compra</span>
-                        <div className="text-2xl font-bold text-primary">
-                            {formatCurrency(watch("invoiceTotal") || 0)}
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
+                  <DialogFooter className="border-t bg-white p-6 pt-4">
+                      <div className="flex w-full justify-end gap-2">
                           <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
                           Cancelar
                           </Button>
