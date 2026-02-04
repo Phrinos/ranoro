@@ -144,10 +144,21 @@ export function AssignDriverCard({
                   <CommandEmpty>No se encontraron conductores activos.</CommandEmpty>
                   <CommandGroup heading="Opciones">
                     <CommandItem
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedDriverId(null);
+                        setOpen(false);
+                      }}
                       onSelect={() => {
                         setSelectedDriverId(null);
                         setOpen(false);
                       }}
+                      disabled={false}
+                      className={cn(
+                        "cursor-pointer select-none",
+                        "[&[data-disabled=true]]:pointer-events-auto [&[data-disabled=true]]:opacity-100"
+                      )}
                     >
                       <Check
                         className={cn(
@@ -162,10 +173,22 @@ export function AssignDriverCard({
                     {driverOptions.map((opt) => (
                       <CommandItem
                         key={opt.id}
+                        value={`${opt.label} ${opt.id}`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedDriverId(opt.id);
+                          setOpen(false);
+                        }}
                         onSelect={() => {
                           setSelectedDriverId(opt.id);
                           setOpen(false);
                         }}
+                        disabled={false}
+                        className={cn(
+                          "cursor-pointer select-none",
+                          "[&[data-disabled=true]]:pointer-events-auto [&[data-disabled=true]]:opacity-100"
+                        )}
                       >
                         <Check
                           className={cn(

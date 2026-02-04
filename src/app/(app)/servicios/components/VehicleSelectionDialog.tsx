@@ -143,9 +143,17 @@ export function VehicleSelectionDialog({
                     <CommandItem
                       key={v.id}
                       value={searchValue}
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleSelect(v.id);
+                      }}
                       onSelect={() => handleSelect(v.id)}
-                      onClick={() => handleSelect(v.id)}
-                      className="flex items-center gap-3 data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto cursor-pointer"
+                      disabled={false}
+                      className={cn(
+                        "flex items-center gap-3 cursor-pointer select-none",
+                        "[&[data-disabled=true]]:pointer-events-auto [&[data-disabled=true]]:opacity-100"
+                      )}
                     >
                       <Car className="h-5 w-5 text-muted-foreground shrink-0" />
                       <div className="min-w-0">
