@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useForm, FormProvider, useFieldArray, type Resolver, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -118,7 +118,7 @@ export function RegisterPurchaseDialog({
     if (open) reset(buildDefaults());
   }, [open, reset]);
 
-  const handleAddItem = (item: InventoryItem) => {
+  const handleSelectInventoryItem = (item: InventoryItem) => {
     const price = Number(item.unitPrice || 0);
     append({
       inventoryItemId: item.id,
@@ -147,7 +147,7 @@ export function RegisterPurchaseDialog({
 
   const handleNewItemSaved = async (formData: InventoryItemFormValues) => {
     const newItem = await onInventoryItemCreated(formData);
-    handleAddItem(newItem);
+    handleSelectInventoryItem(newItem);
     setIsNewItemDialogOpen(false);
   };
 
