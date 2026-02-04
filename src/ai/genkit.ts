@@ -1,9 +1,10 @@
 import { genkit } from 'genkit';
-import { googleAI, gemini15Pro } from '@genkit-ai/google-genai';
+import { googleAI } from '@genkit-ai/google-genai';
 
 /**
  * Configuración centralizada de Genkit utilizando Google AI.
- * Se utiliza una referencia directa al modelo para evitar errores de resolución (404).
+ * Se utiliza una referencia de cadena para el modelo para asegurar compatibilidad 
+ * y evitar errores de exportación durante la compilación.
  */
 export const ai = genkit({
   plugins: [
@@ -11,5 +12,5 @@ export const ai = genkit({
       apiKey: process.env.GOOGLE_GENAI_API_KEY,
     }),
   ],
-  model: gemini15Pro,
+  model: 'googleai/gemini-1.5-pro',
 });
