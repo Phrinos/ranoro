@@ -98,9 +98,20 @@ export function RegisterPurchaseDialog({
   const itemsWatch = useWatch({ control, name: "items" });
 
   const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
+  const [supplierSearchQuery, setSupplierSearchQuery] = useState("");
   const [isItemSearchOpen, setIsItemSearchOpen] = useState(false);
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
   const [newItemSearchTerm, setNewItemSearchTerm] = useState("");
+
+  // Manual filtering for suppliers to avoid cmdk data-disabled bugs
+  const filteredSuppliers = useMemo(() => {
+    const q = (supplierSearchQuery || "").toLowerCase().trim();
+    if (!q) return suppliers;
+    return suppliers.filter(s => 
+      s.name.toLowerCase().includes(q) || 
+      (s.rfc && s.rfc.toLowerCase().includes(q))
+    );
+  }, [suppliers, supplierSearchQuery]);
 
   useEffect(() => {
     const total = (itemsWatch ?? []).reduce((sum: number, i: any) => {
@@ -116,7 +127,10 @@ export function RegisterPurchaseDialog({
   }, [itemsWatch, setValue]);
 
   useEffect(() => {
-    if (open) reset(buildDefaults());
+    if (open) {
+      reset(buildDefaults());
+      setSupplierSearchQuery("");
+    }
   }, [open, reset]);
 
   const handleSelectInventoryItem = (item: InventoryItem) => {
@@ -195,26 +209,24 @@ export function RegisterPurchaseDialog({
                                 </FormControl>
                               </PopoverTrigger>
                               <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                                <Command shouldFilter={true}>
-                                  <CommandInput placeholder="Nombre del proveedor..." />
+                                <Command shouldFilter={false}>
+                                  <CommandInput 
+                                    placeholder="Escribe nombre o RFC..." 
+                                    value={supplierSearchQuery}
+                                    onValueChange={setSupplierSearchQuery}
+                                  />
                                   <CommandList>
                                     <CommandEmpty>No se encontró el proveedor.</CommandEmpty>
                                     <CommandGroup>
-                                      {suppliers.map((s) => (
+                                      {filteredSuppliers.map((s) => (
                                         <CommandItem
                                           key={s.id}
-                                          value={`${s.name} ${s.id}`}
-                                          onPointerDown={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setValue("supplierId", s.id, { shouldValidate: true, shouldDirty: true });
-                                            setIsSupplierSearchOpen(false);
-                                          }}
+                                          value={s.id}
                                           onSelect={() => {
                                             setValue("supplierId", s.id, { shouldValidate: true, shouldDirty: true });
                                             setIsSupplierSearchOpen(false);
+                                            setSupplierSearchQuery("");
                                           }}
-                                          disabled={false}
                                           className={cn(
                                             "cursor-pointer select-none",
                                             "[&[data-disabled=true]]:pointer-events-auto [&[data-disabled=true]]:opacity-100"
