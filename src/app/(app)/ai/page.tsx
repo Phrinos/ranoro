@@ -162,16 +162,16 @@ export default function AiHubPage() {
                                 </ScrollArea>
 
                                 <div className="p-6 border-t bg-white rounded-b-2xl">
-                                    <form onSubmit={handleSendMessage} className="flex gap-3 max-w-4xl mx-auto">
+                                    <form onSubmit={handleSendMessage} className="flex gap-3 max-w-4xl mx-auto items-center">
                                         <Input 
                                             placeholder="Pregúntale cualquier cosa a la IA de Ranoro..."
                                             value={input}
                                             onChange={(e) => setInput(e.target.value)}
                                             disabled={isLoading}
-                                            className="h-12 bg-muted/20 border-none focus-visible:ring-primary shadow-inner rounded-xl px-6"
+                                            className="h-16 text-lg bg-muted/20 border-none focus-visible:ring-primary shadow-inner rounded-xl px-8"
                                         />
-                                        <Button type="submit" size="icon" className="h-12 w-12 shrink-0 rounded-xl shadow-lg transition-transform active:scale-95" disabled={isLoading || !input.trim()}>
-                                            {isLoading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Send className="h-6 w-6" />}
+                                        <Button type="submit" size="icon" className="h-16 w-16 shrink-0 rounded-xl shadow-lg transition-transform active:scale-95" disabled={isLoading || !input.trim()}>
+                                            {isLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : <Send className="h-8 w-8" />}
                                         </Button>
                                     </form>
                                     <p className="text-[10px] text-center text-muted-foreground mt-3 italic">
