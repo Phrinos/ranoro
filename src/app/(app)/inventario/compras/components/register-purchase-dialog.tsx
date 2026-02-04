@@ -103,7 +103,6 @@ export function RegisterPurchaseDialog({
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
   const [newItemSearchTerm, setNewItemSearchTerm] = useState("");
 
-  // Manual filtering for suppliers to avoid cmdk data-disabled bugs
   const filteredSuppliers = useMemo(() => {
     const q = (supplierSearchQuery || "").toLowerCase().trim();
     if (!q) return suppliers;
@@ -208,7 +207,11 @@ export function RegisterPurchaseDialog({
                                   </Button>
                                 </FormControl>
                               </PopoverTrigger>
-                              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                              <PopoverContent 
+                                className="w-[var(--radix-popover-trigger-width)] p-0" 
+                                align="start"
+                                onOpenAutoFocus={(e) => e.preventDefault()}
+                              >
                                 <Command shouldFilter={false}>
                                   <CommandInput 
                                     placeholder="Escribe nombre o RFC..." 
@@ -221,21 +224,17 @@ export function RegisterPurchaseDialog({
                                       {filteredSuppliers.map((s) => (
                                         <CommandItem
                                           key={s.id}
-                                          value={s.id}
+                                          value={`${s.name} ${s.rfc ?? ""}`.trim()}
                                           onSelect={() => {
-                                            setValue("supplierId", s.id, { shouldValidate: true, shouldDirty: true });
+                                            setValue("supplierId", String(s.id), { shouldValidate: true, shouldDirty: true });
                                             setIsSupplierSearchOpen(false);
                                             setSupplierSearchQuery("");
                                           }}
-                                          className={cn(
-                                            "cursor-pointer select-none",
-                                            "[&[data-disabled=true]]:pointer-events-auto [&[data-disabled=true]]:opacity-100"
-                                          )}
                                         >
                                           <Check
                                             className={cn(
                                               "mr-2 h-4 w-4",
-                                              s.id === field.value ? "opacity-100" : "opacity-0"
+                                              String(s.id) === String(field.value) ? "opacity-100" : "opacity-0"
                                             )}
                                           />
                                           {s.name}
