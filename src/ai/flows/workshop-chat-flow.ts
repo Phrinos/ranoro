@@ -316,14 +316,13 @@ const getTopVehiclesByServiceType = ai.defineTool(
       map.set(s.vehicle, entry);
     }
 
-    const vehicles = Array.from(map.values())
+    const vehiclesList = Array.from(map.values())
       .map(v => {
         const avgTicket = v.count > 0 ? v.totalRevenue / v.count : 0;
         let avgMarginPct: number | null = null;
         let marginMode: 'real' | 'estimated' | 'mixed' = 'estimated';
 
         if (v.realCount > 0) {
-          const avgProfit = v.realMarginSum / v.realCount;
           avgMarginPct = v.totalRevenue > 0 ? Math.round((v.realMarginSum / v.totalRevenue) * 1000) / 10 : 0;
           marginMode = v.realCount === v.count ? 'real' : 'mixed';
         } else {
@@ -337,13 +336,13 @@ const getTopVehiclesByServiceType = ai.defineTool(
           totalRevenue: Number(v.totalRevenue.toFixed(2)),
           avgTicket: Number(avgTicket.toFixed(2)),
           avgMarginPct,
-          marginMode,
+          marginMode: marginMode as "real" | "estimated" | "mixed",
         };
       })
       .sort((a, b) => b.count - a.count)
       .slice(0, topN);
 
-    const marginMode = services.every(s => s.realCogs > 0) ? 'real' : services.some(s => s.realCogs > 0) ? 'mixed' : 'estimated';
+    const finalMarginMode = (services.every(s => s.realCogs > 0) ? 'real' : services.some(s => s.realCogs > 0) ? 'mixed' : 'estimated') as "real" | "estimated" | "mixed";
 
     return {
       period: { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] },
@@ -353,10 +352,10 @@ const getTopVehiclesByServiceType = ai.defineTool(
         totalIncome: Number(totalIncome.toFixed(2)),
         totalExpenses: Number(totalExpenses.toFixed(2)),
         overallMarginPct,
-        marginMode,
+        marginMode: finalMarginMode,
       },
-      vehicles,
-      notes: marginMode === 'estimated' ? ['Los márgenes por vehículo son estimados basándose en los gastos generales del periodo.'] : [],
+      vehicles: vehiclesList,
+      notes: finalMarginMode === 'estimated' ? ['Los márgenes por vehículo son estimados basándose en los gastos generales del periodo.'] : [],
     };
   }
 );
@@ -416,7 +415,7 @@ const workshopChatFlow = ai.defineFlow(
 export async function sendChatMessage(message: string, history: any[] = []): Promise<string> {
     try {
         const cleanHistory = history.map(h => ({
-            role: h.role === 'user' ? 'user' : 'model',
+            role: (h.role === 'user' ? 'user' : 'model') as 'user' | 'model',
             content: String(h.content)
         }));
 
