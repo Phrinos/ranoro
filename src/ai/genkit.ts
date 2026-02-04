@@ -1,16 +1,16 @@
 import { genkit } from 'genkit';
-import { googleAI, gemini15Pro } from '@genkit-ai/google-genai';
+import { googleAI } from '@genkit-ai/google-genai';
 
 /**
  * Configuración centralizada de Genkit utilizando Google AI.
- * Al usar la referencia del objeto 'gemini15Pro', el SDK maneja
- * automáticamente los IDs de versión correctos para la API de AI Studio.
+ * Se utiliza googleAI.model() para referenciar el modelo de forma robusta,
+ * evitando errores de exportación en el plugin.
  */
 export const ai = genkit({
   plugins: [
     googleAI({
-      apiKey: process.env.GOOGLE_GENAI_API_KEY,
+      apiKey: process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GENAI_API_KEY,
     }),
   ],
-  model: gemini15Pro, 
+  model: googleAI.model('gemini-1.5-pro'), 
 });

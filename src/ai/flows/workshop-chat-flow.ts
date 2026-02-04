@@ -188,7 +188,7 @@ const workshopChatFlow = ai.defineFlow(
         content: [{ text: m.content }]
     }));
 
-    // Se eliminó la línea 'model: ...' para usar el gemini15Pro configurado en genkit.ts
+    // El modelo se hereda de la configuración de src/ai/genkit.ts
     const response = await ai.generate({
       system: `Eres el Asistente Inteligente de Ranoro, el experto administrativo del taller.
       Usa las herramientas para dar datos reales de la base de datos de Firestore.
@@ -218,11 +218,9 @@ export async function sendChatMessage(message: string, history: any[] = []): Pro
             content: String(h.content)
         }));
 
-        // @ts-ignore - Genkit 1.x defineFlow return can be called directamente
         return await workshopChatFlow({ message, history: cleanHistory });
     } catch (error: any) {
         console.error("🔥 ERROR GENKIT SERVER:", error);
-        // Mensaje limpio para el frontend con detalle técnico para diagnóstico
         throw new Error(`Error: ${error.message || "La IA no pudo responder. Verifica la configuración del modelo."}`);
     }
 }
