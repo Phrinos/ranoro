@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote, Download, Filter, Landmark } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote, Download, Filter, Landmark, Edit } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -90,6 +91,7 @@ const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
 
 export default function DetallesReporteContent({ services, sales, cashTransactions, users }: DetallesReporteProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const permissions = usePermissions();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<'Ingreso' | 'Egreso'>('Ingreso');
@@ -762,20 +764,36 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
           )}
 
           <DialogFooter className="flex-col sm:flex-row gap-2">
-            {selectedMovement && canDeleteEntries && (
-              <ConfirmDialog
-                triggerButton={
-                  <Button variant="destructive" className="w-full sm:w-auto">
-                    <Trash2 className="mr-2 h-4 w-4" /> Eliminar Registro
-                  </Button>
-                }
-                title="¿Eliminar este movimiento?"
-                description="Esta acción es permanente. Si el movimiento proviene de una venta o servicio entregado, se recomienda cancelarlo desde su módulo correspondiente para mantener la consistencia del inventario y caja."
-                onConfirm={() => handleDeleteMovement(selectedMovement)}
-                confirmText="Sí, Eliminar"
-              />
-            )}
-            <Button variant="outline" onClick={() => setSelectedMovement(null)}>Cerrar</Button>
+            <div className="flex flex-1 gap-2">
+              {selectedMovement && (selectedMovement.source === 'Servicio' || selectedMovement.source === 'Venta (PDV)') && (
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => {
+                    const path = selectedMovement.source === 'Servicio' 
+                      ? `/servicios/${selectedMovement.realId}` 
+                      : `/pos?saleId=${selectedMovement.realId}`;
+                    router.push(path);
+                  }}
+                >
+                  <Edit className="mr-2 h-4 w-4" /> Ir a Editar
+                </Button>
+              )}
+              {selectedMovement && canDeleteEntries && (
+                <ConfirmDialog
+                  triggerButton={
+                    <Button variant="destructive" className="flex-1">
+                      <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                    </Button>
+                  }
+                  title="¿Eliminar este movimiento?"
+                  description="Esta acción es permanente. Si el movimiento proviene de una venta o servicio entregado, se recomienda cancelarlo desde su módulo correspondiente para mantener la consistencia del inventario y caja."
+                  onConfirm={() => handleDeleteMovement(selectedMovement)}
+                  confirmText="Sí, Eliminar"
+                />
+              )}
+            </div>
+            <Button variant="outline" className="w-full sm:w-auto" onClick={() => setSelectedMovement(null)}>Cerrar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
