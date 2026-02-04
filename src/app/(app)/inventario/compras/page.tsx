@@ -14,6 +14,7 @@ import type {
 import { inventoryService, purchaseService } from "@/lib/services";
 import { TabbedPageLayout } from "@/components/layout/tabbed-page-layout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 import type { PurchaseFormValues } from './components/register-purchase-dialog';
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
