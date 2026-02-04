@@ -109,26 +109,18 @@ export default function CatalogTab({ priceLists }: CatalogTabProps) {
         <Accordion type="multiple" className="space-y-3">
           {sortedMakes.map((m) => (
             <AccordionItem key={m.make} value={m.make} className="border border-primary/10 rounded-xl bg-card overflow-hidden">
-              <div className="flex items-center justify-between pr-4 group">
-                <AccordionTrigger className="flex-1 px-6 py-4 hover:no-underline">
-                  <div className="flex items-center gap-4">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <Car className="h-5 w-5 text-primary" />
-                    </div>
+              <div className="group">
+                <AccordionTrigger className="flex px-6 py-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
                     <span className="text-xl font-bold tracking-tight">{m.make}</span>
+                    <div 
+                      className="h-8 w-8 flex items-center justify-center rounded-md hover:bg-primary/10 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                      onClick={(e) => handleOpenEdit(e, m.make, m.models?.length || 0)}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </div>
                   </div>
                 </AccordionTrigger>
-                
-                <div className="flex items-center gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-8 w-8 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={(e) => handleOpenEdit(e, m.make, m.models?.length || 0)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                </div>
               </div>
 
               <AccordionContent className="px-6 pb-6 pt-2 border-t border-primary/5 bg-muted/5">
