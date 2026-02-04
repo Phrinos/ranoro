@@ -5,8 +5,9 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'kit';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { startOfMonth, endOfMonth } from 'date-fns';
 
 // --- Herramientas para la IA ---
 
@@ -72,6 +73,32 @@ const getServiceStats = ai.defineTool(
 );
 
 /**
+ * Obtiene un resumen financiero básico.
+ */
+const getFinancialStats = ai.defineTool(
+  {
+    name: 'getFinancialStats',
+    description: 'Obtiene el total de ingresos y gastos registrados este mes para dar un panorama del negocio.',
+    inputSchema: z.object({}),
+    outputSchema: z.object({ totalIncome: z.number(), totalExpenses: z.number(), netFlow: z.number() }),
+  },
+  async () => {
+    const db = getAdminDb();
+    const now = new Date();
+    const start = startOfMonth(now).toISOString();
+    const end = endOfMonth(now).toISOString();
+
+    const servicesSnap = await db.collection('serviceRecords').where('status', '==', 'Entregado').get();
+    const income = servicesSnap.docs.reduce((sum, doc) => sum + (doc.data().totalCost || 0), 0);
+
+    const cashSnap = await db.collection('cashDrawerTransactions').where('type', '==', 'out').get();
+    const expenses = cashSnap.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
+
+    return { totalIncome: income, totalExpenses: expenses, netFlow: income - expenses };
+  }
+);
+
+/**
  * Obtiene un resumen del inventario actual.
  */
 const getInventorySummary = ai.defineTool(
@@ -119,7 +146,7 @@ export const workshopChatFlow = ai.defineFlow(
     const response = await ai.generate({
       system: `Eres el Asistente Inteligente de Ranoro, un experto en gestión de talleres mecánicos. 
       Tienes acceso a los datos reales del taller mediante herramientas. 
-      Tu objetivo es responder preguntas sobre el negocio, como estadísticas de vehículos, servicios más comunes o estado del inventario.
+      Tu objetivo es responder preguntas sobre el negocio, como estadísticas de vehículos, servicios más comunes, estado del inventario o finanzas mensuales.
       Responde siempre de forma amable, profesional y en español. 
       Si no tienes una herramienta para responder algo específico, indícalo cortésmente.`,
       messages: [
@@ -129,7 +156,7 @@ export const workshopChatFlow = ai.defineFlow(
         })) || []),
         { role: 'user', content: [{ text: input.message }] }
       ],
-      tools: [getVehicleStats, getServiceStats, getInventorySummary],
+      tools: [getVehicleStats, getServiceStats, getInventorySummary, getFinancialStats],
     });
 
     return response.text;

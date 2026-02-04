@@ -1,31 +1,46 @@
-
 'use server';
 /**
- * @fileOverview An AI flow to suggest a full quote (supplies and price) for a vehicle service based on historical data.
- * This flow is currently a placeholder.
+ * @fileOverview An AI flow to suggest a full quote (supplies and price) for a vehicle service.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
+import { z } from 'kit';
 
-// Input schema - kept generic for future use
+// Input schema
 const QuoteSuggestionInputSchema = z.object({
-  serviceDescription: z.string().describe("The customer's description of the service needed."),
+  serviceDescription: z.string().describe("La descripción del servicio que el cliente solicita."),
 });
 export type QuoteSuggestionInput = z.infer<typeof QuoteSuggestionInputSchema>;
 
-// Output schema - kept generic
+// Output schema
+const QuoteItemSchema = z.object({
+    name: z.string().describe("Nombre del trabajo o refacción."),
+    quantity: z.number().describe("Cantidad."),
+    price: z.number().describe("Precio sugerido al cliente."),
+    type: z.enum(['work', 'part']).describe("Tipo de ítem."),
+});
+
 const QuoteSuggestionOutputSchema = z.object({
-  estimatedTotalCost: z.number().describe("The final suggested price for the customer."),
-  reasoning: z.string().describe("A brief explanation of how the quote was generated."),
+  items: z.array(QuoteItemSchema),
+  estimatedTotal: z.number().describe("Total sugerido incluyendo IVA."),
+  reasoning: z.string().describe("Explicación del cálculo realizado."),
 });
 export type QuoteSuggestionOutput = z.infer<typeof QuoteSuggestionOutputSchema>;
 
-// Placeholder function
 export async function suggestQuote(input: QuoteSuggestionInput): Promise<QuoteSuggestionOutput> {
-  console.warn("suggestQuote function is a placeholder and not implemented yet.");
-  return Promise.resolve({
-    estimatedTotalCost: 0,
-    reasoning: "Funcionalidad de cotización en desarrollo.",
+  const { output } = await ai.generate({
+    model: 'googleai/gemini-2.0-flash-exp',
+    system: `Eres un experto cotizador de taller mecánico. Tu tarea es generar una lista de trabajos y refacciones basada en la solicitud del cliente.
+    Reglas:
+    1. Divide la cotización en 'work' (mano de obra) y 'part' (refacciones).
+    2. Los precios deben ser realistas para el mercado de México (Pesos MXN).
+    3. Incluye siempre una partida de mano de obra.
+    4. El total debe ser la suma de los ítems.
+    5. Responde siempre en español.`,
+    prompt: `Genera una cotización detallada para: ${input.serviceDescription}`,
+    output: { schema: QuoteSuggestionOutputSchema }
   });
+
+  if (!output) throw new Error("No se pudo generar la cotización.");
+  return output;
 }
