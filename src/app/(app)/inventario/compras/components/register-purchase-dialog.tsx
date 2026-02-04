@@ -49,6 +49,7 @@ import { format as formatDate } from "date-fns";
 import { es } from "date-fns/locale";
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 import { registerPurchaseSchema, type RegisterPurchaseFormValues } from "@/schemas/register-purchase-schema";
+import { Badge } from "@/components/ui/badge";
 
 export type PurchaseFormValues = RegisterPurchaseFormValues;
 
