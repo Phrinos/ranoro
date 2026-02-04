@@ -26,7 +26,10 @@ import {
   Minus, 
   Plus,
   Check,
-  ChevronsUpDown
+  ChevronsUpDown,
+  Tags,
+  Package,
+  Car
 } from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
 import { formatCurrency, cn, getToday } from "@/lib/utils";
@@ -151,7 +154,7 @@ export function RegisterPurchaseDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl p-0">
+        <DialogContent className="max-w-3xl p-0 overflow-hidden">
           <DialogHeader className="border-b p-6 pb-4 bg-white">
             <DialogTitle>Registrar Nueva Compra</DialogTitle>
             <DialogDescription>
@@ -177,31 +180,34 @@ export function RegisterPurchaseDialog({
                                     variant="outline"
                                     role="combobox"
                                     className={cn(
-                                      "w-full justify-between bg-white",
+                                      "w-full justify-between bg-white text-left font-normal",
                                       !field.value && "text-muted-foreground"
                                     )}
                                   >
-                                    {field.value
-                                      ? suppliers.find((s) => s.id === field.value)?.name
-                                      : "Buscar proveedor..."}
+                                    <span className="truncate">
+                                      {field.value
+                                        ? suppliers.find((s) => s.id === field.value)?.name
+                                        : "Buscar proveedor..."}
+                                    </span>
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                   </Button>
                                 </FormControl>
                               </PopoverTrigger>
-                              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-                                <Command>
+                              <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                <Command shouldFilter={true}>
                                   <CommandInput placeholder="Nombre del proveedor..." />
                                   <CommandList>
                                     <CommandEmpty>No se encontró el proveedor.</CommandEmpty>
                                     <CommandGroup>
                                       {suppliers.map((s) => (
                                         <CommandItem
-                                          value={s.name}
                                           key={s.id}
+                                          value={`${s.name} ${s.id}`}
                                           onSelect={() => {
                                             setValue("supplierId", s.id, { shouldValidate: true, shouldDirty: true });
                                             setIsSupplierSearchOpen(false);
                                           }}
+                                          className="cursor-pointer"
                                         >
                                           <Check
                                             className={cn(
@@ -438,7 +444,7 @@ export function RegisterPurchaseDialog({
         open={isItemSearchOpen}
         onOpenChange={setIsItemSearchOpen}
         inventoryItems={inventoryItems}
-        onItemSelected={handleAddItem}
+        onItemSelected={handleSelectInventoryItem}
         onNewItemRequest={handleNewItemRequest}
       />
       
@@ -459,7 +465,7 @@ interface SearchItemDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
   inventoryItems: InventoryItem[];
-  onItemSelected: (item: InventoryItem, quantity: number) => void;
+  onItemSelected: (item: InventoryItem) => void;
   onNewItemRequest: (searchTerm: string) => void;
 }
 
@@ -474,26 +480,31 @@ function SearchItemDialog({
 
   const filteredItems = useMemo(() => {
     const physical = inventoryItems.filter((i) => !i.isService);
-    if (!searchTerm.trim()) return physical;
+    if (!searchTerm.trim()) return physical.slice(0, 50);
     const q = searchTerm.toLowerCase();
     return physical.filter(
       (i) =>
         i.name.toLowerCase().includes(q) ||
         (i.sku && i.sku.toLowerCase().includes(q))
-    );
+    ).slice(0, 100);
   }, [searchTerm, inventoryItems]);
 
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) setSearchTerm("");
+    onOpenChange(isOpen);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0">
-        <DialogHeader className="border-b p-6 pb-4">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-4xl p-0 overflow-hidden">
+        <DialogHeader className="border-b p-6 pb-4 bg-white">
           <DialogTitle>Buscar Artículo en Inventario</DialogTitle>
           <DialogDescription>
             Seleccione un artículo para añadir a la compra o cree uno nuevo.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="px-6">
+        <div className="px-6 py-4">
           <div className="relative">
             <Search className="text-muted-foreground absolute left-2.5 top-2.5 h-4 w-4" />
             <Input
@@ -501,32 +512,68 @@ function SearchItemDialog({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-8"
+              autoFocus
             />
           </div>
         </div>
 
-        <div className="px-6 pb-6">
-          <ScrollArea className="h-72 rounded-md border">
-            <div className="space-y-1 p-2">
-              {filteredItems.map((item) => (
-                <Button
-                  key={item.id}
-                  variant="ghost"
-                  className="h-auto w-full justify-start px-2 py-1.5 text-left"
-                  onClick={() => onItemSelected(item, 1)}
-                >
-                  <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      Stock: {item.quantity} | Costo: {formatCurrency(item.unitPrice || 0)}
-                    </p>
-                  </div>
-                </Button>
-              ))}
+        <div className="px-6 pb-6 bg-muted/10">
+          <ScrollArea className="h-[450px] rounded-md border bg-white">
+            <div className="p-2">
+              <div className="grid grid-cols-1 gap-1">
+                {filteredItems.map((item) => {
+                  const isLowStock = item.quantity <= (item.lowStockThreshold || 0);
+                  const price = item.sellingPrice ?? item.unitPrice ?? 0;
+
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="w-full text-left p-3 rounded-lg hover:bg-muted/50 border-b last:border-0 transition-colors group"
+                      onClick={() => onItemSelected(item)}
+                    >
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <Badge variant="secondary" className="shrink-0 text-[10px] font-bold uppercase tracking-wider h-5">
+                              {item.category || 'General'}
+                            </Badge>
+                            <span className="font-bold text-base truncate">{item.name}</span>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="font-black text-primary text-lg">
+                              {formatCurrency(price)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-6 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1.5">
+                            <Tags className="h-3.5 w-3.5 opacity-50" />
+                            <span>SKU: <span className="font-medium text-foreground">{item.sku || '—'}</span></span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <Package className="h-3.5 w-3.5 opacity-50" />
+                            <span>Stock: <span className={cn("font-bold", isLowStock ? "text-destructive" : "text-foreground")}>
+                              {item.quantity}
+                            </span></span>
+                          </div>
+                          {item.brand && (
+                            <div className="flex items-center gap-1.5">
+                              <Car className="h-3.5 w-3.5 opacity-50" />
+                              <span>Marca: <span className="font-medium text-foreground">{item.brand}</span></span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
 
               {searchTerm && filteredItems.length === 0 && (
-                <div className="p-4 text-center">
-                  <Button variant="link" onClick={() => onNewItemRequest(searchTerm)}>
+                <div className="p-8 text-center">
+                  <p className="text-muted-foreground mb-4">No se encontraron artículos que coincidan.</p>
+                  <Button variant="outline" onClick={() => onNewItemRequest(searchTerm)}>
                     <PackagePlus className="mr-2 h-4 w-4" />
                     Crear Nuevo Artículo &quot;{searchTerm}&quot;
                   </Button>
