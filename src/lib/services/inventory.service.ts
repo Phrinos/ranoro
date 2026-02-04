@@ -359,6 +359,19 @@ const createMasterMake = async (makeName: string): Promise<void> => {
     await setDoc(makeRef, { models: [] }, { merge: false });
 };
 
+const renameMasterMake = async (oldName: string, newName: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const oldRef = doc(db, MASTER_CATALOG_COLLECTION, oldName);
+    const newRef = doc(db, MASTER_CATALOG_COLLECTION, newName.toUpperCase().trim());
+    
+    const snap = await getDoc(oldRef);
+    if (!snap.exists()) throw new Error("Source make not found.");
+    
+    const data = snap.data();
+    await setDoc(newRef, data);
+    await fbDeleteDoc(oldRef);
+};
+
 const deleteMasterMake = async (makeName: string): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     await fbDeleteDoc(doc(db, MASTER_CATALOG_COLLECTION, makeName));
@@ -446,5 +459,6 @@ export const inventoryService = {
   // Master Catalog
   onMasterVehicleDataUpdate,
   createMasterMake,
+  renameMasterMake,
   deleteMasterMake,
 };
