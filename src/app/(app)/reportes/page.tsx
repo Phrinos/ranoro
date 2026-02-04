@@ -2,19 +2,17 @@
 
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import React, { useState, useEffect, Suspense, lazy, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import type { User, ServiceRecord, SaleReceipt, CashDrawerTransaction, InventoryItem, MonthlyFixedExpense, FinancialSummary } from '@/types';
 import { inventoryService, serviceService, saleService, cashService, adminService } from '@/lib/services';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, isValid, getDaysInMonth, differenceInDays } from 'date-fns';
 import { parseDate } from '@/lib/forms';
-import { calcEffectiveProfit, calcSuppliesCostFromItems } from '@/lib/money-helpers';
+import { calcSuppliesCostFromItems, calcEffectiveProfit } from '@/lib/money-helpers';
 
 const DetallesReporteContent = lazy(() => import('./components/detalles-reporte-content'));
-const CajaReporteContent = lazy(() => import('./components/caja-reporte-content'));
 const MensualReporteContent = lazy(() => import('./components/mensual-reporte-content'));
-const CierresReporteContent = lazy(() => import('./components/cierres-reporte-content').then(m => ({ default: m.CierresReporteContent })));
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
 
 interface DateRange {
@@ -140,16 +138,14 @@ function ReportesPageInner() {
 
   const tabs = [
     { value: "movimientos", label: "Movimientos", content: <DetallesReporteContent services={services} sales={sales} cashTransactions={cashTransactions} users={users} /> },
-    { value: "caja", label: "Corte de Caja", content: <CajaReporteContent /> },
     { value: "mensual", label: "Resumen Anual", content: <MensualReporteContent services={services} sales={sales} cashTransactions={cashTransactions} inventory={inventory} /> },
-    { value: "cierres", label: "Cierres", content: <CierresReporteContent services={services} sales={sales} inventory={inventory} expenses={expenses} personnel={users} cashTransactions={cashTransactions} /> },
     { value: "egresos", label: "Gastos Fijos", content: <EgresosContent financialSummary={financialSummary} fixedExpenses={expenses} personnel={users} onExpensesUpdated={setExpenses} /> },
   ];
 
   return (
     <TabbedPageLayout
       title="Reportes y Finanzas"
-      description="Control total de ingresos, caja y rentabilidad neta."
+      description={<span className="text-primary-foreground/80">Control total de ingresos, caja y rentabilidad neta.</span>}
       activeTab={activeTab}
       onTabChange={handleTabChange}
       tabs={tabs}
