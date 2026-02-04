@@ -53,7 +53,7 @@ const getServiceReport = ai.defineTool(
     const start = startOfMonth(new Date(targetYear, targetMonth));
     const end = endOfMonth(start);
 
-    // Consulta optimizada directamente en Firestore
+    // Consulta optimizada directamente en Firestore filtrando por fecha
     const servicesSnap = await db.collection('serviceRecords')
         .where('status', '==', 'Entregado')
         .where('deliveryDateTime', '>=', start.toISOString())
@@ -181,6 +181,7 @@ const workshopChatFlow = ai.defineFlow(
     }));
 
     const response = await ai.generate({
+      // El modelo se hereda de la configuración predeterminada en genkit.ts
       system: `Eres el Asistente Inteligente de Ranoro, el experto administrativo del taller.
       Usa las herramientas para dar datos reales de la base de datos de Firestore.
       Responde siempre de forma amable, profesional, corta y en español (pesos mexicanos).`,
@@ -209,9 +210,13 @@ export async function sendChatMessage(message: string, history: any[] = []): Pro
             content: String(h.content)
         }));
 
-        return await workshopChatFlow({ message, history: cleanHistory as any });
+        // @ts-ignore - Genkit 1.x defineFlow return can be called directamente
+        return await workshopChatFlow({ message, history: cleanHistory });
     } catch (error: any) {
         console.error("🔥 ERROR GENKIT SERVER:", error);
-        throw new Error(`Error técnico de IA: ${error.message || "No pude conectar con el servidor de inteligencia."}`);
+        if (error.message?.includes('404')) {
+            throw new Error(`Error de configuración de IA (404): No se encontró el modelo. Verifica src/ai/genkit.ts.`);
+        }
+        throw new Error(`Error técnico de IA: ${error.message || "No pude conectar con el servidor."}`);
     }
 }
