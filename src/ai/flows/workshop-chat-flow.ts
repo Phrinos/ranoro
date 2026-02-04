@@ -53,8 +53,11 @@ const getServiceReport = ai.defineTool(
     const start = startOfMonth(new Date(targetYear, targetMonth));
     const end = endOfMonth(start);
 
+    // Optimización: Filtrar por fecha directamente en Firestore
     const servicesSnap = await db.collection('serviceRecords')
         .where('status', '==', 'Entregado')
+        .where('deliveryDateTime', '>=', start.toISOString())
+        .where('deliveryDateTime', '<=', end.toISOString())
         .get();
     
     let filtered = servicesSnap.docs.map(doc => {
@@ -68,7 +71,7 @@ const getServiceReport = ai.defineTool(
         total: Number(data.totalCost || data.total || 0),
         dateObj: dateObj
       };
-    }).filter(s => isWithinInterval(s.dateObj, { start, end }));
+    });
 
     if (serviceType) {
       const q = serviceType.toLowerCase();
@@ -92,16 +95,37 @@ const getServiceReport = ai.defineTool(
 const getFinancialStats = ai.defineTool(
   {
     name: 'getFinancialStats',
-    description: 'Obtiene el balance financiero (ingresos vs gastos) del taller.',
-    inputSchema: z.object({}),
+    description: 'Obtiene el balance financiero (ingresos vs gastos) del taller en un periodo.',
+    inputSchema: z.object({
+      month: z.number().optional().describe('Mes numérico (1-12)'),
+      year: z.number().optional().describe('Año (ej: 2024)')
+    }),
     outputSchema: z.object({ totalIncome: z.number(), totalExpenses: z.number(), netProfit: z.number() }),
   },
-  async () => {
+  async ({ month, year }) => {
     const db = getAdminDb();
-    const servicesSnap = await db.collection('serviceRecords').where('status', '==', 'Entregado').get();
+    const now = new Date();
+    const targetMonth = month ? month - 1 : now.getMonth();
+    const targetYear = year || now.getFullYear();
+    
+    const start = startOfMonth(new Date(targetYear, targetMonth));
+    const end = endOfMonth(start);
+
+    // Optimización: Consultas filtradas por fecha
+    const servicesSnap = await db.collection('serviceRecords')
+      .where('status', '==', 'Entregado')
+      .where('deliveryDateTime', '>=', start.toISOString())
+      .where('deliveryDateTime', '<=', end.toISOString())
+      .get();
+
     const income = servicesSnap.docs.reduce((sum, doc) => sum + (Number(doc.data().totalCost || doc.data().total || 0)), 0);
 
-    const cashSnap = await db.collection('cashDrawerTransactions').where('type', 'in', ['out', 'Salida', 'expense']).get();
+    const cashSnap = await db.collection('cashDrawerTransactions')
+      .where('type', 'in', ['out', 'Salida', 'expense'])
+      .where('date', '>=', start.toISOString())
+      .where('date', '<=', end.toISOString())
+      .get();
+
     const expenses = cashSnap.docs.reduce((sum, doc) => sum + (Number(doc.data().amount) || 0), 0);
 
     return { totalIncome: income, totalExpenses: expenses, netProfit: income - expenses };
@@ -189,6 +213,7 @@ export async function sendChatMessage(message: string, history: any[] = []): Pro
         return await workshopChatFlow({ message, history: cleanHistory as any });
     } catch (error: any) {
         console.error("🔥 ERROR GENKIT SERVER:", error);
+        // Lanzamos el mensaje técnico para facilitar el diagnóstico en el frontend
         throw new Error(`Error técnico de IA: ${error.message || "No pude conectar con el servidor de inteligencia."}`);
     }
 }

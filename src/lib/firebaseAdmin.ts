@@ -1,4 +1,5 @@
 // src/lib/firebaseAdmin.ts
+import 'server-only';
 import { initializeApp, getApps, cert, getApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import admin from 'firebase-admin';
@@ -33,7 +34,7 @@ export function getAdminDb(): Firestore {
         }),
       });
     } else {
-      // Fallback para entornos que auto-inyectan credenciales (como Google Cloud Workstations)
+      // Fallback para entornos que auto-inyectan credenciales
       initializeApp();
     }
   } catch (e) {
