@@ -63,6 +63,7 @@ const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   Tarjeta: CreditCard,
   "Tarjeta MSI": CreditCard,
   Transferencia: Landmark,
+  "Transferencia/Contadora": Landmark,
   "Efectivo+Transferencia": Wallet,
   "Tarjeta+Transferencia": CreditCard,
   "Crédito": CreditCard,
@@ -112,7 +113,7 @@ export function HistorialSummary({ filteredServices }: HistorialSummaryProps) {
                 let variant: "lightGreen" | "lightPurple" | "blue" | "secondary" = "secondary";
                 if (method === "Efectivo") variant = "lightGreen";
                 if (method.includes("Tarjeta")) variant = "lightPurple";
-                if (method === "Transferencia") variant = "blue";
+                if (method.includes("Transferencia")) variant = "blue";
                 return (
                   <Badge key={method} variant={variant as any} className="text-sm">
                     <Icon className="h-3 w-3 mr-1" />

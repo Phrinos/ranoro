@@ -102,9 +102,12 @@ export function getPaymentMethodVariant(method?: PaymentMethod): 'success' | 'pu
     if (!method) return 'success';
     switch(method) {
         case 'Efectivo': return 'success';
-        case 'Tarjeta': return 'purple';
-        case 'Tarjeta MSI': return 'purple';
-        case 'Transferencia': return 'lightPurple';
+        case 'Tarjeta': 
+        case 'Tarjeta MSI': 
+            return 'purple';
+        case 'Transferencia':
+        case 'Transferencia/Contadora':
+            return 'lightPurple';
         default: return 'success';
     }
 }

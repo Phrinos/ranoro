@@ -38,7 +38,7 @@ const transactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a 0."),
   date: z.date(),
-  paymentMethod: z.enum(["Efectivo", "Tarjeta", "Transferencia", "Transferencia/Contadora"] as const),
+  paymentMethod: z.enum(["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Transferencia/Contadora"] as const),
 });
 
 type TransactionFormValues = z.infer<typeof transactionSchema>;
@@ -75,6 +75,7 @@ const metodoOptions = [
   { value: 'all', label: 'Todos los Métodos' },
   { value: 'Efectivo', label: 'Efectivo' },
   { value: 'Tarjeta', label: 'Tarjeta' },
+  { value: 'Tarjeta MSI', label: 'Tarjeta MSI' },
   { value: 'Transferencia', label: 'Transferencia' },
   { value: 'Transferencia/Contadora', label: 'Transferencia/Contadora' },
 ] as const;
@@ -622,6 +623,7 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                         <SelectContent>
                           <SelectItem value="Efectivo">Efectivo</SelectItem>
                           <SelectItem value="Tarjeta">Tarjeta</SelectItem>
+                          <SelectItem value="Tarjeta MSI">Tarjeta MSI</SelectItem>
                           <SelectItem value="Transferencia">Transferencia</SelectItem>
                           <SelectItem value="Transferencia/Contadora">Transferencia/Contadora</SelectItem>
                         </SelectContent>
