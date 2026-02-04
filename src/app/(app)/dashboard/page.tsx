@@ -5,16 +5,15 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit, calcEffectiveProfit } from '@/lib/money-helpers';
-import type { User, CapacityAnalysisOutput, ServiceRecord, SaleReceipt, InventoryItem, Personnel, MonthlyFixedExpense, Driver, Vehicle, PaymentMethod } from '@/types';
-import { BrainCircuit, Loader2, Wrench, DollarSign, AlertTriangle, Receipt, Truck } from 'lucide-react'; 
+import type { User, ServiceRecord, SaleReceipt, InventoryItem, Personnel, MonthlyFixedExpense, Driver, Vehicle, PaymentMethod } from '@/types';
+import { Loader2, Wrench, DollarSign, AlertTriangle, Receipt, Truck } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
-import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { serviceService, saleService, inventoryService, adminService, personnelService, rentalService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { isValid, isToday, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
+import { isValid, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import { toZonedTime } from 'date-fns-tz';
@@ -64,10 +63,6 @@ export default function DashboardPage() {
   const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
 
   const [isLoading, setIsLoading] = useState(true);
-
-  const [capacityInfo, setCapacityInfo] = useState<CapacityAnalysisOutput | null>(null);
-  const [isCapacityLoading, setIsCapacityLoading] = useState(false);
-  const [capacityError, setCapacityError] = useState<string | null>(null);
 
   const [isTransactionDialogOpen, setIsTransactionDialogOpen] = useState(false);
   
@@ -158,49 +153,6 @@ export default function DashboardPage() {
       }
     }
   }, []);
-  
-  const runCapacityAnalysis = useCallback(async () => {
-    if (allServices.length === 0 || allPersonnel.length === 0) {
-      return;
-    }
-    
-    setIsCapacityLoading(true);
-    setCapacityError(null);
-    
-    try {
-      const servicesForToday = allServices.filter(s => {
-        const serviceDay = parseDate(s.serviceDate || new Date().toDateString());
-        return (s.status === 'En Taller') || (s.status === 'Agendado' && serviceDay && isValid(serviceDay) && isToday(serviceDay));
-      });
-
-      if (servicesForToday.length === 0) {
-          const totalAvailable = allPersonnel.filter(p => !(p as any).isArchived).reduce((sum, t) => sum + ((t as any).standardHoursPerDay || 8), 0);
-          setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: totalAvailable, recommendation: 'Taller disponible', capacityPercentage: 0 });
-          return;
-      }
-
-      const result = await analyzeWorkshopCapacity({
-          servicesForDay: servicesForToday.map(s => ({ description: s.description || '' })),
-          technicians: allPersonnel.filter(p => !(p as any).isArchived).map(t => ({ id: t.id, standardHoursPerDay: (t as any).standardHoursPerDay || 8 })),
-          serviceHistory: allServices
-            .filter(s => s.serviceDate)
-            .map(s => {
-                const serviceDate = parseDate(s.serviceDate || new Date().toDateString());
-                const deliveryDateTime = parseDate(s.deliveryDateTime || new Date().toDateString());
-                return {
-                    description: s.description || '',
-                    serviceDate: serviceDate ? serviceDate.toISOString() : undefined,
-                    deliveryDateTime: deliveryDateTime ? deliveryDateTime.toISOString() : undefined,
-                };
-            }),
-      });
-      setCapacityInfo(result);
-    } catch (e: any) {
-      setCapacityError(e.message || 'Error en análisis de capacidad');
-    } finally {
-      setIsCapacityLoading(false);
-    }
-  }, [allServices, allPersonnel]);
 
   const handleSaveTransaction = async (values: GlobalTransactionFormValues) => {
     try {
@@ -217,19 +169,12 @@ export default function DashboardPage() {
     }
   };
 
-  useEffect(() => {
-    if (!isLoading) {
-      runCapacityAnalysis();
-    }
-  }, [isLoading, runCapacityAnalysis]);
-
-
   return (
     <>
       <div className="container mx-auto py-8 flex flex-col">
         <PageHeader
           title={userName ? `¡Bienvenido, ${userName}!` : 'Panel Principal de Taller'}
-          description="Vista del estado actual de los servicios y herramientas de IA."
+          description="Vista del estado actual de los servicios y herramientas de gestión."
           actions={
             <div className="flex flex-wrap gap-2">
               <Button asChild variant="outline" className="w-full sm:w-auto bg-white border-red-500 text-black font-bold hover:bg-red-50">
@@ -252,7 +197,7 @@ export default function DashboardPage() {
           }
         />
 
-         <div className="mb-6 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+         <div className="mb-6 grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">Ingresos del Día</CardTitle>
@@ -281,33 +226,6 @@ export default function DashboardPage() {
             <CardContent>
               {isLoading ? <Skeleton className="h-8 w-1/4" /> : <div className="text-2xl font-bold font-headline">{kpiData.lowStockAlerts}</div>}
               {isLoading ? <Skeleton className="h-4 w-2/3 mt-1" /> : <p className="text-xs text-muted-foreground">Ítems que necesitan reposición</p>}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Capacidad del Taller (Hoy)
-                </CardTitle>
-                <BrainCircuit className="h-5 w-5 text-purple-500" />
-            </CardHeader>
-            <CardContent>
-                {isCapacityLoading ? (
-                    <Skeleton className="h-8 w-3/4 mt-1" />
-                ) : capacityInfo ? (
-                    <>
-                        <div className="text-2xl font-bold font-headline">{capacityInfo.capacityPercentage}%</div>
-                        <p className="text-xs text-muted-foreground" title={`${capacityInfo.totalRequiredHours?.toFixed(1)}h de ${capacityInfo.totalAvailableHours}h`}>
-                            {capacityInfo.recommendation}
-                        </p>
-                    </>
-                ) : capacityError ? (
-                     <div className="flex items-center gap-2 pt-2 text-destructive">
-                        <AlertTriangle className="h-5 w-5" />
-                        <span className="text-sm">{capacityError}</span>
-                    </div>
-                ) : (
-                    <p className="text-xs text-muted-foreground mt-2">Analizando capacidad...</p>
-                )}
             </CardContent>
           </Card>
         </div>
