@@ -24,7 +24,7 @@ import { SuppliersTable } from "./components/suppliers-table";
 import { TableToolbar } from "@/components/shared/table-toolbar";
 import { useTableManager } from "@/hooks/useTableManager";
 import dynamic from "next/dynamic";
-import { PurchaseDetailDialog } from "./purchase-detail-dialog";
+import { PurchaseDetailDialog } from "./components/purchase-detail-dialog";
 import { PurchasesTable } from "./components/purchases-table";
 import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { Checkbox } from "@/components/ui/checkbox";
