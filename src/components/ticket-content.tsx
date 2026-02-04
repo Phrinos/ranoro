@@ -1,7 +1,6 @@
-
 "use client";
 
-import type { SaleReceipt, ServiceRecord, Vehicle, Technician } from '@/types';
+import type { SaleReceipt, ServiceRecord, Vehicle, User } from '@/types';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import React, { useMemo } from 'react';
@@ -16,7 +15,7 @@ interface TicketContentProps {
   sale?: SaleReceipt;
   service?: ServiceRecord;
   vehicle?: Vehicle; 
-  technician?: Technician; 
+  technician?: User; 
   /** Mantengo el nombre prop existente para no romper llamadas actuales */
   previewWorkshopInfo?: Partial<TicketSettings>;
 }

@@ -15,7 +15,7 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { Technician, AdministrativeStaff, Personnel, Area, User, Driver, Vehicle, ManualDebtEntry } from "@/types";
+import type { Personnel, Area, User, Driver, Vehicle, ManualDebtEntry } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 import type { UserFormValues } from '@/schemas/user-form-schema';
 import { inventoryService } from './inventory.service';

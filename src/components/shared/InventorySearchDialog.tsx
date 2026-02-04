@@ -2,9 +2,9 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "cmdk";
 import { Button } from "@/components/ui/button";
-import { PackagePlus, Tags, Package, Car, Search as SearchIcon } from "lucide-react";
+import { PackagePlus, Tags, Package, Car, Search as SearchIcon, Loader2 } from "lucide-react";
 import type { InventoryItem } from "@/types";
 import { formatCurrency, cn } from "@/lib/utils";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
@@ -124,13 +124,17 @@ export function InventorySearchDialog({
               "[&_[cmdk-input]]:text-sm [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-3"
             )}
           >
-            <CommandInput
-              placeholder="Escribe al menos 3 caracteres (nombre, SKU, categoría...)"
-              value={searchTerm}
-              onValueChange={setSearchTerm}
-            />
+            <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
+              <SearchIcon className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <Command.Input
+                placeholder="Escribe al menos 3 caracteres (nombre, SKU, categoría...)"
+                value={searchTerm}
+                onValueChange={setSearchTerm}
+                className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            </div>
 
-            <CommandList className="max-h-[52vh] overflow-y-auto">
+            <Command.List className="max-h-[52vh] overflow-y-auto">
               {isLoading ? (
                 <div className="p-10 text-center flex flex-col items-center gap-2">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -177,7 +181,7 @@ export function InventorySearchDialog({
                         key={item.id}
                         value={valueForCmdk}
                         onSelect={() => handleSelect(item)}
-                        className="flex flex-col items-start gap-1.5 cursor-pointer border-b last:border-0 hover:bg-muted/50 data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto"
+                        className="flex flex-col items-start gap-1.5 cursor-pointer border-b last:border-0 hover:bg-muted/50 data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto p-3"
                       >
                         <div className="flex items-center justify-between w-full gap-4">
                           <div className="flex items-center gap-3 min-w-0">
@@ -220,7 +224,7 @@ export function InventorySearchDialog({
                   })}
                 </CommandGroup>
               )}
-            </CommandList>
+            </Command.List>
           </Command>
         </div>
 

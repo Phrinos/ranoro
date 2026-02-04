@@ -6,7 +6,7 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { ServiceRecord, Vehicle, Technician, User } from '@/types';
+import type { ServiceRecord, Vehicle, User } from '@/types';
 import { isSameDay, parseISO, format, isValid, compareAsc } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Wrench, Clock, CheckCircle, CalendarCheck } from 'lucide-react';

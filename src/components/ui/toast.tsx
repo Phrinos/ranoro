@@ -151,6 +151,9 @@ const ToastTitleRow = ({
   <div className={cn("grid flex-1 gap-1", className)} {...props} />
 );
 
+export type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>;
+export type ToastActionElement = React.ReactElement<typeof ToastAction>;
+
 export {
   ToastProvider,
   ToastViewport,

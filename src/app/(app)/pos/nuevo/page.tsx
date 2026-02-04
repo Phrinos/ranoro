@@ -40,6 +40,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogFooter,
+  AlertDialogDescription,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Command,

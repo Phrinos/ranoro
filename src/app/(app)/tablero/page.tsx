@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -6,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { ServiceRecord, Vehicle, Technician, ServiceSubStatus, ServiceTypeRecord, InventoryItem, Personnel } from '@/types';
+import type { ServiceRecord, Vehicle, ServiceSubStatus, ServiceTypeRecord, InventoryItem, User } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -94,7 +93,7 @@ export default function TableroPage() {
   const router = useRouter();
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [personnel, setPersonnel] = useState<Personnel[]>([]);
+  const [personnel, setPersonnel] = useState<User[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
