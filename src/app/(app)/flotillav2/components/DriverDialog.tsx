@@ -1,9 +1,8 @@
-
 "use client";
 
 import React from 'react';
 import { FormDialog } from '@/components/shared/form-dialog';
-import { DriverForm, type DriverFormValues } from '../../conductores/components/DriverForm';
+import { DriverForm, type DriverFormValues } from './DriverForm';
 import type { Driver } from '@/types';
 
 interface DriverDialogProps {

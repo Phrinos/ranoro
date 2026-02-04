@@ -1,0 +1,138 @@
+"use client";
+
+import type { RentalPayment, Driver, Vehicle } from '@/types';
+import { format, parseISO, isValid } from 'date-fns';
+import { es } from 'date-fns/locale';
+import React, { useEffect, useState } from 'react';
+import { cn, formatCurrency } from "@/lib/utils";
+import Image from 'next/image';
+
+type TicketBranding = {
+  name?: string;
+  phone?: string;
+  addressLine1?: string;
+  logoUrl?: string;
+  headerFontSize?: number;
+  bodyFontSize?: number;
+  itemsFontSize?: number;
+  totalsFontSize?: number;
+  footerFontSize?: number;
+  logoWidth?: number;
+  nameBold?: boolean;
+  footerLine1Bold?: boolean;
+  footerLine1?: string;
+};
+
+const initialBranding: TicketBranding = {
+  name: "RANORO",
+  phone: "4491425323",
+  addressLine1: "Av. de la Convencion de 1914 No. 1421",
+  logoUrl: "/ranoro-logo.png",
+};
+
+interface RentalPaymentTicketProps {
+  payment: RentalPayment;
+  driver?: Driver;
+  vehicle?: Vehicle;
+  driverBalance: number;
+  previewBranding?: TicketBranding;
+}
+
+export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymentTicketProps>(
+  ({ payment, driver, vehicle, driverBalance, previewBranding }, ref) => {
+    
+    const [branding, setBranding] = useState<TicketBranding>(initialBranding);
+
+    useEffect(() => {
+        const baseInfo = previewBranding ?? initialBranding;
+        const stored = localStorage.getItem('workshopTicketInfo');
+        if (stored) {
+            try {
+                setBranding({ ...baseInfo, ...JSON.parse(stored) });
+            } catch (e) {
+                console.error("Failed to parse workshop info", e);
+                setBranding(baseInfo);
+            }
+        } else {
+            setBranding(baseInfo);
+        }
+    }, [previewBranding]);
+
+    const formattedDateTime = format(new Date(), "dd/MM/yyyy HH:mm:ss", { locale: es });
+    const paymentDate = payment.paymentDate ? parseISO(payment.paymentDate) : new Date();
+    const formattedPaymentDate = isValid(paymentDate) ? format(paymentDate, "dd 'de' MMMM, yyyy", { locale: es }) : 'N/A';
+    
+    return (
+      <div 
+        ref={ref}
+        data-format="receipt"
+        className="font-mono bg-white text-black p-4 max-w-[300px] mx-auto print-format-receipt"
+      >
+        <div className="text-center mb-1 space-y-0 leading-tight">
+          {branding.logoUrl && (
+            <div className="mx-auto mb-1 relative" style={{ width: `${branding.logoWidth || 120}px`, height: `${((branding.logoWidth || 120) / 3)}px` }}>
+                <Image 
+                  src={branding.logoUrl!} 
+                  alt="Logo" 
+                  fill
+                  style={{ objectFit: 'contain' }}
+                  crossOrigin="anonymous"
+                  unoptimized
+                />
+            </div>
+          )}
+          <div style={{ fontSize: `${branding.headerFontSize || 10}px` }}>
+              <p className={cn({"font-bold": branding.nameBold})}>{branding.name}</p>
+              <p>Tel: {branding.phone}</p>
+          </div>
+        </div>
+
+        <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
+        
+        <div style={{ fontSize: `${branding.bodyFontSize || 10}px` }}>
+            <div>Fecha Emisión: {formattedDateTime}</div>
+            <div>Folio de Pago: {payment.id}</div>
+            {payment.registeredByName && <div>Recibió: {payment.registeredByName}</div>}
+        </div>
+        
+        <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
+        <div className="font-semibold text-center my-1" style={{ fontSize: `${branding.bodyFontSize || 10}px` }}>RECIBO DE PAGO</div>
+        <div className="border-t border-dashed border-neutral-400 mt-1 mb-2"></div>
+
+        <table className="w-full text-left" style={{ fontSize: `${branding.itemsFontSize || 10}px` }}>
+            <tbody>
+                <tr><td className="pr-2"><span className="font-semibold">Recibimos de:</span></td><td>{driver?.name || payment.driverName}</td></tr>
+                <tr><td className="pr-2"><span className="font-semibold">Vehículo:</span></td><td>{vehicle?.make} {vehicle?.model} ({payment.vehicleLicensePlate})</td></tr>
+                <tr><td colSpan={2}><div className="border-t border-dashed border-neutral-400 my-2"></div></td></tr>
+                <tr><td className="pr-2"><span className="font-semibold">Fecha del Pago:</span></td><td>{formattedPaymentDate}</td></tr>
+                <tr><td className="pr-2"><span className="font-semibold">Método de Pago:</span></td><td>{payment.paymentMethod || 'Efectivo'}</td></tr>
+                <tr><td className="pr-2"><span className="font-semibold">Descripción:</span></td><td>{payment.note || 'Abono de Renta'}</td></tr>
+                 <tr><td colSpan={2}><div className="border-t border-dashed border-neutral-400 my-2"></div></td></tr>
+            </tbody>
+        </table>
+
+
+        <table className="w-full mt-2" style={{ fontSize: `${branding.totalsFontSize || 12}px` }}>
+            <tbody>
+                <tr className="font-bold text-lg">
+                    <td className="text-left">Total Pagado:</td>
+                    <td className="text-right">{formatCurrency(payment.amount)}</td>
+                </tr>
+                 <tr className={cn("font-semibold text-base", driverBalance >= 0 ? 'text-green-700' : 'text-red-700')}>
+                    <td className="text-left">Saldo Global:</td>
+                    <td className="text-right">{formatCurrency(driverBalance)}</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div className="border-t border-dashed border-neutral-400 mt-2 mb-1"></div>
+
+        <div className="text-center mt-2" style={{ fontSize: `${branding.footerFontSize || 10}px` }}>
+            <p className={cn({ "font-bold": branding.footerLine1Bold })}>{branding.footerLine1}</p>
+        </div>
+      </div>
+    );
+  }
+);
+
+RentalPaymentTicket.displayName = "RentalPaymentTicket";
