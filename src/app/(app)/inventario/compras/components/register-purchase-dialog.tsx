@@ -1,4 +1,3 @@
-// src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
 import React, { useState, useMemo, useEffect, useCallback } from "react";
@@ -212,7 +211,6 @@ export function RegisterPurchaseDialog({
                               <PopoverContent 
                                 className="w-[var(--radix-popover-trigger-width)] p-0" 
                                 align="start"
-                                onOpenAutoFocus={(e) => e.preventDefault()}
                               >
                                 <Command shouldFilter={false}>
                                   <CommandInput 
@@ -227,7 +225,9 @@ export function RegisterPurchaseDialog({
                                         <CommandItem
                                           key={s.id}
                                           value={`${s.name} ${s.rfc ?? ""}`.trim()}
-                                          onSelect={() => {
+                                          onMouseDown={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
                                             setValue("supplierId", String(s.id), { shouldValidate: true, shouldDirty: true });
                                             setIsSupplierSearchOpen(false);
                                             setSupplierSearchQuery("");
@@ -625,4 +625,8 @@ function SearchItemDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function normalize(s?: string) {
+  return (s ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
