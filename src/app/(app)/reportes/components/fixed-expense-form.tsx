@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, type Resolver } from "react-hook-form";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +34,7 @@ const fixedExpenseFormSchema = z.object({
 });
 
 export type FixedExpenseFormValues = z.infer<typeof fixedExpenseFormSchema>;
+type FixedExpenseFormInput = z.input<typeof fixedExpenseFormSchema>;
 
 interface FixedExpenseFormProps {
   initialData?: MonthlyFixedExpense | null;
@@ -42,8 +43,8 @@ interface FixedExpenseFormProps {
 }
 
 export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpenseFormProps) {
-  const form = useForm<FixedExpenseFormValues>({
-    resolver: zodResolver(fixedExpenseFormSchema),
+  const form = useForm<FixedExpenseFormInput, any, FixedExpenseFormValues>({
+    resolver: zodResolver(fixedExpenseFormSchema) as Resolver<FixedExpenseFormInput, any>,
     defaultValues: {
       name: initialData?.name ?? "",
       amount: initialData?.amount ?? undefined,
@@ -56,7 +57,7 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
-          control={form.control}
+          control={form.control as any}
           name="name"
           render={({ field }) => (
             <FormItem>
@@ -67,7 +68,7 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
           )}
         />
         <FormField
-          control={form.control}
+          control={form.control as any}
           name="category"
           render={({ field }) => (
             <FormItem>
@@ -82,7 +83,7 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
           )}
         />
         <FormField
-          control={form.control}
+          control={form.control as any}
           name="amount"
           render={({ field }) => (
             <FormItem>
@@ -90,7 +91,14 @@ export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpens
               <FormControl>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input type="number" step="0.01" className="pl-8" {...field} />
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    className="pl-8" 
+                    {...field} 
+                    value={field.value ?? ""}
+                    onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)}
+                  />
                 </div>
               </FormControl>
               <FormMessage />
