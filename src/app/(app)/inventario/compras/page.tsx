@@ -1,10 +1,9 @@
 // src/app/(app)/inventario/compras/page.tsx
 "use client";
 
-import React, { useState, useEffect, useCallback, Suspense, lazy } from "react";
-import { PlusCircle } from "lucide-react";
+import React, { useState, useEffect, useCallback, Suspense, useMemo } from "react";
+import { PlusCircle, Filter, Check, Loader2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
 import type {
   User,
   Supplier,
@@ -25,6 +24,13 @@ import { useTableManager } from "@/hooks/useTableManager";
 import dynamic from "next/dynamic";
 import { PurchaseDetailDialog } from "./components/purchase-detail-dialog";
 import { PurchasesTable } from "./components/purchases-table";
+import { startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { parseDate } from "@/lib/forms";
 
 const CuentasPorPagarContent = dynamic(
   () =>
@@ -59,6 +65,189 @@ const sortOptionsProveedores = [
   { value: "debtAmount_desc", label: "Deuda (Mayor a Menor)" },
   { value: "debtAmount_asc", label: "Deuda (Menor a Mayor)" },
 ];
+
+function MultiSelectFilter({ 
+  label, 
+  options, 
+  selected, 
+  onToggle, 
+  onClear,
+  searchPlaceholder = "Buscar..."
+}: { 
+  label: string, 
+  options: { value: string, label: string }[], 
+  selected: string[], 
+  onToggle: (val: string) => void,
+  onClear: () => void,
+  searchPlaceholder?: string
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-10 bg-card border-dashed">
+          <Filter className="mr-2 h-4 w-4" />
+          {label}
+          {selected.length > 0 && (
+            <Badge variant="secondary" className="ml-2 px-1 font-normal">
+              {selected.length}
+            </Badge>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[250px] p-0" align="start">
+        <Command>
+          <CommandInput placeholder={searchPlaceholder} />
+          <CommandList>
+            <CommandEmpty>No se encontraron resultados.</CommandEmpty>
+            <CommandGroup>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  onSelect={() => onToggle(option.value)}
+                >
+                  <Checkbox 
+                    checked={selected.includes(option.value)}
+                    className="mr-2"
+                  />
+                  {option.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+          {selected.length > 0 && (
+            <>
+              <Separator />
+              <div className="p-1">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="w-full text-xs" 
+                  onClick={onClear}
+                >
+                  Limpiar filtros
+                </Button>
+              </div>
+            </>
+          )}
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function ComprasTabContent({ 
+  purchases, 
+  suppliers, 
+  onRowClick 
+}: { 
+  purchases: any[], 
+  suppliers: Supplier[], 
+  onRowClick: (p: any) => void 
+}) {
+  const { filteredData, ...tableManager } = useTableManager<any>({
+    initialData: purchases,
+    searchKeys: ['invoiceId', 'supplierName', 'items.itemName'],
+    dateFilterKey: (item) => parseDate(item.invoiceDate || item.createdAt),
+    initialSortOption: 'invoiceDate_desc',
+  });
+
+  const [selectedSuppliers, setSelectedSuppliers] = useState<string[]>([]);
+  const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
+
+  const supplierOptions = useMemo(() => 
+    suppliers.map(s => ({ value: s.id, label: s.name })).sort((a,b) => a.label.localeCompare(b.label)), 
+  [suppliers]);
+
+  const methodOptions = [
+    { value: 'Efectivo', label: 'Efectivo' },
+    { value: 'Tarjeta', label: 'Tarjeta' },
+    { value: 'Tarjeta MSI', label: 'Tarjeta MSI' },
+    { value: 'Transferencia', label: 'Transferencia' },
+    { value: 'Crédito', label: 'Crédito' },
+  ];
+
+  const handleToggleSupplier = (id: string) => {
+    const next = selectedSuppliers.includes(id) 
+      ? selectedSuppliers.filter(s => s !== id) 
+      : [...selectedSuppliers, id];
+    setSelectedSuppliers(next);
+    tableManager.setOtherFilters(prev => ({ ...prev, supplierId: next.length ? next : "all" }));
+  };
+
+  const handleToggleMethod = (method: string) => {
+    const next = selectedMethods.includes(method) 
+      ? selectedMethods.filter(m => m !== method) 
+      : [...selectedMethods, method];
+    setSelectedMethods(next);
+    tableManager.setOtherFilters(prev => ({ ...prev, paymentMethod: next.length ? next : "all" }));
+  };
+
+  const setThisMonth = () => {
+    const now = new Date();
+    tableManager.onDateRangeChange({ from: startOfMonth(now), to: endOfMonth(now) });
+  };
+
+  const setLastMonth = () => {
+    const last = subMonths(new Date(), 1);
+    tableManager.onDateRangeChange({ from: startOfMonth(last), to: endOfMonth(last) });
+  };
+
+  return (
+    <div className="space-y-4 pt-4">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row gap-2 items-center">
+          <div className="relative flex-grow w-full">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por folio, proveedor o artículo..."
+              value={tableManager.searchTerm}
+              onChange={(e) => tableManager.onSearchTermChange(e.target.value)}
+              className="pl-8 bg-card h-10"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col md:flex-row gap-2 items-center justify-end">
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button variant="outline" size="sm" onClick={setThisMonth} className="flex-1 sm:flex-none bg-card">
+              Este Mes
+            </Button>
+            <Button variant="outline" size="sm" onClick={setLastMonth} className="flex-1 sm:flex-none bg-card">
+              Mes Pasado
+            </Button>
+          </div>
+          <TableToolbar
+            dateRange={tableManager.dateRange}
+            onDateRangeChange={tableManager.onDateRangeChange}
+          />
+          <div className="flex gap-2 w-full md:w-auto">
+            <MultiSelectFilter 
+              label="Proveedores"
+              options={supplierOptions}
+              selected={selectedSuppliers}
+              onToggle={handleToggleSupplier}
+              onClear={() => { setSelectedSuppliers([]); tableManager.setOtherFilters(prev => ({ ...prev, supplierId: "all" })); }}
+            />
+            <MultiSelectFilter 
+              label="Métodos Pago"
+              options={methodOptions}
+              selected={selectedMethods}
+              onToggle={handleToggleMethod}
+              onClear={() => { setSelectedMethods([]); tableManager.setOtherFilters(prev => ({ ...prev, paymentMethod: "all" })); }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <PurchasesTable 
+        purchases={filteredData} 
+        onRowClick={onRowClick}
+        sortOption={tableManager.sortOption}
+        onSortOptionChange={tableManager.onSortOptionChange}
+      />
+    </div>
+  );
+}
 
 function ProveedoresTabContent({ suppliers }: { suppliers: Supplier[] }) {
   const { filteredData, ...tableManager } = useTableManager<Supplier>({
@@ -275,7 +464,7 @@ export default function ComprasUnificadasPage() {
     { 
       value: "compras", 
       label: "Compras", 
-      content: <section className="mt-4"><PurchasesTable purchases={purchases} onRowClick={handleRowClick} /></section> 
+      content: <ComprasTabContent purchases={purchases} suppliers={suppliers} onRowClick={handleRowClick} />
     },
     {
       value: "proveedores",

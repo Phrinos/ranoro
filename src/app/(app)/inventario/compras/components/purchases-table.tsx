@@ -36,12 +36,26 @@ interface PurchasesTableProps {
   purchases: Purchase[];
   isLoading?: boolean;
   onRowClick?: (purchase: Purchase) => void;
+  sortOption?: string;
+  onSortOptionChange?: (val: string) => void;
 }
 
-export function PurchasesTable({ purchases, isLoading, onRowClick }: PurchasesTableProps) {
-  const [sortOption, setSortOption] = useState('invoiceDate_desc');
+export function PurchasesTable({ 
+  purchases, 
+  isLoading, 
+  onRowClick,
+  sortOption: externalSortOption,
+  onSortOptionChange: externalOnSortOptionChange
+}: PurchasesTableProps) {
+  const [internalSortOption, setInternalSortOption] = useState('invoiceDate_desc');
+  
+  const sortOption = externalSortOption ?? internalSortOption;
+  const onSortOptionChange = externalOnSortOptionChange ?? setInternalSortOption;
 
   const sortedPurchases = useMemo(() => {
+    // If external sort is provided, we assume data is already sorted by the parent
+    if (externalSortOption) return purchases;
+
     return [...purchases].sort((a, b) => {
         const [key, direction] = sortOption.split('_');
         let valA, valB;
@@ -63,11 +77,11 @@ export function PurchasesTable({ purchases, isLoading, onRowClick }: PurchasesTa
         const comparison = String(valA).localeCompare(String(valB), 'es', { numeric: true });
         return direction === 'asc' ? comparison : -comparison;
     });
-  }, [purchases, sortOption]);
+  }, [purchases, sortOption, externalSortOption]);
   
   const handleSort = (key: string) => {
     const isAsc = sortOption === `${key}_asc`;
-    setSortOption(`${key}_${isAsc ? 'desc' : 'asc'}`);
+    onSortOptionChange(`${key}_${isAsc ? 'desc' : 'asc'}`);
   };
 
   if (isLoading) {
