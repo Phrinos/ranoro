@@ -16,7 +16,7 @@ import { ContactInfoCard } from '../../components/ContactInfoCard';
 import { AssignedVehicleCard } from '../../components/AssignedVehicleCard';
 import { FinancialInfoCard } from '../../components/FinancialInfoCard';
 import { DocumentsCard } from '../../components/DocumentsCard';
-import { HistoryTabContent } from '../../conductores/components/HistoryTabContent';
+import { HistoryTabContent } from '../../components/HistoryTabContent';
 import { DriverDialog } from '../../components/DriverDialog';
 
 export default function DriverProfilePageV2() {
@@ -25,7 +25,7 @@ export default function DriverProfilePageV2() {
   const router = useRouter();
   const { toast } = useToast();
   
-  const [driver, setDriver] = useState<Driver | null>(null);
+  const [driver, setDriver] = setDriver] = useState<Driver | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [assignedVehicle, setAssignedVehicle] = useState<Vehicle | null>(null);
   const [isLoading, setIsLoading] = useState(true);

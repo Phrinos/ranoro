@@ -4,7 +4,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
-import { GlobalTransactionDialog, type GlobalTransactionFormValues } from '../../flotilla/components/GlobalTransactionDialog';
+import { GlobalTransactionDialog, type GlobalTransactionFormValues } from './GlobalTransactionDialog';
 import { rentalService } from '@/lib/services/rental.service';
 import { useToast } from '@/hooks/use-toast';
 import type { Driver, Vehicle, PaymentMethod } from '@/types';

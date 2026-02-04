@@ -6,7 +6,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit, calcEffectiveProfit } from '@/lib/money-helpers';
-import type { User, CapacityAnalysisOutput, ServiceRecord, SaleReceipt, InventoryItem, Personnel, MonthlyFixedExpense, Driver, Vehicle, PaymentMethod, SimplifiedSale, LegacySale } from '@/types';
+import type { User, CapacityAnalysisOutput, ServiceRecord, SaleReceipt, InventoryItem, Personnel, MonthlyFixedExpense, Driver, Vehicle, PaymentMethod } from '@/types';
 import { BrainCircuit, Loader2, Wrench, DollarSign, AlertTriangle, Receipt, Truck } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
@@ -19,7 +19,7 @@ import { isValid, isToday, startOfDay, endOfDay, isWithinInterval } from 'date-f
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import { toZonedTime } from 'date-fns-tz';
-import { GlobalTransactionDialog, GlobalTransactionFormValues } from '../flotilla/components/GlobalTransactionDialog';
+import { GlobalTransactionDialog, GlobalTransactionFormValues } from '../flotillav2/components/GlobalTransactionDialog';
 import { DashboardCharts } from './components/DashboardCharts';
 
 const TZ = "America/Mexico_City";
@@ -162,7 +162,6 @@ export default function DashboardPage() {
   
   const runCapacityAnalysis = useCallback(async () => {
     if (allServices.length === 0 || allPersonnel.length === 0) {
-      toast({ title: 'Datos insuficientes', description: 'Se necesitan servicios y personal para analizar la capacidad.', variant: 'default' });
       return;
     }
     
@@ -202,7 +201,7 @@ export default function DashboardPage() {
     } finally {
       setIsCapacityLoading(false);
     }
-  }, [allServices, allPersonnel, toast]);
+  }, [allServices, allPersonnel]);
 
   const handleSaveTransaction = async (values: GlobalTransactionFormValues) => {
     try {
