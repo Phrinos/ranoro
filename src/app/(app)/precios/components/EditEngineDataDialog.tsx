@@ -316,28 +316,28 @@ export function EditEngineDataDialog({ open, onOpenChange, engineData, onSave }:
                           <div className="space-y-3">
                             <Label className="text-[10px] uppercase font-bold text-muted-foreground">Cobre</Label>
                             <FormField control={control} name="insumos.bujias.modelos.cobre" render={({ field }) => (
-                              <FormControl><Input {...field} value={field.value ?? ""} placeholder="SKU..." className="bg-white"/></FormControl>
+                              <FormItem><FormControl><Input {...field} value={field.value ?? ""} placeholder="SKU..." className="bg-white"/></FormControl></FormItem>
                             )}/>
                             <FormField control={control} name="insumos.bujias.costoUnitario.cobre" render={({ field }) => (
-                              <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="Costo unit." className="bg-white"/></FormControl>
+                              <FormItem><FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="Costo unit." className="bg-white"/></FormControl></FormItem>
                             )}/>
                           </div>
                           <div className="space-y-3">
                             <Label className="text-[10px] uppercase font-bold text-muted-foreground">Platino</Label>
                             <FormField control={control} name="insumos.bujias.modelos.platino" render={({ field }) => (
-                              <FormControl><Input {...field} value={field.value ?? ""} placeholder="SKU..." className="bg-white"/></FormControl>
+                              <FormItem><FormControl><Input {...field} value={field.value ?? ""} placeholder="SKU..." className="bg-white"/></FormControl></FormItem>
                             )}/>
                             <FormField control={control} name="insumos.bujias.costoUnitario.platino" render={({ field }) => (
-                              <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="Costo unit." className="bg-white"/></FormControl>
+                              <FormItem><FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="Costo unit." className="bg-white"/></FormControl></FormItem>
                             )}/>
                           </div>
                           <div className="space-y-3">
                             <Label className="text-[10px] uppercase font-bold text-muted-foreground">Iridio</Label>
                             <FormField control={control} name="insumos.bujias.modelos.iridio" render={({ field }) => (
-                              <FormControl><Input {...field} value={field.value ?? ""} placeholder="SKU..." className="bg-white"/></FormControl>
+                              <FormItem><FormControl><Input {...field} value={field.value ?? ""} placeholder="SKU..." className="bg-white"/></FormControl></FormItem>
                             )}/>
                             <FormField control={control} name="insumos.bujias.costoUnitario.iridio" render={({ field }) => (
-                              <FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="Costo unit." className="bg-white"/></FormControl>
+                              <FormItem><FormControl><Input type="number" value={field.value ?? ""} onChange={(e)=>field.onChange(numOrUndef(e.target.value))} placeholder="Costo unit." className="bg-white"/></FormControl></FormItem>
                             )}/>
                           </div>
                         </div>
