@@ -3,7 +3,6 @@
  * @fileOverview Flow de Chat Inteligente Unificado para Ranoro.
  * 
  * - sendChatMessage - Función principal para interactuar con el asistente.
- * - WorkshopChatInput - Tipo de entrada para el chat.
  */
 
 import { ai } from '@/ai/genkit';
@@ -102,7 +101,7 @@ const getFinancialStats = ai.defineTool(
     const servicesSnap = await db.collection('serviceRecords').where('status', '==', 'Entregado').get();
     const income = servicesSnap.docs.reduce((sum, doc) => sum + (Number(doc.data().totalCost || doc.data().total || 0)), 0);
 
-    const cashSnap = await db.collection('cashDrawerTransactions').where('type', 'in', ['out', 'Salida']).get();
+    const cashSnap = await db.collection('cashDrawerTransactions').where('type', 'in', ['out', 'Salida', 'expense']).get();
     const expenses = cashSnap.docs.reduce((sum, doc) => sum + (Number(doc.data().amount) || 0), 0);
 
     return { totalIncome: income, totalExpenses: expenses, netProfit: income - expenses };
@@ -145,7 +144,6 @@ const WorkshopChatInputSchema = z.object({
   history: z.array(MessageSchema).optional(),
   message: z.string(),
 });
-export type WorkshopChatInput = z.infer<typeof WorkshopChatInputSchema>;
 
 const workshopChatFlow = ai.defineFlow(
   {
@@ -160,13 +158,8 @@ const workshopChatFlow = ai.defineFlow(
     }));
 
     const response = await ai.generate({
-      model: 'googleai/gemini-1.5-pro',
       system: `Eres el Asistente Inteligente de Ranoro, el experto administrativo del taller.
-      Tienes acceso a los datos reales mediante herramientas. 
-      Tu misión es ayudar al dueño del taller a entender su negocio.
-      Si te piden estadísticas de un mes específico, usa la herramienta getServiceReport.
-      Si te preguntan cómo van las finanzas, usa getFinancialStats.
-      Si te preguntan qué falta comprar, usa getInventoryStatus.
+      Usa las herramientas para dar datos reales de la base de datos de Firestore.
       Responde siempre de forma amable, profesional, corta y en español (pesos mexicanos).`,
       messages: [
         ...historyMessages,
@@ -195,7 +188,7 @@ export async function sendChatMessage(message: string, history: any[] = []): Pro
 
         return await workshopChatFlow({ message, history: cleanHistory as any });
     } catch (error: any) {
-        console.error("🔥 ERROR REAL DEL SERVIDOR:", error);
-        throw new Error(`Error técnico de IA: ${error.message || "No pude conectar con el servidor."}`);
+        console.error("🔥 ERROR GENKIT SERVER:", error);
+        throw new Error(`Error técnico de IA: ${error.message || "No pude conectar con el servidor de inteligencia."}`);
     }
 }
