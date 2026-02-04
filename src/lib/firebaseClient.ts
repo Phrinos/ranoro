@@ -1,9 +1,8 @@
-
 // src/lib/firebaseClient.ts
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
-import { getAuth, Auth } from 'firebase/auth';
+import { getAuth, Auth, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { firebaseConfig } from './firebase.config';
 
 /**
@@ -25,6 +24,13 @@ export const storage: FirebaseStorage = getStorage(app);
 
 // Initialize Auth only on the client-side to prevent server-side errors
 export const auth: Auth | null = typeof window !== 'undefined' ? getAuth(app) : null;
+
+// Ensure persistence is set if auth is initialized
+if (auth) {
+  setPersistence(auth, browserLocalPersistence).catch((err) => {
+    console.error("[FIREBASE] Persistence error:", err);
+  });
+}
 
 // Export the Firebase app instance if needed elsewhere
 export { app };
