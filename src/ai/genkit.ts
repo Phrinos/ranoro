@@ -1,10 +1,16 @@
 import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/google-genai';
+import { vertexAI } from '@genkit-ai/vertexai';
 
+/**
+ * Configuración centralizada de Genkit utilizando Vertex AI.
+ * Vertex AI es el estándar para entornos de Google Cloud/Firebase Studio,
+ * evitando bloqueos de API externa y problemas de permisos.
+ */
 export const ai = genkit({
   plugins: [
-    // Esto buscará automáticamente la variable GOOGLE_GENAI_API_KEY en tu .env
-    googleAI(), 
+    vertexAI({
+      location: 'us-central1',
+    }),
   ],
-  model: 'googleai/gemini-1.5-pro', 
+  model: 'vertexai/gemini-1.5-pro',
 });

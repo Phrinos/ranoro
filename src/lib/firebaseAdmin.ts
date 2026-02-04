@@ -1,11 +1,12 @@
 // src/lib/firebaseAdmin.ts
-import { initializeApp, getApps, cert, getApp, type App } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, getApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import admin from 'firebase-admin';
 
 /**
  * Inicializa y devuelve la instancia de Firestore del SDK de Firebase Admin,
- * asegurando que sea un singleton.
+ * asegurando que sea un singleton. Este servicio es necesario para las 
+ * herramientas de IA que se ejecutan en el servidor.
  */
 export function getAdminDb(): Firestore {
   if (getApps().length > 0) {
@@ -32,7 +33,8 @@ export function getAdminDb(): Firestore {
         }),
       });
     } else {
-      throw new Error('❌ Faltan credenciales de Firebase Admin en las variables de entorno.');
+      // Fallback para entornos que auto-inyectan credenciales (como Google Cloud Workstations)
+      initializeApp();
     }
   } catch (e) {
     console.error("Error crítico al inicializar Firebase Admin:", e);
