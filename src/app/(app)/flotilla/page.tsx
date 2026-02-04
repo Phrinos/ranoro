@@ -1,4 +1,3 @@
-// src/app/(app)/flotilla/page.tsx
 "use client";
 
 import React, { useState, useCallback, Suspense, lazy, useEffect } from 'react';
@@ -14,8 +13,6 @@ import { personnelService, rentalService, inventoryService } from '@/lib/service
 import { useFlotillaData } from './useFlotillaData';
 
 import { GlobalTransactionDialog, type GlobalTransactionFormValues } from './components/GlobalTransactionDialog';
-import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './components/OwnerWithdrawalDialog';
-import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/VehicleExpenseDialog';
 import { DriverDialog } from './conductores/components/DriverDialog';
 import type { DriverFormValues } from '@/schemas/driver-form-schema';
 import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
@@ -38,18 +35,12 @@ function PageInner() {
     dailyCharges,
     payments,
     manualDebts,
-    withdrawals,
-    expenses,
     isLoading,
-    handleShowTicket,
   } = useFlotillaData();
   
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'balance');
 
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [isWithdrawalDialogOpen, setIsWithdrawalDialogOpen] = useState(false);
-  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
-  
   const [isDriverDialogOpen, setIsDriverDialogOpen] = useState(false);
   const [editingDriver, setEditingDriver] = useState<Driver | null>(null);
   
@@ -69,17 +60,6 @@ function PageInner() {
     }
   }, []);
 
-  const vehicleOwners = React.useMemo(() => {
-    const ownerSet = new Set<string>();
-    vehicles
-      .filter(v => v.isFleetVehicle) 
-      .forEach(v => {
-        if (v.ownerName) ownerSet.add(v.ownerName);
-      });
-    return Array.from(ownerSet).sort();
-  }, [vehicles]);
-
-
   const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab);
     router.push(`/flotilla?tab=${tab}`, { scroll: false });
@@ -97,26 +77,6 @@ function PageInner() {
         toast({ title: "Pago Registrado" });
         setIsPaymentDialogOpen(false);
     } catch(e) {
-        toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
-    }
-  };
-
-  const handleSaveWithdrawal = async (data: OwnerWithdrawalFormValues) => {
-    try {
-        await rentalService.addOwnerWithdrawal({ ...data });
-        toast({ title: "Retiro Registrado" });
-        setIsWithdrawalDialogOpen(false);
-    } catch (e) {
-        toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
-    }
-  };
-
-  const handleSaveExpense = async (data: VehicleExpenseFormValues) => {
-    try {
-        await rentalService.addVehicleExpense(data);
-        toast({ title: "Gasto Registrado" });
-        setIsExpenseDialogOpen(false);
-    } catch (e) {
         toast({ title: "Error", description: (e as Error).message, variant: "destructive" });
     }
   };
@@ -205,20 +165,6 @@ function PageInner() {
         drivers={drivers}
         onSave={async (data) => { await handleSaveTransaction(data); }}
         transactionType="payment"
-      />
-
-      <OwnerWithdrawalDialog
-        open={isWithdrawalDialogOpen}
-        onOpenChange={setIsWithdrawalDialogOpen}
-        owners={vehicleOwners}
-        onSave={handleSaveWithdrawal}
-      />
-
-      <VehicleExpenseDialog
-        open={isExpenseDialogOpen}
-        onOpenChange={setIsExpenseDialogOpen}
-        vehicles={vehicles}
-        onSave={handleSaveExpense}
       />
 
       <DriverDialog

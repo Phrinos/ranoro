@@ -1,4 +1,3 @@
-
 "use client";
 
 import { withSuspense } from "@/lib/withSuspense";
@@ -8,8 +7,8 @@ import { Loader2 } from 'lucide-react';
 import type { RentalPayment, VehicleExpense, OwnerWithdrawal, CashDrawerTransaction, User, Vehicle } from '@/types';
 import { rentalService, cashService, adminService, inventoryService } from '@/lib/services';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
-import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from '../flotilla/components/OwnerWithdrawalDialog';
-import { VehicleExpenseDialog, type VehicleExpenseFormValues } from '../flotilla/components/VehicleExpenseDialog';
+import { OwnerWithdrawalDialog, type OwnerWithdrawalFormValues } from './components/OwnerWithdrawalDialog';
+import { VehicleExpenseDialog, type VehicleExpenseFormValues } from './components/VehicleExpenseDialog';
 import { useToast } from '@/hooks/use-toast';
 
 const DetallesFlotillaContent = lazy(() => import('./components/detalles-flotilla-content'));
@@ -120,7 +119,7 @@ function FlotillaReportesPageInner() {
     <>
       <TabbedPageLayout
         title="Reportes de Flotilla"
-        description="Control financiero detallado de rentas, gastos de unidades y retiros de socios."
+        description={<span className="text-primary-foreground/80">Control financiero detallado de rentas, gastos de unidades y retiros de socios.</span>}
         activeTab={activeTab}
         onTabChange={handleTabChange}
         tabs={tabs}
