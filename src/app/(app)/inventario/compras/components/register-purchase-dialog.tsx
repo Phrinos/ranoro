@@ -51,6 +51,7 @@ import { es } from "date-fns/locale";
 import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
 import { registerPurchaseSchema, type RegisterPurchaseFormValues } from "@/schemas/register-purchase-schema";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 
 export type PurchaseFormValues = RegisterPurchaseFormValues;
 
@@ -270,6 +271,7 @@ export function RegisterPurchaseDialog({
                               <SelectContent>
                                 <SelectItem value="Efectivo">Efectivo</SelectItem>
                                 <SelectItem value="Tarjeta">Tarjeta</SelectItem>
+                                <SelectItem value="Tarjeta MSI">Tarjeta MSI</SelectItem>
                                 <SelectItem value="Transferencia">Transferencia</SelectItem>
                                 <SelectItem value="Crédito">Crédito</SelectItem>
                               </SelectContent>
@@ -336,10 +338,10 @@ export function RegisterPurchaseDialog({
                     {/* LÍNEA 3: ARTÍCULOS COMPRADOS */}
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <FormLabel className="text-base font-black flex items-center gap-2">
+                        <Label className="text-base font-black flex items-center gap-2">
                           <Receipt className="h-5 w-5 text-primary" />
                           Detalle de Artículos
-                        </FormLabel>
+                        </Label>
                         <Button
                           type="button"
                           variant="secondary"
@@ -354,7 +356,7 @@ export function RegisterPurchaseDialog({
 
                       <div className="rounded-xl border bg-card shadow-inner overflow-hidden">
                         <table className="w-full text-sm">
-                          <thead className="bg-muted/80 text-muted-foreground text-[10px] uppercase tracking-widest font-bold border-b">
+                          <thead className="bg-black text-white">
                             <tr>
                               <th className="px-4 py-3 text-left">Artículo</th>
                               <th className="px-2 py-3 text-center w-24">Cantidad</th>
@@ -505,7 +507,7 @@ export function RegisterPurchaseDialog({
   );
 }
 
-// --- Subcomponente buscador (Refinado) ---
+// --- Subcomponente buscador ---
 interface SearchItemDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -537,7 +539,7 @@ function SearchItemDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl p-0 overflow-hidden">
-        <DialogHeader className="border-b p-6 pb-4 bg-white">
+        <DialogHeader className="p-6 pb-4 bg-white">
           <DialogTitle>Buscar Artículo en Inventario</DialogTitle>
           <DialogDescription>
             Seleccione un artículo para añadir a la compra o cree uno nuevo.

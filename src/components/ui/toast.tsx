@@ -36,7 +36,7 @@ const toastVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-border",
+        default: "border-border text-foreground",
         success: "border-emerald-200 bg-emerald-50/80 text-emerald-950",
         destructive: "border-destructive/30 bg-destructive/10 text-destructive",
       },
@@ -45,10 +45,14 @@ const toastVariants = cva(
   }
 );
 
+type ToastIcon = "info" | "success" | "error";
+
 const Toast = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Root>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Root> &
-    VariantProps<typeof toastVariants> & { icon?: "info" | "success" | "error" }
+    VariantProps<typeof toastVariants> & {
+      icon?: ToastIcon;
+    }
 >(({ className, variant, icon, ...props }, ref) => {
   const Icon =
     icon === "success"
@@ -103,6 +107,24 @@ const ToastDescription = React.forwardRef<
 ));
 ToastDescription.displayName = ToastPrimitives.Description.displayName;
 
+const ToastAction = React.forwardRef<
+  React.ElementRef<typeof ToastPrimitives.Action>,
+  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Action>
+>(({ className, ...props }, ref) => (
+  <ToastPrimitives.Action
+    ref={ref}
+    className={cn(
+      "inline-flex h-9 items-center justify-center rounded-xl border px-3 text-sm font-semibold",
+      "bg-white/70 hover:bg-white",
+      "focus:outline-none focus:ring-2 focus:ring-ring/30",
+      "disabled:pointer-events-none disabled:opacity-50",
+      className
+    )}
+    {...props}
+  />
+));
+ToastAction.displayName = ToastPrimitives.Action.displayName;
+
 const ToastClose = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Close>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Close>
@@ -122,22 +144,12 @@ const ToastClose = React.forwardRef<
 ));
 ToastClose.displayName = ToastPrimitives.Close.displayName;
 
-const ToastAction = React.forwardRef<
-  React.ElementRef<typeof ToastPrimitives.Action>,
-  React.ComponentPropsWithoutRef<typeof ToastPrimitives.Action>
->(({ className, ...props }, ref) => (
-  <ToastPrimitives.Action
-    ref={ref}
-    className={cn(
-      "inline-flex h-9 items-center justify-center rounded-xl border px-3 text-sm font-semibold",
-      "bg-white/70 hover:bg-white",
-      "focus:outline-none focus:ring-2 focus:ring-ring/30",
-      className
-    )}
-    {...props}
-  />
-));
-ToastAction.displayName = ToastPrimitives.Action.displayName;
+const ToastTitleRow = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn("grid flex-1 gap-1", className)} {...props} />
+);
 
 export {
   ToastProvider,
@@ -147,4 +159,5 @@ export {
   ToastDescription,
   ToastClose,
   ToastAction,
+  ToastTitleRow,
 };

@@ -101,6 +101,7 @@ export const reducer = (state: State, action: Action): State => {
 };
 
 function dispatch(action: Action) {
+  // Limpia timers en remove/dismiss
   if (action.type === actionTypes.DISMISS_TOAST && action.toastId) {
     clearDismissTimer(action.toastId);
   }
@@ -139,6 +140,7 @@ function toast(props: Toast) {
     },
   });
 
+  // Auto-dismiss (si duration no es Infinity y es > 0)
   if (Number.isFinite(duration) && duration > 0) {
     clearDismissTimer(id);
     dismissQueue.set(id, setTimeout(dismiss, duration));

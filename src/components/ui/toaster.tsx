@@ -8,6 +8,7 @@ import {
   ToastProvider,
   ToastTitle,
   ToastViewport,
+  ToastTitleRow,
 } from "@/components/ui/toast";
 
 export function Toaster() {
@@ -17,10 +18,10 @@ export function Toaster() {
     <ToastProvider>
       {toasts.map(({ id, title, description, action, ...props }) => (
         <Toast key={id} {...props}>
-          <div className="grid flex-1 gap-1">
+          <ToastTitleRow>
             {title && <ToastTitle>{title}</ToastTitle>}
             {description && <ToastDescription>{description}</ToastDescription>}
-          </div>
+          </ToastTitleRow>
           {action}
           <ToastClose />
         </Toast>

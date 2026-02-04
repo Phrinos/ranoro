@@ -29,6 +29,7 @@ const PopoverContent = React.forwardRef<
         align={align}
         sideOffset={sideOffset}
         collisionPadding={collisionPadding}
+        // Evita cambios de foco que rompen cmdk dentro de Popover/Dialog
         onOpenAutoFocus={(e) => {
           if (!onOpenAutoFocus) e.preventDefault();
           onOpenAutoFocus?.(e);
@@ -38,7 +39,9 @@ const PopoverContent = React.forwardRef<
           onCloseAutoFocus?.(e);
         }}
         className={cn(
+          // z alto para estar arriba de Dialog overlay y otras capas
           "z-[80] min-w-[12rem] rounded-2xl border bg-popover/95 text-popover-foreground shadow-xl backdrop-blur-md outline-none",
+          "p-1",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
           "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
