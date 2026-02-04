@@ -17,27 +17,28 @@ import { es } from 'date-fns/locale';
 import { Skeleton } from "@/components/ui/skeleton";
 import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
 import { formatCurrency } from "@/lib/utils";
-import { parseDate } from "@/lib/forms"; // Importar el helper robusto
+import { parseDate } from "@/lib/forms";
 
 export interface Purchase {
   id: string;
   invoiceId?: string;
   supplierName: string;
-  invoiceDate: Timestamp | string; // Campo principal de fecha
-  createdAt?: Timestamp | string; // Fallback date
+  invoiceDate: Timestamp | string;
+  createdAt?: Timestamp | string;
   totalAmount?: number;
   invoiceTotal?: number;
   status: "Completado" | "Registrada" | "Pendiente";
   paymentMethod?: string;
-  items: { itemName: string; quantity: number }[];
+  items: { itemName: string; quantity: number; purchasePrice: number }[];
 }
 
 interface PurchasesTableProps {
   purchases: Purchase[];
   isLoading?: boolean;
+  onRowClick?: (purchase: Purchase) => void;
 }
 
-export function PurchasesTable({ purchases, isLoading }: PurchasesTableProps) {
+export function PurchasesTable({ purchases, isLoading, onRowClick }: PurchasesTableProps) {
   const [sortOption, setSortOption] = useState('invoiceDate_desc');
 
   const sortedPurchases = useMemo(() => {
@@ -45,7 +46,6 @@ export function PurchasesTable({ purchases, isLoading }: PurchasesTableProps) {
         const [key, direction] = sortOption.split('_');
         let valA, valB;
         
-        // Use invoiceDate primarily, but fallback to createdAt for sorting if needed
         if (key === 'invoiceDate') {
             valA = parseDate(a.invoiceDate) || parseDate(a.createdAt);
             valB = parseDate(b.invoiceDate) || parseDate(b.createdAt);
@@ -80,7 +80,7 @@ export function PurchasesTable({ purchases, isLoading }: PurchasesTableProps) {
               <TableHead>Folio/Factura</TableHead>
               <TableHead>Proveedor</TableHead>
               <TableHead>Productos</TableHead>
-              <TableHead>Cantidad</TableHead>
+              <TableHead>Artículos</TableHead>
               <TableHead>Monto</TableHead>
               <TableHead>Método</TableHead>
               <TableHead>Estado</TableHead>
@@ -113,29 +113,32 @@ export function PurchasesTable({ purchases, isLoading }: PurchasesTableProps) {
             <SortableTableHeader sortKey="invoiceDate" label="Fecha" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
             <SortableTableHeader sortKey="invoiceId" label="Folio/Factura" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
             <SortableTableHeader sortKey="supplierName" label="Proveedor" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
-            <TableHead className="text-white">Productos</TableHead>
+            <TableHead className="text-white">Resumen Productos</TableHead>
             <TableHead className="text-white">Artículos</TableHead>
             <SortableTableHeader sortKey="invoiceTotal" label="Monto Total" onSort={handleSort} currentSort={sortOption} className="text-right" textClassName="text-white" />
-            <SortableTableHeader sortKey="paymentMethod" label="Método de Pago" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
+            <SortableTableHeader sortKey="paymentMethod" label="Método" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
             <SortableTableHeader sortKey="status" label="Estado" onSort={handleSort} currentSort={sortOption} textClassName="text-white" />
           </TableRow>
         </TableHeader>
         <TableBody>
           {sortedPurchases.length > 0 ? (
             sortedPurchases.map((purchase) => {
-              // Use invoiceDate first, but fallback to createdAt if it's missing
               const purchaseDate = parseDate(purchase.invoiceDate) || parseDate(purchase.createdAt);
-              const productNames = purchase.items.map(i => i.itemName).join(', ');
-              const totalItems = purchase.items.reduce((sum, i) => sum + i.quantity, 0);
+              const productNames = (purchase.items || []).map(i => i.itemName).join(', ');
+              const totalItems = (purchase.items || []).reduce((sum, i) => sum + i.quantity, 0);
 
               return (
-              <TableRow key={purchase.id}>
+              <TableRow 
+                key={purchase.id} 
+                className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
+                onClick={() => onRowClick?.(purchase)}
+              >
                 <TableCell>
                   {purchaseDate && isValid(purchaseDate) ? format(purchaseDate, "dd/MM/yy, HH:mm", { locale: es }) : 'N/A'}
                 </TableCell>
                 <TableCell>{purchase.invoiceId}</TableCell>
                 <TableCell className="font-medium">{purchase.supplierName}</TableCell>
-                <TableCell className="truncate max-w-xs" title={productNames}>{productNames}</TableCell>
+                <TableCell className="truncate max-w-[200px]" title={productNames}>{productNames}</TableCell>
                 <TableCell>{totalItems}</TableCell>
                 <TableCell className="text-right font-semibold">
                   {formatCurrency(purchase.invoiceTotal ?? purchase.totalAmount ?? 0)}

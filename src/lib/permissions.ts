@@ -26,6 +26,7 @@ export const PERMISSION_GROUPS = [
             { id: 'inventory:view_public_info', label: 'Ver Inventario (Info. Pública)' },
             { id: 'inventory:view_costs', label: 'Ver Costos y Ganancias de Inventario' },
             { id: 'purchases:manage', label: 'Gestionar Compras a Proveedores' },
+            { id: 'purchases:delete', label: 'Eliminar/Anular Compras (Restaura Stock)' },
             { id: 'pos:create_sale', label: 'Registrar Ventas (POS)' },
             { id: 'pos:view_sales', label: 'Ver Registro de Ventas' },
         ]

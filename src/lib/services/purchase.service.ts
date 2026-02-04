@@ -14,6 +14,7 @@ import {
   serverTimestamp,
   orderBy,
   runTransaction,
+  deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { PurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';
@@ -192,6 +193,69 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   });
 };
 
+/**
+ * Elimina una compra y restaura el inventario.
+ */
+const deletePurchase = async (purchaseId: string, currentUser: User | null): Promise<void> => {
+  if (!db) throw new Error("Database not initialized.");
+
+  const purchaseRef = doc(db, 'purchases', purchaseId);
+  const purchaseSnap = await getDoc(purchaseRef);
+
+  if (!purchaseSnap.exists()) throw new Error("La compra no existe.");
+  const data = purchaseSnap.data();
+
+  const batch = writeBatch(db);
+
+  // 1. Restaurar Stock (Restar lo que se compró)
+  const inventoryUpdateItems = (data.items || []).map((item: any) => ({
+    id: item.inventoryItemId,
+    quantity: item.quantity,
+  }));
+  if (inventoryUpdateItems.length > 0) {
+    await inventoryService.updateInventoryStock(batch, inventoryUpdateItems, 'subtract');
+  }
+
+  // 2. Limpiar Cuentas por Pagar / Deuda de Proveedor
+  if (data.payableAccountId) {
+    const payableRef = doc(db, 'payableAccounts', data.payableAccountId);
+    const payableSnap = await getDoc(payableRef);
+    if (payableSnap.exists()) {
+      const payableData = payableSnap.data();
+      const supplierRef = doc(db, 'suppliers', data.supplierId);
+      const supplierSnap = await getDoc(supplierRef);
+      if (supplierSnap.exists()) {
+        const currentDebt = supplierSnap.data().debtAmount || 0;
+        // Restar el total de la factura de la deuda acumulada del proveedor
+        batch.update(supplierRef, { debtAmount: Math.max(0, currentDebt - (payableData.totalAmount || 0)) });
+      }
+      batch.delete(payableRef);
+    }
+  }
+
+  // 3. Eliminar Transacción de Caja (si existe)
+  if (data.cashTransactionId) {
+    batch.delete(doc(db, 'cashDrawerTransactions', data.cashTransactionId));
+  } else {
+    // Buscar transacciones huérfanas vinculadas por relatedId por si acaso
+    const cashQuery = query(collection(db, "cashDrawerTransactions"), where("relatedId", "==", purchaseId));
+    const cashDocs = await getDocs(cashQuery);
+    cashDocs.forEach(d => batch.delete(d.ref));
+  }
+
+  // 4. Eliminar el documento de compra
+  batch.delete(purchaseRef);
+
+  await batch.commit();
+
+  await adminService.logAudit('Eliminar', `Eliminó la compra #${data.invoiceId || purchaseId} de ${data.supplierName} por ${formatCurrency(data.invoiceTotal || 0)}. El inventario fue restaurado.`, {
+    entityType: 'Compra',
+    entityId: purchaseId,
+    userId: currentUser?.id || 'system',
+    userName: currentUser?.name || 'Sistema',
+  });
+};
+
 const registerPayableAccountPayment = async (
   accountId: string,
   amount: number,
@@ -247,5 +311,6 @@ export const purchaseService = {
   onPayableAccountsUpdate,
   onPurchasesUpdate,
   registerPurchase,
+  deletePurchase,
   registerPayableAccountPayment,
 };

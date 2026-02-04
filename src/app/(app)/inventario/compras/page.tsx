@@ -23,8 +23,8 @@ import { SuppliersTable } from "./components/suppliers-table";
 import { TableToolbar } from "@/components/shared/table-toolbar";
 import { useTableManager } from "@/hooks/useTableManager";
 import dynamic from "next/dynamic";
-
-const ComprasContent = lazy(() => import("./components/compras-content"));
+import { PurchaseDetailDialog } from "./components/purchase-detail-dialog";
+import { PurchasesTable } from "./components/purchases-table";
 
 const CuentasPorPagarContent = dynamic(
   () =>
@@ -96,7 +96,7 @@ function ProveedoresTabContent({ suppliers }: { suppliers: Supplier[] }) {
     async (supplierId: string) => {
       try {
         await inventoryService.deleteSupplier(supplierId);
-        toast({ title: "Proveedor Eliminado" });
+        toast({ title: "Proveedor Eliminar" });
       } catch {
         toast({ title: "Error al eliminar", variant: "destructive" });
       }
@@ -150,7 +150,7 @@ export default function ComprasUnificadasPage() {
   const [payableAccounts, setPayableAccounts] = useState<PayableAccount[]>([]);
   const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
-  const [purchases, setPurchases] = useState<any[]>([]); // To store purchases
+  const [purchases, setPurchases] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
@@ -158,6 +158,8 @@ export default function ComprasUnificadasPage() {
     null
   );
   const [isNewPurchaseDialogOpen, setIsNewPurchaseDialogOpen] = useState(false);
+  const [selectedPurchase, setSelectedPurchase] = useState<any | null>(null);
+  const [isPurchaseDetailOpen, setIsPurchaseDetailOpen] = useState(false);
   
   const sortedSuppliers = React.useMemo(() => 
     [...suppliers].sort((a, b) => a.name.localeCompare(b.name)),
@@ -183,7 +185,6 @@ export default function ComprasUnificadasPage() {
       if (!alive) return;
       setCategories(d);
     });
-    // Add listener for purchases
     const u5 = purchaseService.onPurchasesUpdate((d) => {
         if (!alive) return;
         setPurchases(d);
@@ -209,10 +210,7 @@ export default function ComprasUnificadasPage() {
       note?: string
     ) => {
       try {
-        const userString =
-          typeof window !== "undefined"
-            ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY)
-            : null;
+        const userString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
         const user: User | null = userString ? JSON.parse(userString) : null;
         await purchaseService.registerPayableAccountPayment(
           accountId,
@@ -248,6 +246,23 @@ export default function ComprasUnificadasPage() {
       return newItem;
   }, [toast]);
 
+  const handleRowClick = (purchase: any) => {
+    setSelectedPurchase(purchase);
+    setIsPurchaseDetailOpen(true);
+  };
+
+  const handleDeletePurchase = async (purchaseId: string) => {
+    try {
+      const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+      const currentUser = authUserString ? JSON.parse(authUserString) : null;
+      await purchaseService.deletePurchase(purchaseId, currentUser);
+      toast({ title: "Compra Anulada", description: "El stock y las deudas han sido restaurados." });
+      setIsPurchaseDetailOpen(false);
+    } catch (e: any) {
+      toast({ title: "Error al anular compra", description: e.message, variant: "destructive" });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -257,7 +272,11 @@ export default function ComprasUnificadasPage() {
   }
 
   const tabs = [
-    { value: "compras", label: "Compras", content: <ComprasContent purchases={purchases} /> },
+    { 
+      value: "compras", 
+      label: "Compras", 
+      content: <section className="mt-4"><PurchasesTable purchases={purchases} onRowClick={handleRowClick} /></section> 
+    },
     {
       value: "proveedores",
       label: "Proveedores",
@@ -313,6 +332,15 @@ export default function ComprasUnificadasPage() {
           onSave={handleSavePurchase}
           onInventoryItemCreated={handleInventoryItemCreatedFromPurchase}
           categories={categories}
+        />
+      )}
+
+      {selectedPurchase && (
+        <PurchaseDetailDialog
+          open={isPurchaseDetailOpen}
+          onOpenChange={setIsPurchaseDetailOpen}
+          purchase={selectedPurchase}
+          onDelete={handleDeletePurchase}
         />
       )}
     </>
