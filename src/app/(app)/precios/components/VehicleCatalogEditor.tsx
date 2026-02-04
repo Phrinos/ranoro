@@ -19,10 +19,11 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { PlusCircle, Save, Trash2, Settings } from "lucide-react";
+import { PlusCircle, Save, Trash2, Settings, ArrowRight } from "lucide-react";
 
 import type { EngineData } from "@/lib/data/vehicle-database-types";
 import { EditEngineDataDialog } from "./EditEngineDataDialog";
+import { Label } from "@/components/ui/label";
 
 const engineMiniSchema = z.object({ name: z.string().min(1, "Requerido") }).passthrough();
 
@@ -96,145 +97,133 @@ function toFirestoreDoc(form: MakeDocForm) {
   };
 }
 
-function ModelAccordionItem({
-  model,
+function ModelEntry({
   modelIdx,
   removeModel,
   openEngineDialog,
 }: {
-  model: ModelForm;
   modelIdx: number;
   removeModel: (index: number) => void;
   openEngineDialog: (modelIdx: number, genIdx: number, engIdx: number) => void;
 }) {
-    const { control, watch, setValue } = useFormContext<MakeDocForm>();
-    const { fields, append, remove } = useFieldArray({ control, name: `models.${modelIdx}.generations` });
-    const modelName = watch(`models.${modelIdx}.name`);
-
-    return (
-        <AccordionItem key={model.id} value={model.id} className="border-b-0 rounded-lg bg-card overflow-hidden">
-        <AccordionTrigger className="text-lg font-semibold px-4 py-3 hover:no-underline">
-            <div className="flex items-center gap-3 w-full">
-            <Input
-                value={modelName ?? ""}
-                onChange={(e) => setValue(`models.${modelIdx}.name`, e.target.value, { shouldDirty: true })}
-                className="h-8 w-full max-w-xs bg-white"
-                onClick={(e) => e.stopPropagation()}
-            />
-            <Badge variant="outline">{fields.length} gen.</Badge>
-            </div>
-        </AccordionTrigger>
-        <AccordionContent className="p-4 pt-2">
-            <div className="space-y-4">
-            {fields.map((generation, genIdx) => (
-                <GenerationBlock
-                key={generation.id}
-                modelIdx={modelIdx}
-                genIdx={genIdx}
-                removeGeneration={remove}
-                openEngineDialog={openEngineDialog}
-                />
-            ))}
-            <div className="flex items-center gap-2 pt-4 mt-4 border-t">
-                <Button type="button" variant="outline" onClick={() => append({ id: nanoid(), engines: [] })}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Añadir Rango de Años
-                </Button>
-                <Button type="button" variant="ghost" onClick={() => removeModel(modelIdx)}>
-                <Trash2 className="mr-2 h-4 w-4 text-destructive" /> Eliminar Modelo
-                </Button>
-            </div>
-            </div>
-        </AccordionContent>
-        </AccordionItem>
-    );
-}
-
-function GenerationBlock({
-  modelIdx,
-  genIdx,
-  removeGeneration,
-  openEngineDialog,
-}: {
-  modelIdx: number;
-  genIdx: number;
-  removeGeneration: (index: number) => void;
-  openEngineDialog: (modelIdx: number, genIdx: number, engIdx: number) => void;
-}) {
-  const { control, setValue, watch } = useFormContext<MakeDocForm>();
-  const { fields: enginesFA, append, remove } = useFieldArray({ control, name: `models.${modelIdx}.generations.${genIdx}.engines` });
-
+  const { control, watch, setValue } = useFormContext<MakeDocForm>();
+  // Para simplificar según solicitud, asumimos que cada "entrada" de modelo maneja su primera generación de años directamente
+  const genIdx = 0;
+  const modelName = watch(`models.${modelIdx}.name`);
   const startYear = watch(`models.${modelIdx}.generations.${genIdx}.startYear`);
   const endYear = watch(`models.${modelIdx}.generations.${genIdx}.endYear`);
 
+  const { fields: enginesFA, append, remove } = useFieldArray({ 
+    control, 
+    name: `models.${modelIdx}.generations.${genIdx}.engines` as any
+  });
+
   return (
-    <div className="space-y-3 border-l-2 pl-4 ml-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="font-semibold text-sm">
-            Rango: {startYear || endYear ? `${startYear ?? "?"} - ${endYear ?? "?"}` : "Generación"}
-          </span>
-          <div className="flex items-center gap-2">
+    <Card className="border bg-white shadow-sm overflow-hidden">
+      <CardContent className="p-6 space-y-6">
+        {/* Linea 1: Nombre, Año Desde, Año Hasta */}
+        <div className="flex flex-col md:flex-row items-end gap-4">
+          <div className="flex-1 space-y-2 w-full">
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Nombre del Modelo / Grupo</Label>
             <Input
-              placeholder="Desde (año)"
-              inputMode="numeric"
-              className="h-8 w-[120px] bg-white"
-              value={startYear ?? ""}
-              onChange={(e) =>
-                setValue(
-                  `models.${modelIdx}.generations.${genIdx}.startYear`,
-                  e.target.value === "" ? undefined : Number(e.target.value),
-                  { shouldDirty: true }
-                )
-              }
-            />
-            <Input
-              placeholder="Hasta (año)"
-              inputMode="numeric"
-              className="h-8 w-[120px] bg-white"
-              value={endYear ?? ""}
-              onChange={(e) =>
-                setValue(
-                  `models.${modelIdx}.generations.${genIdx}.endYear`,
-                  e.target.value === "" ? undefined : Number(e.target.value),
-                  { shouldDirty: true }
-                )
-              }
+              placeholder="Ej: VERSA / MARCH"
+              value={modelName ?? ""}
+              onChange={(e) => setValue(`models.${modelIdx}.name`, e.target.value.toUpperCase(), { shouldDirty: true })}
+              className="h-10 font-bold bg-muted/20"
             />
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button type="button" variant="outline" size="sm" onClick={() => append({ name: "Nuevo motor" })}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Añadir motor
-          </Button>
-          <Button type="button" variant="ghost" size="icon" onClick={() => removeGeneration(genIdx)}>
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </Button>
-        </div>
-      </div>
-
-      <ul className="list-disc pl-6 space-y-2">
-        {enginesFA.map((e, ei) => (
-          <li key={e.id} className="flex items-center gap-3">
+          <div className="w-full md:w-32 space-y-2">
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Año Desde</Label>
             <Input
-              className="h-8 w-[260px] bg-white"
-              value={watch(`models.${modelIdx}.generations.${genIdx}.engines.${ei}.name`) ?? ""}
-              onChange={(ev) =>
-                setValue(`models.${modelIdx}.generations.${genIdx}.engines.${ei}.name`, ev.target.value, { shouldDirty: true })
-              }
+              placeholder="2012"
+              inputMode="numeric"
+              value={startYear ?? ""}
+              onChange={(e) => setValue(`models.${modelIdx}.generations.${genIdx}.startYear`, e.target.value === "" ? undefined : Number(e.target.value), { shouldDirty: true })}
+              className="h-10 text-center"
             />
-            <Button type="button" variant="secondary" size="sm" onClick={() => openEngineDialog(modelIdx, genIdx, ei)}>
-              <Settings className="mr-2 h-4 w-4" /> Detalles
+          </div>
+          <div className="flex items-center pb-2 hidden md:flex">
+            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div className="w-full md:w-32 space-y-2">
+            <Label className="text-xs font-bold text-muted-foreground uppercase">Año Hasta</Label>
+            <Input
+              placeholder="2019"
+              inputMode="numeric"
+              value={endYear ?? ""}
+              onChange={(e) => setValue(`models.${modelIdx}.generations.${genIdx}.endYear`, e.target.value === "" ? undefined : Number(e.target.value), { shouldDirty: true })}
+              className="h-10 text-center"
+            />
+          </div>
+          <Button 
+            type="button" 
+            variant="ghost" 
+            size="icon" 
+            className="text-destructive h-10 w-10 shrink-0"
+            onClick={() => removeModel(modelIdx)}
+          >
+            <Trash2 className="h-5 w-5" />
+          </Button>
+        </div>
+
+        <Separator />
+
+        {/* Motores y Configuraciones */}
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h4 className="text-sm font-bold flex items-center gap-2">
+              <Settings className="h-4 w-4 text-primary" />
+              Configuraciones de Motor
+            </h4>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm" 
+              onClick={() => append({ name: "Nuevo motor" })}
+              className="h-8 bg-white"
+            >
+              <PlusCircle className="mr-2 h-3 w-3" /> Añadir Motor
             </Button>
-            <Button type="button" variant="ghost" size="icon" onClick={() => remove(ei)}>
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          </li>
-        ))}
-        {enginesFA.length === 0 && <li className="text-sm text-muted-foreground">No hay motores. Agrega uno.</li>}
-      </ul>
-      <Separator />
-    </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {enginesFA.map((e, ei) => (
+              <div key={e.id} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/5 group">
+                <Input
+                  className="h-9 flex-1 bg-white text-sm"
+                  placeholder="Ej: 1.6L 4Cil"
+                  value={watch(`models.${modelIdx}.generations.${genIdx}.engines.${ei}.name`) ?? ""}
+                  onChange={(ev) => setValue(`models.${modelIdx}.generations.${genIdx}.engines.${ei}.name`, ev.target.value, { shouldDirty: true })}
+                />
+                <Button 
+                  type="button" 
+                  variant="secondary" 
+                  size="sm" 
+                  className="h-9 px-3 gap-2"
+                  onClick={() => openEngineDialog(modelIdx, genIdx, ei)}
+                >
+                  <Settings className="h-3 w-3" /> <span className="hidden sm:inline">Configurar</span>
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-9 w-9 text-destructive opacity-0 group-hover:opacity-100 transition-opacity" 
+                  onClick={() => remove(ei)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            {enginesFA.length === 0 && (
+              <div className="col-span-full py-4 text-center border-2 border-dashed rounded-lg bg-muted/10">
+                <p className="text-xs text-muted-foreground">No hay motores configurados. Los motores agrupan los insumos compartidos.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -246,7 +235,7 @@ export function VehicleCatalogEditor({ make, collectionName = VEHICLE_COLLECTION
   });
 
   const { control, reset, handleSubmit, getValues, setValue } = methods;
-  const { fields, append, remove } = useFieldArray({ control, name: "models", keyName: "k" });
+  const { fields, append, remove } = useFieldArray({ control, name: "models" as any });
 
   const [engineEditor, setEngineEditor] = useState<{
     open: boolean;
@@ -270,7 +259,7 @@ export function VehicleCatalogEditor({ make, collectionName = VEHICLE_COLLECTION
     try {
       const payload = stripUndefinedDeep(toFirestoreDoc(form));
       await setDoc(doc(db, collectionName, make), payload, { merge: true });
-      toast({ description: "Catálogo actualizado correctamente." });
+      toast({ title: "Guardado", description: "Catálogo maestro actualizado." });
     } catch (e) {
       console.error("Error saving catalog:", e);
       toast({ variant: "destructive", description: "Error al guardar el catálogo." });
@@ -292,49 +281,44 @@ export function VehicleCatalogEditor({ make, collectionName = VEHICLE_COLLECTION
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={handleSubmit(onSaveAll)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSaveAll)} className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Modelos de {make}</h2>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => append({ id: nanoid(), name: "Nuevo modelo", generations: [{ id: nanoid(), engines: [] }] })}
-            >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Añadir Modelo
-            </Button>
-            <Button type="submit">
-              <Save className="mr-2 h-4 w-4" />
-              Guardar cambios
-            </Button>
-          </div>
+          <h2 className="text-2xl font-bold tracking-tight">Modelos de {make}</h2>
+          <Button type="submit" size="lg" className="bg-primary hover:bg-primary/90 shadow-lg">
+            <Save className="mr-2 h-5 w-5" />
+            Guardar Todo
+          </Button>
         </div>
 
-        <ScrollArea className="h-[70vh] rounded-md border">
-          <div className="p-4 space-y-4">
-            <Accordion type="multiple" className="w-full space-y-3">
-              {fields.map((model, index) => (
-                <ModelAccordionItem
-                  key={model.k}
-                  model={model}
-                  modelIdx={index}
-                  removeModel={remove}
-                  openEngineDialog={openEngineDialog}
-                />
-              ))}
-            </Accordion>
+        <ScrollArea className="h-[75vh] pr-4">
+          <div className="space-y-6 pb-20">
+            {fields.map((model, index) => (
+              <ModelEntry
+                key={model.id}
+                modelIdx={index}
+                removeModel={remove}
+                openEngineDialog={openEngineDialog}
+              />
+            ))}
+
+            {/* Linea 2: Botón para añadir otro modelo */}
+            <div className="flex justify-center pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={() => append({ id: nanoid(), name: "", generations: [{ id: nanoid(), engines: [] }] })}
+                className="w-full max-w-md border-2 border-dashed bg-white hover:bg-primary/5 hover:border-primary/50 text-primary font-bold transition-all"
+              >
+                <PlusCircle className="mr-2 h-5 w-5" />
+                Añadir Otro Modelo o Grupo
+              </Button>
+            </div>
 
             {fields.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No hay modelos para {make}.</p>
-                <Button
-                  type="button"
-                  variant="link"
-                  onClick={() => append({ id: nanoid(), name: "Nuevo modelo", generations: [{ id: nanoid(), engines: [] }] })}
-                >
-                  Añade el primero.
-                </Button>
+              <div className="text-center py-20 bg-muted/5 rounded-3xl border-2 border-dashed">
+                <p className="text-muted-foreground">No hay modelos registrados para {make}.</p>
+                <p className="text-xs text-muted-foreground mt-1">Comienza añadiendo el primero arriba.</p>
               </div>
             )}
           </div>
