@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useForm, FormProvider, useFieldArray, type Resolver, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -11,17 +11,17 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { 
-  Search, 
-  PackagePlus, 
-  DollarSign, 
-  PlusCircle, 
-  Trash2, 
-  CalendarIcon, 
+import {
+  Search,
+  PackagePlus,
+  DollarSign,
+  PlusCircle,
+  Trash2,
+  CalendarIcon,
   Check,
   ChevronsUpDown,
   Tags,
@@ -30,30 +30,23 @@ import {
   TrendingUp,
   Receipt,
   Search as SearchIcon,
-  Loader2,
   Plus,
-  Minus
+  Minus,
 } from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
 import { formatCurrency, cn, getToday } from "@/lib/utils";
 import { InventoryItemDialog } from "@/app/(app)/inventario/components/inventory-item-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { 
-  Command, 
-  CommandEmpty, 
-  CommandGroup, 
-  CommandInput, 
-  CommandItem, 
-  CommandList 
-} from "@/components/ui/command";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Calendar } from "@/components/ui/calendar";
 import { format as formatDate } from "date-fns";
 import { es } from "date-fns/locale";
-import type { InventoryItemFormValues } from '@/schemas/inventory-item-form-schema';
+import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-schema";
 import { registerPurchaseSchema, type RegisterPurchaseFormValues } from "@/schemas/register-purchase-schema";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { z } from "zod";
 
 export type PurchaseFormValues = RegisterPurchaseFormValues;
 
@@ -78,6 +71,9 @@ const buildDefaults = (): RegisterPurchaseFormValues => ({
   note: "",
 });
 
+function normalize(s?: string) {
+  return (s ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
 
 export function RegisterPurchaseDialog({
   open,
@@ -103,26 +99,32 @@ export function RegisterPurchaseDialog({
 
   const [isSupplierSearchOpen, setIsSupplierSearchOpen] = useState(false);
   const [supplierSearchQuery, setSupplierSearchQuery] = useState("");
+
+  const supplierInputRef = useRef<HTMLInputElement | null>(null);
+
   const [isItemSearchOpen, setIsItemSearchOpen] = useState(false);
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
   const [newItemSearchTerm, setNewItemSearchTerm] = useState("");
 
   const filteredSuppliers = useMemo(() => {
-    const q = (supplierSearchQuery || "").toLowerCase().trim();
+    const q = normalize(supplierSearchQuery).trim();
     if (!q) return suppliers;
-    return suppliers.filter(s => 
-      s.name.toLowerCase().includes(q) || 
-      (s.rfc && s.rfc.toLowerCase().includes(q))
-    );
+
+    const tokens = q.split(/\s+/).filter(Boolean);
+    return suppliers.filter((s) => {
+      const haystack = normalize([s.name, s.rfc].filter(Boolean).join(" "));
+      return tokens.every((t) => haystack.includes(t));
+    });
   }, [suppliers, supplierSearchQuery]);
 
+  // Total
   useEffect(() => {
     const total = (itemsWatch ?? []).reduce((sum: number, i: any) => {
       const qty = Number(i?.quantity) || 0;
       const unit = Number(i?.purchasePrice) || 0;
       return sum + qty * unit;
     }, 0);
-  
+
     setValue("invoiceTotal", Number.isFinite(total) ? total : 0, {
       shouldDirty: true,
       shouldValidate: false,
@@ -133,8 +135,23 @@ export function RegisterPurchaseDialog({
     if (open) {
       reset(buildDefaults());
       setSupplierSearchQuery("");
+      setIsSupplierSearchOpen(false);
     }
   }, [open, reset]);
+
+  // Autofocus de proveedor al abrir
+  useEffect(() => {
+    if (!isSupplierSearchOpen) return;
+
+    // Espera a que el Popover/CommandInput se monte
+    const id = requestAnimationFrame(() => {
+      supplierInputRef.current?.focus();
+      // opcional: seleccionar texto previo
+      supplierInputRef.current?.select?.();
+    });
+
+    return () => cancelAnimationFrame(id);
+  }, [isSupplierSearchOpen]);
 
   const handleSelectInventoryItem = (item: InventoryItem) => {
     append({
@@ -147,7 +164,7 @@ export function RegisterPurchaseDialog({
     });
     setIsItemSearchOpen(false);
   };
-  
+
   const updateLineTotals = (index: number) => {
     const item = getValues(`items.${index}`);
     const qty = Number(item?.quantity) || 0;
@@ -167,6 +184,11 @@ export function RegisterPurchaseDialog({
     setIsNewItemDialogOpen(false);
   };
 
+  const closeSupplierSearch = useCallback(() => {
+    setIsSupplierSearchOpen(false);
+    setSupplierSearchQuery("");
+  }, []);
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
@@ -179,347 +201,388 @@ export function RegisterPurchaseDialog({
           </DialogHeader>
 
           <FormProvider {...form}>
-              <Form {...form}>
-                <form onSubmit={handleSubmit(onSave)} id="purchase-form" className="space-y-0">
-                  <div className="max-h-[calc(80vh-150px)] space-y-6 overflow-y-auto px-6 py-6 bg-muted/50">
-                    
-                    {/* CABECERA UNIFICADA: PROVEEDOR, FOLIO, METODO */}
-                    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
-                      <div className="md:col-span-6">
-                        <FormField
-                          control={control as any}
-                          name="supplierId"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-col">
-                              <Label className="font-bold mb-1">Proveedor</Label>
-                              <Popover open={isSupplierSearchOpen} onOpenChange={setIsSupplierSearchOpen}>
-                                <PopoverTrigger asChild>
-                                  <FormControl>
-                                    <Button
-                                      variant="outline"
-                                      role="combobox"
-                                      className={cn(
-                                        "w-full justify-between bg-white text-left font-normal h-10",
-                                        !field.value && "text-muted-foreground"
-                                      )}
-                                    >
-                                      <span className="truncate text-sm">
-                                        {field.value
-                                          ? suppliers.find((s) => s.id === field.value)?.name
-                                          : "Buscar proveedor..."}
-                                      </span>
-                                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                    </Button>
-                                  </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent 
-                                  className="w-[var(--radix-popover-trigger-width)] p-0" 
-                                  align="start"
-                                  onOpenAutoFocus={(e) => e.preventDefault()}
-                                >
-                                  <Command shouldFilter={false}>
-                                    <CommandInput 
-                                      placeholder="Escribe nombre o RFC..." 
+            <Form {...form}>
+              <form onSubmit={handleSubmit(onSave)} id="purchase-form" className="space-y-0">
+                <div className="max-h-[calc(80vh-150px)] space-y-6 overflow-y-auto px-6 py-6 bg-muted/50">
+                  {/* CABECERA */}
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                    <div className="md:col-span-6">
+                      <FormField
+                        control={control as any}
+                        name="supplierId"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                            <Label className="font-bold mb-1">Proveedor</Label>
+
+                            <Popover
+                              open={isSupplierSearchOpen}
+                              onOpenChange={(next) => {
+                                setIsSupplierSearchOpen(next);
+                                if (!next) setSupplierSearchQuery("");
+                              }}
+                            >
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={isSupplierSearchOpen}
+                                    className={cn(
+                                      "w-full justify-between bg-white text-left font-normal h-10",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                    onClick={() => setIsSupplierSearchOpen(true)}
+                                  >
+                                    <span className="truncate text-sm">
+                                      {field.value
+                                        ? suppliers.find((s) => String(s.id) === String(field.value))?.name
+                                        : "Buscar proveedor..."}
+                                    </span>
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+
+                              <PopoverContent
+                                className="w-[var(--radix-popover-trigger-width)] p-0"
+                                align="start"
+                                // Evita que Radix haga focus en algo distinto
+                                onOpenAutoFocus={(e) => e.preventDefault()}
+                                // Cierra con Escape desde cualquier parte del popover
+                                onKeyDown={(e) => {
+                                  if (e.key === "Escape") closeSupplierSearch();
+                                }}
+                              >
+                                <Command shouldFilter={false} className="max-h-[340px]">
+                                  {/* Sticky search */}
+                                  <div className="sticky top-0 z-10 bg-popover">
+                                    <CommandInput
+                                      ref={supplierInputRef}
+                                      placeholder="Escribe nombre o RFC…"
                                       value={supplierSearchQuery}
                                       onValueChange={setSupplierSearchQuery}
                                       autoFocus
                                     />
-                                    <CommandList>
-                                      <CommandEmpty>No se encontró el proveedor.</CommandEmpty>
-                                      <CommandGroup>
-                                        {filteredSuppliers.map((s) => (
-                                          <CommandItem
-                                            key={s.id}
-                                            value={`${s.name} ${s.rfc ?? ""}`.trim()}
-                                            onSelect={() => {
-                                              setValue("supplierId", String(s.id), { shouldValidate: true, shouldDirty: true });
-                                              setIsSupplierSearchOpen(false);
-                                              setSupplierSearchQuery("");
-                                            }}
-                                          >
-                                            <Check
-                                              className={cn(
-                                                "mr-2 h-4 w-4",
-                                                String(s.id) === String(field.value) ? "opacity-100" : "opacity-0"
-                                              )}
-                                            />
-                                            {s.name}
-                                          </CommandItem>
-                                        ))}
-                                      </CommandGroup>
-                                    </CommandList>
-                                  </Command>
-                                </PopoverContent>
-                              </Popover>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                                  </div>
 
-                      <div className="md:col-span-3">
-                        <FormField
-                          control={control as any}
-                          name="invoiceId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <Label className="font-bold mb-1">Folio Factura</Label>
-                              <FormControl>
-                                <Input placeholder="F-12345" {...field} value={field.value ?? ""} className="bg-white h-10 text-sm" />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                                  <CommandList className="max-h-[300px] overflow-y-auto">
+                                    <CommandEmpty>No se encontró el proveedor.</CommandEmpty>
+                                    <CommandGroup heading="Proveedores">
+                                      {filteredSuppliers.map((s) => (
+                                        <CommandItem
+                                          key={s.id}
+                                          value={`${s.name} ${s.rfc ?? ""}`.trim()}
+                                          onSelect={() => {
+                                            setValue("supplierId", String(s.id), {
+                                              shouldValidate: true,
+                                              shouldDirty: true,
+                                            });
+                                            closeSupplierSearch();
+                                          }}
+                                          className="cursor-pointer"
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              String(s.id) === String(field.value) ? "opacity-100" : "opacity-0"
+                                            )}
+                                          />
+                                          <div className="flex flex-col min-w-0">
+                                            <span className="truncate font-medium">{s.name}</span>
+                                            {s.rfc ? (
+                                              <span className="text-xs text-muted-foreground truncate">RFC: {s.rfc}</span>
+                                            ) : null}
+                                          </div>
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </CommandList>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
 
-                      <div className="md:col-span-3">
-                        <FormField
-                          control={control as any}
-                          name="paymentMethod"
-                          render={({ field }) => (
-                            <FormItem>
-                              <Label className="font-bold mb-1">Método de Pago</Label>
-                              <Select onValueChange={field.onChange} value={field.value}>
-                                <FormControl>
-                                  <SelectTrigger className="bg-white h-10 text-sm">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="Efectivo">Efectivo</SelectItem>
-                                  <SelectItem value="Tarjeta">Tarjeta</SelectItem>
-                                  <SelectItem value="Tarjeta MSI">Tarjeta MSI</SelectItem>
-                                  <SelectItem value="Transferencia">Transferencia</SelectItem>
-                                  <SelectItem value="Crédito">Crédito</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
 
-                    {paymentMethod === "Crédito" && (
-                      <div className="flex justify-end">
-                        <FormField
-                          control={control as any}
-                          name="dueDate"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-col w-full md:w-1/4">
-                              <Label className="font-bold mb-1">Fecha de Vencimiento</Label>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <FormControl>
-                                    <Button
-                                      variant="outline"
-                                      className={cn(
-                                        "pl-3 text-left font-normal bg-white h-10 text-sm",
-                                        !field.value && "text-muted-foreground"
-                                      )}
-                                    >
-                                      <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
-                                      {field.value ? (
-                                        formatDate(field.value as Date, "PPP", { locale: es })
-                                      ) : (
-                                        <span>Seleccione fecha</span>
-                                      )}
-                                    </Button>
-                                  </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                  <Calendar
-                                    mode="single"
-                                    onSelect={(d: Date | undefined) => field.onChange(d)}
-                                    selected={field.value as Date}
-                                  />
-                                </PopoverContent>
-                              </Popover>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    )}
+                    <div className="md:col-span-3">
+                      <FormField
+                        control={control as any}
+                        name="invoiceId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <Label className="font-bold mb-1">Folio Factura</Label>
+                            <FormControl>
+                              <Input
+                                placeholder="F-12345"
+                                {...field}
+                                value={field.value ?? ""}
+                                className="bg-white h-10 text-sm"
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
 
-                    {/* SECCIÓN ARTÍCULOS */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-base font-bold flex items-center gap-2">
-                          <Receipt className="h-5 w-5 text-primary" />
-                          Detalle de Artículos
-                        </Label>
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">Total Actual</span>
-                          <span className="text-xl font-bold text-primary">
-                            {formatCurrency(watch("invoiceTotal") || 0)}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="rounded-xl border bg-card shadow-inner overflow-hidden">
-                        <table className="w-full text-sm">
-                          <thead className="bg-black text-white">
-                            <tr>
-                              <th className="px-4 py-3 text-left">Artículo</th>
-                              <th className="px-2 py-3 text-center w-36">Cantidad</th>
-                              <th className="px-2 py-3 text-right w-32">Costo (Taller)</th>
-                              <th className="px-2 py-3 text-right w-32">Venta (Público)</th>
-                              <th className="px-2 py-3 text-right w-32">Total</th>
-                              <th className="px-4 py-3 w-10"></th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {fields.map((field, index) => (
-                              <tr key={field.id} className="border-b last:border-0 hover:bg-muted/5 transition-colors">
-                                <td className="px-4 py-3">
-                                  <p className="font-bold text-sm truncate max-w-[200px]" title={watch(`items.${index}.itemName`)}>
-                                    {watch(`items.${index}.itemName`)}
-                                  </p>
-                                </td>
-                                <td className="px-2 py-3">
-                                  <div className="flex items-center justify-center gap-1">
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="icon"
-                                      className="h-8 w-8 bg-white shrink-0"
-                                      onClick={() => {
-                                        const curr = Number(getValues(`items.${index}.quantity`)) || 0;
-                                        const next = Math.max(0, curr - 1);
-                                        setValue(`items.${index}.quantity`, next, { shouldDirty: true });
-                                        updateLineTotals(index);
-                                      }}
-                                    >
-                                      <Minus className="h-3 w-3" />
-                                    </Button>
-                                    <FormField
-                                      control={control as any}
-                                      name={`items.${index}.quantity`}
-                                      render={({ field }) => (
-                                        <Input
-                                          type="number"
-                                          step="0.01"
-                                          className="h-9 w-16 text-center bg-white"
-                                          {...field}
-                                          value={(field.value as any) ?? ""}
-                                          onChange={(e) => {
-                                            field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value));
-                                            updateLineTotals(index);
-                                          }}
-                                        />
-                                      )}
-                                    />
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="icon"
-                                      className="h-8 w-8 bg-white shrink-0"
-                                      onClick={() => {
-                                        const curr = Number(getValues(`items.${index}.quantity`)) || 0;
-                                        const next = curr + 1;
-                                        setValue(`items.${index}.quantity`, next, { shouldDirty: true });
-                                        updateLineTotals(index);
-                                      }}
-                                    >
-                                      <Plus className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </td>
-                                <td className="px-2 py-3">
-                                  <FormField
-                                    control={control as any}
-                                    name={`items.${index}.purchasePrice`}
-                                    render={({ field }) => (
-                                      <div className="relative">
-                                        <DollarSign className="text-muted-foreground absolute left-2 top-2.5 h-3.5 w-3.5" />
-                                        <Input
-                                          type="number"
-                                          step="0.01"
-                                          className="h-9 pl-7 text-right bg-white"
-                                          {...field}
-                                          value={(field.value as any) ?? ""}
-                                          onChange={(e) => {
-                                            field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value));
-                                            updateLineTotals(index);
-                                          }}
-                                        />
-                                      </div>
-                                    )}
-                                  />
-                                </td>
-                                <td className="px-2 py-3">
-                                  <FormField
-                                    control={control as any}
-                                    name={`items.${index}.sellingPrice`}
-                                    render={({ field }) => (
-                                      <div className="relative">
-                                        <TrendingUp className="text-green-600 absolute left-2 top-2.5 h-3.5 w-3.5" />
-                                        <Input
-                                          type="number"
-                                          step="0.01"
-                                          className="h-9 pl-7 text-right bg-white font-bold text-green-700"
-                                          {...field}
-                                          value={(field.value as any) ?? ""}
-                                          onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
-                                        />
-                                      </div>
-                                    )}
-                                  />
-                                </td>
-                                <td className="px-2 py-3 text-right">
-                                  <span className="font-bold text-foreground">
-                                    {formatCurrency(Number(watch(`items.${index}.totalPrice`) || 0))}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => remove(index)}
-                                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </td>
-                              </tr>
-                            ))}
-                            {fields.length === 0 && (
-                              <tr>
-                                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground italic">
-                                  No has añadido ningún artículo aún.
-                                </td>
-                              </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </div>
-
-                      <div className="flex justify-start">
-                        <Button
-                          type="button"
-                          onClick={() => setIsItemSearchOpen(true)}
-                          className="h-10 gap-2 shadow-md bg-red-600 hover:bg-red-700 text-white font-bold"
-                        >
-                          <PlusCircle className="h-4 w-4" />
-                          Añadir Artículo/Insumo
-                        </Button>
-                      </div>
+                    <div className="md:col-span-3">
+                      <FormField
+                        control={control as any}
+                        name="paymentMethod"
+                        render={({ field }) => (
+                          <FormItem>
+                            <Label className="font-bold mb-1">Método de Pago</Label>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger className="bg-white h-10 text-sm">
+                                  <SelectValue />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="Efectivo">Efectivo</SelectItem>
+                                <SelectItem value="Tarjeta">Tarjeta</SelectItem>
+                                <SelectItem value="Tarjeta MSI">Tarjeta MSI</SelectItem>
+                                <SelectItem value="Transferencia">Transferencia</SelectItem>
+                                <SelectItem value="Crédito">Crédito</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   </div>
 
-                  <DialogFooter className="border-t bg-white p-6 pt-4">
-                      <div className="flex w-full justify-end gap-2">
-                          <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
-                          Cancelar
-                          </Button>
-                          <Button type="submit" disabled={fields.length === 0}>
-                          Completar Registro
-                          </Button>
+                  {paymentMethod === "Crédito" && (
+                    <div className="flex justify-end">
+                      <FormField
+                        control={control as any}
+                        name="dueDate"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-col w-full md:w-1/4">
+                            <Label className="font-bold mb-1">Fecha de Vencimiento</Label>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    className={cn(
+                                      "pl-3 text-left font-normal bg-white h-10 text-sm",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+                                    {field.value ? formatDate(field.value as Date, "PPP", { locale: es }) : "Seleccione fecha"}
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                  mode="single"
+                                  onSelect={(d: Date | undefined) => field.onChange(d)}
+                                  selected={field.value as Date}
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
+
+                  {/* ARTÍCULOS */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-base font-bold flex items-center gap-2">
+                        <Receipt className="h-5 w-5 text-primary" />
+                        Detalle de Artículos
+                      </Label>
+                      <div className="flex items-center gap-3">
+                        <span className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">
+                          Total Actual
+                        </span>
+                        <span className="text-xl font-bold text-primary">{formatCurrency(watch("invoiceTotal") || 0)}</span>
                       </div>
-                  </DialogFooter>
-                </form>
+                    </div>
+
+                    <div className="rounded-xl border bg-card shadow-inner overflow-hidden">
+                      <table className="w-full text-sm">
+                        <thead className="bg-black text-white">
+                          <tr>
+                            <th className="px-4 py-3 text-left">Artículo</th>
+                            <th className="px-2 py-3 text-center w-36">Cantidad</th>
+                            <th className="px-2 py-3 text-right w-32">Costo (Taller)</th>
+                            <th className="px-2 py-3 text-right w-32">Venta (Público)</th>
+                            <th className="px-2 py-3 text-right w-32">Total</th>
+                            <th className="px-4 py-3 w-10"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {fields.map((field, index) => (
+                            <tr key={field.id} className="border-b last:border-0 hover:bg-muted/5 transition-colors">
+                              <td className="px-4 py-3">
+                                <p className="font-bold text-sm truncate max-w-[200px]" title={watch(`items.${index}.itemName`)}>
+                                  {watch(`items.${index}.itemName`)}
+                                </p>
+                              </td>
+
+                              <td className="px-2 py-3">
+                                <div className="flex items-center justify-center gap-1">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 bg-white shrink-0"
+                                    onClick={() => {
+                                      const curr = Number(getValues(`items.${index}.quantity`)) || 0;
+                                      const next = Math.max(0, curr - 1);
+                                      setValue(`items.${index}.quantity`, next, { shouldDirty: true });
+                                      updateLineTotals(index);
+                                    }}
+                                  >
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+
+                                  <FormField
+                                    control={control as any}
+                                    name={`items.${index}.quantity`}
+                                    render={({ field }) => (
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        className="h-9 w-16 text-center bg-white"
+                                        {...field}
+                                        value={(field.value as any) ?? ""}
+                                        onChange={(e) => {
+                                          field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value));
+                                          updateLineTotals(index);
+                                        }}
+                                      />
+                                    )}
+                                  />
+
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 bg-white shrink-0"
+                                    onClick={() => {
+                                      const curr = Number(getValues(`items.${index}.quantity`)) || 0;
+                                      const next = curr + 1;
+                                      setValue(`items.${index}.quantity`, next, { shouldDirty: true });
+                                      updateLineTotals(index);
+                                    }}
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </td>
+
+                              <td className="px-2 py-3">
+                                <FormField
+                                  control={control as any}
+                                  name={`items.${index}.purchasePrice`}
+                                  render={({ field }) => (
+                                    <div className="relative">
+                                      <DollarSign className="text-muted-foreground absolute left-2 top-2.5 h-3.5 w-3.5" />
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        className="h-9 pl-7 text-right bg-white"
+                                        {...field}
+                                        value={(field.value as any) ?? ""}
+                                        onChange={(e) => {
+                                          field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value));
+                                          updateLineTotals(index);
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                />
+                              </td>
+
+                              <td className="px-2 py-3">
+                                <FormField
+                                  control={control as any}
+                                  name={`items.${index}.sellingPrice`}
+                                  render={({ field }) => (
+                                    <div className="relative">
+                                      <TrendingUp className="text-green-600 absolute left-2 top-2.5 h-3.5 w-3.5" />
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        className="h-9 pl-7 text-right bg-white font-bold text-green-700"
+                                        {...field}
+                                        value={(field.value as any) ?? ""}
+                                        onChange={(e) =>
+                                          field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))
+                                        }
+                                      />
+                                    </div>
+                                  )}
+                                />
+                              </td>
+
+                              <td className="px-2 py-3 text-right">
+                                <span className="font-bold text-foreground">
+                                  {formatCurrency(Number(watch(`items.${index}.totalPrice`) || 0))}
+                                </span>
+                              </td>
+
+                              <td className="px-4 py-3 text-right">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => remove(index)}
+                                  className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+
+                          {fields.length === 0 && (
+                            <tr>
+                              <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground italic">
+                                No has añadido ningún artículo aún.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="flex justify-start">
+                      <Button
+                        type="button"
+                        onClick={() => setIsItemSearchOpen(true)}
+                        className="h-10 gap-2 shadow-md bg-red-600 hover:bg-red-700 text-white font-bold"
+                      >
+                        <PlusCircle className="h-4 w-4" />
+                        Añadir Artículo/Insumo
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter className="border-t bg-white p-6 pt-4">
+                  <div className="flex w-full justify-end gap-2">
+                    <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" disabled={fields.length === 0}>
+                      Completar Registro
+                    </Button>
+                  </div>
+                </DialogFooter>
+              </form>
             </Form>
           </FormProvider>
         </DialogContent>
@@ -532,7 +595,7 @@ export function RegisterPurchaseDialog({
         onItemSelected={handleSelectInventoryItem}
         onNewItemRequest={handleNewItemRequest}
       />
-      
+
       <InventoryItemDialog
         open={isNewItemDialogOpen}
         onOpenChange={setIsNewItemDialogOpen}
@@ -545,7 +608,7 @@ export function RegisterPurchaseDialog({
   );
 }
 
-// --- Subcomponente buscador ---
+// --- Buscador Artículos ---
 interface SearchItemDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -567,25 +630,29 @@ function SearchItemDialog({
     const physical = inventoryItems.filter((i) => !i.isService);
     const trimmed = searchTerm.trim();
     if (trimmed.length > 0 && trimmed.length < 3) return [];
-    
+
     if (!trimmed) return physical.slice(0, 50);
     const q = normalize(trimmed);
-    return physical.filter(
-      (i) =>
-        normalize(i.name).includes(q) ||
-        (i.sku && normalize(i.sku).includes(q)) ||
-        (i.category && normalize(i.category).includes(q))
-    ).slice(0, 100);
+    return physical
+      .filter(
+        (i) =>
+          normalize(i.name).includes(q) ||
+          (i.sku && normalize(i.sku).includes(q)) ||
+          (i.category && normalize(i.category).includes(q))
+      )
+      .slice(0, 100);
   }, [searchTerm, inventoryItems]);
+
+  useEffect(() => {
+    if (!open) setSearchTerm("");
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-4 bg-white">
           <DialogTitle>Buscar Artículo en Inventario</DialogTitle>
-          <DialogDescription>
-            Busca por nombre, SKU o categoría. Mínimo 3 caracteres.
-          </DialogDescription>
+          <DialogDescription>Busca por nombre, SKU o categoría. Mínimo 3 caracteres.</DialogDescription>
         </DialogHeader>
 
         <div className="px-6 py-4">
@@ -635,38 +702,47 @@ function SearchItemDialog({
                         <div className="flex flex-col gap-1.5">
                           <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3 min-w-0">
-                              <Badge variant="secondary" className="shrink-0 text-[10px] font-bold uppercase tracking-wider h-5">
-                                {item.category || 'General'}
+                              <Badge
+                                variant="secondary"
+                                className="shrink-0 text-[10px] font-bold uppercase tracking-wider h-5"
+                              >
+                                {item.category || "General"}
                               </Badge>
                               <span className="font-bold text-base truncate">{item.name}</span>
                             </div>
                             <div className="text-right shrink-0">
-                              <span className="font-bold text-primary text-lg">
-                                {formatCurrency(price)}
-                              </span>
+                              <span className="font-bold text-primary text-lg">{formatCurrency(price)}</span>
                             </div>
                           </div>
+
                           <div className="flex items-center gap-6 text-xs text-muted-foreground">
                             <div className="flex items-center gap-1.5">
                               <Tags className="h-3.5 w-3.5 opacity-50" />
-                              <span>SKU: <span className="font-medium text-foreground">{item.sku || '—'}</span></span>
+                              <span>
+                                SKU: <span className="font-medium text-foreground">{item.sku || "—"}</span>
+                              </span>
                             </div>
                             <div className="flex items-center gap-1.5">
                               <Package className="h-3.5 w-3.5 opacity-50" />
-                              <span>Stock: <span className={cn("font-bold", isLowStock ? "text-destructive" : "text-foreground")}>
-                                {item.quantity}
-                              </span></span>
+                              <span>
+                                Stock:{" "}
+                                <span className={cn("font-bold", isLowStock ? "text-destructive" : "text-foreground")}>
+                                  {item.quantity}
+                                </span>
+                              </span>
                             </div>
                             {item.brand && (
                               <div className="flex items-center gap-1.5">
                                 <Car className="h-3.5 w-3.5 opacity-50" />
-                                <span>Marca: <span className="font-medium text-foreground">{item.brand}</span></span>
+                                <span>
+                                  Marca: <span className="font-medium text-foreground">{item.brand}</span>
+                                </span>
                               </div>
                             )}
                           </div>
                         </div>
                       </button>
-                    )
+                    );
                   })
                 )}
               </div>
@@ -676,8 +752,4 @@ function SearchItemDialog({
       </DialogContent>
     </Dialog>
   );
-}
-
-function normalize(s?: string) {
-  return (s ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
