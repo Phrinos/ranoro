@@ -1,0 +1,107 @@
+"use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import type { MonthlyFixedExpense } from "@/types";
+import { DollarSign } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const expenseCategories = ["Renta", "Servicios", "Otros"] as const;
+
+const fixedExpenseFormSchema = z.object({
+  name: z.string().trim().min(2, "El nombre es requerido."),
+  amount: z.coerce.number().positive("El monto debe ser mayor a 0."),
+  category: z.enum(expenseCategories),
+  notes: z.string().optional(),
+});
+
+export type FixedExpenseFormValues = z.infer<typeof fixedExpenseFormSchema>;
+
+interface FixedExpenseFormProps {
+  initialData?: MonthlyFixedExpense | null;
+  onSubmit: (values: FixedExpenseFormValues) => void;
+  onClose: () => void;
+}
+
+export function FixedExpenseForm({ initialData, onSubmit, onClose }: FixedExpenseFormProps) {
+  const form = useForm<FixedExpenseFormValues>({
+    resolver: zodResolver(fixedExpenseFormSchema),
+    defaultValues: {
+      name: initialData?.name ?? "",
+      amount: initialData?.amount ?? undefined,
+      category: (initialData as any)?.category ?? "Otros",
+      notes: (initialData as any)?.notes ?? "",
+    },
+  });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nombre del Gasto</FormLabel>
+              <FormControl><Input placeholder="Ej: Renta del Local" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="category"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Categoría</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                <SelectContent>
+                  {expenseCategories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Monto Mensual</FormLabel>
+              <FormControl>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input type="number" step="0.01" className="pl-8" {...field} />
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="flex justify-end gap-2 pt-4">
+          <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button type="submit">Guardar Gasto</Button>
+        </div>
+      </form>
+    </Form>
+  );
+}

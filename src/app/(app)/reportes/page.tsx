@@ -12,8 +12,10 @@ import { parseDate } from '@/lib/forms';
 import { calcEffectiveProfit, calcSuppliesCostFromItems } from '@/lib/money-helpers';
 
 const DetallesReporteContent = lazy(() => import('./components/detalles-reporte-content'));
+const CajaReporteContent = lazy(() => import('./components/caja-reporte-content'));
 const MensualReporteContent = lazy(() => import('./components/mensual-reporte-content'));
-const EgresosContent = lazy(() => import('../finanzas/components/egresos-content').then(m => ({ default: m.EgresosContent })));
+const CierresReporteContent = lazy(() => import('./components/cierres-reporte-content').then(m => ({ default: m.CierresReporteContent })));
+const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
 
 interface DateRange {
   from: Date | undefined;
@@ -64,10 +66,6 @@ function ReportesPageInner() {
     router.push(`${pathname}?${params.toString()}`);
   };
 
-  const handleDateRangeChange = useCallback((range?: DateRange) => {
-    setDateRange(range);
-  }, []);
-
   const financialSummary = useMemo<FinancialSummary & { totalRevenue: number, totalCOGS: number, netProfit: number }>(() => {
     if (!dateRange?.from) return { totalTechnicianSalaries: 0, totalAdministrativeSalaries: 0, totalFixedExpenses: 0, totalVariableCommissions: 0, totalBaseExpenses: 0, totalRevenue: 0, totalCOGS: 0, netProfit: 0 };
   
@@ -79,7 +77,6 @@ function ReportesPageInner() {
     const periodDays = Math.min(daysInMonth, differenceInDays(to, from) + 1);
     const periodFactor = periodDays / daysInMonth;
   
-    // 1. Ingresos y Costos de Insumos (COGS)
     const deliveredServices = services.filter(s => {
       const d = parseDate(s.deliveryDateTime);
       return s.status === 'Entregado' && d && isValid(d) && isWithinInterval(d, interval);
@@ -105,7 +102,6 @@ function ReportesPageInner() {
     const totalRevenue = serviceRevenue + saleRevenue;
     const totalCOGS = serviceCOGS + saleCOGS;
 
-    // 2. Gastos Fijos (Nómina y Gastos de Taller)
     const activePersonnel = users.filter(p => !p.isArchived);
     const totalTechnicianSalaries = activePersonnel
       .filter(p => (p as any).functions?.includes('tecnico') || (p as any).role.toLowerCase().includes('tecnico'))
@@ -119,24 +115,12 @@ function ReportesPageInner() {
     const totalBaseMonthly = totalTechnicianSalaries + totalAdministrativeSalaries + totalFixedWorkshopExpenses;
     const totalBaseExpensesApplied = totalBaseMonthly * periodFactor;
   
-    // 3. Comisiones Variables
     const totalVariableCommissions = deliveredServices.reduce((sum, s) => {
       const profit = calcEffectiveProfit(s, inventory);
       if (profit <= 0) return sum;
-  
       let commission = 0;
       const advisor = activePersonnel.find(p => p.id === s.serviceAdvisorId);
       if ((advisor as any)?.commissionRate) commission += profit * ((advisor as any).commissionRate / 100);
-        
-      if(s.serviceItems)
-        s.serviceItems.forEach(item => {
-          const tech = activePersonnel.find(p => p.id === (item as any).technicianId);
-          if ((tech as any)?.commissionRate) {
-            const itemSuppliesCost = inventory.find(inv => inv.id === (item as any).supplyId)?.unitPrice ?? 0;
-            const itemProfit = (item.sellingPrice || 0) - itemSuppliesCost;
-            if (itemProfit > 0) commission += itemProfit * ((tech as any).commissionRate / 100);
-          }
-        });
       return sum + commission;
     }, 0);
   
@@ -144,62 +128,32 @@ function ReportesPageInner() {
     const netProfit = grossProfit - totalBaseExpensesApplied - totalVariableCommissions;
 
     return {
-      totalRevenue,
-      totalCOGS,
-      totalTechnicianSalaries,
-      totalAdministrativeSalaries,
-      totalFixedExpenses: totalFixedWorkshopExpenses,
-      totalVariableCommissions,
-      totalBaseExpenses: totalBaseExpensesApplied,
-      netProfit,
+      totalRevenue, totalCOGS, totalTechnicianSalaries, totalAdministrativeSalaries,
+      totalFixedExpenses: totalFixedWorkshopExpenses, totalVariableCommissions,
+      totalBaseExpenses: totalBaseExpensesApplied, netProfit,
     };
   }, [dateRange, services, sales, users, expenses, inventory]);
 
   if (isLoading) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    return <div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
   const tabs = [
-    { 
-      value: "movimientos", 
-      label: "Movimientos", 
-      content: <DetallesReporteContent services={services} sales={sales} cashTransactions={cashTransactions} users={users} /> 
-    },
-    { 
-      value: "mensual", 
-      label: "Resumen Mensual", 
-      content: <MensualReporteContent services={services} sales={sales} cashTransactions={cashTransactions} inventory={inventory} /> 
-    },
-    { 
-      value: "egresos", 
-      label: "Gastos Fijos", 
-      content: (
-        <Suspense fallback={<Loader2 className="animate-spin" />}>
-          <EgresosContent 
-            financialSummary={financialSummary} 
-            fixedExpenses={expenses} 
-            personnel={users}
-            onExpensesUpdated={setExpenses}
-          />
-        </Suspense>
-      )
-    },
+    { value: "movimientos", label: "Movimientos", content: <DetallesReporteContent services={services} sales={sales} cashTransactions={cashTransactions} users={users} /> },
+    { value: "caja", label: "Corte de Caja", content: <CajaReporteContent /> },
+    { value: "mensual", label: "Resumen Anual", content: <MensualReporteContent services={services} sales={sales} cashTransactions={cashTransactions} inventory={inventory} /> },
+    { value: "cierres", label: "Cierres", content: <CierresReporteContent services={services} sales={sales} inventory={inventory} expenses={expenses} personnel={users} cashTransactions={cashTransactions} /> },
+    { value: "egresos", label: "Gastos Fijos", content: <EgresosContent financialSummary={financialSummary} fixedExpenses={expenses} personnel={users} onExpensesUpdated={setExpenses} /> },
   ];
 
   return (
-    <>
-      <TabbedPageLayout
-        title="Reportes Taller"
-        description={<span className="text-primary-foreground/80">Control total de ingresos, egresos y utilidad neta de tu taller.</span>}
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        tabs={tabs}
-      />
-    </>
+    <TabbedPageLayout
+      title="Reportes y Finanzas"
+      description="Control total de ingresos, caja y rentabilidad neta."
+      activeTab={activeTab}
+      onTabChange={handleTabChange}
+      tabs={tabs}
+    />
   );
 }
 
