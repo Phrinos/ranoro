@@ -1,5 +1,5 @@
-import {genkit} from 'genkit';
-import {vertexAI} from '@genkit-ai/vertexai';
+import { genkit } from 'genkit';
+import { vertexAI } from '@genkit-ai/vertexai';
 
 export const ai = genkit({
   plugins: [
@@ -7,5 +7,5 @@ export const ai = genkit({
       location: 'us-central1',
     }),
   ],
-  model: 'vertexai/gemini-1.5-flash',
+  model: 'vertexai/gemini-1.5-pro',
 });

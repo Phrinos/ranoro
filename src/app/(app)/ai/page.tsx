@@ -52,11 +52,7 @@ export default function AiHubPage() {
         setIsLoading(true);
 
         try {
-            const response = await sendChatMessage(userMessage, messages.map(m => ({
-                role: m.role,
-                content: m.content
-            })));
-            
+            const response = await sendChatMessage(userMessage, messages);
             setMessages(prev => [...prev, { role: 'model', content: response }]);
         } catch (error) {
             console.error(error);
@@ -82,9 +78,9 @@ export default function AiHubPage() {
                     </h1>
                     <p className="text-sm text-muted-foreground ml-1">Tu taller, analizado por inteligencia artificial avanzada</p>
                 </div>
-                <div className="flex items-center gap-2 bg-gradient-to-r from-primary/10 to-blue-500/10 text-primary border border-primary/20 px-4 py-2 rounded-2xl text-xs font-bold shadow-sm">
-                    <Sparkles className="h-4 w-4 animate-pulse" />
-                    Gemini 1.5 Flash Active
+                <div className="flex items-center gap-2 bg-gradient-to-r from-purple-500/10 to-blue-500/10 text-primary border border-primary/20 px-4 py-2 rounded-2xl text-xs font-bold shadow-sm">
+                    <Sparkles className="h-4 w-4 animate-pulse text-purple-600" />
+                    Gemini 1.5 Pro Business
                 </div>
             </div>
 
