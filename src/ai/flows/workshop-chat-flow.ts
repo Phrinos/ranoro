@@ -5,7 +5,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'kit';
+import { z } from 'genkit';
 import { getAdminDb } from '@/lib/firebaseAdmin';
 import { startOfMonth, endOfMonth } from 'date-fns';
 

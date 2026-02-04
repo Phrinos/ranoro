@@ -4,7 +4,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'kit';
+import { z } from 'genkit';
 
 // Input schema
 const QuoteSuggestionInputSchema = z.object({
