@@ -1,9 +1,7 @@
 'use server';
 /**
  * @fileOverview Flow de Chat Inteligente Unificado para Ranoro.
- * Proporciona a Gemini acceso a herramientas para consultar datos reales del taller mediante Google AI.
- *
- * - sendChatMessage - Función que maneja el proceso de chat con el asistente.
+ * Proporciona a Gemini acceso a herramientas para consultar datos reales del taller.
  */
 
 import { ai } from '@/ai/genkit';
@@ -160,6 +158,7 @@ const workshopChatFlow = ai.defineFlow(
     }));
 
     const response = await ai.generate({
+      model: 'googleai/gemini-1.5-pro',
       system: `Eres el Asistente Inteligente de Ranoro, el experto administrativo del taller.
       Tienes acceso a los datos reales mediante herramientas. 
       Tu misión es ayudar al dueño del taller a entender su negocio.
@@ -194,11 +193,9 @@ export async function sendChatMessage(message: string, history: any[] = []): Pro
 
         return await workshopChatFlow({ message, history: cleanHistory as any });
     } catch (error: any) {
-        console.error("Error detallado en flujo de IA:", error);
-        // Si es un error de API Key, damos un mensaje útil
-        if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('403')) {
-            throw new Error("La API Key de Google AI no es válida o no está configurada en el archivo .env.");
-        }
-        throw new Error(error.message || "No pude procesar tu solicitud de IA.");
+        console.error("🔥 ERROR REAL DEL SERVIDOR:", error);
+        
+        // Lanzamos el mensaje técnico para verlo en pantalla durante el debug
+        throw new Error(`Error técnico de IA: ${error.message || "No pude conectar con el servidor."}`);
     }
 }

@@ -7,42 +7,51 @@ let app: App | null = null;
 let db: Firestore | null = null;
 
 /**
- * Initializes and returns the Firebase Admin SDK's Firestore instance,
- * ensuring it's a singleton. It uses service account credentials
- * from environment variables, making it suitable for serverless environments.
+ * Inicializa y devuelve la instancia de Firestore del SDK de Firebase Admin,
+ * asegurando que sea un singleton.
  *
- * @returns The initialized Firestore instance.
- * @throws {Error} If the service account key is not found in environment variables.
+ * @returns La instancia de Firestore inicializada.
  */
 export function getAdminDb(): Firestore {
-  // Return the cached instance if it already exists.
   if (db) return db;
 
-  // Find an existing app instance to prevent re-initialization errors.
   const existingApp = getApps().length > 0 ? getApps()[0] : null;
   if (existingApp) {
     app = existingApp;
   } else {
-    // Retrieve the service account key from environment variables.
+    // Intentamos cargar las credenciales desde las variables de entorno
+    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY;
     const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-    if (!serviceAccountString) {
-      throw new Error(
-        'FIREBASE_SERVICE_ACCOUNT_KEY no está configurada en las variables de entorno.'
-      );
-    }
-    
+
     try {
-      const serviceAccount = JSON.parse(serviceAccountString);
-      app = initializeApp({
-        credential: cert(serviceAccount)
-      });
+      if (serviceAccountString) {
+        // Opción 1: JSON completo en una sola variable
+        const serviceAccount = JSON.parse(serviceAccountString);
+        app = initializeApp({
+          credential: cert(serviceAccount)
+        });
+      } else if (projectId && clientEmail && privateKey) {
+        // Opción 2: Variables individuales
+        app = initializeApp({
+          credential: cert({
+            projectId,
+            clientEmail,
+            privateKey: privateKey.replace(/\\n/g, '\n'),
+          }),
+        });
+      } else {
+        throw new Error(
+          'No se encontraron credenciales de Firebase Admin (.env ignorado o incompleto).'
+        );
+      }
     } catch (e) {
-      console.error("Error al parsear o inicializar las credenciales de Firebase Admin:", e);
-      throw new Error("Las credenciales de Firebase Admin no son un JSON válido.");
+      console.error("Error al inicializar Firebase Admin:", e);
+      throw e;
     }
   }
 
-  // Get the Firestore instance from the app and cache it.
   db = getFirestore(app!);
   return db;
 }
