@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -14,9 +13,7 @@ import { Button } from '@/components/ui/button';
 import { isToday, parseISO, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { inventoryService } from '@/lib/services/inventory.service';
-import { personnelService } from '@/lib/services/personnel.service';
-import { serviceService } from '@/lib/services/service.service';
+import { inventoryService, personnelService, serviceService, adminService } from '@/lib/services';
 
 
 type KanbanColumnId = 'Agendado' | 'En Espera de Refacciones' | 'Reparando' | 'Completado';
@@ -107,7 +104,7 @@ export default function TableroPage() {
     const unsubs = [
       serviceService.onServicesUpdate(setServices),
       inventoryService.onVehiclesUpdate(setVehicles),
-      personnelService.onPersonnelUpdate(setPersonnel),
+      adminService.onUsersUpdate(setPersonnel as any),
       inventoryService.onItemsUpdate(setInventoryItems),
       inventoryService.onServiceTypesUpdate((data) => {
           setServiceTypes(data);

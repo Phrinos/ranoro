@@ -23,8 +23,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { serviceService, saleService, inventoryService, cashService } from '@/lib/services';
-import type { ServiceRecord, SaleReceipt, InventoryItem, MonthlyFixedExpense, Personnel, CashDrawerTransaction } from '@/types';
+import { serviceService, saleService, inventoryService, cashService, adminService } from '@/lib/services';
+import type { ServiceRecord, SaleReceipt, InventoryItem, MonthlyFixedExpense, Personnel, CashDrawerTransaction, User } from '@/types';
 import { format, startOfMonth, endOfMonth, isWithinInterval, isValid, getYear } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
@@ -50,7 +50,7 @@ function CierrePageInner() {
   const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
   const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
-  const [personnel, setPersonnel] = useState<Personnel[]>([]);
+  const [personnel, setPersonnel] = useState<User[]>([]);
   const [cashTransactions, setCashTransactions] = useState<CashDrawerTransaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
@@ -63,11 +63,11 @@ function CierrePageInner() {
       inventoryService.onItemsUpdate(setAllInventory),
       inventoryService.onFixedExpensesUpdate(setFixedExpenses),
       cashService.onCashTransactionsUpdate(setCashTransactions),
-      // Assuming personnel service exists
-      // personnelService.onPersonnelUpdate(setPersonnel),
+      adminService.onUsersUpdate((users) => {
+        setPersonnel(users);
+        setIsLoading(false);
+      }),
     ];
-    // Simulating personnel fetch
-    Promise.resolve([]).then(setPersonnel).finally(() => setIsLoading(false));
     return () => unsubs.forEach(unsub => unsub());
   }, []);
 

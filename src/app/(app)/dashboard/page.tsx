@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { analyzeWorkshopCapacity } from '@/ai/flows/capacity-analysis-flow';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { serviceService, saleService, inventoryService, personnelService, rentalService } from '@/lib/services';
+import { serviceService, saleService, inventoryService, adminService, personnelService, rentalService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { isValid, isToday, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
@@ -78,7 +78,7 @@ export default function DashboardPage() {
       serviceService.onServicesUpdate(setAllServices),
       saleService.onSalesUpdate(setAllSales),
       inventoryService.onItemsUpdate(setAllInventory),
-      personnelService.onPersonnelUpdate(setAllPersonnel as any),
+      adminService.onUsersUpdate(setAllPersonnel as any),
       personnelService.onDriversUpdate(setDrivers),
       inventoryService.onFixedExpensesUpdate(setFixedExpenses),
       inventoryService.onVehiclesUpdate((vehicles) => {
@@ -176,14 +176,14 @@ export default function DashboardPage() {
       });
 
       if (servicesForToday.length === 0) {
-          const totalAvailable = allPersonnel.filter(p => !p.isArchived).reduce((sum, t) => sum + (t.standardHoursPerDay || 8), 0);
+          const totalAvailable = allPersonnel.filter(p => !(p as any).isArchived).reduce((sum, t) => sum + ((t as any).standardHoursPerDay || 8), 0);
           setCapacityInfo({ totalRequiredHours: 0, totalAvailableHours: totalAvailable, recommendation: 'Taller disponible', capacityPercentage: 0 });
           return;
       }
 
       const result = await analyzeWorkshopCapacity({
           servicesForDay: servicesForToday.map(s => ({ description: s.description || '' })),
-          technicians: allPersonnel.filter(p => !p.isArchived).map(t => ({ id: t.id, standardHoursPerDay: t.standardHoursPerDay || 8 })),
+          technicians: allPersonnel.filter(p => !(p as any).isArchived).map(t => ({ id: t.id, standardHoursPerDay: (t as any).standardHoursPerDay || 8 })),
           serviceHistory: allServices
             .filter(s => s.serviceDate)
             .map(s => {
@@ -277,7 +277,7 @@ export default function DashboardPage() {
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Alertas de Stock Bajo</CardTitle>
+              <CardTitle className="text-sm font-medium">Alertas de Stock Bajo</CardTitle>
               <AlertTriangle className="h-5 w-5 text-orange-500" />
             </CardHeader>
             <CardContent>
