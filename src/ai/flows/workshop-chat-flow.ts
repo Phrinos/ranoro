@@ -1,7 +1,9 @@
 'use server';
 /**
  * @fileOverview Flow de Chat Inteligente Unificado para Ranoro.
- * Proporciona a Gemini acceso a herramientas para consultar datos reales del taller.
+ * 
+ * - sendChatMessage - Función principal para interactuar con el asistente.
+ * - WorkshopChatInput - Tipo de entrada para el chat.
  */
 
 import { ai } from '@/ai/genkit';
@@ -194,8 +196,6 @@ export async function sendChatMessage(message: string, history: any[] = []): Pro
         return await workshopChatFlow({ message, history: cleanHistory as any });
     } catch (error: any) {
         console.error("🔥 ERROR REAL DEL SERVIDOR:", error);
-        
-        // Lanzamos el mensaje técnico para verlo en pantalla durante el debug
         throw new Error(`Error técnico de IA: ${error.message || "No pude conectar con el servidor."}`);
     }
 }
