@@ -1,9 +1,9 @@
+// src/app/(app)/inventario/compras/components/register-purchase-dialog.tsx
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useForm, FormProvider, useFieldArray, type Resolver, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import {
   Dialog,
   DialogContent,
@@ -29,7 +29,9 @@ import {
   ChevronsUpDown,
   Tags,
   Package,
-  Car
+  Car,
+  TrendingUp,
+  Receipt
 } from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
 import { formatCurrency, cn, getToday } from "@/lib/utils";
@@ -133,25 +135,23 @@ export function RegisterPurchaseDialog({
   }, [open, reset]);
 
   const handleSelectInventoryItem = (item: InventoryItem) => {
-    const price = Number(item.unitPrice || 0);
     append({
       inventoryItemId: item.id,
       itemName: item.name,
       quantity: 1,
-      purchasePrice: price,
-      totalPrice: price,
+      purchasePrice: Number(item.unitPrice || 0),
+      sellingPrice: Number(item.sellingPrice || 0),
+      totalPrice: Number(item.unitPrice || 0),
     });
     setIsItemSearchOpen(false);
   };
   
-  const updateQty = (index: number, nextQty: number) => {
-    const items = getValues('items');
-    const safeQty = Math.max(0.01, Number(nextQty) || 0.01);
-    const unit = Number(items[index]?.purchasePrice || 0);
-    setValue(`items.${index}.quantity`, safeQty, { shouldDirty: true, shouldTouch: true });
-    setValue(`items.${index}.totalPrice`, unit * safeQty, { shouldDirty: true, shouldTouch: true });
+  const updateLineTotals = (index: number) => {
+    const item = getValues(`items.${index}`);
+    const qty = Number(item?.quantity) || 0;
+    const cost = Number(item?.purchasePrice) || 0;
+    setValue(`items.${index}.totalPrice`, cost * qty, { shouldDirty: true });
   };
-
 
   const handleNewItemRequest = (searchTerm: string) => {
     setNewItemSearchTerm(searchTerm);
@@ -168,25 +168,27 @@ export function RegisterPurchaseDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl p-0 overflow-hidden">
+        <DialogContent className="max-w-5xl p-0 overflow-hidden">
           <DialogHeader className="border-b p-6 pb-4 bg-white">
             <DialogTitle>Registrar Nueva Compra</DialogTitle>
             <DialogDescription>
-              Busque un proveedor, añada los productos comprados y especifique los detalles del pago.
+              Captura los datos del proveedor, método de pago y el detalle de los artículos.
             </DialogDescription>
           </DialogHeader>
 
           <FormProvider {...form}>
               <Form {...form}>
-                <form onSubmit={handleSubmit(onSave)} id="purchase-form" className="space-y-4">
-                  <div className="max-h-[calc(80vh-150px)] space-y-6 overflow-y-auto px-6 py-4 bg-muted/50">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <form onSubmit={handleSubmit(onSave)} id="purchase-form" className="space-y-0">
+                  <div className="max-h-[calc(80vh-150px)] space-y-6 overflow-y-auto px-6 py-6 bg-muted/50">
+                    
+                    {/* LÍNEA 1: PROVEEDOR */}
+                    <div className="grid grid-cols-1">
                       <FormField
                         control={control as any}
                         name="supplierId"
                         render={({ field }) => (
                           <FormItem className="flex flex-col">
-                            <FormLabel>Proveedor</FormLabel>
+                            <FormLabel className="font-bold">Proveedor</FormLabel>
                             <Popover open={isSupplierSearchOpen} onOpenChange={setIsSupplierSearchOpen}>
                               <PopoverTrigger asChild>
                                 <FormControl>
@@ -194,14 +196,14 @@ export function RegisterPurchaseDialog({
                                     variant="outline"
                                     role="combobox"
                                     className={cn(
-                                      "w-full justify-between bg-white text-left font-normal",
+                                      "w-full justify-between bg-white text-left font-normal h-11",
                                       !field.value && "text-muted-foreground"
                                     )}
                                   >
                                     <span className="truncate">
                                       {field.value
                                         ? suppliers.find((s) => s.id === field.value)?.name
-                                        : "Buscar proveedor..."}
+                                        : "Buscar o seleccionar proveedor..."}
                                     </span>
                                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                   </Button>
@@ -249,143 +251,19 @@ export function RegisterPurchaseDialog({
                           </FormItem>
                         )}
                       />
-                      <FormField
-                        control={control as any}
-                        name="invoiceId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Folio de Factura (Opcional)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="F-12345" {...field} value={field.value ?? ""} className="bg-white" />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
                     </div>
 
-                    <FormField
-                      control={control as any}
-                      name="items"
-                      render={() => (
-                        <FormItem>
-                          <FormLabel>Artículos Comprados</FormLabel>
-                          <div className="mt-2 space-y-2 rounded-md border bg-card p-4">
-                            {fields.length > 0 && (
-                              <div className="hidden sm:grid sm:grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground pr-10">
-                                <span className="sm:col-span-5">Artículo</span>
-                                <span className="sm:col-span-3 text-center">Cantidad</span>
-                                <span className="sm:col-span-2 text-right">Costo Unitario</span>
-                                <span className="sm:col-span-2 text-right">Costo Total</span>
-                              </div>
-                            )}
-                            <ScrollArea className="max-h-48 pr-3">
-                              <div className="space-y-3">
-                                {fields.map((field, index) => {
-                                  const itemValues = watch(`items.${index}`);
-                                  const qty = Number(itemValues?.quantity || 1);
-                                  const unitPrice = Number(itemValues?.purchasePrice || 0);
-                                  const lineTotal = qty * unitPrice;
-                                  return (
-                                    <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
-                                      <span
-                                        className="col-span-12 sm:col-span-5 truncate text-sm font-medium"
-                                        title={itemValues.itemName}
-                                      >
-                                        {itemValues.itemName}
-                                      </span>
-                                      <div className="col-span-6 sm:col-span-3 flex items-center gap-1">
-                                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQty(index, qty - 1)} disabled={qty <= 1}>
-                                          <Minus className="h-4 w-4" />
-                                        </Button>
-                                        <FormField
-                                          control={control as any}
-                                          name={`items.${index}.quantity`}
-                                          render={({ field }) => (
-                                            <Input
-                                              type="number"
-                                              step="0.01"
-                                              min="0.01"
-                                              inputMode="decimal"
-                                              className="h-8 w-16 text-center bg-white"
-                                              {...field}
-                                              value={(field.value as any) ?? ""}
-                                              onChange={(e) => updateQty(index, parseFloat(e.target.value))}
-                                              onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
-                                            />
-                                          )}
-                                        />
-                                        <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => updateQty(index, qty + 1)}>
-                                          <Plus className="h-4 w-4" />
-                                        </Button>
-                                      </div>
-                                      <div className="col-span-3 sm:col-span-2">
-                                        <FormField
-                                          control={control as any}
-                                          name={`items.${index}.purchasePrice`}
-                                          render={({ field }) => (
-                                            <div className="relative">
-                                              <DollarSign className="text-muted-foreground absolute left-2.5 top-1.5 h-4 w-4" />
-                                              <Input
-                                                type="number"
-                                                step="0.01"
-                                                min="0"
-                                                inputMode="decimal"
-                                                className="h-8 pl-8 text-right bg-white"
-                                                {...field}
-                                                value={(field.value as any) ?? ""}
-                                                onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
-                                              />
-                                            </div>
-                                          )}
-                                        />
-                                      </div>
-                                      <div className="col-span-2 sm:col-span-2 text-right font-semibold">
-                                        {formatCurrency(lineTotal)}
-                                      </div>
-                                      <div className="col-span-1 text-right">
-                                        <Button
-                                          type="button"
-                                          variant="ghost"
-                                          size="icon"
-                                          onClick={() => remove(index)}
-                                        >
-                                          <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            </ScrollArea>
-                            <div className="border-t pt-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setIsItemSearchOpen(true)}
-                                className="bg-white"
-                              >
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Añadir Artículo
-                              </Button>
-                            </div>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {/* LÍNEA 2: MÉTODO DE PAGO Y FOLIO */}
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                       <FormField
                         control={control as any}
                         name="paymentMethod"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Método de Pago</FormLabel>
+                            <FormLabel className="font-bold">Método de Pago</FormLabel>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
-                                <SelectTrigger className="bg-white">
+                                <SelectTrigger className="bg-white h-11">
                                   <SelectValue />
                                 </SelectTrigger>
                               </FormControl>
@@ -401,20 +279,33 @@ export function RegisterPurchaseDialog({
                         )}
                       />
 
+                      <FormField
+                        control={control as any}
+                        name="invoiceId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-bold">Folio de Factura / Ticket</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Ej: F-12345" {...field} value={field.value ?? ""} className="bg-white h-11" />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
                       {paymentMethod === "Crédito" && (
                         <FormField
                           control={control as any}
                           name="dueDate"
                           render={({ field }) => (
                             <FormItem className="flex flex-col">
-                              <FormLabel>Fecha de Vencimiento</FormLabel>
+                              <FormLabel className="font-bold">Vencimiento</FormLabel>
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <FormControl>
                                     <Button
                                       variant="outline"
                                       className={cn(
-                                        "pl-3 text-left font-normal bg-white",
+                                        "pl-3 text-left font-normal bg-white h-11",
                                         !field.value && "text-muted-foreground"
                                       )}
                                     >
@@ -441,18 +332,150 @@ export function RegisterPurchaseDialog({
                         />
                       )}
                     </div>
+
+                    {/* LÍNEA 3: ARTÍCULOS COMPRADOS */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <FormLabel className="text-base font-black flex items-center gap-2">
+                          <Receipt className="h-5 w-5 text-primary" />
+                          Detalle de Artículos
+                        </FormLabel>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setIsItemSearchOpen(true)}
+                          className="h-9 gap-2 shadow-sm"
+                        >
+                          <PlusCircle className="h-4 w-4" />
+                          Añadir Artículo
+                        </Button>
+                      </div>
+
+                      <div className="rounded-xl border bg-card shadow-inner overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-muted/80 text-muted-foreground text-[10px] uppercase tracking-widest font-bold border-b">
+                            <tr>
+                              <th className="px-4 py-3 text-left">Artículo</th>
+                              <th className="px-2 py-3 text-center w-24">Cantidad</th>
+                              <th className="px-2 py-3 text-right w-32">Costo (Taller)</th>
+                              <th className="px-2 py-3 text-right w-32">Venta (Público)</th>
+                              <th className="px-2 py-3 text-right w-32">Total</th>
+                              <th className="px-4 py-3 w-10"></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {fields.map((field, index) => (
+                              <tr key={field.id} className="border-b last:border-0 hover:bg-muted/5 transition-colors">
+                                <td className="px-4 py-3">
+                                  <p className="font-bold text-sm truncate max-w-[200px]" title={watch(`items.${index}.itemName`)}>
+                                    {watch(`items.${index}.itemName`)}
+                                  </p>
+                                </td>
+                                <td className="px-2 py-3">
+                                  <FormField
+                                    control={control as any}
+                                    name={`items.${index}.quantity`}
+                                    render={({ field }) => (
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        className="h-9 text-center bg-white"
+                                        {...field}
+                                        value={(field.value as any) ?? ""}
+                                        onChange={(e) => {
+                                          field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value));
+                                          updateLineTotals(index);
+                                        }}
+                                      />
+                                    )}
+                                  />
+                                </td>
+                                <td className="px-2 py-3">
+                                  <FormField
+                                    control={control as any}
+                                    name={`items.${index}.purchasePrice`}
+                                    render={({ field }) => (
+                                      <div className="relative">
+                                        <DollarSign className="text-muted-foreground absolute left-2 top-2.5 h-3.5 w-3.5" />
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          className="h-9 pl-7 text-right bg-white"
+                                          {...field}
+                                          value={(field.value as any) ?? ""}
+                                          onChange={(e) => {
+                                            field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value));
+                                            updateLineTotals(index);
+                                          }}
+                                        />
+                                      </div>
+                                    )}
+                                  />
+                                </td>
+                                <td className="px-2 py-3">
+                                  <FormField
+                                    control={control as any}
+                                    name={`items.${index}.sellingPrice`}
+                                    render={({ field }) => (
+                                      <div className="relative">
+                                        <TrendingUp className="text-green-600 absolute left-2 top-2.5 h-3.5 w-3.5" />
+                                        <Input
+                                          type="number"
+                                          step="0.01"
+                                          className="h-9 pl-7 text-right bg-white font-semibold text-green-700"
+                                          {...field}
+                                          value={(field.value as any) ?? ""}
+                                          onChange={(e) => field.onChange(e.target.value === "" ? "" : parseFloat(e.target.value))}
+                                        />
+                                      </div>
+                                    )}
+                                  />
+                                </td>
+                                <td className="px-2 py-3 text-right">
+                                  <span className="font-black text-foreground">
+                                    {formatCurrency(Number(watch(`items.${index}.totalPrice`) || 0))}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => remove(index)}
+                                    className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                            {fields.length === 0 && (
+                              <tr>
+                                <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground italic">
+                                  No has añadido ningún artículo aún.
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
                   </div>
 
                   <DialogFooter className="flex w-full flex-col-reverse items-center border-t bg-white p-6 pt-4 sm:flex-row sm:justify-between">
-                      <div className="text-right text-lg font-bold">
-                          Total: {formatCurrency(watch("invoiceTotal") || 0)}
+                      <div className="flex flex-col">
+                        <span className="text-xs text-muted-foreground uppercase font-bold tracking-tighter">Total Compra</span>
+                        <div className="text-2xl font-black text-primary">
+                            {formatCurrency(watch("invoiceTotal") || 0)}
+                        </div>
                       </div>
                       <div className="flex gap-2">
                           <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
                           Cancelar
                           </Button>
-                          <Button type="submit" form="purchase-form" disabled={fields.length === 0}>
-                          Registrar Compra
+                          <Button type="submit" disabled={fields.length === 0}>
+                          Completar Registro
                           </Button>
                       </div>
                   </DialogFooter>
@@ -482,7 +505,7 @@ export function RegisterPurchaseDialog({
   );
 }
 
-// --- Subcomponente buscador ---
+// --- Subcomponente buscador (Refinado) ---
 interface SearchItemDialogProps {
   open: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -503,21 +526,16 @@ function SearchItemDialog({
   const filteredItems = useMemo(() => {
     const physical = inventoryItems.filter((i) => !i.isService);
     if (!searchTerm.trim()) return physical.slice(0, 50);
-    const q = searchTerm.toLowerCase();
+    const q = normalize(searchTerm.trim());
     return physical.filter(
       (i) =>
-        i.name.toLowerCase().includes(q) ||
-        (i.sku && i.sku.toLowerCase().includes(q))
+        normalize(i.name).includes(q) ||
+        (i.sku && normalize(i.sku).includes(q))
     ).slice(0, 100);
   }, [searchTerm, inventoryItems]);
 
-  const handleOpenChange = (isOpen: boolean) => {
-    if (!isOpen) setSearchTerm("");
-    onOpenChange(isOpen);
-  };
-
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl p-0 overflow-hidden">
         <DialogHeader className="border-b p-6 pb-4 bg-white">
           <DialogTitle>Buscar Artículo en Inventario</DialogTitle>
@@ -540,7 +558,7 @@ function SearchItemDialog({
         </div>
 
         <div className="px-6 pb-6 bg-muted/10">
-          <ScrollArea className="h-[450px] rounded-md border bg-white">
+          <ScrollArea className="h-[450px] rounded-md border bg-white shadow-inner">
             <div className="p-2">
               <div className="grid grid-cols-1 gap-1">
                 {filteredItems.map((item) => {
@@ -563,7 +581,7 @@ function SearchItemDialog({
                             <span className="font-bold text-base truncate">{item.name}</span>
                           </div>
                           <div className="text-right shrink-0">
-                            <span className="font-black text-primary text-lg">
+                            <span className="font-bold text-primary text-lg">
                               {formatCurrency(price)}
                             </span>
                           </div>

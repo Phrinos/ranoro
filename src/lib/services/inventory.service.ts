@@ -79,7 +79,7 @@ const deleteItem = async (id: string): Promise<void> => {
 
 const updateInventoryStock = async (
     batch: WriteBatch,
-    items: { id: string; quantity: number; unitPrice?: number }[],
+    items: { id: string; quantity: number; unitPrice?: number; sellingPrice?: number }[],
     operation: 'add' | 'subtract'
 ) => {
     if (!db) throw new Error("Database not initialized.");
@@ -98,12 +98,15 @@ const updateInventoryStock = async (
                 ? currentStock + item.quantity
                 : currentStock - item.quantity;
             
-            const updateData: { quantity: number; unitPrice?: number, updatedAt: any } = { 
+            const updateData: any = { 
                 quantity: newStock,
                 updatedAt: serverTimestamp() 
             };
             if (item.unitPrice !== undefined) {
                 updateData.unitPrice = item.unitPrice;
+            }
+            if (item.sellingPrice !== undefined) {
+                updateData.sellingPrice = item.sellingPrice;
             }
 
             batch.update(itemRef, updateData);

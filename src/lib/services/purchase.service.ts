@@ -88,11 +88,12 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   const taxes = data.taxes != null ? asMoney(data.taxes) : undefined;
   const discounts = data.discounts != null ? asMoney(data.discounts) : undefined;
 
-  // --- 1) Actualización de inventario (sumar existencias y actualizar costo unitario)
+  // --- 1) Actualización de inventario (sumar existencias y actualizar costo unitario + precio venta)
   const inventoryUpdateItems = data.items.map((item: any) => ({
     id: item.inventoryItemId,
     quantity: item.quantity,
     unitPrice: asMoney(item.purchasePrice),
+    sellingPrice: item.sellingPrice != null ? asMoney(item.sellingPrice) : undefined,
   }));
   await inventoryService.updateInventoryStock(batch, inventoryUpdateItems, 'add');
 
@@ -108,7 +109,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
   const payableRef = isCredit(data.paymentMethod) ? doc(collection(db, 'payableAccounts')) : null;
   const payableAccountId = payableRef?.id ?? null;
 
-  const cashTxRef = isImmediatePayment(data.paymentMethod) ? doc(collection(db, 'cashDrawerTransactions')) : null;
+  const cashTxRef = isCash(data.paymentMethod) ? doc(collection(db, 'cashDrawerTransactions')) : null;
   const cashTransactionId = cashTxRef?.id ?? null;
 
   // --- 4) Documento de compra
@@ -123,6 +124,7 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
       itemName: it.itemName,
       quantity: it.quantity,
       purchasePrice: asMoney(it.purchasePrice),
+      sellingPrice: it.sellingPrice != null ? asMoney(it.sellingPrice) : undefined,
       subtotal: asMoney((it.quantity ?? 0) * (asMoney(it.purchasePrice) ?? 0)),
     })),
     subtotal,
