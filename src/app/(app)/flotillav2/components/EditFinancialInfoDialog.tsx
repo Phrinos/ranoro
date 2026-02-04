@@ -81,7 +81,7 @@ export function EditFinancialInfoDialog({ open, onOpenChange, onSave, driver }: 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="contractDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
@@ -111,11 +111,11 @@ export function EditFinancialInfoDialog({ open, onOpenChange, onSave, driver }: 
               )}
             />
 
-            <FormField control={form.control} name="requiredDepositAmount" render={({ field }) => (
+            <FormField control={form.control as any} name="requiredDepositAmount" render={({ field }) => (
               <FormItem><FormLabel>Depósito Requerido ($)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)} className="bg-white"/></FormControl><FormMessage /></FormItem>
             )}/>
 
-            <FormField control={form.control} name="depositAmount" render={({ field }) => (
+            <FormField control={form.control as any} name="depositAmount" render={({ field }) => (
               <FormItem><FormLabel>Depósito Entregado ($)</FormLabel><FormControl><Input type="number" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)} className="bg-white"/></FormControl><FormMessage /></FormItem>
             )}/>
 

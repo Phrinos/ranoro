@@ -75,12 +75,12 @@ export function PaperworkDialog({ open, onOpenChange, paperwork, onSave }: Paper
       <DialogContent className="sm:max-w-md">
         <DialogHeader><DialogTitle>Gestionar Trámite</DialogTitle></DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSave)} className="space-y-4 pt-2">
-            <FormField control={form.control} name="name" render={({ field }) => (
+          <form onSubmit={form.handleSubmit(onSave as any)} className="space-y-4 pt-2">
+            <FormField control={form.control as any} name="name" render={({ field }) => (
               <FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} value={field.value ?? ""} className="bg-white" /></FormControl><FormMessage /></FormItem>
             )}/>
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="dueDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">

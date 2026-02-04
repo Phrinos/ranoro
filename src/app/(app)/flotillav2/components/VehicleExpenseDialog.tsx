@@ -62,9 +62,9 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSave)} className="space-y-4 p-4">
+          <form onSubmit={form.handleSubmit(onSave as any)} className="space-y-4 p-4">
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="vehicleId"
               render={({ field }) => (
                 <FormItem>
@@ -89,7 +89,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="amount"
               render={({ field }) => (
                 <FormItem>
@@ -109,7 +109,7 @@ export function VehicleExpenseDialog({ open, onOpenChange, vehicles, onSave }: V
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="description"
               render={({ field }) => (
                 <FormItem>

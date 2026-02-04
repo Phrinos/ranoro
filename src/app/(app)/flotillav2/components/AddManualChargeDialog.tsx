@@ -113,7 +113,7 @@ export function AddManualChargeDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-2">
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="date"
               render={({ field }) => {
                 const dateValue = field.value instanceof Date ? field.value : undefined;
@@ -155,7 +155,7 @@ export function AddManualChargeDialog({
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="amount"
               render={({ field }) => (
                 <FormItem>
@@ -179,7 +179,7 @@ export function AddManualChargeDialog({
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="note"
               render={({ field }) => (
                 <FormItem>

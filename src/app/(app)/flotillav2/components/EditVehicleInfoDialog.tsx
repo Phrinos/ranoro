@@ -86,7 +86,7 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="make"
                 render={({ field }) => (
                   <FormItem>
@@ -99,7 +99,7 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
                 )}
               />
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="model"
                 render={({ field }) => (
                   <FormItem>
@@ -114,7 +114,7 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
             </div>
             <div className="grid grid-cols-2 gap-4">
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="year"
                 render={({ field }) => (
                   <FormItem>
@@ -127,7 +127,7 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
                 )}
               />
               <FormField
-                control={form.control}
+                control={form.control as any}
                 name="color"
                 render={({ field }) => (
                   <FormItem>
@@ -141,7 +141,7 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
               />
             </div>
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="ownerName"
               render={({ field }) => (
                 <FormItem>

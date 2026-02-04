@@ -61,9 +61,9 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, onSave, owners }: Ow
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={handleSubmit(async (data) => onSave(data))} className="space-y-4">
+          <form onSubmit={handleSubmit(async (data) => onSave(data as any))} className="space-y-4">
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="ownerName"
               render={({ field }) => (
                 <FormItem>
@@ -88,7 +88,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, onSave, owners }: Ow
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="date"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
@@ -116,7 +116,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, onSave, owners }: Ow
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="amount"
               render={({ field }) => (
                 <FormItem>
@@ -135,7 +135,7 @@ export function OwnerWithdrawalDialog({ open, onOpenChange, onSave, owners }: Ow
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="note"
               render={({ field }) => (
                 <FormItem>

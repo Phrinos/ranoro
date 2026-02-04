@@ -109,9 +109,9 @@ export function RegisterPaymentDialog({
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={handleSubmit(handleSave)} className="space-y-4">
+          <form onSubmit={handleSubmit(handleSave as any)} className="space-y-4">
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="paymentDate"
               render={({ field }) => (
                 <FormItem className="flex flex-col">
@@ -143,7 +143,7 @@ export function RegisterPaymentDialog({
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="amount"
               render={({ field }) => (
                 <FormItem>
@@ -162,7 +162,7 @@ export function RegisterPaymentDialog({
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="paymentMethod"
               render={({ field }) => (
                 <FormItem>
@@ -186,7 +186,7 @@ export function RegisterPaymentDialog({
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="note"
               render={({ field }) => (
                 <FormItem>

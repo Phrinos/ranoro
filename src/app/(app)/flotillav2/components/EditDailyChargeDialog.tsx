@@ -110,7 +110,7 @@ export function EditDailyChargeDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4 pt-4">
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="date"
               render={({ field }) => {
                 const dateValue = normalizeToDate(field.value) ?? undefined;
@@ -158,7 +158,7 @@ export function EditDailyChargeDialog({
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="amount"
               render={({ field }) => (
                 <FormItem>
@@ -179,7 +179,7 @@ export function EditDailyChargeDialog({
             />
 
             <FormField
-              control={form.control}
+              control={form.control as any}
               name="note"
               render={({ field }) => (
                 <FormItem>
