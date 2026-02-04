@@ -22,8 +22,6 @@ import {
   PlusCircle, 
   Trash2, 
   CalendarIcon, 
-  Minus, 
-  Plus,
   Check,
   ChevronsUpDown,
   Tags,
@@ -31,7 +29,8 @@ import {
   Car,
   TrendingUp,
   Receipt,
-  Search as SearchIcon
+  Search as SearchIcon,
+  Loader2
 } from "lucide-react";
 import type { InventoryItem, Supplier, InventoryCategory } from "@/types";
 import { formatCurrency, cn, getToday } from "@/lib/utils";
@@ -189,7 +188,7 @@ export function RegisterPurchaseDialog({
                         name="supplierId"
                         render={({ field }) => (
                           <FormItem className="flex flex-col">
-                            <FormLabel className="font-bold">Proveedor</FormLabel>
+                            <Label className="font-bold">Proveedor</Label>
                             <Popover open={isSupplierSearchOpen} onOpenChange={setIsSupplierSearchOpen}>
                               <PopoverTrigger asChild>
                                 <FormControl>
@@ -227,9 +226,7 @@ export function RegisterPurchaseDialog({
                                         <CommandItem
                                           key={s.id}
                                           value={`${s.name} ${s.rfc ?? ""}`.trim()}
-                                          onMouseDown={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
+                                          onSelect={() => {
                                             setValue("supplierId", String(s.id), { shouldValidate: true, shouldDirty: true });
                                             setIsSupplierSearchOpen(false);
                                             setSupplierSearchQuery("");
@@ -262,7 +259,7 @@ export function RegisterPurchaseDialog({
                         name="paymentMethod"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="font-bold">Método de Pago</FormLabel>
+                            <Label className="font-bold">Método de Pago</Label>
                             <Select onValueChange={field.onChange} value={field.value}>
                               <FormControl>
                                 <SelectTrigger className="bg-white h-11">
@@ -287,7 +284,7 @@ export function RegisterPurchaseDialog({
                         name="invoiceId"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="font-bold">Folio de Factura / Ticket</FormLabel>
+                            <Label className="font-bold">Folio de Factura / Ticket</Label>
                             <FormControl>
                               <Input placeholder="Ej: F-12345" {...field} value={field.value ?? ""} className="bg-white h-11" />
                             </FormControl>
@@ -301,7 +298,7 @@ export function RegisterPurchaseDialog({
                           name="dueDate"
                           render={({ field }) => (
                             <FormItem className="flex flex-col">
-                              <FormLabel className="font-bold">Vencimiento</FormLabel>
+                              <Label className="font-bold">Vencimiento</Label>
                               <Popover>
                                 <PopoverTrigger asChild>
                                   <FormControl>

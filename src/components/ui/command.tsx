@@ -15,7 +15,7 @@ const Command = React.forwardRef<
   <CommandPrimitive
     ref={ref}
     className={cn(
-      "flex h-full w-full flex-col overflow-hidden rounded-2xl bg-popover text-popover-foreground",
+      "flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground",
       className
     )}
     {...props}
@@ -28,13 +28,18 @@ type CommandDialogProps = DialogProps;
 const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
   return (
     <Dialog {...props}>
-      <DialogContent className="overflow-hidden p-0 shadow-xl">
-        <Command className={cn(
-          "[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted-foreground",
-          "[&_[cmdk-group]]:px-2 [&_[cmdk-group]]:py-1",
-          "[&_[cmdk-input-wrapper]]:px-3 [&_[cmdk-input]]:h-12",
-          "[&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-3"
-        )}>
+      <DialogContent className="overflow-hidden p-0 shadow-lg">
+        <Command
+          className={cn(
+            "[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-muted-foreground",
+            "[&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0",
+            "[&_[cmdk-group]]:px-2",
+            "[&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5",
+            "[&_[cmdk-input]]:h-12",
+            "[&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3",
+            "[&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5"
+          )}
+        >
           {children}
         </Command>
       </DialogContent>
@@ -67,11 +72,7 @@ const CommandList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <CommandPrimitive.List
     ref={ref}
-    className={cn(
-      "max-h-[360px] overflow-y-auto overflow-x-hidden",
-      "scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent",
-      className
-    )}
+    className={cn("max-h-[300px] overflow-y-auto overflow-x-hidden", className)}
     {...props}
   />
 ));
@@ -83,7 +84,7 @@ const CommandEmpty = React.forwardRef<
 >((props, ref) => (
   <CommandPrimitive.Empty
     ref={ref}
-    className="py-8 text-center text-sm text-muted-foreground"
+    className="py-6 text-center text-sm text-muted-foreground"
     {...props}
   />
 ));
@@ -97,9 +98,8 @@ const CommandGroup = React.forwardRef<
     ref={ref}
     className={cn(
       "overflow-hidden p-1 text-foreground",
-      "[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-2",
-      "[&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-bold",
-      "[&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider",
+      "[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:py-1.5",
+      "[&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-semibold",
       "[&_[cmdk-group-heading]]:text-muted-foreground",
       className
     )}
@@ -120,30 +120,21 @@ const CommandSeparator = React.forwardRef<
 ));
 CommandSeparator.displayName = CommandPrimitive.Separator.displayName;
 
-/**
- * FIX GLOBAL PARA: Popover/Dialog + cmdk
- * - usa onMouseDown preventDefault para que el blur no mate la selección
- * - si está disabled, no bloquea por accidente el resto del stack
- */
 const CommandItem = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Item>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Item>
->(({ className, onMouseDown, disabled, ...props }, ref) => (
+>(({ className, onMouseDownCapture, ...props }, ref) => (
   <CommandPrimitive.Item
     ref={ref}
-    onMouseDown={(e) => {
-      if (!disabled) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-      onMouseDown?.(e);
+    onMouseDownCapture={(e) => {
+      onMouseDownCapture?.(e);
+      if (!e.defaultPrevented) e.preventDefault();
     }}
-    disabled={disabled}
     className={cn(
-      "relative flex cursor-default select-none items-center rounded-xl px-3 py-2 text-sm outline-none",
+      "relative flex cursor-pointer select-none items-center gap-2 rounded-sm px-2 py-2 text-sm outline-none",
       "aria-selected:bg-accent aria-selected:text-accent-foreground",
-      "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      "hover:bg-muted/40",
+      "data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50",
+      "aria-disabled:pointer-events-none aria-disabled:opacity-50",
       className
     )}
     {...props}
