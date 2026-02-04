@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect } from "react";
@@ -19,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
+import { NewCalendar } from "@/components/ui/calendar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
@@ -46,10 +47,8 @@ const buildDefaults = (): GlobalTransactionFormValues => ({
 });
 
 export function GlobalTransactionDialog({ open, onOpenChange, drivers, onSave, transactionType }: GlobalTransactionDialogProps) {
-  const resolver = zodResolver(globalTransactionSchema) as unknown as Resolver<GlobalTransactionFormValues>;
-
   const form = useForm<GlobalTransactionFormValues>({
-    resolver,
+    resolver: zodResolver(globalTransactionSchema) as unknown as Resolver<GlobalTransactionFormValues>,
     defaultValues: buildDefaults(),
     mode: "onBlur",
   });
@@ -107,7 +106,7 @@ export function GlobalTransactionDialog({ open, onOpenChange, drivers, onSave, t
                         <Button
                           type="button"
                           variant="outline"
-                          className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")}
+                          className={cn("justify-start text-left font-normal bg-white", !field.value && "text-muted-foreground")}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {field.value ? formatDate(field.value, "PPP", { locale: es }) : "Selecciona una fecha"}
@@ -115,7 +114,11 @@ export function GlobalTransactionDialog({ open, onOpenChange, drivers, onSave, t
                       </FormControl>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={field.value} onSelect={(d: Date | undefined) => field.onChange(d ?? new Date())} initialFocus />
+                      <NewCalendar
+                        value={field.value}
+                        onChange={(d: any) => field.onChange(d)}
+                        locale="es-MX"
+                      />
                     </PopoverContent>
                   </Popover>
                   <FormMessage />

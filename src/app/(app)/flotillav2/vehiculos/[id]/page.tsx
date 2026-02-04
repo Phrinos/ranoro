@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -151,7 +152,7 @@ export default function VehicleProfilePageV2() {
       </div>
 
       <EditVehicleInfoDialog open={isInfoOpen} onOpenChange={setIsInfoOpen} vehicle={vehicle} onSave={handleSaveVehicleInfo} />
-      <EditRentalSystemDialog open={isRentalOpen} onOpenChange={setIsRentalOpen} vehicle={vehicle} onSave={handleSaveRentalSystem} />
+      <EditRentalSystemDialog open={isRentalOpen} onOpenChange={isRentalOpen} vehicle={vehicle} onSave={handleSaveRentalSystem} />
       <PaperworkDialog open={isPaperOpen} onOpenChange={setIsPaperOpen} paperwork={editingPaperwork} onSave={handleSavePaperwork} />
       <FineCheckDialog 
         open={isFineOpen} 
