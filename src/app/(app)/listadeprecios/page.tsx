@@ -1,10 +1,10 @@
-// src/app/(app)/listadeprecios/page.tsx
+
 "use client";
 
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { withSuspense } from "@/lib/withSuspense";
-import { Loader2, PlusCircle } from 'lucide-react';
+import { Loader2, PlusCircle, BookOpen } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { inventoryService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
@@ -71,7 +71,7 @@ function ListaDePreciosPage() {
     },
     { 
       value: 'grupos', 
-      label: 'Grupos (Hermanados)', 
+      label: 'Grupos (Compatibilidad)', 
       content: <GroupsTab groups={groups} priceLists={priceLists} /> 
     },
   ];
@@ -82,8 +82,8 @@ function ListaDePreciosPage() {
 
   const actions = (
     <div className="flex gap-2">
-      <Button variant="outline" onClick={() => setIsNewMakeDialogOpen(true)} className="bg-white">
-        <PlusCircle className="mr-2 h-4 w-4" /> Nueva Marca
+      <Button variant="default" onClick={() => setIsNewMakeDialogOpen(true)} className="bg-primary hover:bg-primary/90 font-bold">
+        <PlusCircle className="mr-2 h-4 w-4" /> Añadir Marca
       </Button>
     </div>
   );
@@ -92,7 +92,12 @@ function ListaDePreciosPage() {
     <>
       <TabbedPageLayout
         title="Catálogo Maestro Independiente"
-        description="Gestión técnica de vehículos. Los datos aquí son independientes del catálogo de cotizaciones general."
+        description={
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-primary-foreground/60" />
+            <span>Base de datos técnica para consulta de insumos y estandarización de costos.</span>
+          </div>
+        }
         activeTab={activeTab}
         onTabChange={handleTabChange}
         tabs={tabs}
@@ -102,7 +107,7 @@ function ListaDePreciosPage() {
       <Dialog open={isNewMakeDialogOpen} onOpenChange={setIsNewMakeDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nueva Marca (Maestra)</DialogTitle>
+            <DialogTitle>Nueva Marca Maestros</DialogTitle>
             <DialogDescription>Añade una nueva marca a tu catálogo técnico independiente.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
