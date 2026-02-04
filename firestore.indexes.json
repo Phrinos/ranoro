@@ -10,7 +10,7 @@
         },
         {
           "fieldPath": "deliveryDateTime",
-          "order": "DESCENDING"
+          "order": "ASCENDING"
         }
       ]
     },
@@ -24,20 +24,6 @@
         },
         {
           "fieldPath": "date",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "serviceRecords",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "serviceDate",
           "order": "DESCENDING"
         }
       ]

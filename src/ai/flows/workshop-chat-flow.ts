@@ -8,7 +8,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { getAdminDb } from '@/lib/firebaseAdmin';
-import { startOfMonth, endOfMonth, isWithinInterval, isValid } from 'date-fns';
+import { startOfMonth, endOfMonth, isValid } from 'date-fns';
 
 // --- Helper para manejar fechas de Firestore ---
 const parseDate = (dateVal: any): Date => {
@@ -53,7 +53,7 @@ const getServiceReport = ai.defineTool(
     const start = startOfMonth(new Date(targetYear, targetMonth));
     const end = endOfMonth(start);
 
-    // Optimización: Filtrar por fecha directamente en Firestore
+    // Consulta optimizada directamente en Firestore
     const servicesSnap = await db.collection('serviceRecords')
         .where('status', '==', 'Entregado')
         .where('deliveryDateTime', '>=', start.toISOString())
@@ -111,7 +111,6 @@ const getFinancialStats = ai.defineTool(
     const start = startOfMonth(new Date(targetYear, targetMonth));
     const end = endOfMonth(start);
 
-    // Optimización: Consultas filtradas por fecha
     const servicesSnap = await db.collection('serviceRecords')
       .where('status', '==', 'Entregado')
       .where('deliveryDateTime', '>=', start.toISOString())
@@ -213,7 +212,6 @@ export async function sendChatMessage(message: string, history: any[] = []): Pro
         return await workshopChatFlow({ message, history: cleanHistory as any });
     } catch (error: any) {
         console.error("🔥 ERROR GENKIT SERVER:", error);
-        // Lanzamos el mensaje técnico para facilitar el diagnóstico en el frontend
         throw new Error(`Error técnico de IA: ${error.message || "No pude conectar con el servidor de inteligencia."}`);
     }
 }
