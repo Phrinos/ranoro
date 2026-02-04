@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview Flow de Chat Inteligente Unificado para Ranoro.
- * Proporciona a Gemini acceso a herramientas para consultar datos reales del taller mediante Vertex AI.
+ * Proporciona a Gemini acceso a herramientas para consultar datos reales del taller mediante Google AI.
  *
  * - sendChatMessage - Función que maneja el proceso de chat con el asistente.
  */
@@ -195,7 +195,10 @@ export async function sendChatMessage(message: string, history: any[] = []): Pro
         return await workshopChatFlow({ message, history: cleanHistory as any });
     } catch (error: any) {
         console.error("Error detallado en flujo de IA:", error);
-        // Lanzamos un error descriptivo pero capturable
-        throw new Error(error.message || "No pude consultar la base de datos.");
+        // Si es un error de API Key, damos un mensaje útil
+        if (error.message?.includes('API_KEY_INVALID') || error.message?.includes('403')) {
+            throw new Error("La API Key de Google AI no es válida o no está configurada en el archivo .env.");
+        }
+        throw new Error(error.message || "No pude procesar tu solicitud de IA.");
     }
 }
