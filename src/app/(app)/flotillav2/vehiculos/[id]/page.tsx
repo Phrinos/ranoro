@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Loader2, Trash2, Info, FileText, Wrench } from 'lucide-react';
 import { inventoryService, personnelService, serviceService } from '@/lib/services';
-import type { Vehicle, Driver, ServiceRecord, Paperwork, FineCheck } from '@/types';
+import type { Vehicle, Driver, ServiceRecord, FineCheck } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -110,7 +110,7 @@ export default function VehicleProfilePageV2() {
     <div className="space-y-6">
       <PageHeader
         title={`${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`}
-        description="Gestión técnica y administrativa de la unidad."
+        description="Gestión técnica y administrativa de la unidad en flota."
         actions={
           <div className="flex gap-2">
             <ConfirmDialog
@@ -127,7 +127,7 @@ export default function VehicleProfilePageV2() {
       />
 
       <Tabs defaultValue="details" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 max-w-2xl">
+        <TabsList className="grid w-full grid-cols-3 max-w-2xl mb-6">
           <TabsTrigger value="details" className="gap-2">
             <Info className="h-4 w-4" /> Detalles
           </TabsTrigger>
@@ -139,17 +139,18 @@ export default function VehicleProfilePageV2() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="details" className="space-y-6 mt-6">
+        <TabsContent value="details" className="space-y-6">
+          {/* Tarjeta de información principal arriba sola */}
+          <VehicleInfoCard vehicle={vehicle} onEdit={() => setIsInfoOpen(true)} />
+          
+          {/* Sistema de renta a la izquierda y conductor a la derecha */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <VehicleInfoCard vehicle={vehicle} onEdit={() => setIsInfoOpen(true)} />
-            <div className="space-y-6">
-              <AssignDriverCard vehicle={vehicle} allDrivers={allDrivers} onAssignmentChange={() => {}} />
-              <RentalSystemCard vehicle={vehicle} onEdit={() => setIsRentalOpen(true)} />
-            </div>
+            <RentalSystemCard vehicle={vehicle} onEdit={() => setIsRentalOpen(true)} />
+            <AssignDriverCard vehicle={vehicle} allDrivers={allDrivers} onAssignmentChange={() => {}} />
           </div>
         </TabsContent>
 
-        <TabsContent value="docs" className="space-y-6 mt-6">
+        <TabsContent value="docs" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <VehicleDocumentsCard vehicle={vehicle} />
             <FineCheckCard 
@@ -160,62 +161,59 @@ export default function VehicleProfilePageV2() {
           </div>
         </TabsContent>
 
-        <TabsContent value="maintenance" className="space-y-6 mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <MaintenanceCard vehicle={vehicle} serviceHistory={serviceHistory} />
-            </div>
-            <div className="lg:col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Historial de Servicios en Taller</CardTitle>
-                  <CardDescription>Registro cronológico de intervenciones mecánicas.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="rounded-md border overflow-hidden">
-                    <Table>
-                      <TableHeader className="bg-black">
-                        <TableRow>
-                          <TableHead className="text-white">Folio</TableHead>
-                          <TableHead className="text-white">Fecha</TableHead>
-                          <TableHead className="text-white">Trabajo</TableHead>
-                          <TableHead className="text-white text-right">Monto</TableHead>
-                          <TableHead className="text-white">Estatus</TableHead>
+        <TabsContent value="maintenance" className="space-y-6">
+          {/* Tarjeta de mantenimiento arriba */}
+          <MaintenanceCard vehicle={vehicle} serviceHistory={serviceHistory} />
+          
+          {/* Historial abajo */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Historial de Servicios en Taller</CardTitle>
+              <CardDescription>Registro cronológico de intervenciones mecánicas realizadas en el establecimiento.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="rounded-md border overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-black">
+                    <TableRow>
+                      <TableHead className="text-white">Folio</TableHead>
+                      <TableHead className="text-white">Fecha</TableHead>
+                      <TableHead className="text-white">Trabajo</TableHead>
+                      <TableHead className="text-white text-right">Monto</TableHead>
+                      <TableHead className="text-white">Estatus</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {serviceHistory.length > 0 ? serviceHistory.map(s => {
+                      const statusInfo = getStatusInfo(s.status as any);
+                      const sDate = parseDate(s.deliveryDateTime || s.serviceDate);
+                      return (
+                        <TableRow 
+                          key={s.id} 
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => { setSelectedService(s); setIsServicePreviewOpen(true); }}
+                        >
+                          <TableCell className="font-mono text-xs">{s.folio || s.id.slice(-6)}</TableCell>
+                          <TableCell>{sDate ? format(sDate, "dd/MM/yy", { locale: es }) : '—'}</TableCell>
+                          <TableCell className="max-w-[200px] truncate">{s.serviceItems?.[0]?.name || s.description || '—'}</TableCell>
+                          <TableCell className="text-right font-semibold">{formatCurrency(s.totalCost || 0)}</TableCell>
+                          <TableCell><Badge variant={statusInfo.color as any}>{s.status}</Badge></TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {serviceHistory.length > 0 ? serviceHistory.map(s => {
-                          const statusInfo = getStatusInfo(s.status as any);
-                          const sDate = parseDate(s.deliveryDateTime || s.serviceDate);
-                          return (
-                            <TableRow 
-                              key={s.id} 
-                              className="cursor-pointer hover:bg-muted/50"
-                              onClick={() => { setSelectedService(s); setIsServicePreviewOpen(true); }}
-                            >
-                              <TableCell className="font-mono text-xs">{s.folio || s.id.slice(-6)}</TableCell>
-                              <TableCell>{sDate ? format(sDate, "dd/MM/yy", { locale: es }) : '—'}</TableCell>
-                              <TableCell className="max-w-[200px] truncate">{s.serviceItems?.[0]?.name || s.description || '—'}</TableCell>
-                              <TableCell className="text-right font-semibold">{formatCurrency(s.totalCost || 0)}</TableCell>
-                              <TableCell><Badge variant={statusInfo.color as any}>{s.status}</Badge></TableCell>
-                            </TableRow>
-                          )
-                        }) : (
-                          <TableRow>
-                            <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">Sin servicios registrados.</TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                      )
+                    }) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">Sin servicios registrados.</TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
-      {/* Dialogs */}
+      {/* Dialogs de edición */}
       <EditVehicleInfoDialog open={isInfoOpen} onOpenChange={setIsInfoOpen} vehicle={vehicle} onSave={handleSaveVehicleInfo} />
       <EditRentalSystemDialog open={isRentalOpen} onOpenChange={setIsRentalOpen} vehicle={vehicle} onSave={handleSaveRentalSystem} />
       <FineCheckDialog 

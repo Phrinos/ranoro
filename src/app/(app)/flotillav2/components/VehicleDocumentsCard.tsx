@@ -18,14 +18,14 @@ interface VehicleDocumentsCardProps {
   vehicle: Vehicle;
 }
 
-type VehicleDocType = 'tarjetaCirculacionUrl' | 'seguroUrl' | 'facturaUrl' | 'bajaPlacasUrl' | 'dictamenGasUrl';
+// ✅ Documentos actualizados según solicitud
+type VehicleDocType = 'tarjetaCirculacionUrl' | 'seguroUrl' | 'contratoPropietarioUrl' | 'contratoConductorUrl';
 
 const documentTypes: { id: VehicleDocType; name: string }[] = [
   { id: 'tarjetaCirculacionUrl', name: 'Tarjeta de Circulación' },
   { id: 'seguroUrl', name: 'Póliza de Seguro' },
-  { id: 'facturaUrl', name: 'Factura de la Unidad' },
-  { id: 'bajaPlacasUrl', name: 'Baja de Placas' },
-  { id: 'dictamenGasUrl', name: 'Dictamen de Gas' },
+  { id: 'contratoPropietarioUrl', name: 'Contrato Propietario' },
+  { id: 'contratoConductorUrl', name: 'Contrato Conductor' },
 ];
 
 export function VehicleDocumentsCard({ vehicle }: VehicleDocumentsCardProps) {
@@ -66,7 +66,6 @@ export function VehicleDocumentsCard({ vehicle }: VehicleDocumentsCardProps) {
     if (!url) return;
 
     try {
-      // Intentar borrar de Storage si es una URL interna
       if (url.includes('firebasestorage')) {
         const storageRef = ref(storage, url);
         await deleteObject(storageRef).catch(() => console.warn("File not found in storage, proceeding to update DB"));
@@ -89,7 +88,7 @@ export function VehicleDocumentsCard({ vehicle }: VehicleDocumentsCardProps) {
           <FileCheck className="h-5 w-5 text-primary" />
           Documentación de la Unidad
         </CardTitle>
-        <CardDescription>Expediente digital del vehículo.</CardDescription>
+        <CardDescription>Expediente digital del vehículo para gestión de flota.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="rounded-md border">
@@ -111,7 +110,7 @@ export function VehicleDocumentsCard({ vehicle }: VehicleDocumentsCardProps) {
                               size="icon" 
                               className="h-8 w-8 text-blue-600" 
                               onClick={() => window.open(docUrl, '_blank')}
-                              title="Ver documento"
+                              title="Ver / Descargar documento"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -127,7 +126,7 @@ export function VehicleDocumentsCard({ vehicle }: VehicleDocumentsCardProps) {
                                 </Button>
                               }
                               title={`¿Eliminar ${doc.name}?`}
-                              description="Esta acción borrará el archivo permanentemente."
+                              description="Esta acción borrará el archivo permanentemente del sistema."
                               onConfirm={() => handleDeleteDocument(doc.id)}
                             />
                           </>
