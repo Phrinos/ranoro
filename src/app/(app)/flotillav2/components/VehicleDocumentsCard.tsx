@@ -6,7 +6,7 @@ import type { Vehicle } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
-import { Eye, Upload, Trash2, Loader2, FileCheck } from 'lucide-react';
+import { Eye, Upload, Trash2, Loader2, FileCheck, Download } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { inventoryService } from '@/lib/services';
 import { storage } from '@/lib/firebaseClient';
@@ -81,6 +81,25 @@ export function VehicleDocumentsCard({ vehicle }: VehicleDocumentsCardProps) {
     }
   };
 
+  const handleDownload = async (url: string, fileName: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+      // Fallback: abrir en nueva pestaña si falla el fetch (ej. por CORS)
+      window.open(url, '_blank');
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -110,9 +129,18 @@ export function VehicleDocumentsCard({ vehicle }: VehicleDocumentsCardProps) {
                               size="icon" 
                               className="h-8 w-8 text-blue-600" 
                               onClick={() => window.open(docUrl, '_blank')}
-                              title="Ver / Descargar documento"
+                              title="Ver documento"
                             >
                               <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-green-600" 
+                              onClick={() => handleDownload(docUrl, `${vehicle.licensePlate}_${doc.name}.jpg`)}
+                              title="Descargar documento"
+                            >
+                              <Download className="h-4 w-4" />
                             </Button>
                             <ConfirmDialog
                               triggerButton={
