@@ -1,3 +1,4 @@
+
 // src/app/(app)/vehiculos/components/vehicle-form.tsx
 "use client";
 
@@ -193,9 +194,10 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
             )}/>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <FormField control={control} name="licensePlate" render={({ field }) => ( <FormItem><Label>Placa</Label><FormControl><Input placeholder="Ej: ABC-123" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value.toUpperCase())} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
-          <FormField control={control} name="vin" render={({ field }) => ( <FormItem><Label>VIN (Opcional)</Label><FormControl><Input placeholder="Número de Serie" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value.toUpperCase())} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
+          <FormField control={control} name="vin" render={({ field }) => ( <FormItem><Label>Serie (VIN)</Label><FormControl><Input placeholder="Número de Serie" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value.toUpperCase())} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
+          <FormField control={control} name="engineSerialNumber" render={({ field }) => ( <FormItem><Label>Número de Motor</Label><FormControl><Input placeholder="Serie del Motor" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value.toUpperCase())} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
           <FormField control={control} name="color" render={({ field }) => ( <FormItem><Label>Color (Opcional)</Label><FormControl><Input placeholder="Ej: Blanco" {...field} value={field.value ?? ''} onChange={e => field.onChange(capitalizeWords(e.target.value))} className="bg-card" /></FormControl><FormMessage /></FormItem> )}/>
         </div>
 

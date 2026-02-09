@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -24,6 +25,8 @@ const vehicleInfoSchema = z.object({
   model: z.string().min(1, "El modelo es obligatorio."),
   year: z.coerce.number().min(1900, "Año inválido."),
   color: z.string().optional(),
+  vin: z.string().optional(),
+  engineSerialNumber: z.string().optional(), // ✅ Añadido
   ownerName: z.string().min(1, "El nombre del propietario es obligatorio."),
   ownerPhone: z.string().optional(),
   notes: z.string().optional(),
@@ -47,6 +50,8 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
       model: vehicle?.model ?? "",
       year: Number(vehicle?.year ?? new Date().getFullYear()),
       color: vehicle?.color ?? "",
+      vin: vehicle?.vin ?? "",
+      engineSerialNumber: vehicle?.engineSerialNumber ?? "", // ✅ Añadido
       ownerName: vehicle?.ownerName ?? "",
       ownerPhone: vehicle?.ownerPhone ?? "",
       notes: vehicle?.notes ?? "",
@@ -140,6 +145,36 @@ export function EditVehicleInfoDialog({ open, onOpenChange, vehicle, onSave }: E
                 )}
               />
             </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control as any}
+                name="vin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Serie (VIN)</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ""} className="bg-white" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control as any}
+                name="engineSerialNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Número de Motor</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ""} className="bg-white" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control as any}
               name="ownerName"

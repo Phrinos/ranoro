@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -27,6 +28,7 @@ const buildDefaults = (v?: Partial<Vehicle> | null): Partial<VehicleFormInput> =
   engine: (v as any)?.engine ?? "",
   licensePlate: v?.licensePlate ?? "",
   vin: v?.vin ?? "",
+  engineSerialNumber: v?.engineSerialNumber ?? "", // ✅ Campo añadido
   color: v?.color ?? "",
   ownerName: v?.ownerName ?? "",
   ownerPhone: v?.ownerPhone ?? "",

@@ -348,6 +348,7 @@ export interface Vehicle {
   ownerPhone?: string;
   color?: string;
   vin?: string;
+  engineSerialNumber?: string; // ✅ Campo añadido
   notes?: string;
   isFleetVehicle?: boolean;
   purchasePrice?: number;

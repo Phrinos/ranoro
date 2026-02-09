@@ -1,10 +1,11 @@
+
 "use client";
 
 import React from 'react';
 import type { Vehicle } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Car, User, Calendar, Phone, Edit } from 'lucide-react';
+import { Car, User, Calendar, Phone, Edit, Cog, Fingerprint } from 'lucide-react';
 
 interface VehicleInfoCardProps {
   vehicle: Vehicle;
@@ -16,6 +17,8 @@ export function VehicleInfoCard({ vehicle, onEdit }: VehicleInfoCardProps) {
     { icon: Car, label: "Marca", value: vehicle.make },
     { icon: Car, label: "Modelo", value: vehicle.model },
     { icon: Calendar, label: "Año", value: vehicle.year },
+    { icon: Cog, label: "Tipo Motor", value: vehicle.engine || 'N/A' },
+    { icon: Fingerprint, label: "Num. Motor", value: vehicle.engineSerialNumber || 'N/A' }, // ✅ Añadido
     { icon: Car, label: "Color", value: vehicle.color },
   ];
 
@@ -41,7 +44,10 @@ export function VehicleInfoCard({ vehicle, onEdit }: VehicleInfoCardProps) {
           <div className="space-y-2">
             {vehicleInfo.map(item => (
               <div key={item.label} className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{item.label}</span>
+                <div className="flex items-center gap-2 text-muted-foreground text-xs">
+                    <item.icon className="h-3.5 w-3.5" />
+                    <span>{item.label}</span>
+                </div>
                 <span className="font-medium">{item.value || 'N/A'}</span>
               </div>
             ))}

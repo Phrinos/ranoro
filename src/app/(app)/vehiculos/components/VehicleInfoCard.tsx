@@ -1,3 +1,4 @@
+
 // src/app/(app)/vehiculos/components/VehicleInfoCard.tsx
 "use client";
 
@@ -5,7 +6,7 @@ import React from 'react';
 import type { Vehicle } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Car, User, Calendar, StickyNote, Phone, Edit, Cog } from 'lucide-react';
+import { Car, User, Calendar, StickyNote, Phone, Edit, Cog, Fingerprint } from 'lucide-react';
 
 interface VehicleInfoCardProps {
   vehicle: Vehicle;
@@ -17,7 +18,8 @@ export function VehicleInfoCard({ vehicle, onEdit }: VehicleInfoCardProps) {
     { icon: Car, label: "Marca", value: vehicle.make },
     { icon: Car, label: "Modelo", value: vehicle.model },
     { icon: Calendar, label: "Año", value: vehicle.year },
-    { icon: Cog, label: "Motor", value: (vehicle as any).engine || 'N/A' },
+    { icon: Cog, label: "Tipo Motor", value: (vehicle as any).engine || 'N/A' },
+    { icon: Fingerprint, label: "Número Motor", value: vehicle.engineSerialNumber || 'N/A' }, // ✅ Añadido
     { icon: Car, label: "Color", value: vehicle.color },
   ];
 

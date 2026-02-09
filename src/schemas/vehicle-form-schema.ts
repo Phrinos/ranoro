@@ -9,6 +9,7 @@ export const vehicleFormSchema = z.object({
   engine: z.string().optional(),
   licensePlate: z.string().min(3, "La placa debe tener al menos 3 caracteres."),
   vin: z.string().optional(),
+  engineSerialNumber: z.string().optional(), // ✅ Campo añadido
   color: z.string().optional(),
   ownerName: z.string().min(2, { message: "El nombre del propietario debe tener al menos 2 caracteres." }),
   ownerPhone: z.string().optional(),
