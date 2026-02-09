@@ -56,7 +56,7 @@ type ReportRow = {
   realId: string;
   date: Date | null;
   type: 'Ingreso' | 'Egreso';
-  source: 'Compra' | 'Venta (PDV)' | 'Servicio' | 'Manual' | 'Flotilla';
+  source: 'Compra' | 'Venta (PDV)' | 'Servicio' | 'Manual';
   concept: string;
   method: string;
   amount: number;
@@ -164,14 +164,17 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
     });
 
     cashTransactions.forEach(t => {
+      // Omitir operaciones del taller ya contabilizadas (Servicios/Ventas)
       if (t.relatedType === 'Servicio' || t.relatedType === 'Venta') return;
       
+      // EXCLUIR MOVIMIENTOS DE FLOTILLA (Se ven en /flotillav2?tab=detalles)
+      if (t.relatedType === 'Flotilla' || t.relatedType === 'RetiroSocio' || t.relatedType === 'GastoVehiculo' || t.relatedType === 'RetiroSocio') return;
+
       const d = parseDate(t.date);
       const isIncome = t.type === 'in' || t.type === 'Entrada';
       
       let source: ReportRow['source'] = 'Manual';
       if (t.relatedType === 'Compra') source = 'Compra';
-      if (t.relatedType === 'Flotilla') source = 'Flotilla';
 
       rows.push({
         id: `ledger-${t.id}`,

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo } from 'react';
@@ -61,6 +60,9 @@ export default function MensualReporteContent({ services, sales, cashTransaction
 
     // Procesar Egresos (Caja)
     cashTransactions.forEach(t => {
+      // EXCLUIR MOVIMIENTOS DE FLOTILLA (Se ven en /flotillav2)
+      if (t.relatedType === 'Flotilla' || t.relatedType === 'RetiroSocio' || t.relatedType === 'GastoVehiculo') return;
+
       const d = parseDate(t.date);
       if (!d) return;
       const month = months.find(m => isWithinInterval(d, { start: m.start, end: m.end }));
