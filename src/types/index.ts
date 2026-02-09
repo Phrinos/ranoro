@@ -361,6 +361,7 @@ export interface Vehicle {
   lastServiceDate?: string;
   fineChecks?: FineCheck[];
   paperwork?: Paperwork[];
+  documents?: Record<string, string>; // ✅ Campo añadido para almacenamiento de archivos
   engine?: string;
   chatMetaLink?: string;
   assignedDriverName?: string;

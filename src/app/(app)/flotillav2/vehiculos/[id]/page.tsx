@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -16,6 +17,7 @@ import { RentalSystemCard } from '../../components/RentalSystemCard';
 import { MaintenanceCard } from '../../components/MaintenanceCard';
 import { PaperworkCard } from '../../components/PaperworkCard';
 import { FineCheckCard } from '../../components/FineCheckCard';
+import { VehicleDocumentsCard } from '../../components/VehicleDocumentsCard';
 
 import { EditVehicleInfoDialog } from '../../components/EditVehicleInfoDialog';
 import { EditRentalSystemDialog } from '../../components/EditRentalSystemDialog';
@@ -136,6 +138,7 @@ export default function VehicleProfilePageV2() {
         <div className="space-y-6">
           <VehicleInfoCard vehicle={vehicle} onEdit={() => setIsInfoOpen(true)} />
           <MaintenanceCard vehicle={vehicle} serviceHistory={serviceHistory} />
+          <VehicleDocumentsCard vehicle={vehicle} />
           <PaperworkCard 
             vehicle={vehicle} 
             onAdd={() => { setEditingPaperwork(null); setIsPaperOpen(true); }}

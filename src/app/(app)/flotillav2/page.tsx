@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, Suspense, lazy } from 'react';
@@ -15,7 +16,6 @@ const BalanceTab = lazy(() => import('./components/BalanceTab'));
 const ConductoresTab = lazy(() => import('./components/ConductoresTab'));
 const VehiculosTab = lazy(() => import('./components/VehiculosTab'));
 const DetallesReporteTab = lazy(() => import('./components/DetallesReporteTab'));
-const ResumenMensualTab = lazy(() => import('./components/ResumenMensualTab'));
 
 function FlotillaV2Page() {
   const router = useRouter();
@@ -77,11 +77,6 @@ function FlotillaV2Page() {
       value: 'detalles', 
       label: 'Detalle Reporte', 
       content: <DetallesReporteTab payments={payments} expenses={expenses} withdrawals={withdrawals} cashTransactions={cashTransactions} vehicles={vehicles} /> 
-    },
-    { 
-      value: 'resumen', 
-      label: 'Resumen Mensual', 
-      content: <ResumenMensualTab payments={payments} expenses={expenses} withdrawals={withdrawals} cashTransactions={cashTransactions} /> 
     },
   ];
 

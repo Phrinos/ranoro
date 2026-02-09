@@ -24,7 +24,7 @@ import {
   Settings,
   LogOut,
   LayoutGrid, Wrench, Receipt, Package, DollarSign, Users, 
-  Truck, PlusCircle, ShoppingCart, FileJson, BrainCircuit, LifeBuoy, Tags, Car, ListOrdered
+  Truck, PlusCircle, ShoppingCart, FileJson, BrainCircuit, LifeBuoy, Tags, Car, ListOrdered, BarChart3
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -57,6 +57,7 @@ const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   
   // Finanzas
   { label: 'Reportes Taller', path: '/reportes', icon: DollarSign, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
+  { label: 'Reporte Flotilla', path: '/reporteflotilla', icon: BarChart3, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
   { label: 'Facturación', path: '/facturacion', icon: FileJson, groupTag: 'Finanzas', permissions: ['billing:manage'] },
 
   // Opciones
