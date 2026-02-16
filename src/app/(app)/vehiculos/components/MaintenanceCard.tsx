@@ -5,7 +5,7 @@ import React, { useMemo } from 'react';
 import type { Vehicle, ServiceRecord, NextServiceInfo } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Wrench, Gauge, Calendar, AlertTriangle } from 'lucide-react';
-import { format, parseISO, isValid } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatNumber } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
@@ -38,16 +38,36 @@ const NextServiceDisplay = ({ nextServiceInfo }: { nextServiceInfo?: NextService
 
 export function MaintenanceCard({ vehicle, serviceHistory = [] }: MaintenanceCardProps) {
   
-  const lastServiceDate = vehicle.lastServiceDate ? parseDate(vehicle.lastServiceDate) : null;
+  // Calcular la fecha del último servicio basándose en el historial
+  const lastServiceDate = useMemo(() => {
+    const deliveredServices = serviceHistory
+      .filter(s => s.status === 'Entregado')
+      .map(s => parseDate(s.deliveryDateTime || s.serviceDate))
+      .filter((d): d is Date => d !== null && isValid(d));
 
-  // FIX: Calcular el kilometraje actual basándose en el historial de servicios entregados
+    if (deliveredServices.length === 0) {
+      return vehicle.lastServiceDate ? parseDate(vehicle.lastServiceDate) : null;
+    }
+
+    // Obtener la fecha más reciente del historial
+    const latestFromHistory = new Date(Math.max(...deliveredServices.map(d => d.getTime())));
+    const currentFromVehicle = vehicle.lastServiceDate ? parseDate(vehicle.lastServiceDate) : null;
+
+    if (currentFromVehicle && isValid(currentFromVehicle) && currentFromVehicle > latestFromHistory) {
+      return currentFromVehicle;
+    }
+
+    return latestFromHistory;
+  }, [vehicle.lastServiceDate, serviceHistory]);
+
+  // Calcular el kilometraje actual basándose en el historial de servicios entregados
   const currentMileage = useMemo(() => {
     const mileageFromServices = serviceHistory
       .filter(s => s.status === 'Entregado' && (s as any).mileage)
       .map(s => Number((s as any).mileage))
+      .filter(m => !isNaN(m))
       .reduce((max, curr) => Math.max(max, curr), 0);
     
-    // Devolvemos el mayor entre el historial y lo registrado en el vehículo
     return Math.max(mileageFromServices, Number(vehicle.currentMileage || 0));
   }, [vehicle.currentMileage, serviceHistory]);
 
@@ -63,7 +83,7 @@ export function MaintenanceCard({ vehicle, serviceHistory = [] }: MaintenanceCar
             <Gauge className="h-5 w-5 text-muted-foreground" />
             <div>
               <p className="text-muted-foreground text-xs">KM Actual</p>
-              <p className="font-semibold">{formatNumber(currentMileage) || 'N/A'}</p>
+              <p className="font-semibold">{formatNumber(currentMileage) || '0'}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-md">
