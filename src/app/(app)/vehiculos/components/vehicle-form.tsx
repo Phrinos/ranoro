@@ -1,4 +1,3 @@
-
 // src/app/(app)/vehiculos/components/vehicle-form.tsx
 "use client";
 
@@ -34,12 +33,7 @@ interface VehicleMake {
   }[];
 }
 
-interface VehicleFormProps {
-  id?: string;
-  onSubmit: (values: VehicleFormValues) => Promise<void>;
-}
-
-export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
+export function VehicleForm() {
   const [vehicleDb, setVehicleDb] = useState<VehicleMake[]>([]);
   const [isLoadingDb, setIsLoadingDb] = useState(true);
 

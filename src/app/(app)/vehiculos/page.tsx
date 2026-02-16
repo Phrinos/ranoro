@@ -1,4 +1,3 @@
-
 //src/app/(app)/vehiculos/page.tsx
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
@@ -16,6 +15,7 @@ import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { VehicleDialog } from './components/vehicle-dialog';
 import { DatabaseManagementTab } from './components/database-management-tab';
+import { getServiceEffectiveDate, getServiceMileage, isDeliveredStatus } from "@/lib/vehicles/serviceRecordHelpers";
 
 function PageInner() {
   const router = useRouter();
@@ -49,28 +49,33 @@ function PageInner() {
   }, []);
 
   const enrichedVehicles = useMemo(() => {
-    // Map vehicleId -> latest delivery date
-    const latestDates = new Map<string, Date>();
-    allServices.forEach(s => {
-      if (s.vehicleId && s.status === 'Entregado') {
-        const d = parseDate(s.deliveryDateTime || s.serviceDate);
-        if (d && isValid(d)) {
-          const existing = latestDates.get(s.vehicleId);
-          if (!existing || d > existing) {
-            latestDates.set(s.vehicleId, d);
-          }
-        }
+    const latestByVehicle = new Map<string, { date: Date; mileage?: number }>();
+
+    allServices.forEach((s) => {
+      if (!s.vehicleId) return;
+      if (!isDeliveredStatus((s as any).status)) return;
+
+      const d = getServiceEffectiveDate(s);
+      if (!d || !isValid(d)) return;
+
+      const m = getServiceMileage(s) ?? undefined;
+      const prev = latestByVehicle.get(s.vehicleId);
+
+      if (!prev || d > prev.date) {
+        latestByVehicle.set(s.vehicleId, { date: d, mileage: m ?? prev?.mileage });
       }
     });
 
-    return allVehicles.map(v => {
-      const latestFromHistory = latestDates.get(v.id);
-      // Prefer the history date if it exists, otherwise keep existing
-      const lastServiceDate = latestFromHistory 
-        ? latestFromHistory.toISOString() 
-        : v.lastServiceDate;
-      
-      return { ...v, lastServiceDate };
+    return allVehicles.map((v) => {
+      const latest = latestByVehicle.get(v.id);
+      return {
+        ...v,
+        lastServiceDate: latest ? latest.date.toISOString() : v.lastServiceDate,
+        currentMileage:
+          typeof latest?.mileage === "number"
+            ? Math.max(Number(v.currentMileage || 0) || 0, latest.mileage)
+            : v.currentMileage,
+      };
     });
   }, [allVehicles, allServices]);
   

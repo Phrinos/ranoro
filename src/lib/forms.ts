@@ -1,4 +1,3 @@
-
 // src/lib/forms.ts
 
 import { parseISO, isValid } from 'date-fns';
@@ -9,45 +8,56 @@ import { parseISO, isValid } from 'date-fns';
  * @param d The date value to parse.
  * @returns A Date object or null if invalid.
  */
-export const parseDate = (d: any): Date | null => {
-  if (!d) return null;
-  if (d instanceof Date) return d;
+export function parseDate(value: any): Date | null {
+  if (!value) return null;
 
-  // Handle Firestore Timestamps
-  // 1. Client-side SDK Timestamp object
-  if (typeof d.toDate === 'function') {
-    return d.toDate();
-  }
-  // 2. Serialized Timestamp object (from server-side rendering)
-  if (typeof d === 'object' && d !== null && (d.seconds !== undefined || d._seconds !== undefined)) {
-    const seconds = d.seconds ?? d._seconds;
-    const nanoseconds = d.nanoseconds ?? d._nanoseconds ?? 0;
-    const date = new Date(seconds * 1000 + nanoseconds / 1000000);
-    if(isValid(date)) return date;
+  // Date
+  if (value instanceof Date) return isValid(value) ? value : null;
+
+  // Firestore Timestamp (v9) { toDate() }
+  if (typeof value === "object" && typeof value.toDate === "function") {
+    const d = value.toDate();
+    return isValid(d) ? d : null;
   }
 
-  // Handle number (milliseconds timestamp)
-  if (typeof d === 'number') {
-    const date = new Date(d);
-    if(isValid(date)) return date;
+  // Firestore-like { seconds, nanoseconds }
+  if (typeof value === "object" && (value.seconds !== undefined || value._seconds !== undefined)) {
+    const seconds = value.seconds ?? value._seconds;
+    const nanoseconds = value.nanoseconds ?? value._nanoseconds ?? 0;
+    const d = new Date(seconds * 1000 + nanoseconds / 1000000);
+    return isValid(d) ? d : null;
   }
 
-  // Handle string formats
-  if (typeof d === 'string') {
-    // Standard ISO string
-    let parsed = parseISO(d);
-    if (isValid(parsed)) {
-      return parsed;
+  // number (ms)
+  if (typeof value === "number") {
+    const d = new Date(value);
+    return isValid(d) ? d : null;
+  }
+
+  // string
+  if (typeof value === "string") {
+    const s = value.trim();
+    if (!s) return null;
+
+    // ISO (2026-02-16T...Z)
+    if (/^\d{4}-\d{2}-\d{2}T/.test(s) || s.endsWith("Z")) {
+      const d = parseISO(s);
+      return isValid(d) ? d : null;
     }
-    // Fallback for other date-like strings
-    parsed = new Date(d);
-    if (isValid(parsed)) {
-      return parsed;
+
+    // YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const d = new Date(`${s}T00:00:00`);
+      return isValid(d) ? d : null;
     }
+
+    // fallback (si guardas fechas “legibles”)
+    const d = new Date(s);
+    return isValid(d) ? d : null;
   }
 
   return null;
-};
+}
 
 
 /**

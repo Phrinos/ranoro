@@ -1,4 +1,4 @@
-
+// src/app/(app)/vehiculos/components/vehicle-dialog.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -71,7 +71,7 @@ export function VehicleDialog({
     mode: "onBlur",
   });
 
-  const { reset } = methods;
+  const { reset, handleSubmit } = methods;
 
   useEffect(() => {
     if (open) reset(buildDefaults(vehicle));
@@ -116,7 +116,9 @@ export function VehicleDialog({
       dialogContentClassName="sm:max-w-2xl"
     >
       <FormProvider {...methods}>
-        <VehicleForm id="vehicle-form" onSubmit={handleSubmitForm} />
+        <form id="vehicle-form" onSubmit={handleSubmit(handleSubmitForm)}>
+          <VehicleForm />
+        </form>
       </FormProvider>
     </FormDialog>
   );

@@ -1,14 +1,15 @@
 // src/app/(app)/vehiculos/components/MaintenanceCard.tsx
 "use client";
 
-import React, { useMemo } from 'react';
-import type { Vehicle, ServiceRecord, NextServiceInfo } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Wrench, Gauge, Calendar, AlertTriangle } from 'lucide-react';
-import { format, isValid } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { formatNumber } from '@/lib/utils';
-import { parseDate } from '@/lib/forms';
+import React, { useMemo } from "react";
+import type { Vehicle, ServiceRecord, NextServiceInfo } from "@/types";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Gauge, Calendar, AlertTriangle } from "lucide-react";
+import { format, isValid } from "date-fns";
+import { es } from "date-fns/locale";
+import { formatNumber } from "@/lib/utils";
+import { parseDate } from "@/lib/forms";
+import { pickLatestDeliveredService, getServiceMileage } from "@/lib/vehicles/serviceRecordHelpers";
 
 interface MaintenanceCardProps {
   vehicle: Vehicle;
@@ -16,60 +17,52 @@ interface MaintenanceCardProps {
 }
 
 const NextServiceDisplay = ({ nextServiceInfo }: { nextServiceInfo?: NextServiceInfo | null }) => {
-    if (!nextServiceInfo || (!nextServiceInfo.date && !nextServiceInfo.mileage)) {
-        return <p className="font-semibold text-sm">No programado</p>;
-    }
-    
-    const date = nextServiceInfo.date ? parseDate(nextServiceInfo.date) : null;
-    const isOverdue = date && isValid(date) ? new Date() > date : false;
+  if (!nextServiceInfo || (!nextServiceInfo.date && !nextServiceInfo.mileage)) {
+    return <p className="font-semibold text-sm">No programado</p>;
+  }
 
-    return (
-        <div className={isOverdue ? 'text-destructive' : ''}>
-            <p className="font-semibold text-sm">
-                {date && isValid(date) ? format(date, "dd MMM yyyy", { locale: es }) : ''}
-                {(date && nextServiceInfo.mileage) && ' / '}
-                {nextServiceInfo.mileage ? `${formatNumber(nextServiceInfo.mileage)} km` : ''}
-            </p>
-            {isOverdue && <p className="text-xs font-semibold flex items-center gap-1"><AlertTriangle className="h-3 w-3"/>Vencido</p>}
-        </div>
-    );
+  const date = nextServiceInfo.date ? parseDate(nextServiceInfo.date) : null;
+  const isOverdue = date && isValid(date) ? new Date() > date : false;
+
+  return (
+    <div className={isOverdue ? "text-destructive" : ""}>
+      <p className="font-semibold text-sm">
+        {date && isValid(date) ? format(date, "dd MMM yyyy", { locale: es }) : ""}
+        {(date && nextServiceInfo.mileage) && " / "}
+        {nextServiceInfo.mileage ? `${formatNumber(nextServiceInfo.mileage)} km` : ""}
+      </p>
+      {isOverdue && (
+        <p className="text-xs font-semibold flex items-center gap-1">
+          <AlertTriangle className="h-3 w-3" />
+          Vencido
+        </p>
+      )}
+    </div>
+  );
 };
 
-
 export function MaintenanceCard({ vehicle, serviceHistory = [] }: MaintenanceCardProps) {
-  
-  // Calcular la fecha del último servicio basándose en el historial
+  const latest = useMemo(() => pickLatestDeliveredService(serviceHistory), [serviceHistory]);
+
   const lastServiceDate = useMemo(() => {
-    const deliveredServices = serviceHistory
-      .filter(s => s.status === 'Entregado')
-      .map(s => parseDate(s.deliveryDateTime || s.serviceDate))
-      .filter((d): d is Date => d !== null && isValid(d));
+    const fromHistory = latest?.date ?? null;
+    if (fromHistory && isValid(fromHistory)) return fromHistory;
+    return vehicle.lastServiceDate ? parseDate(vehicle.lastServiceDate) : null;
+  }, [latest, vehicle.lastServiceDate]);
 
-    if (deliveredServices.length === 0) {
-      return vehicle.lastServiceDate ? parseDate(vehicle.lastServiceDate) : null;
-    }
+  const lastServiceMileage = useMemo(() => {
+    return latest?.mileage ?? null;
+  }, [latest]);
 
-    // Obtener la fecha más reciente del historial
-    const latestFromHistory = new Date(Math.max(...deliveredServices.map(d => d.getTime())));
-    const currentFromVehicle = vehicle.lastServiceDate ? parseDate(vehicle.lastServiceDate) : null;
-
-    if (currentFromVehicle && isValid(currentFromVehicle) && currentFromVehicle > latestFromHistory) {
-      return currentFromVehicle;
-    }
-
-    return latestFromHistory;
-  }, [vehicle.lastServiceDate, serviceHistory]);
-
-  // Calcular el kilometraje actual basándose en el historial de servicios entregados
   const currentMileage = useMemo(() => {
-    const mileageFromServices = serviceHistory
-      .filter(s => s.status === 'Entregado' && (s as any).mileage)
-      .map(s => Number((s as any).mileage))
-      .filter(m => !isNaN(m))
-      .reduce((max, curr) => Math.max(max, curr), 0);
-    
-    return Math.max(mileageFromServices, Number(vehicle.currentMileage || 0));
-  }, [vehicle.currentMileage, serviceHistory]);
+    const base = Number(vehicle.currentMileage || 0) || 0;
+    const maxFromServices = serviceHistory
+      .map(getServiceMileage)
+      .filter((n): n is number => typeof n === "number" && !isNaN(n))
+      .reduce((max, n) => Math.max(max, n), 0);
+
+    return Math.max(base, maxFromServices, lastServiceMileage ?? 0);
+  }, [vehicle.currentMileage, serviceHistory, lastServiceMileage]);
 
   return (
     <Card>
@@ -77,29 +70,39 @@ export function MaintenanceCard({ vehicle, serviceHistory = [] }: MaintenanceCar
         <CardTitle>Mantenimiento</CardTitle>
         <CardDescription>Último servicio y próximo mantenimiento.</CardDescription>
       </CardHeader>
+
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-md">
             <Gauge className="h-5 w-5 text-muted-foreground" />
             <div>
               <p className="text-muted-foreground text-xs">KM Actual</p>
-              <p className="font-semibold">{formatNumber(currentMileage) || '0'}</p>
+              <p className="font-semibold">{formatNumber(currentMileage) || "0"}</p>
             </div>
           </div>
+
           <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-md">
             <Calendar className="h-5 w-5 text-muted-foreground" />
             <div>
               <p className="text-muted-foreground text-xs">Último Servicio</p>
-              <p className="font-semibold">{lastServiceDate && isValid(lastServiceDate) ? format(lastServiceDate, 'dd MMM yyyy', { locale: es }) : 'N/A'}</p>
+              <p className="font-semibold">
+                {lastServiceDate && isValid(lastServiceDate)
+                  ? format(lastServiceDate, "dd MMM yyyy", { locale: es })
+                  : "N/A"}
+              </p>
+              {typeof lastServiceMileage === "number" && (
+                <p className="text-xs text-muted-foreground">{formatNumber(lastServiceMileage)} km</p>
+              )}
             </div>
           </div>
         </div>
-         <div className="space-y-2 pt-2">
-            <h4 className="text-sm font-semibold">Próximo Servicio Recomendado</h4>
-            <div className="p-3 bg-muted/50 rounded-md">
-                <NextServiceDisplay nextServiceInfo={(vehicle as any).nextServiceInfo} />
-            </div>
-         </div>
+
+        <div className="space-y-2 pt-2">
+          <h4 className="text-sm font-semibold">Próximo Servicio Recomendado</h4>
+          <div className="p-3 bg-muted/50 rounded-md">
+            <NextServiceDisplay nextServiceInfo={(vehicle as any).nextServiceInfo} />
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
