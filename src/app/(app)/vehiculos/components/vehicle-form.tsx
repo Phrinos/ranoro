@@ -43,7 +43,7 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
   const [vehicleDb, setVehicleDb] = useState<VehicleMake[]>([]);
   const [isLoadingDb, setIsLoadingDb] = useState(true);
 
-  const { control, watch, setValue, handleSubmit } = useFormContext<VehicleFormValues>();
+  const { control, watch, setValue } = useFormContext<VehicleFormValues>();
   
   const watchedMake = watch("make");
   const watchedModel = watch("model");
@@ -140,7 +140,7 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {makes.map(make => <SelectItem key={make} value={make}>{make}</SelectItem>)}
+                    {makes.map(make => <SelectItem key={`make-${make}`} value={make}>{make}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -165,7 +165,7 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {models.map(model => <SelectItem key={model} value={model}>{model}</SelectItem>)}
+                    {models.map(model => <SelectItem key={`model-${model}`} value={model}>{model}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -190,7 +190,7 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {years.map(year => <SelectItem key={year} value={String(year)}>{year}</SelectItem>)}
+                    {years.map(year => <SelectItem key={`year-${year}`} value={String(year)}>{year}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -207,7 +207,7 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {engines.map((engineName) => <SelectItem key={engineName} value={engineName}>{engineName}</SelectItem>)}
+                    {engines.map((engineName) => <SelectItem key={`eng-${engineName}`} value={engineName}>{engineName}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />

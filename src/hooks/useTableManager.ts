@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -88,7 +89,6 @@ export function useTableManager<T extends Record<string, any>>({
         data = data.filter(item => {
           const raw = getNestedValue(item, key);
           
-          // Soporte para multi-select (si value es un array)
           if (Array.isArray(value)) {
             if (value.length === 0) return true;
             if (Array.isArray(raw)) {
@@ -100,7 +100,6 @@ export function useTableManager<T extends Record<string, any>>({
             return value.includes(raw);
           }
 
-          // Lógica existente para valor único
           if (Array.isArray(raw)) {
             return raw.some(subItem => subItem && (subItem.method === value || subItem === value));
           }
@@ -129,7 +128,6 @@ export function useTableManager<T extends Record<string, any>>({
         const va = getNestedValue(a, sortKey);
         const vb = getNestedValue(b, sortKey);
 
-        // Robust comparison handling undefined/nulls
         if (va == null && vb == null) return 0;
         if (va == null) return isAsc ? -1 : 1;
         if (vb == null) return isAsc ? 1 : -1;
@@ -138,8 +136,11 @@ export function useTableManager<T extends Record<string, any>>({
             return isAsc ? va - vb : vb - va;
         }
         
-        const strA = String(va).trim();
-        const strB = String(vb).trim();
+        const strA = String(va).trim().toLowerCase();
+        const strB = String(vb).trim().toLowerCase();
+        
+        if (strA === strB) return 0;
+        
         return isAsc 
           ? strA.localeCompare(strB, 'es', { sensitivity: 'base', numeric: true }) 
           : strB.localeCompare(strA, 'es', { sensitivity: 'base', numeric: true });

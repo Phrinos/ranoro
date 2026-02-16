@@ -1,15 +1,14 @@
+
 // src/app/(app)/vehiculos/components/vehicles-table.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useCallback } from 'react';
 import type { Vehicle } from '@/types';
 import { useTableManager } from '@/hooks/useTableManager';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, PlusCircle } from 'lucide-react';
-import { VehicleDialog } from './vehicle-dialog';
-import type { VehicleFormValues } from './vehicle-form';
 import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
@@ -19,12 +18,12 @@ import { Card, CardContent } from '@/components/ui/card';
 
 interface VehiclesTableProps {
   vehicles: Vehicle[];
-  onSave: (data: VehicleFormValues, id?: string) => Promise<void>;
+  onSave: (data: any, id?: string) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onAdd: () => void;
 }
 
-export function VehiclesTable({ vehicles, onSave, onDelete, onAdd }: VehiclesTableProps) {
+export function VehiclesTable({ vehicles, onAdd }: VehiclesTableProps) {
   const router = useRouter();
 
   const { paginatedData, ...tableManager } = useTableManager<Vehicle>({
@@ -35,14 +34,14 @@ export function VehiclesTable({ vehicles, onSave, onDelete, onAdd }: VehiclesTab
     dateFilterKey: 'lastServiceDate',
   });
 
-  const handleSort = (key: string) => {
-    const isAsc = tableManager.sortOption.startsWith(key) && tableManager.sortOption.endsWith('_asc');
+  const handleSort = useCallback((key: string) => {
+    const isAsc = tableManager.sortOption === `${key}_asc`;
     tableManager.onSortOptionChange(`${key}_${isAsc ? 'desc' : 'asc'}`);
-  };
+  }, [tableManager.sortOption, tableManager.onSortOptionChange]);
   
-  const handleSearchChange = (term: string) => {
+  const handleSearchChange = useCallback((term: string) => {
     tableManager.onSearchTermChange(term);
-  };
+  }, [tableManager.onSearchTermChange]);
 
   return (
     <div className="space-y-4">

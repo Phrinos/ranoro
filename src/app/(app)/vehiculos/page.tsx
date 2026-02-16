@@ -1,3 +1,4 @@
+
 //src/app/(app)/vehiculos/page.tsx
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
@@ -7,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Car, AlertTriangle, Activity, CalendarX, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Vehicle, ServiceRecord } from "@/types";
-import { VehicleFormValues } from "./components/vehicle-form";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VehiclesTable } from './components/vehicles-table';
@@ -35,7 +35,6 @@ function PageInner() {
     setIsLoading(true);
     const unsubscribeVehicles = inventoryService.onVehiclesUpdate((data) => {
       setAllVehicles(data);
-      // We can set loading to false here or wait for services too
     });
     
     const unsubscribeServices = serviceService.onServicesUpdate((data) => {
@@ -48,30 +47,42 @@ function PageInner() {
       unsubscribeServices();
     };
   }, []);
-  
-  const vehicleSummary = useMemo(() => {
-    const now = new Date();
-    const total = allVehicles.length;
-    let recent = 0;
-    let inactive6Months = 0;
-    let inactive12Months = 0;
-  
-    // Pre-calculate latest service dates for each vehicle
-    const latestServiceDates = new Map<string, Date>();
+
+  const enrichedVehicles = useMemo(() => {
+    // Map vehicleId -> latest delivery date
+    const latestDates = new Map<string, Date>();
     allServices.forEach(s => {
       if (s.vehicleId && s.status === 'Entregado') {
-        const serviceDate = parseDate(s.deliveryDateTime);
-        if (serviceDate && isValid(serviceDate)) {
-          const existing = latestServiceDates.get(s.vehicleId);
-          if (!existing || serviceDate > existing) {
-            latestServiceDates.set(s.vehicleId, serviceDate);
+        const d = parseDate(s.deliveryDateTime || s.serviceDate);
+        if (d && isValid(d)) {
+          const existing = latestDates.get(s.vehicleId);
+          if (!existing || d > existing) {
+            latestDates.set(s.vehicleId, d);
           }
         }
       }
     });
 
-    allVehicles.forEach(v => {
-      const lastService = latestServiceDates.get(v.id) || (v.lastServiceDate ? parseDate(v.lastServiceDate) : null);
+    return allVehicles.map(v => {
+      const latestFromHistory = latestDates.get(v.id);
+      // Prefer the history date if it exists, otherwise keep existing
+      const lastServiceDate = latestFromHistory 
+        ? latestFromHistory.toISOString() 
+        : v.lastServiceDate;
+      
+      return { ...v, lastServiceDate };
+    });
+  }, [allVehicles, allServices]);
+  
+  const vehicleSummary = useMemo(() => {
+    const now = new Date();
+    const total = enrichedVehicles.length;
+    let recent = 0;
+    let inactive6Months = 0;
+    let inactive12Months = 0;
+  
+    enrichedVehicles.forEach(v => {
+      const lastService = v.lastServiceDate ? parseDate(v.lastServiceDate) : null;
       if (lastService && isValid(lastService)) {
         const monthsSinceService = differenceInMonths(now, lastService);
         if (monthsSinceService <= 1) recent++;
@@ -84,10 +95,10 @@ function PageInner() {
     });
 
     return { total, recent, inactive6Months, inactive12Months };
-  }, [allVehicles, allServices]);
+  }, [enrichedVehicles]);
 
 
-  const handleSaveVehicle = async (data: VehicleFormValues) => {
+  const handleSaveVehicle = async (data: any) => {
     try {
       await inventoryService.saveVehicle(data, editingVehicle?.id);
       toast({ title: `Vehículo ${editingVehicle?.id ? 'Actualizado' : 'Creado'}` });
@@ -163,7 +174,7 @@ function PageInner() {
             </div>
             
             <VehiclesTable
-              vehicles={allVehicles}
+              vehicles={enrichedVehicles}
               onSave={handleSaveVehicle}
               onDelete={handleDeleteVehicle}
               onAdd={() => handleOpenVehicleDialog()}
