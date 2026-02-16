@@ -41,7 +41,6 @@ export function VehiclesTable({ vehicles, onSave, onDelete, onAdd }: VehiclesTab
   };
   
   const handleSearchChange = (term: string) => {
-    // FIX: Siempre actualizamos el término de búsqueda para que el input sea fluido
     tableManager.onSearchTermChange(term);
   };
 
@@ -77,17 +76,19 @@ export function VehiclesTable({ vehicles, onSave, onDelete, onAdd }: VehiclesTab
                 {paginatedData.length > 0 ? (
                   paginatedData.map((vehicle) => {
                     const lastServiceDate = vehicle.lastServiceDate ? parseDate(vehicle.lastServiceDate) : null;
+                    const yearValue = vehicle.year && !isNaN(Number(vehicle.year)) ? String(vehicle.year) : '—';
+                    
                     return (
                       <TableRow
                         key={vehicle.id}
                         onClick={() => router.push(`/vehiculos/${vehicle.id}`)}
                         className="cursor-pointer hover:bg-muted/50"
                       >
-                        <TableCell className="hidden sm:table-cell">{vehicle.make}</TableCell>
-                        <TableCell>{vehicle.model}</TableCell>
-                        <TableCell>{vehicle.year}</TableCell>
-                        <TableCell>{vehicle.licensePlate}</TableCell>
-                        <TableCell className="hidden sm:table-cell">{vehicle.ownerName}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{vehicle.make || '—'}</TableCell>
+                        <TableCell>{vehicle.model || '—'}</TableCell>
+                        <TableCell>{yearValue}</TableCell>
+                        <TableCell>{vehicle.licensePlate || '—'}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{vehicle.ownerName || '—'}</TableCell>
                         <TableCell>
                           {lastServiceDate && isValid(lastServiceDate)
                             ? format(lastServiceDate, "dd MMM, yyyy", { locale: es })
