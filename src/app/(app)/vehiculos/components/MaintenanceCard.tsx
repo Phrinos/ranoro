@@ -1,8 +1,7 @@
-
-// src/app/(app)/flotilla/components/MaintenanceCard.tsx
+// src/app/(app)/vehiculos/components/MaintenanceCard.tsx
 "use client";
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { Vehicle, ServiceRecord, NextServiceInfo } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Wrench, Gauge, Calendar, AlertTriangle } from 'lucide-react';
@@ -37,9 +36,20 @@ const NextServiceDisplay = ({ nextServiceInfo }: { nextServiceInfo?: NextService
 };
 
 
-export function MaintenanceCard({ vehicle }: MaintenanceCardProps) {
+export function MaintenanceCard({ vehicle, serviceHistory = [] }: MaintenanceCardProps) {
   
   const lastServiceDate = vehicle.lastServiceDate ? parseDate(vehicle.lastServiceDate) : null;
+
+  // FIX: Calcular el kilometraje actual basándose en el historial de servicios entregados
+  const currentMileage = useMemo(() => {
+    const mileageFromServices = serviceHistory
+      .filter(s => s.status === 'Entregado' && (s as any).mileage)
+      .map(s => Number((s as any).mileage))
+      .reduce((max, curr) => Math.max(max, curr), 0);
+    
+    // Devolvemos el mayor entre el historial y lo registrado en el vehículo
+    return Math.max(mileageFromServices, Number(vehicle.currentMileage || 0));
+  }, [vehicle.currentMileage, serviceHistory]);
 
   return (
     <Card>
@@ -53,7 +63,7 @@ export function MaintenanceCard({ vehicle }: MaintenanceCardProps) {
             <Gauge className="h-5 w-5 text-muted-foreground" />
             <div>
               <p className="text-muted-foreground text-xs">KM Actual</p>
-              <p className="font-semibold">{formatNumber(vehicle.currentMileage) || 'N/A'}</p>
+              <p className="font-semibold">{formatNumber(currentMileage) || 'N/A'}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-md">

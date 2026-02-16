@@ -4,96 +4,150 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // --- Funciones de Ayuda ---
-    // Función para verificar si un usuario está autenticado.
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Función para obtener los datos del perfil del usuario que hace la solicitud.
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    // Función para obtener los permisos del rol del usuario.
     function getUserPermissions() {
-      // Asumimos que el rol del usuario (ej. "Técnico") es el ID del documento en appRoles.
       return get(/databases/$(database)/documents/appRoles/$(getUserData().role)).data.permissions;
     }
 
-    // Función principal de seguridad: verifica si el usuario tiene un permiso específico.
     function hasPermission(permission) {
-      return isSignedIn() && permission in getUserPermissions();
+      return isSignedIn() && (permission in getUserPermissions() || getUserData().role == 'Superadministrador');
     }
     
     // --- Reglas por Colección ---
 
-    // Usuarios: Solo puedes editar tu propio perfil.
+    // Usuarios
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow write: if isSignedIn() && (request.auth.uid == userId || hasPermission('users:manage'));
     }
 
-    // Roles: Solo se pueden leer, nunca modificar desde el cliente.
+    // Roles
     match /appRoles/{roleId} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('roles:manage');
+    }
+
+    // Vehículos
+    match /vehicles/{vehicleId} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('vehicles:manage');
+    }
+
+    // Conductores y Flotilla
+    match /drivers/{driverId} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('drivers:create') || hasPermission('fleet:manage');
+    }
+    match /rentalPayments/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('rentals:manage');
+    }
+    match /dailyRentalCharges/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('rentals:manage');
+    }
+    match /manualDebts/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('rentals:manage');
+    }
+    match /ownerWithdrawals/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('rentals:manage');
+    }
+    match /vehicleExpenses/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('rentals:manage');
+    }
+
+    // Inventario
+    match /inventory/{itemId} {
+      allow read: if hasPermission('inventory:view_public_info');
+      allow write: if hasPermission('inventory:manage');
+    }
+    match /inventoryCategories/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('inventory:manage');
+    }
+    match /suppliers/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('inventory:manage');
+    }
+    match /inventoryMovements/{id} {
       allow read: if isSignedIn();
       allow write: if false;
     }
+    match /serviceTypes/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('roles:manage');
+    }
+    match /vehicleGroups/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('inventory:manage');
+    }
+    match /masterCatalogData/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('inventory:manage');
+    }
+    match /vehicleData/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('inventory:manage');
+    }
 
-    // Servicios Públicos: Lectura pública, actualización muy limitada.
+    // Compras y Cuentas por Pagar
+    match /purchases/{id} {
+      allow read: if hasPermission('purchases:manage');
+      allow write: if hasPermission('purchases:manage');
+    }
+    match /payableAccounts/{id} {
+      allow read: if hasPermission('purchases:manage');
+      allow write: if hasPermission('purchases:manage');
+    }
+
+    // Servicios
+    match /serviceRecords/{serviceId} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('services:create') || hasPermission('services:edit');
+    }
     match /publicServices/{serviceId} {
       allow read: if true;
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'appointmentDateTime', 'appointmentStatus', 'customerSignatureReception', 'customerSignatureDelivery']);
+      allow update: if true;
       allow create, delete: if false;
     }
+
+    // Punto de Venta
+    match /sales/{saleId} {
+      allow read: if hasPermission('pos:view_sales');
+      allow write: if hasPermission('pos:create_sale');
+    }
+
+    // Caja y Finanzas
+    match /cashDrawerTransactions/{id} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+    match /fixedMonthlyExpenses/{id} {
+      allow read: if hasPermission('finances:view_report');
+      allow write: if hasPermission('workshop:manage');
+    }
+    match /workshopConfig/{id} {
+      allow read: if true;
+      allow write: if hasPermission('workshop:manage');
+    }
     
-    // Auditoría: Solo se puede leer, nunca escribir.
+    // Auditoría
     match /auditLogs/{logId} {
         allow read: if hasPermission('audits:view');
-        allow write: if false;
+        allow write: if isSignedIn();
     }
 
-    // --- REGLAS DE ACCESO GRANULAR ---
-
-    // Inventario:
-    match /inventoryItems/{itemId} {
-      // Leer: Se divide en dos.
-      // 1. Leer información pública (sin costos)
-      allow read: if hasPermission('inventory:view_public_info');
-      
-      // Escribir:
-      allow create: if hasPermission('inventory:manage');
-      allow update: if hasPermission('inventory:manage') &&
-                     // Regla de protección de stock: no se puede cambiar desde el cliente.
-                     request.resource.data.stock == resource.data.stock;
-    }
-    
-    // Compras a Proveedores:
-    match /purchases/{purchaseId} {
-        allow read, create, update: if hasPermission('purchases:manage');
-        allow delete: if false; // Por seguridad, es mejor cancelar que borrar.
-    }
-
-    // Servicios: La regla más compleja.
-    match /serviceRecords/{serviceId} {
-      // Lectura:
-      // Un técnico solo puede leer un servicio si NO contiene datos sensibles del cliente.
-      // Un asesor o admin puede leer todo.
-      allow read: if isSignedIn(); // Se controlará el acceso a campos específicos en las Cloud Functions
-
-      // Escritura:
-      allow create: if hasPermission('services:create');
-      allow update: if hasPermission('services:edit');
-      allow delete: if hasPermission('services:create'); // Usamos el mismo permiso para borrar cotizaciones
-    }
-    
-    // Movimientos de inventario: Solo se pueden leer, son creados por el backend.
-    match /inventoryMovements/{movementId} {
-        allow read: if hasPermission('inventory:view_public_info');
-        allow write: if false;
-    }
-
-    // Regla General de "Denegar por Defecto"
-    // Cualquier otra colección no listada aquí no tendrá acceso.
+    // Denegar por defecto
     match /{document=**} {
       allow read, write: if false;
     }

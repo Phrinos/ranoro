@@ -41,9 +41,8 @@ export function VehiclesTable({ vehicles, onSave, onDelete, onAdd }: VehiclesTab
   };
   
   const handleSearchChange = (term: string) => {
-    if (term.length >= 3 || term.length === 0) {
-      tableManager.onSearchTermChange(term);
-    }
+    // FIX: Siempre actualizamos el término de búsqueda para que el input sea fluido
+    tableManager.onSearchTermChange(term);
   };
 
   return (

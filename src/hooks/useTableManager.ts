@@ -121,21 +121,28 @@ export function useTableManager<T extends Record<string, any>>({
         if (isDateKey) {
             const da = getSortDate(a, sortKey);
             const db = getSortDate(b, sortKey);
-            if (!da || !isValid(da)) return 1;
-            if (!db || !isValid(db)) return -1;
+            if (!da || !isValid(da)) return isAsc ? 1 : -1;
+            if (!db || !isValid(db)) return isAsc ? -1 : 1;
             return isAsc ? compareAsc(da, db) : compareDesc(da, db);
         }
 
         const va = getNestedValue(a, sortKey);
         const vb = getNestedValue(b, sortKey);
 
+        // Robust comparison handling undefined/nulls
+        if (va == null && vb == null) return 0;
+        if (va == null) return isAsc ? -1 : 1;
+        if (vb == null) return isAsc ? 1 : -1;
+
         if (typeof va === 'number' && typeof vb === 'number') {
             return isAsc ? va - vb : vb - va;
         }
-        if (typeof va === 'string' && typeof vb === 'string') {
-            return isAsc ? va.localeCompare(vb, 'es', { sensitivity: 'base' }) : vb.localeCompare(va, 'es', { sensitivity: 'base' });
-        }
-        return 0;
+        
+        const strA = String(va).trim();
+        const strB = String(vb).trim();
+        return isAsc 
+          ? strA.localeCompare(strB, 'es', { sensitivity: 'base', numeric: true }) 
+          : strB.localeCompare(strA, 'es', { sensitivity: 'base', numeric: true });
       });
     }
 
