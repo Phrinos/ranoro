@@ -3,21 +3,17 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useForm, useFormContext, Controller } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import {
-  Form,
-  FormControl,
   FormField,
   FormItem,
-  FormLabel,
+  FormControl,
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import type { Vehicle } from "@/types";
-import { vehicleFormSchema } from '@/schemas/vehicle-form-schema';
 import { capitalizeWords } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -26,9 +22,6 @@ import { collection, getDocs } from 'firebase/firestore';
 import { VEHICLE_COLLECTION } from "@/lib/vehicle-constants";
 import type { VehicleFormValues } from '@/schemas/vehicle-form-schema';
 
-export type { VehicleFormValues } from '@/schemas/vehicle-form-schema';
-
-// Tipos para la data que viene de Firestore
 interface VehicleMake {
   make: string;
   models: {
@@ -36,7 +29,7 @@ interface VehicleMake {
     generations: {
       startYear: number;
       endYear: number;
-      engines: { name: string; [key: string]: any }[]; // Engine is an object with a name property
+      engines: { name: string; [key: string]: any }[];
     }[];
   }[];
 }
@@ -56,7 +49,6 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
   const watchedModel = watch("model");
   const watchedYear = watch("year");
 
-  // Cargar datos de Firestore al montar el componente
   useEffect(() => {
     const fetchVehicleData = async () => {
       setIsLoadingDb(true);
@@ -66,7 +58,7 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
         const data = querySnapshot.docs.map(doc => ({ make: doc.id, ...doc.data() })) as VehicleMake[];
         setVehicleDb(data);
       } catch (error) {
-        console.error("Error al cargar la base de datos de vehículos:", error);
+        console.error("Error loading vehicle database:", error);
       } finally {
         setIsLoadingDb(false);
       }
@@ -74,8 +66,6 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
     fetchVehicleData();
   }, []);
   
-    // Hooks para obtener listas dependientes (marcas, modelos, etc.)
-    // Se utiliza Set para evitar el error de claves duplicadas reportado.
     const makes = useMemo(() => {
         const makeNames = vehicleDb.map(db => db.make).filter(Boolean);
         return Array.from(new Set(makeNames)).sort();
@@ -107,16 +97,15 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
         if (!watchedMake || !watchedModel || !watchedYear) return [];
         const makeData = vehicleDb.find(db => db.make === watchedMake);
         const modelData = makeData?.models.find(m => m.name === watchedModel);
-        const year = watchedYear;
+        const year = Number(watchedYear);
         const generation = modelData?.generations.find(g => year >= g.startYear && year <= g.endYear);
         if (!generation) return [];
-        // Filtramos motores que tengan un nombre válido y eliminamos duplicados
         const engineNames = generation.engines.map(e => e.name).filter(Boolean);
         return Array.from(new Set(engineNames)).sort();
     }, [watchedMake, watchedModel, watchedYear, vehicleDb]);
 
   return (
-    <form id={id} onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <div className="space-y-6">
         <FormField
           control={control}
           name="isFleetVehicle"
@@ -135,7 +124,16 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
             <FormField control={control} name="make" render={({ field }) => ( 
               <FormItem>
                 <Label>Marca</Label>
-                <Select onValueChange={(value) => { field.onChange(value); setValue("model", ""); setValue("year", undefined as any); setValue("engine", ""); }} value={field.value ?? ''} disabled={isLoadingDb}>
+                <Select 
+                  onValueChange={(value) => { 
+                    field.onChange(value); 
+                    setValue("model", ""); 
+                    setValue("year", undefined as any); 
+                    setValue("engine", ""); 
+                  }} 
+                  value={field.value ?? ''} 
+                  disabled={isLoadingDb}
+                >
                   <FormControl>
                     <SelectTrigger className="bg-card">
                       <SelectValue placeholder={isLoadingDb ? "Cargando..." : "Seleccione..."} />
@@ -152,7 +150,15 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
             <FormField control={control} name="model" render={({ field }) => ( 
               <FormItem>
                 <Label>Modelo</Label>
-                <Select onValueChange={(value) => { field.onChange(value); setValue("year", undefined as any); setValue("engine", ""); }} value={field.value ?? ''} disabled={!watchedMake}>
+                <Select 
+                  onValueChange={(value) => { 
+                    field.onChange(value); 
+                    setValue("year", undefined as any); 
+                    setValue("engine", ""); 
+                  }} 
+                  value={field.value ?? ''} 
+                  disabled={!watchedMake}
+                >
                   <FormControl>
                     <SelectTrigger className="bg-card">
                       <SelectValue placeholder="Seleccione..." />
@@ -169,7 +175,15 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
             <FormField control={control} name="year" render={({ field }) => ( 
               <FormItem>
                 <Label>Año</Label>
-                <Select onValueChange={(val) => { field.onChange(parseInt(val, 10)); setValue("engine", ""); }} value={field.value ? String(field.value) : ''} disabled={!watchedModel}>
+                <Select 
+                  onValueChange={(val) => { 
+                    const num = Number(val);
+                    field.onChange(isNaN(num) ? undefined : num); 
+                    setValue("engine", ""); 
+                  }} 
+                  value={field.value ? String(field.value) : ''} 
+                  disabled={!watchedModel}
+                >
                   <FormControl>
                     <SelectTrigger className="bg-card">
                       <SelectValue placeholder="Seleccione..." />
@@ -250,7 +264,6 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
             </FormItem>
           )}
         />
-      </form>
-    
+    </div>
   );
 }

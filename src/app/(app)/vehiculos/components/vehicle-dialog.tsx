@@ -21,26 +21,32 @@ interface VehicleDialogProps {
   onOpenChange?: (isOpen: boolean) => void;
 }
 
+const safeNumber = (v: any) => {
+  if (v === null || v === undefined) return undefined;
+  const n = Number(v);
+  return isNaN(n) ? undefined : n;
+};
+
 const buildDefaults = (v?: Partial<Vehicle> | null): Partial<VehicleFormInput> => ({
   make: v?.make ?? "",
   model: v?.model ?? "",
-  year: v?.year ? Number(v.year) : undefined,
+  year: safeNumber(v?.year),
   engine: (v as any)?.engine ?? "",
   licensePlate: v?.licensePlate ?? "",
   vin: v?.vin ?? "",
-  engineSerialNumber: v?.engineSerialNumber ?? "", // ✅ Campo añadido
+  engineSerialNumber: v?.engineSerialNumber ?? "",
   color: v?.color ?? "",
   ownerName: v?.ownerName ?? "",
   ownerPhone: v?.ownerPhone ?? "",
   chatMetaLink: (v as any)?.chatMetaLink ?? "",
   notes: v?.notes ?? "",
   isFleetVehicle: v?.isFleetVehicle ?? false,
-  purchasePrice: v?.purchasePrice,
-  dailyRentalCost: v?.dailyRentalCost,
-  gpsCost: v?.gpsCost,
-  insuranceCost: v?.insuranceCost,
-  adminCost: v?.adminCost,
-  currentMileage: v?.currentMileage,
+  purchasePrice: safeNumber(v?.purchasePrice),
+  dailyRentalCost: safeNumber(v?.dailyRentalCost),
+  gpsCost: safeNumber(v?.gpsCost),
+  insuranceCost: safeNumber(v?.insuranceCost),
+  adminCost: safeNumber(v?.adminCost),
+  currentMileage: safeNumber(v?.currentMileage),
   assignedDriverId: v?.assignedDriverId,
 });
 
