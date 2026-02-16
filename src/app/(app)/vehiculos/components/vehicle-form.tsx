@@ -75,13 +75,18 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
   }, []);
   
     // Hooks para obtener listas dependientes (marcas, modelos, etc.)
-    // Se añade .filter(Boolean) para evitar que cadenas vacías rompan el componente Select de Radix
-    const makes = useMemo(() => vehicleDb.map(db => db.make).filter(Boolean).sort(), [vehicleDb]);
+    // Se utiliza Set para evitar el error de claves duplicadas reportado.
+    const makes = useMemo(() => {
+        const makeNames = vehicleDb.map(db => db.make).filter(Boolean);
+        return Array.from(new Set(makeNames)).sort();
+    }, [vehicleDb]);
     
     const models = useMemo(() => {
         if (!watchedMake) return [];
         const selected = vehicleDb.find(db => db.make === watchedMake);
-        return selected ? selected.models.map(m => m.name).filter(Boolean).sort() : [];
+        if (!selected) return [];
+        const modelNames = selected.models.map(m => m.name).filter(Boolean);
+        return Array.from(new Set(modelNames)).sort();
     }, [watchedMake, vehicleDb]);
 
     const years = useMemo(() => {
@@ -104,8 +109,10 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
         const modelData = makeData?.models.find(m => m.name === watchedModel);
         const year = watchedYear;
         const generation = modelData?.generations.find(g => year >= g.startYear && year <= g.endYear);
-        // Filtramos motores que tengan un nombre válido (no vacío)
-        return generation ? generation.engines.filter(e => e.name).sort((a, b) => a.name.localeCompare(b.name)) : [];
+        if (!generation) return [];
+        // Filtramos motores que tengan un nombre válido y eliminamos duplicados
+        const engineNames = generation.engines.map(e => e.name).filter(Boolean);
+        return Array.from(new Set(engineNames)).sort();
     }, [watchedMake, watchedModel, watchedYear, vehicleDb]);
 
   return (
@@ -186,7 +193,7 @@ export function VehicleForm({ id, onSubmit }: VehicleFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {engines.map((engine, index) => <SelectItem key={`${engine.name}-${index}`} value={engine.name}>{engine.name}</SelectItem>)}
+                    {engines.map((engineName) => <SelectItem key={engineName} value={engineName}>{engineName}</SelectItem>)}
                   </SelectContent>
                 </Select>
                 <FormMessage />
