@@ -19,8 +19,10 @@ import { OwnerWithdrawalDialog } from './OwnerWithdrawalDialog';
 import { VehicleExpenseDialog } from './VehicleExpenseDialog';
 import { rentalService } from '@/lib/services/rental.service';
 import { useToast } from '@/hooks/use-toast';
-import { Search, TrendingDown, Wrench, Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, TrendingDown, Wrench, Download, ChevronLeft, ChevronRight, Info, Calendar as CalendarIcon, User, Tag, CreditCard, FileText } from 'lucide-react';
 import { exportToCsv } from '@/lib/services/export.service';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
 
 interface DetallesReporteTabProps {
   payments: RentalPayment[];
@@ -31,6 +33,19 @@ interface DetallesReporteTabProps {
   dailyCharges: DailyRentalCharge[];
   manualDebts: ManualDebtEntry[];
 }
+
+type ReportRow = {
+  id: string;
+  date: Date | null;
+  type: 'Ingreso' | 'Egreso';
+  source: string;
+  concept: string;
+  amount: number;
+  method: string;
+  responsible: string;
+  note?: string;
+  vehiclePlate?: string;
+};
 
 export default function DetallesReporteTab({ 
   payments, 
@@ -44,9 +59,10 @@ export default function DetallesReporteTab({
   const { toast } = useToast();
   const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
+  const [selectedMovement, setSelectedMovement] = useState<ReportRow | null>(null);
 
   const merged = useMemo(() => {
-    const rows: any[] = [];
+    const rows: ReportRow[] = [];
     
     // Pagos de renta
     payments.forEach(p => rows.push({ 
@@ -57,7 +73,9 @@ export default function DetallesReporteTab({
       concept: `Abono: ${p.driverName || 'Chofer'} (${p.vehicleLicensePlate})`, 
       amount: p.amount, 
       method: p.paymentMethod || 'Efectivo', 
-      responsible: p.registeredByName || 'Sistema' 
+      responsible: p.registeredByName || 'Sistema',
+      note: p.note,
+      vehiclePlate: p.vehicleLicensePlate
     }));
 
     // Gastos de unidad
@@ -69,7 +87,9 @@ export default function DetallesReporteTab({
       concept: `${e.description} (${e.vehicleLicensePlate})`, 
       amount: e.amount, 
       method: 'Efectivo', 
-      responsible: 'Sistema' 
+      responsible: 'Sistema',
+      note: e.description,
+      vehiclePlate: e.vehicleLicensePlate
     }));
 
     // Retiros de socios
@@ -81,7 +101,8 @@ export default function DetallesReporteTab({
       concept: `Retiro: ${w.ownerName}`, 
       amount: w.amount, 
       method: 'Efectivo', 
-      responsible: 'Sistema' 
+      responsible: 'Sistema',
+      note: w.note
     }));
 
     // Cargos de renta diarios (Automáticos)
@@ -93,7 +114,9 @@ export default function DetallesReporteTab({
       concept: `Renta Diaria: ${c.vehicleLicensePlate}`, 
       amount: c.amount, 
       method: 'Saldo', 
-      responsible: 'Sistema'
+      responsible: 'Sistema',
+      note: (c as any).note,
+      vehiclePlate: c.vehicleLicensePlate
     }));
 
     // Adeudos manuales
@@ -105,7 +128,8 @@ export default function DetallesReporteTab({
       concept: `${d.note || d.reason}`, 
       amount: d.amount, 
       method: 'Saldo', 
-      responsible: 'Sistema'
+      responsible: 'Sistema',
+      note: d.note || d.reason
     }));
 
     return rows;
@@ -113,7 +137,7 @@ export default function DetallesReporteTab({
 
   const { filteredData, ...tableManager } = useTableManager({
     initialData: merged,
-    searchKeys: ['concept', 'responsible', 'source'],
+    searchKeys: ['concept', 'responsible', 'source', 'note'],
     dateFilterKey: 'date',
     initialSortOption: 'date_desc',
     initialDateRange: { from: startOfMonth(new Date()), to: endOfMonth(new Date()) },
@@ -180,7 +204,11 @@ export default function DetallesReporteTab({
               </TableHeader>
               <TableBody>
                 {filteredData.length > 0 ? filteredData.map(row => (
-                  <TableRow key={row.id}>
+                  <TableRow 
+                    key={row.id} 
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => setSelectedMovement(row)}
+                  >
                     <TableCell className="text-xs">{row.date ? format(row.date, 'dd/MM/yy HH:mm') : '—'}</TableCell>
                     <TableCell>
                       <Badge variant={row.type === 'Ingreso' ? 'success' : 'destructive'}>{row.type}</Badge>
@@ -221,6 +249,84 @@ export default function DetallesReporteTab({
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Detalles */}
+      <Dialog open={!!selectedMovement} onOpenChange={(open) => !open && setSelectedMovement(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-primary" />
+              Detalle de Movimiento
+            </DialogTitle>
+            <DialogDescription>Información registrada en el sistema de flotilla.</DialogDescription>
+          </DialogHeader>
+          
+          {selectedMovement && (
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1"><CalendarIcon className="h-3 w-3"/> Fecha y Hora</p>
+                  <p className="text-sm font-medium">{selectedMovement.date ? format(selectedMovement.date, "dd 'de' MMMM, yyyy HH:mm", { locale: es }) : 'N/A'}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1"><Tag className="h-3 w-3"/> Origen</p>
+                  <p className="text-sm font-medium">{selectedMovement.source}</p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Concepto</p>
+                <p className="text-sm font-semibold">{selectedMovement.concept}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1"><CreditCard className="h-3 w-3"/> Método</p>
+                  <Badge variant={selectedMovement.type === 'Ingreso' ? 'success' : 'destructive'} className="mt-1">
+                    {selectedMovement.method}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1"><DollarSign className="h-3 w-3"/> Monto</p>
+                  <p className={cn("text-lg font-bold", selectedMovement.type === 'Ingreso' ? "text-green-600" : "text-red-600")}>
+                    {selectedMovement.type === 'Ingreso' ? '+' : '-'} {formatCurrency(selectedMovement.amount)}
+                  </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1"><User className="h-3 w-3"/> Registrado por</p>
+                  <p className="text-sm font-medium">{selectedMovement.responsible}</p>
+                </div>
+                {selectedMovement.vehiclePlate && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Vehículo</p>
+                    <p className="text-sm font-medium font-mono">{selectedMovement.vehiclePlate}</p>
+                  </div>
+                )}
+              </div>
+
+              {selectedMovement.note && (
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground flex items-center gap-1"><FileText className="h-3 w-3"/> Notas Adicionales</p>
+                  <div className="p-3 bg-muted/50 rounded-md text-sm italic">
+                    {selectedMovement.note}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" className="w-full" onClick={() => setSelectedMovement(null)}>Cerrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <OwnerWithdrawalDialog 
         open={isWithdrawalOpen} 
