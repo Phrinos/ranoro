@@ -1,12 +1,14 @@
 // src/schemas/vehicle-form-schema.ts
 import * as z from 'zod';
 
-// Helper para coaccionar números de forma segura evitando NaN
-const numericField = (requiredMsg?: string) => z.preprocess((v) => {
+// Helper para coaccionar números de forma segura evitando NaN y errores de tipo
+const numericField = (msg?: string) => z.preprocess((v) => {
   if (v === "" || v === null || v === undefined) return undefined;
   const n = Number(v);
-  return isNaN(n) ? undefined : n;
-}, z.number({ invalid_type_error: requiredMsg }).optional());
+  // Si no es un número válido, devolvemos el valor original (string) 
+  // para que el validador .number() dispare el error de tipo.
+  return isNaN(n) ? v : n;
+}, z.number().optional());
 
 export const vehicleFormSchema = z.object({
   make: z.string().min(2, { message: "La marca debe tener al menos 2 caracteres." }),

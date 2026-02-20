@@ -1,11 +1,11 @@
-// src/app/(app)/vehiculos/components/vehicle-dialog.tsx
+// src/app/vehiculos/components/vehicle-dialog.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormDialog } from "@/components/shared/form-dialog";
-import { VehicleForm } from "./vehicle-form";
+import { VehicleForm } from "@/app/(app)/vehiculos/components/vehicle-form";
 import type { Vehicle } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { vehicleFormSchema, type VehicleFormValues } from "@/schemas/vehicle-form-schema";

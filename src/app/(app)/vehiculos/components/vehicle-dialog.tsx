@@ -5,10 +5,10 @@ import React, { useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FormDialog } from "@/components/shared/form-dialog";
-import { VehicleForm, type VehicleFormValues } from "./vehicle-form";
+import { VehicleForm } from "./vehicle-form";
 import type { Vehicle } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { vehicleFormSchema } from "@/schemas/vehicle-form-schema";
+import { vehicleFormSchema, type VehicleFormValues } from "@/schemas/vehicle-form-schema";
 import { z } from "zod";
 
 type VehicleFormInput = z.input<typeof vehicleFormSchema>;

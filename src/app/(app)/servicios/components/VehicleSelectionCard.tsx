@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { VehicleSelectionDialog } from "./VehicleSelectionDialog";
 import type { Vehicle, ServiceRecord } from "@/types";
-import type { VehicleFormValues } from "@/schemas/vehicle-form-schema";
 import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -31,6 +30,7 @@ import { useToast } from "@/hooks/use-toast";
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
 import { VEHICLE_COLLECTION } from "@/lib/vehicle-constants";
+import type { VehicleFormValues } from '@/schemas/vehicle-form-schema';
 
 
 interface VehicleSelectionCardProps {
