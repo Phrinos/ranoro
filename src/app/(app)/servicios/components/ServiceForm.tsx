@@ -32,7 +32,7 @@ import { ServiceFormFooter } from './ServiceFormFooter';
 import { SignatureDialog } from './signature-dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { ServiceFormValues } from '@/schemas/service-form';
-import type { VehicleFormValues } from '@/app/(app)/vehiculos/components/vehicle-form';
+import type { VehicleFormValues } from '@/schemas/vehicle-form-schema';
 
 
 const ReceptionContent = ({ part, isReadOnly, isEnhancingText, handleEnhanceText, onOpenSignature }: any) => {

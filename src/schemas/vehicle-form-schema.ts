@@ -1,4 +1,3 @@
-
 // src/schemas/vehicle-form-schema.ts
 import * as z from 'zod';
 
@@ -7,7 +6,7 @@ const numericField = (requiredMsg?: string) => z.preprocess((v) => {
   if (v === "" || v === null || v === undefined) return undefined;
   const n = Number(v);
   return isNaN(n) ? undefined : n;
-}, requiredMsg ? z.number({ required_error: requiredMsg, invalid_type_error: requiredMsg }) : z.number().optional());
+}, z.number({ invalid_type_error: requiredMsg }).optional());
 
 export const vehicleFormSchema = z.object({
   make: z.string().min(2, { message: "La marca debe tener al menos 2 caracteres." }),

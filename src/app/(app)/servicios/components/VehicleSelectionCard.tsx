@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { VehicleSelectionDialog } from "./VehicleSelectionDialog";
 import type { Vehicle, ServiceRecord } from "@/types";
-import type { VehicleFormValues } from "@/app/(app)/vehiculos/components/vehicle-form";
+import type { VehicleFormValues } from "@/schemas/vehicle-form-schema";
 import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
