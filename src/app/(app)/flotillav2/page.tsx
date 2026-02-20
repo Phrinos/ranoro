@@ -76,7 +76,17 @@ function FlotillaV2Page() {
     { 
       value: 'detalles', 
       label: 'Detalle Reporte', 
-      content: <DetallesReporteTab payments={payments} expenses={expenses} withdrawals={withdrawals} cashTransactions={cashTransactions} vehicles={vehicles} /> 
+      content: (
+        <DetallesReporteTab 
+          payments={payments} 
+          expenses={expenses} 
+          withdrawals={withdrawals} 
+          cashTransactions={cashTransactions} 
+          vehicles={vehicles} 
+          dailyCharges={dailyCharges}
+          manualDebts={manualDebts}
+        />
+      )
     },
   ];
 
