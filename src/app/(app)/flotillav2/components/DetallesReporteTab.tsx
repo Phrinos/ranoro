@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useMemo, useState } from 'react';
@@ -19,7 +18,21 @@ import { OwnerWithdrawalDialog } from './OwnerWithdrawalDialog';
 import { VehicleExpenseDialog } from './VehicleExpenseDialog';
 import { rentalService } from '@/lib/services/rental.service';
 import { useToast } from '@/hooks/use-toast';
-import { Search, TrendingDown, Wrench, Download, ChevronLeft, ChevronRight, Info, Calendar as CalendarIcon, User, Tag, CreditCard, FileText } from 'lucide-react';
+import { 
+  Search, 
+  TrendingDown, 
+  Wrench, 
+  Download, 
+  ChevronLeft, 
+  ChevronRight, 
+  Info, 
+  Calendar as CalendarIcon, 
+  User, 
+  Tag, 
+  CreditCard, 
+  FileText,
+  DollarSign 
+} from 'lucide-react';
 import { exportToCsv } from '@/lib/services/export.service';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
@@ -300,7 +313,7 @@ export default function DetallesReporteTab({
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground flex items-center gap-1"><User className="h-3 w-3"/> Registrado por</p>
+                  <p className="text-xs text-muted-foreground flex items-center gap-1"><UserIcon className="h-3 w-3"/> Registrado por</p>
                   <p className="text-sm font-medium">{selectedMovement.responsible}</p>
                 </div>
                 {selectedMovement.vehiclePlate && (
