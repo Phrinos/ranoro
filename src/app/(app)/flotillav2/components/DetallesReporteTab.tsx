@@ -27,7 +27,7 @@ import {
   ChevronRight, 
   Info, 
   Calendar as CalendarIcon, 
-  User, 
+  User as UserIcon, 
   Tag, 
   CreditCard, 
   FileText,
