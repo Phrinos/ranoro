@@ -33,11 +33,14 @@ import {
   FileText,
   DollarSign,
   TrendingUp,
-  BarChart3
+  BarChart3,
+  FilterX
 } from 'lucide-react';
 import { exportToCsv } from '@/lib/services/export.service';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface DetallesReporteTabProps {
   payments: RentalPayment[];
@@ -75,6 +78,7 @@ export default function DetallesReporteTab({
   const [isWithdrawalOpen, setIsWithdrawalOpen] = useState(false);
   const [isExpenseOpen, setIsExpenseOpen] = useState(false);
   const [selectedMovement, setSelectedMovement] = useState<ReportRow | null>(null);
+  const [hideDailyCharges, setHideDailyCharges] = useState(false);
 
   const merged = useMemo(() => {
     const rows: ReportRow[] = [];
@@ -150,8 +154,15 @@ export default function DetallesReporteTab({
     return rows;
   }, [payments, expenses, withdrawals, dailyCharges, manualDebts]);
 
+  const filteredBySource = useMemo(() => {
+    if (hideDailyCharges) {
+      return merged.filter(r => r.source !== 'Cargo Renta');
+    }
+    return merged;
+  }, [merged, hideDailyCharges]);
+
   const { filteredData, fullFilteredData, ...tableManager } = useTableManager({
-    initialData: merged,
+    initialData: filteredBySource,
     searchKeys: ['concept', 'responsible', 'source', 'note'],
     dateFilterKey: 'date',
     initialSortOption: 'date_desc',
@@ -254,9 +265,20 @@ export default function DetallesReporteTab({
             <Wrench className="mr-2 h-4 w-4" /> Registrar Gasto
           </Button>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
+          <div className="flex items-center space-x-2 bg-card border px-3 py-2 rounded-md h-10 shadow-sm">
+            <Switch 
+              id="hide-daily-charges" 
+              checked={hideDailyCharges} 
+              onCheckedChange={setHideDailyCharges} 
+            />
+            <Label htmlFor="hide-daily-charges" className="text-xs font-bold uppercase tracking-tighter cursor-pointer flex items-center gap-1.5">
+              <FilterX className="h-3.5 w-3.5" />
+              Ocultar Cargos Diarios
+            </Label>
+          </div>
           <DatePickerWithRange date={tableManager.dateRange} onDateChange={tableManager.onDateRangeChange} />
-          <Button variant="outline" size="icon" onClick={handleExport} title="Descargar CSV" className="bg-card">
+          <Button variant="outline" size="icon" onClick={handleExport} title="Descargar CSV" className="bg-card h-10 w-10">
             <Download className="h-4 w-4" />
           </Button>
         </div>
@@ -267,7 +289,7 @@ export default function DetallesReporteTab({
           <div className="relative mb-4">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por concepto, origen o responsable..."
+              placeholder="Buscar por concepto, responsable o placa..."
               className="pl-8 bg-card"
               value={tableManager.searchTerm}
               onChange={(e) => tableManager.onSearchTermChange(e.target.value)}
