@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,9 @@ import {
   Tag, 
   CreditCard, 
   FileText,
-  DollarSign 
+  DollarSign,
+  TrendingUp,
+  BarChart3
 } from 'lucide-react';
 import { exportToCsv } from '@/lib/services/export.service';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -148,7 +150,7 @@ export default function DetallesReporteTab({
     return rows;
   }, [payments, expenses, withdrawals, dailyCharges, manualDebts]);
 
-  const { filteredData, ...tableManager } = useTableManager({
+  const { filteredData, fullFilteredData, ...tableManager } = useTableManager({
     initialData: merged,
     searchKeys: ['concept', 'responsible', 'source', 'note'],
     dateFilterKey: 'date',
@@ -157,9 +159,30 @@ export default function DetallesReporteTab({
     itemsPerPage: 50
   });
 
+  // Cálculo de KPIs basado en el reporte filtrado
+  const kpis = useMemo(() => {
+    const data = fullFilteredData || [];
+    
+    // Ingresos: Solo lo recaudado por rentas (Pagos)
+    const income = data
+      .filter(r => r.source === 'Pago Renta')
+      .reduce((sum, r) => sum + r.amount, 0);
+    
+    // Egresos: Mantenimientos y Retiros de socios
+    const expense = data
+      .filter(r => r.source === 'Gasto Unidad' || r.source === 'Retiro Socio')
+      .reduce((sum, r) => sum + r.amount, 0);
+
+    return {
+      income,
+      expense,
+      profit: income - expense
+    };
+  }, [fullFilteredData]);
+
   const handleExport = () => {
     exportToCsv({
-      data: filteredData,
+      data: fullFilteredData,
       headers: [
         { key: 'date', label: 'Fecha' },
         { key: 'type', label: 'Tipo' },
@@ -173,8 +196,55 @@ export default function DetallesReporteTab({
     });
   };
 
+  const handleSort = (key: string) => {
+    const isAsc = tableManager.sortOption === `${key}_asc`;
+    tableManager.onSortOptionChange(`${key}_${isAsc ? 'desc' : 'asc'}`);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Tarjetas de KPI */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-green-50 border-green-200 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-green-800">Ingresos Mensuales</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-700 flex items-center gap-2">
+              <DollarSign className="h-6 w-6" />
+              {formatCurrency(kpis.income)}
+            </div>
+            <p className="text-xs text-green-600/70 mt-1 font-medium">Total recaudado por rentas</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-red-50 border-red-200 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-red-800">Egresos Mensuales</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-red-700 flex items-center gap-2">
+              <TrendingUp className="h-6 w-6 rotate-180" />
+              {formatCurrency(kpis.expense)}
+            </div>
+            <p className="text-xs text-red-600/70 mt-1 font-medium">Mantenimientos y retiros de socios</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-blue-50 border-blue-200 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-bold uppercase tracking-wider text-blue-800">Utilidad Neta</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-700 flex items-center gap-2">
+              <BarChart3 className="h-6 w-6" />
+              {formatCurrency(kpis.profit)}
+            </div>
+            <p className="text-xs text-blue-600/70 mt-1 font-medium">Ganancia real del periodo</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="flex flex-col md:flex-row gap-4 justify-between items-start">
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => setIsWithdrawalOpen(true)} className="border-red-500 text-red-600 hover:bg-red-50 bg-card">
@@ -207,7 +277,7 @@ export default function DetallesReporteTab({
             <Table>
               <TableHeader className="bg-black">
                 <TableRow>
-                  <SortableTableHeader sortKey="date" label="Fecha" onSort={k => tableManager.onSortOptionChange(`${k}_${tableManager.sortOption.endsWith('asc') ? 'desc' : 'asc'}`)} currentSort={tableManager.sortOption} textClassName="text-white" />
+                  <SortableTableHeader sortKey="date" label="Fecha" onSort={handleSort} currentSort={tableManager.sortOption} textClassName="text-white" />
                   <TableHead className="text-white">Tipo</TableHead>
                   <TableHead className="text-white">Origen</TableHead>
                   <TableHead className="text-white">Concepto</TableHead>
