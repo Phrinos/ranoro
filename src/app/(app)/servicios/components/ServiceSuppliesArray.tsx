@@ -17,7 +17,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 
 interface ServiceSuppliesArrayProps {
   serviceIndex: number;
-  control: Control<any>; // O un tipo más específico si tienes uno para todo el formulario
+  control: any; // O un tipo más específico si tienes uno para todo el formulario
   inventoryItems: InventoryItem[];
   onNewInventoryItemCreated: (formData: InventoryItemFormValues) => Promise<InventoryItem>;
   categories: InventoryCategory[];
