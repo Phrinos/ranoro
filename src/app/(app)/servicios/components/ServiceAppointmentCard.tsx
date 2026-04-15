@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   Clock,
   Tag,
+  Link2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -242,8 +243,8 @@ export function ServiceAppointmentCard({
 
           {/* ── BLOQUE 5: Acciones verticales ─────────────────────── */}
           <div className="p-3 flex flex-row md:flex-col justify-center items-center gap-1 w-full md:w-14 flex-shrink-0 bg-muted/10">
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onView} title="Ver Detalles">
-              <Icon icon="mdi:eye" className="h-4 w-4" />
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onView} title="Compartir Enlace">
+              <Link2 className="h-4 w-4" />
             </Button>
             {userPermissions.has('services:edit') && (
               <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onEdit} title="Editar">
