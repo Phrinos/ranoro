@@ -10,8 +10,8 @@ export default function AccesoDenegadoPage() {
 
   useEffect(() => {
     const t = setTimeout(() => {
-      router.replace("/");
-    }, 3000);
+      router.replace("/login");
+    }, 3500);
     return () => clearTimeout(t);
   }, [router]);
 
@@ -30,7 +30,7 @@ export default function AccesoDenegadoPage() {
         <CardContent className="flex flex-col items-center pt-6 space-y-4">
             <div className="flex items-center space-x-2 text-slate-500 text-sm">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Redirigiendo a la página principal...</span>
+                <span>Redirigiendo al inicio de sesión...</span>
             </div>
         </CardContent>
       </Card>
