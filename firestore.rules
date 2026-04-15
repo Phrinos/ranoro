@@ -8,16 +8,25 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function userDocExists() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
     function getUserPermissions() {
-      return get(/databases/$(database)/documents/appRoles/$(getUserData().role)).data.permissions;
+      let roleRef = /databases/$(database)/documents/appRoles/$(getUserData().role);
+      return exists(roleRef) ? get(roleRef).data.permissions : [];
     }
 
     function hasPermission(permission) {
-      return isSignedIn() && (permission in getUserPermissions() || getUserData().role == 'Superadministrador');
+      return isSignedIn() && userDocExists() && (getUserData().role == 'Superadministrador' || permission in getUserPermissions());
+    }
+    
+    function isSuperAdmin() {
+      return isSignedIn() && userDocExists() && getUserData().role == 'Superadministrador';
     }
     
     // --- Reglas por Colección ---
@@ -25,59 +34,61 @@ service cloud.firestore {
     // Usuarios
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn() && (request.auth.uid == userId || hasPermission('users:manage'));
+      allow create: if isSuperAdmin() || hasPermission('admin:manage_users_roles');
+      allow update: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin() || hasPermission('admin:manage_users_roles'));
+      allow delete: if isSuperAdmin();
     }
 
     // Roles
     match /appRoles/{roleId} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('roles:manage');
+      allow write: if hasPermission('admin:manage_users_roles');
     }
 
     // Vehículos
     match /vehicles/{vehicleId} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('vehicles:manage');
+      allow write: if hasPermission('fleet:view') || hasPermission('fleet:create');
     }
 
     // Conductores y Flotilla
     match /drivers/{driverId} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('drivers:create') || hasPermission('fleet:manage');
+      allow write: if hasPermission('fleet:manage_drivers');
     }
     match /rentalPayments/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('rentals:manage');
+      allow write: if hasPermission('fleet:manage_rentals');
     }
     match /dailyRentalCharges/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('rentals:manage');
+      allow write: if hasPermission('fleet:manage_rentals');
     }
     match /manualDebts/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('rentals:manage');
+      allow write: if hasPermission('fleet:manage_rentals');
     }
     match /ownerWithdrawals/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('rentals:manage');
+      allow write: if hasPermission('fleet:manage_rentals');
     }
     match /vehicleExpenses/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('rentals:manage');
+      allow write: if hasPermission('fleet:manage_rentals');
     }
 
     // Inventario
     match /inventory/{itemId} {
-      allow read: if hasPermission('inventory:view_public_info');
-      allow write: if hasPermission('inventory:manage');
+      allow read: if hasPermission('inventory:view');
+      allow write: if hasPermission('inventory:create') || hasPermission('inventory:edit');
     }
     match /inventoryCategories/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('inventory:manage');
+      allow write: if hasPermission('inventory:manage_categories');
     }
     match /suppliers/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('inventory:manage');
+      allow write: if hasPermission('suppliers:manage');
     }
     match /inventoryMovements/{id} {
       allow read: if isSignedIn();
@@ -85,29 +96,29 @@ service cloud.firestore {
     }
     match /serviceTypes/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('roles:manage');
+      allow write: if hasPermission('admin:settings');
     }
     match /vehicleGroups/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('inventory:manage');
+      allow write: if hasPermission('fleet:view');
     }
     match /masterCatalogData/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('inventory:manage');
+      allow write: if hasPermission('inventory:create');
     }
     match /vehicleData/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('inventory:manage');
+      allow write: if hasPermission('fleet:view');
     }
 
     // Compras y Cuentas por Pagar
     match /purchases/{id} {
-      allow read: if hasPermission('purchases:manage');
-      allow write: if hasPermission('purchases:manage');
+      allow read: if hasPermission('purchases:view');
+      allow write: if hasPermission('purchases:create');
     }
     match /payableAccounts/{id} {
-      allow read: if hasPermission('purchases:manage');
-      allow write: if hasPermission('purchases:manage');
+      allow read: if hasPermission('purchases:view');
+      allow write: if hasPermission('purchases:create');
     }
 
     // Servicios
@@ -134,17 +145,17 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
     match /fixedMonthlyExpenses/{id} {
-      allow read: if hasPermission('finances:view_report');
-      allow write: if hasPermission('workshop:manage');
+      allow read: if hasPermission('finances:view');
+      allow write: if hasPermission('admin:settings');
     }
     match /workshopConfig/{id} {
       allow read: if true;
-      allow write: if hasPermission('workshop:manage');
+      allow write: if hasPermission('admin:settings');
     }
     
     // Auditoría
     match /auditLogs/{logId} {
-        allow read: if hasPermission('audits:view');
+        allow read: if hasPermission('admin:view_audit');
         allow write: if isSignedIn();
     }
 

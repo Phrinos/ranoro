@@ -6,50 +6,64 @@ export async function syncFirebaseAuthUser(user: { id?: string, email: string, n
   const auth = getAdminAuth();
   
   if (user.id) {
-    // Si estamos editando y hay un ID
-    // Primero, verifica si el usuario existe en Firebase Auth
+    // ── EDITING an existing user ──
     try {
-        const existingUser = await auth.getUserByEmail(user.email);
-        const updateData: any = { displayName: user.name };
-        
-        // Solo actualiza el password si se provee uno nuevo
-        if (user.password && user.password.trim().length > 0) {
-            updateData.password = user.password;
-        }
-        
-        await auth.updateUser(existingUser.uid, updateData);
-        return existingUser.uid;
-    } catch (error: any) {
-         // Si no existe, tenemos que crearlo con el uid definido (user.id)
-         if (error.code === 'auth/user-not-found') {
-              const authUser = await auth.createUser({
-                  uid: user.id,
-                  email: user.email,
-                  password: user.password || 'ranoro2025', // Fallback si editamos pero no existía en Auth
-                  displayName: user.name
-              });
-              return authUser.uid;
-         }
-         throw error;
-    }
-  } else {
-      // Es un usuario completamente nuevo, crear en auth
-      if (!user.password || user.password.trim() === '') {
-          throw new Error('La contraseña es requerida para nuevos usuarios en Firebase Auth.');
+      const existingUser = await auth.getUserByEmail(user.email);
+      const updateData: any = { displayName: user.name };
+      
+      // Only update password if a new one is provided
+      if (user.password && user.password.trim().length > 0) {
+        updateData.password = user.password;
       }
       
-      try {
-          const authUser = await auth.createUser({
-              email: user.email,
-              password: user.password,
-              displayName: user.name
-          });
-          return authUser.uid; // Usaremos esto para el ID en Firestore
-      } catch (error: any) {
-          if (error.code === 'auth/email-already-exists') {
-              throw new Error('El correo electrónico ya está registrado en el sistema de autenticación.');
-          }
-          throw error;
+      await auth.updateUser(existingUser.uid, updateData);
+      return existingUser.uid;
+    } catch (error: any) {
+      if (error.code === 'auth/user-not-found') {
+        // Doesn't exist yet — create it using the existing Firestore ID as the UID
+        const authUser = await auth.createUser({
+          uid: user.id,
+          email: user.email,
+          password: user.password || 'ranoro2025',
+          displayName: user.name,
+        });
+        return authUser.uid;
       }
+      throw error;
+    }
+  } else {
+    // ── CREATING a new user ──
+    if (!user.password || user.password.trim() === '') {
+      throw new Error('La contraseña es requerida para nuevos usuarios.');
+    }
+
+    // Check if the email already exists in Auth (e.g., from Google sign-in)
+    try {
+      const existingUser = await auth.getUserByEmail(user.email);
+      // User already exists (Google account, etc.) — just update the display name
+      // DO NOT reset their provider or password; just return their UID so Firestore doc is linked
+      await auth.updateUser(existingUser.uid, { displayName: user.name });
+      return existingUser.uid;
+    } catch (error: any) {
+      if (error.code === 'auth/user-not-found') {
+        // Truly new — create with email/password
+        try {
+          const authUser = await auth.createUser({
+            email: user.email,
+            password: user.password,
+            displayName: user.name,
+          });
+          return authUser.uid;
+        } catch (createError: any) {
+          if (createError.code === 'auth/email-already-exists') {
+            // Race condition — just look them up
+            const existing = await auth.getUserByEmail(user.email);
+            return existing.uid;
+          }
+          throw createError;
+        }
+      }
+      throw error;
+    }
   }
 }

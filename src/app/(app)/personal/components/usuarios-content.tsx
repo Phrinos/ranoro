@@ -41,7 +41,10 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
   });
 
   const finalData = useMemo(() => {
-    return filteredData.filter(user => showArchived ? true : !user.isArchived);
+    return filteredData.filter(user => {
+      if (!user.id) return false; // skip orphan records with no ID
+      return showArchived ? true : !user.isArchived;
+    });
   }, [filteredData, showArchived]);
 
 
@@ -164,7 +167,7 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
                         const hireDate = user.hireDate ? parseDate(user.hireDate) : null;
                         return (
                           <TableRow 
-                            key={user.id} 
+                            key={user.id ?? user.email} 
                             onClick={() => handleOpenForm(user)} 
                             className={cn("cursor-pointer hover:bg-muted/50", user.isArchived && "bg-gray-100/80 dark:bg-gray-800/20 text-muted-foreground")}
                           >
