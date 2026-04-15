@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged, signOut, deleteUser, type User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebaseClient';
 import type { User } from '@/types';
@@ -57,15 +57,16 @@ export function useAuth() {
         console.log("[AUTH-AUDIT] Firebase User detected UID:", firebaseUser.uid, "Email:", firebaseUser.email);
         
         try {
-            // SECURITY AUDIT FIX: We must locate the user doc in Firestore to prevent unauthorized access.
-            let targetDocRef = doc(db, 'users', firebaseUser.uid); // Default to checking the UID itself.
+            // SECURITY AUDIT FIX: Verify exact UID match first
+            let targetDocRef = doc(db, 'users', firebaseUser.uid);
+            const uidDocSnap = await getDoc(targetDocRef);
             
-            // Si el login fue hecho y no coincide el UID, busquemos el correo.
-            if (firebaseUser.email) {
+            // Only fallback to email matching if UID document doesn't exist (legacy migration)
+            if (!uidDocSnap.exists() && firebaseUser.email) {
                 const emailQuery = query(collection(db, 'users'), where('email', '==', firebaseUser.email));
                 const snap = await getDocs(emailQuery);
                 if (!snap.empty) {
-                    console.log("[AUTH-AUDIT] Matched user by email:", snap.docs[0].id);
+                    console.log("[AUTH-AUDIT] Matched user by email fallback:", snap.docs[0].id);
                     targetDocRef = doc(db, 'users', snap.docs[0].id);
                 }
             }
@@ -90,11 +91,25 @@ export function useAuth() {
                     setIsLoading(false);
                 } else {
                     console.warn("[SECURITY REJECT] User is NOT registered in DB. Booting out.");
-                    handleLogout().then(() => {
-                        if (typeof window !== "undefined") {
-                            window.location.href = '/acceso-denegado';
-                        }
-                    });
+                    
+                    const expel = async () => {
+                       cleanupDocListener();
+                       setCurrentUser(null);
+                       localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
+                       if (auth?.currentUser) {
+                           try {
+                               await deleteUser(auth.currentUser);
+                               console.log("[AUTH-AUDIT] Ghost account deleted from Firebase Auth.");
+                           } catch (e) {
+                               console.warn("Could not delete auth user, signing out instead", e);
+                               await signOut(auth);
+                           }
+                       }
+                       if (typeof window !== "undefined") {
+                           window.location.href = '/acceso-denegado';
+                       }
+                    };
+                    expel();
                 }
             }, (error) => {
                console.error("[AUTH-AUDIT] Firestore listener error:", error);
