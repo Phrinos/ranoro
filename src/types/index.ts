@@ -7,6 +7,8 @@ export type AppRoleName =
   | "Superadministrador"
   | "Administrador"
   | "Supervisor"
+  | "Asesor"
+  | "Recepcionista"
   | "Técnico"
   | "Cajero"
   | "Usuario"

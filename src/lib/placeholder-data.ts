@@ -81,45 +81,55 @@ export const placeholderAppRoles: AppRole[] = [
     permissions: ALL_PERMISSIONS.map(p => p.id),
   },
   {
-    id: "admin_role",
+    id: "asesor_role",
     name: "Asesor",
     permissions: [
-      'dashboard:view',
-      'services:create', 'services:edit', 'services:view_history',
-      'inventory:manage', 'inventory:view_public_info',
-      'pos:create_sale', 'pos:view_sales',
-      'fleet:manage', 'rentals:view', 'rentals:manage',
-      'finances:view_report',
-      'vehicles:manage',
-      'personnel:manage',
-      'billing:manage',
-      'messaging:manage',
-      'audits:view',
-      'ticket_config:manage',
-      'workshop:manage',
+      // Inventario — puede ver e imprimir pero no editar costos
+      'inventory:view',
+      // Servicios — acceso completo al flujo de servicio
+      'services:view', 'services:create', 'services:edit',
+      // POS — puede cobrar y ver ventas
+      'pos:view_sales', 'pos:create_sale',
+      // Vehículos — puede ver y crear
+      'fleet:view', 'fleet:create', 'fleet:edit',
+      // Compras — puede ver historial
+      'purchases:view',
     ],
   },
   {
     id: "tech_role",
-    name: "Tecnico",
+    name: "Técnico",
     permissions: [
-      "dashboard:view",
-      "services:edit",
-      "services:view_history",
-      "inventory:view_public_info",
+      // Solo puede ver servicios y editarlos (actualizar progreso)
+      'services:view', 'services:edit',
+      // Puede ver inventario (para saber qué insumos hay)
+      'inventory:view',
     ],
   },
   {
     id: "recepcion_role",
     name: "Recepcionista",
     permissions: [
-      "dashboard:view",
-      "services:create",
-      "services:view_history",
-      "inventory:view_public_info",
-      "pos:create_sale",
-      "pos:view_sales",
-      "vehicles:manage"
+      // Servicios — puede crear y ver
+      'services:view', 'services:create',
+      // POS — puede cobrar y ver ventas
+      'pos:view_sales', 'pos:create_sale',
+      // Inventario — puede ver precios
+      'inventory:view',
+      // Vehículos — puede registrar
+      'fleet:view', 'fleet:create',
+    ],
+  },
+  {
+    id: "cajero_role",
+    name: "Cajero",
+    permissions: [
+      // POS — acceso completo a ventas
+      'pos:view_sales', 'pos:create_sale',
+      // Inventario — puede ver precios
+      'inventory:view',
+      // Servicios — puede ver para cobrar
+      'services:view',
     ],
   },
 ];

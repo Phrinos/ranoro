@@ -38,6 +38,7 @@ import type { User, NavigationEntry } from "@/types";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { ALL_PERMISSIONS } from '@/lib/permissions';
 import { useRoles } from '@/lib/contexts/roles-context';
+import { normalizePermissions } from '@/hooks/usePermissions';
 
 
 const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
@@ -90,7 +91,8 @@ const useNavigation = (): NavigationEntry[] => {
         return new Set(ALL_PERMISSIONS.map(p => p.id));
     }
     const userRole = roles.find(r => r && r.name === currentUser.role);
-    return new Set(userRole?.permissions || []);
+    const rawPermissions = userRole?.permissions || [];
+    return normalizePermissions(rawPermissions);
   }, [currentUser, roles]);
 
   const filteredNavStructure = React.useMemo(() => {
