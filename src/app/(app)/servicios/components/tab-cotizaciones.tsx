@@ -1,7 +1,8 @@
 // src/app/(app)/servicios/components/tab-cotizaciones.tsx
 "use client";
 
-import React, { useMemo, useCallback } from 'react';
+import { serviceService } from '@/lib/services';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { TableToolbar } from '@/components/shared/table-toolbar';
 import type { ServiceRecord, Vehicle, User } from '@/types';
@@ -12,7 +13,6 @@ import { ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface CotizacionesTabContentProps {
-  services: ServiceRecord[];
   vehicles: Vehicle[];
   personnel: User[];
   currentUser: User | null;
@@ -21,7 +21,6 @@ interface CotizacionesTabContentProps {
 }
 
 function CotizacionesTabContent({
-  services,
   vehicles,
   personnel,
   currentUser,
@@ -29,8 +28,14 @@ function CotizacionesTabContent({
   onDelete,
 }: CotizacionesTabContentProps) {
   const router = useRouter();
+  const [activeData, setActiveData] = useState<ServiceRecord[]>([]);
+
+  useEffect(() => {
+    const unsub = serviceService.onActiveServicesUpdate(setActiveData);
+    return () => unsub();
+  }, []);
   
-  const quotes = useMemo(() => services.filter(s => s.status === 'Cotizacion'), [services]);
+  const quotes = useMemo(() => activeData.filter(s => s.status === 'Cotizacion'), [activeData]);
   
   const { 
     paginatedData,

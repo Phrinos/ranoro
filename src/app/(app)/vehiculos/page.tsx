@@ -1,118 +1,57 @@
-//src/app/(app)/vehiculos/page.tsx
+
+// src/app/(app)/vehiculos/page.tsx
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
-import { useSearchParams, useRouter } from "next/navigation";
-import React, { useState, useMemo, useEffect, useCallback, Suspense } from 'react';
+import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Car, AlertTriangle, Activity, CalendarX, Loader2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Vehicle, ServiceRecord } from "@/types";
+import { PlusCircle, Loader2 } from "lucide-react";
+import type { Vehicle } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { VehiclesTable } from './components/vehicles-table';
-import { inventoryService, serviceService } from '@/lib/services';
-import { differenceInMonths, isValid } from 'date-fns';
-import { parseDate } from '@/lib/forms';
+import { inventoryService } from '@/lib/services';
 import { VehicleDialog } from './components/vehicle-dialog';
+import { usePermissions } from "@/hooks/usePermissions";
+import { cn } from "@/lib/utils";
 import { DatabaseManagementTab } from './components/database-management-tab';
-import { getServiceEffectiveDate, getServiceMileage, isDeliveredStatus } from "@/lib/vehicles/serviceRecordHelpers";
+
+type ActiveView = "vehiculos" | "catalogo";
+
+const TABS: { value: ActiveView; label: string }[] = [
+  { value: "vehiculos", label: "Directorio de Vehículos" },
+  { value: "catalogo", label: "Catálogo de Marcas y Modelos" },
+];
 
 function PageInner() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const defaultTab = searchParams.get('tab') || 'vehiculos';
   const { toast } = useToast();
+  const userPermissions = usePermissions();
 
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const [activeView, setActiveView] = useState<ActiveView>("vehiculos");
   const [isLoading, setIsLoading] = useState(true);
   const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
-  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
-  
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Partial<Vehicle> | null>(null);
-  
+
   useEffect(() => {
     setIsLoading(true);
-    const unsubscribeVehicles = inventoryService.onVehiclesUpdate((data) => {
+    const unsub = inventoryService.onVehiclesUpdate((data) => {
       setAllVehicles(data);
+      setIsLoading(false);
     });
-    
-    const unsubscribeServices = serviceService.onServicesUpdate((data) => {
-        setAllServices(data);
-        setIsLoading(false);
-    });
-    
-    return () => {
-      unsubscribeVehicles();
-      unsubscribeServices();
-    };
+    return () => unsub();
   }, []);
-
-  const enrichedVehicles = useMemo(() => {
-    const latestByVehicle = new Map<string, { date: Date; mileage?: number }>();
-
-    allServices.forEach((s) => {
-      if (!s.vehicleId) return;
-      if (!isDeliveredStatus((s as any).status)) return;
-
-      const d = getServiceEffectiveDate(s);
-      if (!d || !isValid(d)) return;
-
-      const m = getServiceMileage(s) ?? undefined;
-      const prev = latestByVehicle.get(s.vehicleId);
-
-      if (!prev || d > prev.date) {
-        latestByVehicle.set(s.vehicleId, { date: d, mileage: m ?? prev?.mileage });
-      }
-    });
-
-    return allVehicles.map((v) => {
-      const latest = latestByVehicle.get(v.id);
-      return {
-        ...v,
-        lastServiceDate: latest ? latest.date.toISOString() : v.lastServiceDate,
-        currentMileage:
-          typeof latest?.mileage === "number"
-            ? Math.max(Number(v.currentMileage || 0) || 0, latest.mileage)
-            : v.currentMileage,
-      };
-    });
-  }, [allVehicles, allServices]);
-  
-  const vehicleSummary = useMemo(() => {
-    const now = new Date();
-    const total = enrichedVehicles.length;
-    let recent = 0;
-    let inactive6Months = 0;
-    let inactive12Months = 0;
-  
-    enrichedVehicles.forEach(v => {
-      const lastService = v.lastServiceDate ? parseDate(v.lastServiceDate) : null;
-      if (lastService && isValid(lastService)) {
-        const monthsSinceService = differenceInMonths(now, lastService);
-        if (monthsSinceService <= 1) recent++;
-        if (monthsSinceService >= 6) inactive6Months++;
-        if (monthsSinceService >= 12) inactive12Months++;
-      } else {
-        inactive6Months++;
-        inactive12Months++;
-      }
-    });
-
-    return { total, recent, inactive6Months, inactive12Months };
-  }, [enrichedVehicles]);
-
 
   const handleSaveVehicle = async (data: any) => {
     try {
       await inventoryService.saveVehicle(data, editingVehicle?.id);
-      toast({ title: `Vehículo ${editingVehicle?.id ? 'Actualizado' : 'Creado'}` });
+      toast({ title: `Vehículo ${editingVehicle?.id ? 'Actualizado' : 'Registrado'} correctamente` });
       setIsVehicleDialogOpen(false);
+      setEditingVehicle(null);
     } catch (error) {
-      console.error("Error saving vehicle: ", error);
       toast({
-        title: "Error",
-        description: `No se pudo guardar el vehículo. ${error instanceof Error ? error.message : ''}`,
+        title: "Error al guardar",
+        description: `${error instanceof Error ? error.message : 'Intenta de nuevo.'}`,
         variant: "destructive",
       });
     }
@@ -121,83 +60,85 @@ function PageInner() {
   const handleDeleteVehicle = async (id: string) => {
     try {
       await inventoryService.deleteCollectionDoc('vehicles', id);
-      toast({ title: "Vehículo eliminado", variant: "destructive" });
-    } catch (e) {
+      toast({ title: "Vehículo eliminado" });
+    } catch {
       toast({ title: "Error", description: "No se pudo eliminar el vehículo.", variant: "destructive" });
     }
   };
-  
+
   const handleOpenVehicleDialog = (vehicle: Partial<Vehicle> | null = null) => {
     setEditingVehicle(vehicle);
     setIsVehicleDialogOpen(true);
   };
 
-  const tabs = [
-    { value: "vehiculos", label: "Lista de Vehículos" },
-    { value: "database", label: "Base de Datos" },
-  ];
-
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="flex justify-center flex-col items-center h-[60vh] gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-muted-foreground text-sm font-medium animate-pulse">Cargando directorio...</p>
       </div>
     );
   }
 
   return (
-    <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Gestión de Vehículos</h1>
-            <p className="text-primary-foreground/80 mt-1">
-              Administra la información y el historial de los vehículos de tus clientes.
-            </p>
-          </div>
+    <div className="space-y-6">
+      {/* ── Page header (sin banner rojo) ──────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground tracking-tight">Directorio de Vehículos</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Administra los vehículos de tus clientes y el catálogo de marcas y modelos.
+          </p>
         </div>
+        {userPermissions.has('fleet:create') && activeView === 'vehiculos' && (
+          <Button onClick={() => handleOpenVehicleDialog()} className="shrink-0">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Nuevo Vehículo
+          </Button>
+        )}
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            {tabs.map((tabInfo) => (
-              <TabsTrigger key={tabInfo.value} value={tabInfo.value}>
-                {tabInfo.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
+      {/* ── Pill tab navigation ─────────────────────────────────── */}
+      <div className="inline-flex flex-wrap gap-2 bg-muted/50 p-1.5 rounded-2xl border border-border/50">
+        {TABS.map(tab => (
+          <button
+            key={tab.value}
+            onClick={() => setActiveView(tab.value)}
+            className={cn(
+              'inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap',
+              activeView === tab.value
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-        <TabsContent value="vehiculos" className="mt-6">
-          <div className="space-y-4">
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-              <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Total de Vehículos</CardTitle><Car className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{vehicleSummary.total}</div><p className="text-xs text-muted-foreground">Vehículos en la base de datos.</p></CardContent></Card>
-              <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Actividad Reciente</CardTitle><Activity className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{vehicleSummary.recent}</div><p className="text-xs text-muted-foreground">Visitaron el taller en los últimos 30 días.</p></CardContent></Card>
-              <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Vehículos Inactivos</CardTitle><CalendarX className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-orange-600">{vehicleSummary.inactive6Months}</div><p className="text-xs text-muted-foreground">Sin servicio por más de 6 meses.</p></CardContent></Card>
-              <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Vehículos en Riesgo</CardTitle><AlertTriangle className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{vehicleSummary.inactive12Months}</div><p className="text-xs text-muted-foreground">Sin servicio por más de 12 meses.</p></CardContent></Card>
-            </div>
-            
-            <VehiclesTable
-              vehicles={enrichedVehicles}
-              onSave={handleSaveVehicle}
-              onDelete={handleDeleteVehicle}
-              onAdd={() => handleOpenVehicleDialog()}
-            />
-          </div>
-        </TabsContent>
-        <TabsContent value="database" className="mt-6">
-            <DatabaseManagementTab />
-        </TabsContent>
-      </Tabs>
-      
+      {/* ── Content ─────────────────────────────────────────────── */}
+      {activeView === 'vehiculos' && (
+        <VehiclesTable
+          vehicles={allVehicles}
+          onSave={handleSaveVehicle}
+          onDelete={handleDeleteVehicle}
+          onAdd={() => handleOpenVehicleDialog()}
+        />
+      )}
+      {activeView === 'catalogo' && (
+        <DatabaseManagementTab />
+      )}
+
       <VehicleDialog
         open={isVehicleDialogOpen}
-        onOpenChange={setIsVehicleDialogOpen}
+        onOpenChange={(open) => {
+          setIsVehicleDialogOpen(open);
+          if (!open) setEditingVehicle(null);
+        }}
         onSave={handleSaveVehicle}
         vehicle={editingVehicle}
       />
-    </>
+    </div>
   );
 }
 

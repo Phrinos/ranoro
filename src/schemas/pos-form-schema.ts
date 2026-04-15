@@ -40,7 +40,7 @@ export const posFormSchema = z.object({
     }
 
     data.payments.forEach((payment, index) => {
-        const needsFolio = ['Tarjeta', 'Tarjeta MSI', 'Transferencia', 'Transferencia/Contadora'].includes(payment.method);
+        const needsFolio = payment.method.includes('Tarjeta') || payment.method.includes('Transferencia');
         if (needsFolio && (!payment.folio || payment.folio.trim() === '')) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,

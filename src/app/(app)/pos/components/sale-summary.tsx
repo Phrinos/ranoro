@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Save, Loader2 } from 'lucide-react';
 import { formatCurrency, capitalizeWords } from '@/lib/utils';
+import { getCardCommissionRate } from '@/lib/money-helpers';
 import { FormField, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { PaymentSection } from '@/components/shared/PaymentSection';
-
 
 const IVA_RATE = 0.16;
 const COMMISSION_ITEM_ID = 'COMMISSION_FEE';
@@ -30,12 +30,11 @@ export function SaleSummary({ onOpenValidateDialog, validatedFolios }: SaleSumma
     const baseItems = items.filter(i => i.inventoryItemId !== COMMISSION_ITEM_ID);
     const baseTotal = baseItems.reduce((sum, i) => sum + (Number(i.totalPrice ?? i.unitPrice * i.quantity) || 0), 0);
     
-    const hasCard = (watchedPayments || []).some((p: any) => p.method === 'Tarjeta');
-    const hasMSI = (watchedPayments || []).some((p: any) => p.method === 'Tarjeta MSI');
-
     let commission = 0;
-    if (hasCard) commission += baseTotal * 0.041;
-    if (hasMSI) commission += baseTotal * 0.12;
+    for (const p of (watchedPayments || [])) {
+      const rate = getCardCommissionRate(p.method);
+      if (rate > 0) commission += (p.amount || 0) * rate;
+    }
 
     const roundedCommission = Math.round(commission * 100) / 100;
     

@@ -18,7 +18,6 @@ import { DailyEarningsCard } from './DailyEarningsCard';
 const TZ = "America/Mexico_City";
 
 interface ActivosTabContentProps {
-  allServices: ServiceRecord[];
   vehicles: Vehicle[];
   personnel: User[];
   currentUser: User | null;
@@ -51,7 +50,6 @@ const getDateForService = (service: ServiceRecord): Date | null => {
 };
 
 export default function ActivosTabContent({
-  allServices,
   vehicles,
   personnel,
   currentUser,
@@ -63,9 +61,37 @@ export default function ActivosTabContent({
   const router = useRouter();
   const { toast } = useToast();
 
+  const [activeData, setActiveData] = React.useState<ServiceRecord[]>([]);
+  const [todayDeliveredData, setTodayDeliveredData] = React.useState<ServiceRecord[]>([]);
+
   const nowZ = toZonedTime(new Date(), TZ);
   const todayStart = startOfDay(nowZ);
   const todayEnd = endOfDay(nowZ);
+
+  React.useEffect(() => {
+    // 1. Fetch live active services (Agendado, En Taller, Cotizacion)
+    const unsubActive = serviceService.onActiveServicesUpdate(data => {
+      setActiveData(data);
+    });
+
+    // 2. Fetch today's historical (Entregado, Cancelado) to show what's been delivered *today*
+    const todayZ = toZonedTime(new Date(), TZ);
+    const startIso = startOfDay(todayZ).toISOString();
+    const endIso = endOfDay(todayZ).toISOString();
+    const unsubHistory = serviceService.onHistoricalServicesUpdate(startIso, endIso, data => {
+      // Historical fetch gives us both Entregado and Cancelado. We only need Entregado for Activos
+      setTodayDeliveredData(data.filter(s => s.status === 'Entregado'));
+    });
+
+    return () => {
+      unsubActive();
+      unsubHistory();
+    };
+  }, []); // Only on mount
+
+  const allServices = React.useMemo(() => [...activeData, ...todayDeliveredData], [activeData, todayDeliveredData]);
+
+
 
   const activeServices = useMemo(() => {
     return allServices.filter(s => {

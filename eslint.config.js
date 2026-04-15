@@ -2,19 +2,30 @@
 import globals from 'globals';
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
-import react from 'eslint-plugin-react';
-import reactJsxRuntime from 'eslint-plugin-react/configs/jsx-runtime.js';
-import reactHooks from 'eslint-plugin-react-hooks';
 import nextPlugin from '@next/eslint-plugin-next';
+import reactHooks from 'eslint-plugin-react-hooks';
 
-export default [
-  // Ignorar build, cache y auto-generados
-  { ignores: ['node_modules/', '.next/', 'dist/', 'build/', 'functions/lib/**', 'next-env.d.ts'] },
+export default tseslint.config(
+  // ── Ignorados ────────────────────────────────────────────────────────────
+  {
+    ignores: [
+      'node_modules/**',
+      '.next/**',
+      'dist/**',
+      'build/**',
+      'out/**',
+      'coverage/**',
+      'functions/lib/**',
+      'next-env.d.ts',
+      '**/*.min.js',
+    ],
+  },
 
+  // ── Base JS + TS ──────────────────────────────────────────────────────────
   js.configs.recommended,
   ...tseslint.configs.recommended,
-  reactJsxRuntime,
 
+  // ── Reglas principales ────────────────────────────────────────────────────
   {
     files: ['**/*.{js,mjs,cjs,ts,jsx,tsx}'],
     languageOptions: {
@@ -23,39 +34,41 @@ export default [
       parserOptions: { ecmaFeatures: { jsx: true } },
       globals: { ...globals.browser, ...globals.node },
     },
-    plugins: { react, 'react-hooks': reactHooks, '@next/next': nextPlugin },
+    plugins: {
+      '@next/next': nextPlugin,
+      'react-hooks': reactHooks,
+    },
     settings: { react: { version: 'detect' } },
     rules: {
-      // Next
+      // Next.js
       ...nextPlugin.configs.recommended.rules,
       ...nextPlugin.configs['core-web-vitals'].rules,
+      '@next/next/no-img-element': 'off',
 
-      // React moderno
-      'react/react-in-jsx-scope': 'off',
-      'react/jsx-uses-react': 'off',
-      'react/prop-types': 'off',
-      'react/no-unescaped-entities': 'off',
-
-      // Hooks
-      'react-hooks/rules-of-hooks': 'error',   // mantenemos como error (mejor arreglar el código)
+      // React Hooks
+      'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
 
-      // TS
-      '@typescript-eslint/no-unused-vars': 'off',
+      // TypeScript
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-empty-object-type': 'off',
-      '@typescript-eslint/ban-ts-comment': 'off',             // <- para que no truene por @ts-ignore
-      '@typescript-eslint/triple-slash-reference': 'off',     // <- para next-env.d.ts & *.d.ts
+      '@typescript-eslint/ban-ts-comment': 'off',
+      '@typescript-eslint/triple-slash-reference': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
 
-      // Otros
-      'no-case-declarations': 'warn', // <- quita el error en switch/case
+      // General
+      'no-case-declarations': 'warn',
       'no-empty': 'warn',
       'no-irregular-whitespace': 'warn',
       'no-useless-escape': 'warn',
     },
+    linterOptions: {
+      reportUnusedDisableDirectives: 'warn',
+    },
   },
 
-  // Archivos Node/config y Firebase Admin
+  // ── Archivos Node / config / Firebase Admin ───────────────────────────────
   {
     files: [
       '**/next.config.*',
@@ -72,12 +85,11 @@ export default [
       sourceType: 'script',
     },
     rules: {
-      '@typescript-eslint/no-require-imports': 'off',
       'no-undef': 'off',
     },
   },
 
-  // Shadcn Command: permitir atributos cmdk-*
+  // ── Shadcn Command: atributos cmdk-* ─────────────────────────────────────
   {
     files: ['src/components/ui/command.tsx'],
     rules: {
@@ -97,4 +109,4 @@ export default [
       '@typescript-eslint/no-empty-object-type': 'off',
     },
   },
-];
+);

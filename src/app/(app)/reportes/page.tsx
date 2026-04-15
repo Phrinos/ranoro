@@ -6,6 +6,7 @@ import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 import type { User, ServiceRecord, SaleReceipt, CashDrawerTransaction, InventoryItem, MonthlyFixedExpense, FinancialSummary } from '@/types';
 import { inventoryService, serviceService, saleService, cashService, adminService } from '@/lib/services';
+import { purchaseService } from '@/lib/services/purchase.service';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import { startOfMonth, endOfMonth, startOfDay, endOfDay, isWithinInterval, isValid, getDaysInMonth, differenceInDays } from 'date-fns';
 import { parseDate } from '@/lib/forms';
@@ -35,6 +36,7 @@ function ReportesPageInner() {
   const [inventory, setInventory] = useState<InventoryItem[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [expenses, setExpenses] = useState<MonthlyFixedExpense[]>([]);
+  const [purchases, setPurchases] = useState<any[]>([]);
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>(() => {
     const now = new Date();
@@ -52,7 +54,8 @@ function ReportesPageInner() {
       adminService.onUsersUpdate((data) => {
         setUsers(data);
         setIsLoading(false);
-      })
+      }),
+      purchaseService.onPurchasesUpdate(setPurchases)
     ];
     return () => unsubs.forEach(unsub => unsub());
   }, []);
@@ -137,8 +140,8 @@ function ReportesPageInner() {
   }
 
   const tabs = [
-    { value: "movimientos", label: "Movimientos", content: <DetallesReporteContent services={services} sales={sales} cashTransactions={cashTransactions} users={users} /> },
-    { value: "mensual", label: "Resumen Anual", content: <MensualReporteContent services={services} sales={sales} cashTransactions={cashTransactions} inventory={inventory} /> },
+    { value: "movimientos", label: "Movimientos", content: <DetallesReporteContent services={services} sales={sales} cashTransactions={cashTransactions} users={users} purchases={purchases} /> },
+    { value: "mensual", label: "Resumen Anual", content: <MensualReporteContent services={services} sales={sales} cashTransactions={cashTransactions} inventory={inventory} purchases={purchases} /> },
     { value: "egresos", label: "Gastos Fijos", content: <EgresosContent financialSummary={financialSummary} fixedExpenses={expenses} personnel={users} onExpensesUpdated={setExpenses} /> },
   ];
 

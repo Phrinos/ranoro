@@ -12,6 +12,8 @@ import { SidebarProvider } from "@/hooks/use-sidebar";
 import { SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import React, { useEffect } from "react";
+import { NotificationBell } from "@/components/layout/NotificationBell";
+import { RolesProvider } from "@/lib/contexts/roles-context";
 
 
 const AppSidebar = dynamic(
@@ -48,30 +50,36 @@ function AppClientLayoutInner({ children }: PropsWithChildren) {
   }
 
   return (
-    <ThemeProvider defaultTheme="light" enableSystem={false}>
-      <SidebarProvider defaultOpen>
-        <AppSidebar currentUser={currentUser} onLogout={handleLogout} />
+    <RolesProvider>
+      <ThemeProvider defaultTheme="light" enableSystem={false}>
+        <SidebarProvider defaultOpen>
+          <AppSidebar currentUser={currentUser} onLogout={handleLogout} />
 
-        <div className="fixed top-4 left-4 z-50 md:hidden print:hidden">
-          <SidebarTrigger
-            aria-label="Abrir menú"
-            className="h-10 w-10 shadow-lg bg-black text-white"
-          />
-        </div>
+          <div className="fixed top-4 left-4 z-50 md:hidden print:hidden">
+            <SidebarTrigger
+              aria-label="Abrir menú"
+              className="h-10 w-10 shadow-lg bg-black text-white"
+            />
+          </div>
 
-        <SidebarInset
-          className={cn(
-            "app-main-content",
-            "flex min-h-screen flex-col bg-background"
-          )}
-        >
-          <main id="content" className="flex-1">
-            <div className="p-4 pt-20 md:pt-6 lg:p-8">{children}</div>
-          </main>
-          <Toaster />
-        </SidebarInset>
-      </SidebarProvider>
-    </ThemeProvider>
+          <div className="fixed top-4 right-4 z-50 md:right-8 lg:right-10 hidden md:block">
+            <NotificationBell />
+          </div>
+
+          <SidebarInset
+            className={cn(
+              "app-main-content",
+              "flex min-h-screen flex-col bg-background"
+            )}
+          >
+            <main id="content" className="flex-1">
+              <div className="p-4 pt-20 md:pt-6 lg:p-8">{children}</div>
+            </main>
+            <Toaster />
+          </SidebarInset>
+        </SidebarProvider>
+      </ThemeProvider>
+    </RolesProvider>
   );
 }
 

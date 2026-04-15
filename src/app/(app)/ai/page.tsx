@@ -217,7 +217,9 @@ export default function AiHubPage() {
     setLastFailedUserMessage(null);
     try {
       localStorage.removeItem(STORAGE_KEY);
-    } catch {}
+    } catch (e) {
+      console.warn("Failed to remove from localStorage", e);
+    }
     toast({ title: "Listo", description: "Conversación limpiada." });
     requestAnimationFrame(() => scrollToBottom("auto"));
   };

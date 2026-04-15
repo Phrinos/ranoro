@@ -7,7 +7,7 @@ const singlePaymentSchema = z.object({
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a cero.").optional(),
   folio: z.string().optional(),
 }).superRefine((data, ctx) => {
-  const needsFolio = ['Tarjeta', 'Tarjeta MSI', 'Transferencia', 'Transferencia/Contadora'].includes(data.method);
+  const needsFolio = data.method.includes('Tarjeta') || data.method.includes('Transferencia');
   if (needsFolio && (!data.folio || data.folio.trim() === '')) {
     ctx.addIssue({ 
       code: z.ZodIssueCode.custom, 

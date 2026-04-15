@@ -3,8 +3,24 @@
 import type { ServiceRecord, Payment, InventoryItem, SaleReceipt } from "@/types";
 import { inventoryService } from './services/inventory.service';
 
-export const CARD_RATE = 0.041;  // 4.1%
-export const MSI_RATE  = 0.12;   // 12%
+export const CARD_RATE = 0.0406;        // 4.06% neto (3.5% + IVA)
+export const CARD_MSI_3_RATE = 0.09512; // 9.512% neto (8.2% + IVA)
+export const CARD_MSI_6_RATE = 0.12992; // 12.992% neto (11.2% + IVA)
+export const CARD_MSI_9_RATE = 0.17052; // 17.052% neto (14.7% + IVA)
+export const CARD_MSI_12_RATE = 0.1972;  // 19.72% neto (17.0% + IVA)
+export const CARD_MSI_18_RATE = 0.2668;  // 26.68% neto (23.0% + IVA)
+export const CARD_MSI_24_RATE = 0.3364;  // 33.64% neto (29.0% + IVA)
+
+export function getCardCommissionRate(method: string | undefined): number {
+  if (method === 'Tarjeta 24 MSI') return CARD_MSI_24_RATE;
+  if (method === 'Tarjeta 18 MSI') return CARD_MSI_18_RATE;
+  if (method === 'Tarjeta 12 MSI') return CARD_MSI_12_RATE;
+  if (method === 'Tarjeta 9 MSI') return CARD_MSI_9_RATE;
+  if (method === 'Tarjeta 6 MSI') return CARD_MSI_6_RATE;
+  if (method === 'Tarjeta 3 MSI' || method === 'Tarjeta MSI') return CARD_MSI_3_RATE;
+  if (method === 'Tarjeta') return CARD_RATE;
+  return 0;
+}
 
 export function calcTotalFromItems(items: ServiceRecord["serviceItems"]): number {
   return (items ?? []).reduce((s, i) => s + (Number(i.sellingPrice) || 0), 0);
@@ -23,12 +39,17 @@ export function calcSuppliesCostFromItems(items: ServiceRecord["serviceItems"], 
 }
 
 export function calcCardCommission(total: number, payments?: Payment[], fallbackPayment?: string): number {
-  const hasCard = payments?.some(p => p.method === 'Tarjeta') || fallbackPayment === 'Tarjeta';
-  const hasMSI  = payments?.some(p => p.method === 'Tarjeta MSI') || fallbackPayment === 'Tarjeta MSI';
-  let c = 0;
-  if (hasCard) c += total * CARD_RATE;
-  if (hasMSI)  c += total * MSI_RATE;
-  return Math.round(c * 100) / 100; // redondeo para evitar flapping
+  let commission = 0;
+  
+  if (payments && payments.length > 0) {
+    for (const p of payments) {
+      commission += (p.amount || 0) * getCardCommissionRate(p.method);
+    }
+  } else if (fallbackPayment) {
+    commission += total * getCardCommissionRate(fallbackPayment);
+  }
+
+  return Math.round(commission * 100) / 100;
 }
 
 /** Ganancia efectiva: (total de la venta) - (costo de insumos) - (comisión de tarjeta) */
@@ -38,8 +59,8 @@ export function calcEffectiveProfit(s: ServiceRecord, allInventory: InventoryIte
   const supplies = calcSuppliesCostFromItems(s.serviceItems, allInventory);
 
   const hasCardSignals =
-    (s.payments?.some(p => p.method === 'Tarjeta' || p.method === 'Tarjeta MSI') ?? false) ||
-    s.paymentMethod === 'Tarjeta' || s.paymentMethod === 'Tarjeta MSI';
+    (s.payments?.some(p => getCardCommissionRate(p.method) > 0) ?? false) ||
+    getCardCommissionRate(s.paymentMethod) > 0;
 
   const computedCommission = calcCardCommission(total, s.payments, s.paymentMethod as any);
   const persistedCommission = Number(s.cardCommission ?? 0);

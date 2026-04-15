@@ -3,7 +3,7 @@
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Suspense, lazy, useState, useEffect, useMemo, useCallback } from 'react';
-import { Loader2, BookOpen, Settings, UserCircle, Building, Shapes, Wrench } from 'lucide-react';
+import { Loader2, BookOpen, Settings, UserCircle, Building, Shapes, Wrench, ShieldAlert } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { User, AppRole, ServiceTypeRecord } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
@@ -12,6 +12,7 @@ import { collection, getDocs, query, where, writeBatch, doc } from "firebase/fir
 import { db } from "@/lib/firebaseClient";
 import { parseDate } from "@/lib/forms";
 import { useToast } from '@/hooks/use-toast';
+import { useRoles } from '@/lib/contexts/roles-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -19,6 +20,7 @@ const PerfilPageContent = lazy(() => import('./components/perfil-content').then(
 const ConfigTallerPageContent = lazy(() => import('./components/config-taller-content').then(module => ({ default: module.ConfigTallerPageContent })));
 const ConfiguracionTicketPageContent = lazy(() => import('./components/config-ticket-content').then(module => ({ default: module.ConfiguracionTicketPageContent })));
 const TiposDeServicioPageContent = lazy(() => import('./components/service-types-content').then(module => ({ default: module.TiposDeServicioPageContent })));
+const RolesContent = lazy(() => import('./components/roles-content').then(module => ({ default: module.RolesContent })));
 const ManualUsuarioPageContent = lazy(() => import('./components/manual-content').then(module => ({ default: module.ManualUsuarioPageContent })));
 
 function PageInner() {
@@ -28,7 +30,7 @@ function PageInner() {
   const tab = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tab || 'perfil');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [roles, setRoles] = useState<AppRole[]>([]);
+  const roles = useRoles(); // Usa el contexto centralizado — sin listener propio
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isBackfilling, setIsBackfilling] = useState(false);
@@ -45,14 +47,9 @@ function PageInner() {
         setCurrentUser(defaultSuperAdmin);
     }
 
-    const unsubs = [
-      adminService.onRolesUpdate(setRoles),
-      inventoryService.onServiceTypesUpdate(setServiceTypes)
-    ];
-
+    const unsub = inventoryService.onServiceTypesUpdate(setServiceTypes);
     setIsLoading(false);
-
-    return () => unsubs.forEach(unsub => unsub());
+    return () => unsub();
   }, []);
   
   const handleBackfill = async () => {
@@ -114,11 +111,12 @@ function PageInner() {
   }, [currentUser, roles]);
 
   const tabs = useMemo(() => [
-    { value: "perfil", label: "Mi Perfil", icon: UserCircle, component: <PerfilPageContent />, requiredPermission: 'dashboard:view' },
-    { value: "taller", label: "Mi Taller", icon: Building, component: <ConfigTallerPageContent />, requiredPermission: 'workshop:manage' },
-    { value: "ticket", label: "Ticket", icon: Settings, component: <ConfiguracionTicketPageContent />, requiredPermission: 'ticket_config:manage' },
-    { value: "service_types", label: "Tipos de Servicio", icon: Shapes, component: <TiposDeServicioPageContent serviceTypes={serviceTypes} />, requiredPermission: 'roles:manage' },
-    { value: "manual", label: "Manual", icon: BookOpen, component: <ManualUsuarioPageContent />, requiredPermission: 'dashboard:view' },
+    { value: "perfil", label: "Mi Perfil", icon: UserCircle, component: <PerfilPageContent />, requiredPermission: 'services:view' },
+    { value: "taller", label: "Mi Taller", icon: Building, component: <ConfigTallerPageContent />, requiredPermission: 'admin:settings' },
+    { value: "ticket", label: "Ticket", icon: Settings, component: <ConfiguracionTicketPageContent />, requiredPermission: 'admin:settings' },
+    { value: "roles", label: "Roles", icon: ShieldAlert, component: <RolesContent />, requiredPermission: 'admin:manage_users_roles' },
+    { value: "service_types", label: "Tipos de Servicio", icon: Shapes, component: <TiposDeServicioPageContent serviceTypes={serviceTypes} />, requiredPermission: 'admin:settings' },
+    { value: "manual", label: "Manual", icon: BookOpen, component: <ManualUsuarioPageContent />, requiredPermission: 'services:view' },
   ], [serviceTypes]);
 
   const availableTabs = useMemo(() => tabs.filter(tab => tab.requiredPermission && userPermissions.has(tab.requiredPermission)), [tabs, userPermissions]);

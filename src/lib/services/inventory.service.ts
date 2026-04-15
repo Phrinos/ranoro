@@ -15,6 +15,10 @@ import {
   type WriteBatch,
   serverTimestamp,
   setDoc,
+  limit,
+  orderBy,
+  getCountFromServer,
+  increment,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { InventoryItem, ServiceTypeRecord, InventoryCategory, Supplier, Vehicle, MonthlyFixedExpense, Paperwork, FineCheck, ServiceItem, VehicleGroup } from "@/types";
@@ -84,22 +88,31 @@ const updateInventoryStock = async (
 ) => {
     if (!db) throw new Error("Database not initialized.");
 
-    const itemUpdates = items.map(async (item) => {
+    // Aggregating by ID to prevent batch overwrites for duplicate items
+    const aggregatedItems = items.reduce((acc, item) => {
         if (!item.id) {
             console.warn('updateInventoryStock received an item without an ID. Skipping.', item);
-            return;
+            return acc;
         }
+        if (!acc[item.id]) {
+            acc[item.id] = { ...item, quantity: 0 };
+        }
+        acc[item.id].quantity += item.quantity;
+        // For prices, latest one wins
+        if (item.unitPrice !== undefined) acc[item.id].unitPrice = item.unitPrice;
+        if (item.sellingPrice !== undefined) acc[item.id].sellingPrice = item.sellingPrice;
+        return acc;
+    }, {} as Record<string, typeof items[0]>);
+
+    const itemUpdates = Object.values(aggregatedItems).map(async (item) => {
         const itemRef = doc(db, 'inventory', item.id);
         const itemDoc = await getDoc(itemRef);
 
         if (itemDoc.exists()) {
-            const currentStock = itemDoc.data().quantity || 0;
-            const newStock = operation === 'add'
-                ? currentStock + item.quantity
-                : currentStock - item.quantity;
+            const incrementValue = operation === 'add' ? item.quantity : -item.quantity;
             
             const updateData: any = { 
-                quantity: newStock,
+                quantity: increment(incrementValue),
                 updatedAt: serverTimestamp() 
             };
             if (item.unitPrice !== undefined) {
@@ -110,6 +123,8 @@ const updateInventoryStock = async (
             }
 
             batch.update(itemRef, updateData);
+        } else {
+            console.warn(`Item with id ${item.id} not found in inventory. Cannot update stock.`);
         }
     });
 
@@ -222,9 +237,37 @@ const deleteSupplier = async (id: string): Promise<void> => {
   await fbDeleteDoc(doc(db, "suppliers", id));
 };
 
+const getVehicleCount = async (): Promise<number> => {
+    if (!db) return 0;
+    const coll = collection(db, "vehicles");
+    const snapshot = await getCountFromServer(coll);
+    return snapshot.data().count;
+};
+
+const searchVehicles = async (term: string): Promise<Vehicle[]> => {
+    if (!db) return [];
+    const upperTerm = term.toUpperCase().trim();
+    if (!upperTerm) return [];
+    
+    // Simular un buscador sobre la db con prefijos limitados (para Placas y Nombres)
+    const qPlate = query(
+        collection(db, "vehicles"),
+        where("licensePlate", ">=", upperTerm),
+        where("licensePlate", "<=", upperTerm + '\uf8ff'),
+        limit(50)
+    );
+    // Nota: Nombres requieren coincidencia de mayúsculas o normalización. Lo más común es la placa.
+    const [snap1] = await Promise.all([getDocs(qPlate)]);
+    
+    const map = new Map<string, Vehicle>();
+    snap1.docs.forEach(d => map.set(d.id, { id: d.id, ...d.data() } as Vehicle));
+    return Array.from(map.values());
+};
+
 const onVehiclesUpdate = (callback: (vehicles: Vehicle[]) => void): (() => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, "vehicles"));
+    // Escalabilidad: Elevamos a 1500 vehículos para asegurar que toda la flotilla cargue
+    const q = query(collection(db, "vehicles"), limit(1500));
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle)));
     });
@@ -232,7 +275,7 @@ const onVehiclesUpdate = (callback: (vehicles: Vehicle[]) => void): (() => void)
 
 const onVehiclesUpdatePromise = async (): Promise<Vehicle[]> => {
     if (!db) return [];
-    const snapshot = await getDocs(query(collection(db, "vehicles")));
+    const snapshot = await getDocs(query(collection(db, "vehicles"), limit(1500)));
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
 };
 
@@ -346,6 +389,16 @@ const onVehicleDataUpdate = (callback: (data: any[]) => void): (() => void) => {
     });
 };
 
+const onVehicleMakeDataUpdate = (make: string, callback: (data: any | null) => void): (() => void) => {
+    if (!db) return () => {};
+    // Ensure make is properly capitalized/trimmed if needed, or matched exactly as stored.
+    // Assuming 'make' here matches the document ID stored in Firestore.
+    const docRef = doc(db, VEHICLE_COLLECTION, make);
+    return onSnapshot(docRef, (docSnap) => {
+        callback(docSnap.exists() ? { make: docSnap.id, ...docSnap.data() } : null);
+    });
+};
+
 // --- Master Catalog Dedicados ---
 
 const onMasterVehicleDataUpdate = (callback: (data: any[]) => void): (() => void) => {
@@ -438,6 +491,8 @@ export const inventoryService = {
   onSuppliersUpdatePromise,
   saveSupplier,
   deleteSupplier,
+  getVehicleCount,
+  searchVehicles,
   onVehiclesUpdate,
   onVehiclesUpdatePromise,
   getVehicleById,
@@ -452,6 +507,7 @@ export const inventoryService = {
   saveFixedExpense,
   deleteFixedExpense,
   onVehicleDataUpdate,
+  onVehicleMakeDataUpdate,
   deleteCollectionDoc,
   // New Group Functions
   onVehicleGroupsUpdate,

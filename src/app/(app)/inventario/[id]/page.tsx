@@ -3,9 +3,8 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { db } from "@/lib/firebaseClient";
+import { usePermissions } from "@/hooks/usePermissions";
 import type {
-  Vehicle,
-  ServiceRecord,
   InventoryItem,
   InventoryCategory,
   Supplier,
@@ -23,8 +22,6 @@ import { Button } from "@/components/ui/button";
 import {
   ShieldAlert,
   Edit,
-  Package,
-  DollarSign,
   Boxes,
   Trash2,
   ArrowRight,
@@ -32,6 +29,14 @@ import {
   ArrowLeft,
   Tag,
   Factory,
+  Truck,
+  Phone,
+  User,
+  MapPin,
+  TrendingUp,
+  TrendingDown,
+  Fingerprint,
+  Mail
 } from "lucide-react";
 import {
   Table,
@@ -43,36 +48,71 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
-import { collection, getDocs, onSnapshot, query, where, doc } from "firebase/firestore";
+import { collection, onSnapshot, query, where, doc } from "firebase/firestore";
 import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { inventoryService, serviceService } from "@/lib/services";
+import { inventoryService } from "@/lib/services";
 import { parseDate } from "@/lib/forms";
 import { formatCurrency } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { InventoryItemDialog } from "../components/inventory-item-dialog";
 import type { InventoryItemFormValues } from "../components/inventory-item-form";
+import { Separator } from "@/components/ui/separator";
 
 // ===== Helpers =====
 const unitLabel = (ut?: string) =>
-  ut === "ml" ? "ml" : ut === "liters" ? "L" : ut === "units" ? "u" : "";
+  ut === "ml" ? "ml" : ut === "liters" ? "L" : ut === "kg" ? "kg" : ut === "units" ? "Pza" : ut === "service" ? "Serv" : "";
+
+const getPresentationLabel = (ut?: string) => {
+  switch(ut) {
+    case 'units': return 'Pieza';
+    case 'ml': return 'Mililitro';
+    case 'liters': return 'Litro';
+    case 'kg': return 'Kilogramo';
+    case 'service': return 'Servicio';
+    default: return 'Pieza';
+  }
+};
+
+const getIntelligentPricing = (price: number, unitType?: string, rendimiento?: number) => {
+  if (!price || price <= 0) return null;
+  if (unitType === 'liters') {
+    const yieldMl = rendimiento && rendimiento > 0 ? rendimiento : 1000;
+    const pricePerMl = price / yieldMl;
+    const pricePerL = pricePerMl * 1000;
+    return { perSmall: pricePerMl, perBase: pricePerL, smallLabel: 'ml', baseLabel: 'L' };
+  }
+  if (unitType === 'ml') {
+    const yieldMl = rendimiento && rendimiento > 0 ? rendimiento : 1; 
+    const pricePerMl = price / yieldMl;
+    const pricePerL = pricePerMl * 1000;
+    return { perSmall: pricePerMl, perBase: pricePerL, smallLabel: 'ml', baseLabel: 'L' };
+  }
+  if (unitType === 'kg') {
+    const yieldG = rendimiento && rendimiento > 0 ? rendimiento : 1000;
+    const pricePerG = price / yieldG;
+    const pricePerKg = pricePerG * 1000;
+    return { perSmall: pricePerG, perBase: pricePerKg, smallLabel: 'g', baseLabel: 'kg' };
+  }
+  return null;
+};
 
 const safeNumber = (v: unknown) =>
   typeof v === "number" && Number.isFinite(v) ? v : 0;
 
-interface InventoryMovement {
-  date: string;
-  type: "Salida por Servicio" | "Salida por Venta" | "Entrada por Compra" | "Ajuste";
+interface VisualMovement {
+  id: string;
+  dateStr: string;
+  parsedDate: Date;
+  type: string;
   quantity: number;
   relatedId?: string;
-  unitType?: "units" | "ml" | "liters" | "kg" | "service";
+  unitType?: string;
   notes?: string;
 }
-
 
 export default function InventoryItemDetailPage() {
   const params = useParams();
@@ -85,6 +125,7 @@ export default function InventoryItemDetailPage() {
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const userPermissions = usePermissions();
 
   // ===== Data fetch =====
   useEffect(() => {
@@ -93,14 +134,15 @@ export default function InventoryItemDetailPage() {
       return;
     }
 
-    // Subscribe to the item document itself
-    const unsubItem = onSnapshot(doc(db, "inventory", itemId), (doc) => {
-      setItem(doc.exists() ? ({ id: doc.id, ...doc.data() } as InventoryItem) : null);
+    // Subscribe to the item document
+    const unsubItem = onSnapshot(doc(db, "inventory", itemId), (docSnapshot) => {
+      setItem(docSnapshot.exists() ? ({ id: docSnapshot.id, ...docSnapshot.data() } as InventoryItem) : null);
     }, (error) => {
       console.error("Error fetching item details:", error);
       setItem(null);
     });
 
+    // Fetch related generic data
     const fetchRelatedData = async () => {
       try {
         const [categoriesData, suppliersData] = await Promise.all([
@@ -119,7 +161,7 @@ export default function InventoryItemDetailPage() {
     // Subscribe to inventory movements for this specific item
     const q = query(collection(db, 'inventoryMovements'), where("itemId", "==", itemId));
     const unsubscribeMovements = onSnapshot(q, (snapshot) => {
-        const movements = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const movements = snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
         setInventoryMovements(movements);
     });
 
@@ -127,64 +169,44 @@ export default function InventoryItemDetailPage() {
       unsubItem();
       unsubscribeMovements();
     };
-
   }, [itemId, toast]);
 
-  // ===== Derived data =====
-  const history = useMemo<InventoryMovement[]>(() => {
+  // ===== Derived history data =====
+  const history = useMemo<VisualMovement[]>(() => {
     if (!item || !inventoryMovements) return [];
 
-    const movementsFromCollection: InventoryMovement[] = inventoryMovements.map(mov => {
-        let type: InventoryMovement['type'] = 'Ajuste';
-        if (mov.type === 'sale') type = 'Salida por Servicio'; // Ajustado, asumiendo que service y venta usan 'sale'
+    const mapped = inventoryMovements.map(mov => {
+        let type = 'Ajuste';
+        if (mov.type === 'sale') type = 'Salida de Inventario';
         if (mov.type === 'purchase') type = 'Entrada por Compra';
 
+        const parsedDate = parseDate(mov.date);
+
         return {
-            date: mov.date,
+            id: mov.id,
+            dateStr: mov.date,
+            parsedDate: parsedDate && isValid(parsedDate) ? parsedDate : new Date(0), // fallback if invalid
             type: type,
-            quantity: mov.quantityChanged,
+            quantity: safeNumber(mov.quantityChanged),
             relatedId: mov.serviceId || mov.purchaseId || mov.relatedId,
             notes: mov.reason,
-            unitType: item.unitType as any,
+            unitType: item.unitType,
         };
     });
 
-    const allMovements = [...movementsFromCollection]
-      .map((m) => {
-        const d = parseDate(m.date);
-        return d && isValid(d) ? { ...m, _parsed: d } : null;
-      })
-      .filter(Boolean) as (InventoryMovement & { _parsed: Date })[];
-
-    allMovements.sort((a, b) => b._parsed.getTime() - a._parsed.getTime());
-
-    return allMovements.map(({ _parsed, ...rest }) => rest);
+    mapped.sort((a, b) => b.parsedDate.getTime() - a.parsedDate.getTime());
+    return mapped;
   }, [item, inventoryMovements]);
-
-  const kpis = useMemo(() => {
-    const salidaServicio = history
-      .filter((m) => m.type === "Salida por Servicio")
-      .reduce((a, b) => a + Math.abs(b.quantity), 0);
-    const salidaVenta = history
-      .filter((m) => m.type === "Salida por Venta")
-      .reduce((a, b) => a + Math.abs(b.quantity), 0);
-    return {
-      salidaServicio,
-      salidaVenta,
-      totalSalidas: salidaServicio + salidaVenta,
-    };
-  }, [history]);
 
   // ===== Handlers =====
   const handleSaveEditedItem = async (formData: InventoryItemFormValues) => {
     if (!item) return;
-    console.log('Saving edited item with data:', formData);
     try {
       await inventoryService.saveItem(formData, item.id);
       setIsEditDialogOpen(false);
       toast({
         title: "Ítem Actualizado",
-        description: `Los datos de ${formData.name} han sido actualizados.`,
+        description: `Los datos de ${formData.name} han sido actualizados exitosamente.`,
       });
     } catch (e) {
       console.error(e);
@@ -218,332 +240,286 @@ export default function InventoryItemDetailPage() {
   // ===== Loading / Empty =====
   if (item === undefined) {
     return (
-      <div className="container mx-auto py-8 text-center flex items-center justify-center h-64">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        <span className="text-sm">Cargando datos del ítem…</span>
+      <div className="container mx-auto py-12 flex flex-col items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <span className="text-muted-foreground">Cargando datos del inventario...</span>
       </div>
     );
   }
 
   if (!item) {
     return (
-      <div className="container mx-auto py-8 text-center">
-        <ShieldAlert className="mx-auto h-16 w-16 text-destructive mb-4" />
-        <h1 className="text-2xl font-bold">Ítem no encontrado</h1>
-        <p className="text-muted-foreground">
-          No se pudo encontrar un ítem con el ID: {itemId}.
+      <div className="container mx-auto py-12 text-center max-w-lg">
+        <ShieldAlert className="mx-auto h-20 w-20 text-destructive mb-6" />
+        <h1 className="text-3xl font-bold tracking-tight mb-2">Artículo no encontrado</h1>
+        <p className="text-muted-foreground mb-8">
+          No se pudo encontrar un artículo en el sistema con el ID: <span className="font-mono bg-muted px-1 py-0.5 rounded">{itemId}</span>.
         </p>
-        <Button asChild className="mt-6">
-          <Link href="/inventario">Volver a Productos y Servicios</Link>
+        <Button asChild size="lg" className="w-full sm:w-auto">
+          <Link href="/inventario"><ArrowLeft className="mr-2 h-4 w-4"/> Volver al Inventario</Link>
         </Button>
       </div>
     );
   }
 
-  // ===== UI =====
+  // ===== UI Preparations =====
   const unit = unitLabel(item.unitType as any);
   const unitPrice = safeNumber(item.unitPrice);
   const sellingPrice = safeNumber(item.sellingPrice);
-  const margin = sellingPrice - unitPrice;
-  const marginPct =
-    sellingPrice > 0 ? ((margin / sellingPrice) * 100).toFixed(1) : null;
-
   const lowStock = !item.isService && item.quantity <= (item.lowStockThreshold ?? 0);
-  const stockBarPct = !item.isService
-    ? Math.max(
-        0,
-        Math.min(
-          100,
-          (item.lowStockThreshold ?? 0) > 0
-            ? (item.quantity / (item.lowStockThreshold as number)) * 100
-            : 100
-        )
-      )
-    : 0;
+
+  const costBreakdown = getIntelligentPricing(unitPrice, item.unitType, item.rendimiento);
+  const saleBreakdown = getIntelligentPricing(sellingPrice, item.unitType, item.rendimiento);
 
   return (
     <div className="container mx-auto py-8">
       <PageHeader
-        title="Detalles del Producto/Servicio"
-        description={`ID: ${item.id}`}
+        title="Detalles del Artículo"
+        description="Información de producto, disponibilidad y movimientos recientes."
         actions={
-          <Button variant="outline" onClick={() => router.back()}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => router.back()}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Regresar
+            </Button>
+            {userPermissions.has('inventory:delete') && (
+              <ConfirmDialog
+                triggerButton={
+                  <Button variant="destructive" className="hidden sm:flex">
+                    <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                  </Button>
+                }
+                title={`¿Eliminar "${item.name}"?`}
+                description="Esta acción eliminará el producto del catálogo y no se puede deshacer."
+                onConfirm={handleDeleteItem}
+                confirmText="Sí, eliminar"
+              />
+            )}
+            {userPermissions.has('inventory:edit') && (
+              <Button onClick={() => setIsEditDialogOpen(true)}>
+                  <Edit className="mr-2 h-4 w-4" /> Modificar
+              </Button>
+            )}
+          </div>
         }
       />
 
-      <Tabs defaultValue="details" className="w-full">
-        <TabsList className="w-full overflow-x-auto scrollbar-hide flex gap-2 md:gap-4 rounded-lg p-1 bg-muted/60">
-          <TabsTrigger
-            value="details"
-            className="whitespace-nowrap px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
-            Información del Ítem
+      <Tabs defaultValue="details" className="w-full mt-6">
+        <TabsList className="mb-4 shadow-sm border bg-card">
+          <TabsTrigger value="details" className="px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            Ficha Técnica
           </TabsTrigger>
-          <TabsTrigger
-            value="history"
-            className="whitespace-nowrap px-4 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
-            Historial
+          <TabsTrigger value="history" className="px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            Historial de Movimientos
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="details">
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="md:col-span-2">
-                <CardHeader className="flex flex-row items-start justify-between">
-                  <div className="flex flex-col gap-1">
-                     <p className="text-sm font-medium text-primary mb-1">
-                        {item.isService ? "Servicio" : "Producto"}
-                      </p>
-                    <p className="text-lg font-semibold flex items-center gap-2">
-                      <Tag className="h-5 w-5 text-muted-foreground" />
-                      {item.category}
-                    </p>
-                    <CardTitle className="text-2xl mt-2">
-                      {item.brand} {item.name}
-                    </CardTitle>
-                    <CardDescription className="pt-1">
-                      SKU: {item.sku || "N/A"} • Proveedor: {item.supplier || "N/A"}
-                    </CardDescription>
-                  </div>
-
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <ConfirmDialog
-                      triggerButton={
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      }
-                      title={`¿Eliminar "${item.name}"?`}
-                      description="Esta acción no se puede deshacer y eliminará permanentemente el ítem del inventario."
-                      onConfirm={handleDeleteItem}
-                      confirmText="Sí, eliminar"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setIsEditDialogOpen(true)}
-                      title="Editar ítem"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
-                  {item.description && (
-                    <div className="pt-1">
-                      <p className="text-sm text-foreground whitespace-pre-wrap">
-                        {item.description}
-                      </p>
+        {/* =============== DETAILS TAB =============== */}
+        <TabsContent value="details" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            {/* CARD 1: INFORMACIÓN PRINCIPAL (Cubre 2 columnas) */}
+            <Card className="md:col-span-2 shadow-sm border-t-4 border-t-primary">
+              <CardHeader className="pb-4">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Badge variant={item.isService ? "secondary" : "default"} className="uppercase tracking-wider text-xs">
+                                {item.isService ? "Servicio" : "Producto Físico"}
+                            </Badge>
+                            <span className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                                <Tag className="h-3 w-3" /> {item.category || "General"}
+                            </span>
+                        </div>
+                        <CardTitle className="text-3xl font-extrabold tracking-tight">
+                        {item.name}
+                        </CardTitle>
+                        <CardDescription className="text-base mt-1">
+                        {item.brand ? `Marca: ${item.brand}` : "Distribución General"}
+                        </CardDescription>
                     </div>
-                  )}
-
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {!item.isService && (
-                      <Badge variant={lowStock ? "destructive" : "secondary"}>
-                        {lowStock ? "Bajo stock" : "Stock OK"}
-                      </Badge>
-                    )}
-                    {unit && <Badge variant="outline">Unidad: {unit}</Badge>}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5 text-muted-foreground" />
-                    Precios y Ganancia
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Costo (Taller)
-                    </p>
-                    <p className="font-semibold text-lg">
-                      {formatCurrency(unitPrice)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Precio Venta (Cliente)
-                    </p>
-                    <p className="font-semibold text-lg text-primary">
-                      {formatCurrency(sellingPrice)}
-                    </p>
-                  </div>
-                  <Separator />
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Ganancia Bruta
-                    </p>
-                    <p className="font-bold text-lg text-green-600">
-                      {formatCurrency(margin)}{" "}
-                      {marginPct !== null ? `(${marginPct}%)` : ""}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {!item.isService && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Boxes className="h-5 w-5 text-muted-foreground" />
-                      Control de Stock
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-end justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Stock Actual
-                        </p>
-                        <p
-                          className={`font-semibold text-lg ${
-                            lowStock ? "text-red-600" : ""
-                          }`}
-                        >
-                          {item.quantity} {unit}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-muted-foreground">
-                          Umbral de Stock Bajo
-                        </p>
-                        <p className="font-semibold text-lg">
-                          {item.lowStockThreshold ?? "—"}
-                        </p>
-                      </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                   <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">Descripción General</h4>
+                   <p className="text-foreground leading-relaxed bg-muted/30 p-4 rounded-lg border border-border/50">
+                        {item.description || "No hay una descripción proporcionada para este artículo."}
+                   </p>
+                </div>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div className="bg-background rounded-lg p-3 border">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1 mb-1"><Fingerprint className="h-3 w-3"/> Código SKU</span>
+                        <span className="font-semibold">{item.sku || "Sin asignar"}</span>
                     </div>
-
-                    <div className="mt-2">
-                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden border border-border">
-                        <div
-                          className={`h-full transition-all ${
-                            lowStock ? "bg-red-500" : "bg-green-500"
-                          }`}
-                          style={{ width: `${stockBarPct}%` }}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Relación actual vs. umbral de bajo stock
-                      </p>
+                    <div className="bg-background rounded-lg p-3 border">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1 mb-1"><Boxes className="h-3 w-3"/> Presentación</span>
+                        <div className="flex flex-col gap-0">
+                          <span className="font-semibold">{getPresentationLabel(item.unitType)}</span>
+                          {item.rendimiento ? <span className="text-xs text-muted-foreground font-medium">Rinde: {item.rendimiento} ml</span> : null}
+                        </div>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                    <div className="bg-background rounded-lg p-3 border">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1 mb-1"><Factory className="h-3 w-3"/> Proveedor Registrado</span>
+                        <span className="font-semibold">{item.supplier || "Ninguno"}</span>
+                    </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* CARD 2: PRECIOS Y STOCK (Lateral, 1 columna) */}
+            <Card className="shadow-sm border-t-4 border-t-emerald-500">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-xl flex items-center gap-2">
+                  Existencias y Valor
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                
+                <div className="space-y-4">
+                    <div className="flex flex-col p-3 rounded-lg border bg-muted/10">
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-muted-foreground font-medium">Costo de Compra</span>
+                            <span className="font-bold text-lg">{formatCurrency(unitPrice)}</span>
+                        </div>
+                        {costBreakdown && (
+                            <div className="flex justify-between items-center mt-2 pt-2 border-t border-border">
+                                <span className="text-xs text-muted-foreground font-medium">Precio Unitario Inteligente</span>
+                                <div className="text-xs text-right font-medium text-muted-foreground space-x-2">
+                                    <span>{formatCurrency(costBreakdown.perSmall)} / {costBreakdown.smallLabel}</span>
+                                    <span className="border-l border-border pl-2 border-opacity-50">{formatCurrency(costBreakdown.perBase)} / {costBreakdown.baseLabel}</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    
+                    <div className="flex flex-col p-3 rounded-lg border bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
+                        <div className="flex justify-between items-center">
+                            <span className="text-sm text-emerald-700 dark:text-emerald-400 font-bold">Precio de Venta</span>
+                            <span className="text-xl font-black text-emerald-700 dark:text-emerald-400">{formatCurrency(sellingPrice)}</span>
+                        </div>
+                        {saleBreakdown && (
+                            <div className="flex justify-between items-center mt-2 pt-2 border-t border-emerald-200/50 dark:border-emerald-800/50">
+                                <span className="text-xs text-emerald-600/80 dark:text-emerald-400/80 font-medium">Precio Unitario Inteligente</span>
+                                <div className="text-xs text-right font-bold text-emerald-700 dark:text-emerald-400 space-x-2">
+                                    <span>{formatCurrency(saleBreakdown.perSmall)} / {saleBreakdown.smallLabel}</span>
+                                    <span className="border-l border-emerald-200/50 dark:border-emerald-800/50 pl-2">{formatCurrency(saleBreakdown.perBase)} / {saleBreakdown.baseLabel}</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {!item.isService && (
+                    <>
+                        <Separator />
+                        <div className="pt-2 space-y-3">
+                            <div>
+                                <div className="flex justify-between items-end mb-1">
+                                    <span className="text-sm font-semibold text-muted-foreground">Stock Actual</span>
+                                    <span className={`text-3xl font-black tracking-tighter leading-none ${lowStock ? "text-destructive" : "text-foreground"}`}>
+                                        {item.quantity} <span className="text-base font-normal tracking-normal text-muted-foreground">{unit}</span>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div className="bg-muted/30 p-3 rounded-lg border border-border flex justify-between items-center">
+                                <span className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
+                                    <TrendingDown className="h-3 w-3" /> Aviso bajo stock
+                                </span>
+                                <Badge variant={lowStock ? "destructive" : "outline"} className={lowStock ? "animate-pulse" : ""}>
+                                    Alerta: ≤ {item.lowStockThreshold ?? 0}
+                                </Badge>
+                            </div>
+                        </div>
+                    </>
+                )}
+              </CardContent>
+            </Card>
+
           </div>
         </TabsContent>
 
-        <TabsContent value="history">
-          <Card className="mb-4">
-            <CardHeader>
-              <CardTitle>Resumen de Movimientos</CardTitle>
+        {/* =============== HISTORY TAB =============== */}
+        <TabsContent value="history" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <Card className="shadow-sm border-t-4 border-t-primary">
+            <CardHeader className="bg-muted/10 border-b">
+              <CardTitle>Rastreo de Movimientos</CardTitle>
               <CardDescription>
-                Totales calculados sobre el periodo mostrado.
+                Auditoría detallada de todas las entradas (compras) y salidas (servicios/ventas directas) relacionadas de manera oficial al sistema de inventario de este componente o servicio.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="rounded-md border p-4">
-                  <p className="text-sm text-muted-foreground">
-                    Salida por Servicio
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {kpis.salidaServicio} {unit}
-                  </p>
-                </div>
-                <div className="rounded-md border p-4">
-                  <p className="text-sm text-muted-foreground">
-                    Salida por Venta
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {kpis.salidaVenta} {unit}
-                  </p>
-                </div>
-                <div className="rounded-md border p-4">
-                  <p className="text-sm text-muted-foreground">Total Salidas</p>
-                  <p className="text-2xl font-bold">
-                    {kpis.totalSalidas} {unit}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Historial de Movimientos</CardTitle>
-              <CardDescription>
-                Entradas y salidas del producto.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               {history.length > 0 ? (
-                <div className="w-full overflow-x-auto rounded-md border">
+                <div className="w-full overflow-x-auto">
                   <Table className="min-w-[700px]">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Fecha</TableHead>
-                        <TableHead>Tipo de Movimiento</TableHead>
-                        <TableHead className="text-right">Cantidad</TableHead>
-                        <TableHead>ID Relacionado / Notas</TableHead>
+                    <TableHeader className="bg-muted/50">
+                      <TableRow className="uppercase text-xs tracking-wider">
+                        <TableHead className="w-[180px] pl-6">Fecha</TableHead>
+                        <TableHead>Operación</TableHead>
+                        <TableHead className="text-right">Afectación de Stock</TableHead>
+                        <TableHead className="text-right pr-6">Comprobante / Detalle</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {history.map((move, index) => {
-                        const date = parseDate(move.date);
+                      {history.map((move) => {
                         const isExit = move.quantity < 0;
-                        const qtyPrefix = isExit ? '' : '+';
+                        const isEntry = move.quantity > 0;
+                        const validDate = move.parsedDate.getTime() > 0;
+                        
                         return (
-                          <TableRow key={`${move.relatedId}-${index}`}>
-                            <TableCell>
-                              {date
-                                ? format(date, "dd MMM yyyy, HH:mm", { locale: es })
-                                : "Fecha no disponible"}
+                          <TableRow key={move.id} className="hover:bg-muted/30 transition-colors">
+                            <TableCell className="text-muted-foreground font-medium pl-6">
+                              {validDate
+                                ? format(move.parsedDate, "dd MMM yyyy, HH:mm", { locale: es })
+                                : move.dateStr || "Registro Antiguo"}
                             </TableCell>
                             <TableCell>
-                              <Badge
-                                variant={isExit ? "destructive" : "success"}
-                              >
-                                {move.type}
-                              </Badge>
+                                <div className="flex items-center gap-2">
+                                    {isExit ? (
+                                        <div className="h-6 w-6 rounded-full bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400 flex items-center justify-center shrink-0">
+                                            <TrendingDown className="h-3 w-3" />
+                                        </div>
+                                    ) : (
+                                        <div className="h-6 w-6 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                                            <TrendingUp className="h-3 w-3" />
+                                        </div>
+                                    )}
+                                    <span className="font-semibold text-sm">
+                                        {move.type}
+                                    </span>
+                                </div>
                             </TableCell>
-                            <TableCell className="text-right font-medium">
-                              {qtyPrefix}
-                              {move.quantity} {unitLabel(move.unitType as any)}
+                            <TableCell className="text-right">
+                                <Badge variant="outline" className={`font-mono text-sm px-2 py-0.5 border ${
+                                    isExit 
+                                        ? "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-950/20 border-red-200 dark:border-red-900" 
+                                        : isEntry 
+                                            ? "text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900"
+                                            : "text-muted-foreground bg-muted"
+                                }`}>
+                                    {isEntry ? '+' : ''}{move.quantity} {unitLabel(move.unitType as any)}
+                                </Badge>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-right pr-6">
                                 {move.relatedId ? (
-                                    <Link
-                                        href={
-                                        move.type === "Salida por Venta"
-                                            ? `/pos?saleId=${move.relatedId}`
-                                            : move.type === "Entrada por Compra"
-                                            ? `/inventario/compras`
-                                            : `/servicios/${move.relatedId}`
-                                        }
-                                        className="text-primary hover:underline inline-flex items-center gap-1"
-                                    >
-                                        {move.relatedId.slice(-8)}
-                                        <ArrowRight className="h-3 w-3" />
-                                    </Link>
+                                    <Button variant="ghost" size="sm" asChild className="h-8 group hover:bg-primary/10 hover:text-primary">
+                                        <Link
+                                            href={
+                                                move.type === "Entrada por Compra"
+                                                ? `/inventario/compras?id=${move.relatedId}`
+                                                : move.type.includes("Venta")
+                                                ? `/pos?saleId=${move.relatedId}`
+                                                : `/servicios/${move.relatedId}`
+                                            }
+                                        >
+                                            <span className="font-mono text-xs opacity-70 group-hover:opacity-100 mr-1">{move.relatedId.slice(-6).toUpperCase()}</span>
+                                            <ArrowRight className="h-3 w-3" />
+                                        </Link>
+                                    </Button>
                                 ) : (
-                                    <span className="text-muted-foreground text-xs">{move.notes || 'N/A'}</span>
+                                    <span className="text-muted-foreground text-xs italic">{move.notes || 'Ajuste Manual / Movimiento Indirecto'}</span>
                                 )}
                             </TableCell>
                           </TableRow>
@@ -553,9 +529,13 @@ export default function InventoryItemDetailPage() {
                   </Table>
                 </div>
               ) : (
-                <p className="text-muted-foreground text-center py-6">
-                  No hay historial de movimientos para este producto.
-                </p>
+                <div className="text-center py-12 px-4 shadow-inner bg-muted/10 rounded-b-lg">
+                    <Boxes className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                    <h3 className="text-lg font-medium text-foreground">Inventario Limpio</h3>
+                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                        No existen movimientos de compra o venta registrados históricamente para este componente.
+                    </p>
+                </div>
               )}
             </CardContent>
           </Card>

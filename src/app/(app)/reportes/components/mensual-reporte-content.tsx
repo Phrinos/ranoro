@@ -15,9 +15,10 @@ interface MensualReporteProps {
   sales: SaleReceipt[];
   cashTransactions: CashDrawerTransaction[];
   inventory: InventoryItem[];
+  purchases: any[];
 }
 
-export default function MensualReporteContent({ services, sales, cashTransactions, inventory }: MensualReporteProps) {
+export default function MensualReporteContent({ services, sales, cashTransactions, inventory, purchases }: MensualReporteProps) {
   const currentYear = getYear(new Date());
 
   const monthlyData = useMemo(() => {
@@ -60,8 +61,8 @@ export default function MensualReporteContent({ services, sales, cashTransaction
 
     // Procesar Egresos (Caja)
     cashTransactions.forEach(t => {
-      // EXCLUIR MOVIMIENTOS DE FLOTILLA (Se ven en /flotillav2)
-      if (t.relatedType === 'Flotilla' || t.relatedType === 'RetiroSocio' || t.relatedType === 'GastoVehiculo') return;
+      // EXCLUIR MOVIMIENTOS DE FLOTILLA (Se ven en /flotillav2) y compras (se calculan independientemente)
+      if (t.relatedType === 'Flotilla' || t.relatedType === 'RetiroSocio' || t.relatedType === 'GastoVehiculo' || t.relatedType === 'Compra') return;
 
       const d = parseDate(t.date);
       if (!d) return;
@@ -76,8 +77,19 @@ export default function MensualReporteContent({ services, sales, cashTransaction
       }
     });
 
+    // Procesar Compras
+    purchases.forEach(p => {
+      if (p.status === 'Cancelado') return;
+      const d = parseDate(p.invoiceDate);
+      if (!d) return;
+      const month = months.find(m => isWithinInterval(d, { start: m.start, end: m.end }));
+      if (month) {
+        month.egresos += (Number(p.invoiceTotal) || 0);
+      }
+    });
+
     return months.filter(m => m.ingresos > 0 || m.egresos > 0).reverse();
-  }, [services, sales, cashTransactions, inventory, currentYear]);
+  }, [services, sales, cashTransactions, inventory, purchases, currentYear]);
 
   return (
     <div className="space-y-6">

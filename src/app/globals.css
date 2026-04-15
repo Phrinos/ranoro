@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 @layer base {
   :root {
     --background: 0 0% 96%; /* #F5F5F5 */
@@ -111,6 +112,22 @@
     100% { transform: translateX(-50%); }
   }
 
+  /* Marquee infinito para testimonios */
+  .animate-marquee-left {
+    animation: marquee-left var(--marquee-speed, 60s) linear infinite;
+  }
+  .animate-marquee-right {
+    animation: marquee-right var(--marquee-speed, 60s) linear infinite;
+  }
+  @keyframes marquee-left {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  @keyframes marquee-right {
+    0% { transform: translateX(-50%); }
+    100% { transform: translateX(0); }
+  }
+
   /* ======= Impresión simple ======= */
   @media print {
     body * { visibility: hidden; }
@@ -179,4 +196,30 @@ select:-webkit-autofill {
   -webkit-text-fill-color: hsl(var(--foreground)) !important;
   -webkit-box-shadow: 0 0 0px 1000px hsl(var(--background)) inset !important;
           box-shadow: 0 0 0px 1000px hsl(var(--background)) inset !important;
+}
+
+/* ================================
+   PRINT: Inventory Report
+   Only .printable-content shows
+================================ */
+@media print {
+  body > * {
+    visibility: hidden !important;
+  }
+  .printable-content,
+  .printable-content * {
+    visibility: visible !important;
+  }
+  .printable-content {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    background: white !important;
+    z-index: 99999 !important;
+    padding: 20mm !important;
+    overflow: visible !important;
+  }
+  .no-print {
+    display: none !important;
+  }
 }

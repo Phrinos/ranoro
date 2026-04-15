@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Form } from '@/components/ui/form';
 import { Save, Crop } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { storage, db } from '@/lib/firebaseClient.js';
+import { storage, db } from '@/lib/firebaseClient';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { optimizeImage } from '@/lib/utils';

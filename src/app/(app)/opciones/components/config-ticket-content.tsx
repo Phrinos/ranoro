@@ -11,7 +11,7 @@ import { Form } from "@/components/ui/form";
 import { Save, Printer } from "lucide-react";
 import type { SaleReceipt } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { storage } from "@/lib/firebaseClient.js";
+import { storage } from "@/lib/firebaseClient";
 import { ref, uploadString, getDownloadURL } from "firebase/storage";
 import { optimizeImage } from "@/lib/utils";
 

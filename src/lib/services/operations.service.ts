@@ -1,30 +1,53 @@
 
 // src/lib/services/operations.service.ts
-import { collection, onSnapshot, query, where, getDocs, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, PaymentMethod, Payment } from "@/types";
-import { parseDate } from '../forms';
+import type { SaleReceipt, ServiceRecord, CashDrawerTransaction, Payment } from "@/types";
 
+/**
+ * Subscribes to completed/cancelled services and sales, merging them into a single sorted list.
+ * Uses two separate queries (no composite index needed) and merges in memory.
+ */
 const onOperationsUpdate = (callback: (operations: (ServiceRecord | SaleReceipt)[]) => void): (() => void) => {
     if (!db) return () => {};
 
-    const servicesQuery = query(collection(db, 'serviceRecords'), where('status', 'in', ['Entregado', 'Cancelado']), orderBy('deliveryDateTime', 'desc'));
-    const salesQuery = query(collection(db, 'sales'), orderBy('saleDate', 'desc'));
+    let latestServices: ServiceRecord[] = [];
+    let latestSales: SaleReceipt[] = [];
 
-    const servicesUnsub = onSnapshot(servicesQuery, (servicesSnap) => {
-        const services = servicesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
-        // This is a partial update. We need to merge with sales. A more robust solution might use a state management library.
-        // For now, we'll just pass it up and let the component handle merging.
+    const mergeAndEmit = () => {
+        const combined = [...latestServices, ...latestSales];
+        // Sort descending by most relevant date
+        combined.sort((a, b) => {
+            const dateA = new Date((a as any).deliveryDateTime || (a as any).saleDate || (a as any).serviceDate || 0);
+            const dateB = new Date((b as any).deliveryDateTime || (b as any).saleDate || (b as any).serviceDate || 0);
+            return dateB.getTime() - dateA.getTime();
+        });
+        callback(combined);
+    };
+
+    // Query 1: Services with terminal statuses. 
+    // Using 'in' filter only (single-field) — no composite index needed. Sort in memory.
+    const servicesQuery = query(
+        collection(db, 'serviceRecords'), 
+        where('status', 'in', ['Entregado', 'Cancelado'])
+    );
+
+    // Query 2: All sales, ordered by date (single-field index, auto-created).
+    const salesQuery = query(
+        collection(db, 'sales'), 
+        orderBy('saleDate', 'desc')
+    );
+
+    const servicesUnsub = onSnapshot(servicesQuery, (snap) => {
+        latestServices = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as ServiceRecord));
+        mergeAndEmit();
     });
 
-    const salesUnsub = onSnapshot(salesQuery, (salesSnap) => {
-        const sales = salesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as SaleReceipt));
-        // Similarly, this is a partial update.
+    const salesUnsub = onSnapshot(salesQuery, (snap) => {
+        latestSales = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as SaleReceipt));
+        mergeAndEmit();
     });
 
-    // This is a simplified approach. A full implementation would merge and sort the two collections.
-    // For now, we're assuming the main page component does this.
-    // Let's just return a combined unsubscribe function.
     return () => {
         servicesUnsub();
         salesUnsub();

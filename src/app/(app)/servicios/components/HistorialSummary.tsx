@@ -61,7 +61,8 @@ function useHistorialSummary(filteredServices: ServiceRecord[]) {
 const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
-  "Tarjeta MSI": CreditCard,
+  "Tarjeta 3 MSI": CreditCard,
+  "Tarjeta 6 MSI": CreditCard,
   Transferencia: Landmark,
   "Transferencia/Contadora": Landmark,
   "Efectivo+Transferencia": Wallet,

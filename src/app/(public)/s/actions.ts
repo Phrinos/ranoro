@@ -33,7 +33,7 @@ export async function getPublicServiceData(publicId: string): Promise<DataResult
     const mainSnap = await db.collection("serviceRecords").doc(serviceId).get();
     const main = mainSnap.exists ? (mainSnap.data() as any) : null;
 
-    let phone =
+    const phone =
       asText(pub.customerPhone) ??
       asText(main?.customerPhone) ??
       asText(main?.customer?.phone) ??

@@ -29,6 +29,7 @@ import { PaymentDetailsDialog } from "@/components/shared/PaymentDetailsDialog";
 import { PaymentDetailsFormValues } from "@/schemas/payment-details-form-schema";
 import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
+import { usePermissions } from "@/hooks/usePermissions";
 
 
 interface ViewSaleDialogProps {
@@ -60,6 +61,7 @@ export function ViewSaleDialog({
   onSendWhatsapp,
 }: ViewSaleDialogProps) {
   const { toast } = useToast();
+  const userPermissions = usePermissions();
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [cancellationReason, setCancellationReason] = useState("");
   const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
@@ -121,6 +123,7 @@ export function ViewSaleDialog({
 
         <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex flex-row justify-between items-center w-full gap-2">
           <div>
+            {userPermissions.has('pos:delete_sale') && (
               <ConfirmDialog
                 triggerButton={<Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isCancelled}><Ban className="mr-2 h-4 w-4" />Cancelar Venta</Button>}
                 title="¿Está seguro de cancelar esta venta?"
@@ -135,6 +138,7 @@ export function ViewSaleDialog({
                     className="mt-4"
                   />
               </ConfirmDialog>
+            )}
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onSendWhatsapp(sale)} className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200">

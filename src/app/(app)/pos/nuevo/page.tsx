@@ -98,6 +98,7 @@ const createPOSItemFromInventory = (item: InventoryItem) => {
     unitPrice,
     discount: 0,
     totalPrice: unitPrice,
+    isService: !!item.isService,
   };
 };
 
@@ -388,9 +389,11 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
         saleDate: new Date().toISOString(),
         items: values.items.map(it => ({
           itemId: it.inventoryItemId ?? crypto.randomUUID(),
+          inventoryItemId: it.inventoryItemId ?? null,
           itemName: it.itemName,
           quantity: it.quantity,
           total: it.totalPrice ?? (it.unitPrice ?? 0) * it.quantity,
+          isService: !!it.isService,
         })),
         customerName: values.customerName,
         payments: (values.payments ?? []).map(p => ({

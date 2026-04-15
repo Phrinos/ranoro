@@ -16,7 +16,7 @@ export const defaultSuperAdmin: User = {
   id: "superadmin",
   name: "Super Admin",
   email: "admin@example.com",
-  role: "superadmin",
+  role: "Superadministrador",
   isArchived: false,
 };
 
@@ -111,7 +111,7 @@ export const placeholderAppRoles: AppRole[] = [
   },
   {
     id: "recepcion_role",
-    name: "Asesor",
+    name: "Recepcionista",
     permissions: [
       "dashboard:view",
       "services:create",

@@ -4,9 +4,8 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trash2, Loader2, Edit } from "lucide-react";
+import { ArrowLeft, Trash2, Loader2, Edit, ClipboardList } from "lucide-react";
 import { inventoryService, serviceService } from "@/lib/services";
 import type { Vehicle, ServiceRecord } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +36,7 @@ import { EditEngineDataDialog } from "@/app/(app)/precios/components/EditEngineD
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
 import { VEHICLE_COLLECTION } from "@/lib/vehicle-constants";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const getServiceDescriptionText = (service: ServiceRecord) => {
   if (service.serviceItems && service.serviceItems.length > 0) {
@@ -219,32 +219,40 @@ function ServiceHistoryTable({
   );
 
   return (
-    <Card className="w-full">
-      <CardHeader className="space-y-1">
+    <Card className="overflow-hidden border-0 shadow-lg relative bg-card h-full flex flex-col">
+      <CardHeader className="space-y-1 bg-muted/10 border-b pb-4">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle>Historial de Servicios</CardTitle>
-          <div className="text-xs text-muted-foreground">
-            {sortedServices.length} servicio{sortedServices.length === 1 ? "" : "s"}
-          </div>
+          <CardTitle className="text-lg font-bold tracking-tight">Registro de Servicios</CardTitle>
+          {sortedServices.length > 0 && (
+            <div className="text-xs font-semibold px-3 py-1 bg-primary/10 text-primary rounded-full w-fit">
+              {sortedServices.length} intervenci{sortedServices.length === 1 ? "ón" : "ones"}
+            </div>
+          )}
         </div>
         <CardDescription>
-          Servicios realizados a este vehículo. Toca/clic para ver detalles.
+          Mantenimientos y reparaciones ingresadas al historial.
         </CardDescription>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="p-0 flex-1 flex flex-col">
         {sortedServices.length > 0 ? (
           <>
-            {/* Mobile */}
-            <div className="sm:hidden">{renderMobileCards()}</div>
+            {/* Mobile (Cards) */}
+            <div className="sm:hidden p-4 bg-muted/5">{renderMobileCards()}</div>
 
-            {/* Tablet/Web */}
-            <div className="hidden sm:block">{renderDesktopTable()}</div>
+            {/* Tablet/Web (Table) */}
+            <div className="hidden sm:block p-0.5">{renderDesktopTable()}</div>
           </>
         ) : (
-          <p className="text-muted-foreground">
-            No hay historial de servicios para este vehículo.
-          </p>
+          <div className="flex flex-col items-center justify-center p-8 text-center flex-1 bg-muted/5 border-t border-dashed min-h-[200px]">
+            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
+              <ClipboardList className="h-6 w-6 text-muted-foreground/50" />
+            </div>
+            <p className="font-semibold text-foreground">Aún no hay servicios</p>
+            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+              Cuando el taller finalice un trabajo para este vehículo, el registro histórico se desplegará aquí automáticamente.
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>
@@ -265,6 +273,7 @@ export default function VehicleDetailPage() {
   const vehicleId = params.id as string;
   const { toast } = useToast();
   const router = useRouter();
+  const userPermissions = usePermissions();
 
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [services, setServices] = useState<ServiceRecord[]>([]);
@@ -296,29 +305,35 @@ export default function VehicleDetailPage() {
     fetchVehicle();
 
     const unsubscribeServices = serviceService.onServicesForVehicleUpdate(vehicleId, setServices);
-    const unsubscribePriceLists = inventoryService.onVehicleDataUpdate((data) =>
-      setPriceLists(data as any[])
-    );
 
     return () => {
       unsubscribeServices();
-      unsubscribePriceLists();
     };
   }, [vehicleId, toast]);
+
+  // OPTIMIZATION: Only fetch the price list data for this specific vehicle's make
+  useEffect(() => {
+    if (!vehicle?.make) return;
+    const unsubscribeMakeData = inventoryService.onVehicleMakeDataUpdate(vehicle.make, (data) => {
+       setPriceLists(data ? [data] : []);
+    });
+    return () => unsubscribeMakeData();
+  }, [vehicle?.make]);
 
   const vehicleEngineData = useMemo(() => {
     if (!vehicle || !vehicle.engine || priceLists.length === 0) return null;
 
-    const makeData = priceLists.find((pl) => pl.make === vehicle.make);
-    if (!makeData) return null;
+    // priceLists now only contains 1 element (the specific make)
+    const makeData = priceLists[0];
+    if (!makeData || !makeData.models) return null;
 
     const modelData = makeData.models.find((m: any) => m.name === vehicle.model);
-    if (!modelData) return null;
+    if (!modelData || !modelData.generations) return null;
 
     const generationData = modelData.generations.find(
       (g: any) => vehicle.year >= g.startYear && vehicle.year <= g.endYear
     );
-    if (!generationData) return null;
+    if (!generationData || !generationData.engines) return null;
 
     return generationData.engines.find((e: any) => e.name === vehicle.engine) || null;
   }, [vehicle, priceLists]);
@@ -431,38 +446,36 @@ export default function VehicleDetailPage() {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      <PageHeader
-        title={`${vehicle.make} ${vehicle.model} (${vehicle.licensePlate})`}
-        description={`ID Vehículo: ${vehicle.id}`}
-        actions={
-          <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-2">
+      {/* Top Actions Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:text-foreground pl-0 -ml-2"
+          onClick={() => router.back()}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Volver al Directorio
+        </Button>
+        <div className="w-full sm:w-auto flex items-center gap-2">
+          {userPermissions.has('fleet:delete') && (
             <ConfirmDialog
               triggerButton={
-                <Button variant="destructive" size="sm" className="w-full sm:w-auto">
+                <Button variant="outline" size="sm" className="w-full sm:w-auto text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 transition-colors">
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Eliminar
+                  Eliminar Registro
                 </Button>
               }
               title="¿Eliminar este vehículo?"
-              description="Esta acción es permanente. Se eliminará el vehículo y todo su historial de servicios."
+              description="Esta acción es permanente. Se eliminará localmente el vehículo."
               onConfirm={handleDeleteVehicle}
             />
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full sm:w-auto"
-              onClick={() => router.back()}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Volver
-            </Button>
-          </div>
-        }
-      />
+          )}
+        </div>
+      </div>
 
       {/* En md ya se muestra 2 columnas (tablet), en lg 5 cols con spans */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mt-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
         <div className="md:col-span-2 lg:col-span-3 space-y-4 sm:space-y-6">
           <VehicleInfoCard vehicle={vehicle} onEdit={() => setIsEditDialogOpen(true)} />
           <ServiceHistoryTable services={services} onRowClick={openServicePreview} />

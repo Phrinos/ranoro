@@ -3,8 +3,10 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
-import { getAuth, Auth, browserLocalPersistence, setPersistence } from 'firebase/auth';
+import { getAuth, Auth, browserLocalPersistence, setPersistence, GoogleAuthProvider } from 'firebase/auth';
 import { firebaseConfig } from './firebase.config';
+
+export const googleProvider = new GoogleAuthProvider();
 
 /**
  * ----------------------------------------------------------

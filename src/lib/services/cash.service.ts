@@ -17,7 +17,8 @@ import {
   where
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { CashDrawerTransaction, InitialCashBalance } from "@/types";
+import { setDoc } from 'firebase/firestore';
+import type { CashDrawerTransaction, InitialCashBalance, MonthlyBalances } from "@/types";
 import { cleanObjectForFirestore } from '../forms';
 
 const addCashTransaction = async (transactionData: Omit<CashDrawerTransaction, 'id' | 'date'> & { date?: string }): Promise<CashDrawerTransaction> => {
@@ -83,6 +84,23 @@ const setInitialBalance = async (balance: number, userId: string, userName: stri
     await updateDoc(docRef, data);
 };
 
+const getMonthlyBalances = async (monthId: string): Promise<MonthlyBalances | null> => {
+    if (!db) return null;
+    const docRef = doc(db, 'monthlyBalances', monthId);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as MonthlyBalances : null;
+};
+
+const setMonthlyBalances = async (monthId: string, balances: Omit<MonthlyBalances, 'id' | 'lastUpdated'>): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    const docRef = doc(db, 'monthlyBalances', monthId);
+    const data = {
+        ...balances,
+        lastUpdated: new Date().toISOString()
+    };
+    await setDoc(docRef, cleanObjectForFirestore(data), { merge: true });
+};
+
 export const cashService = {
   addCashTransaction,
   deleteCashTransaction,
@@ -90,4 +108,6 @@ export const cashService = {
   onFleetCashEntriesUpdate,
   getInitialBalance,
   setInitialBalance,
+  getMonthlyBalances,
+  setMonthlyBalances,
 };

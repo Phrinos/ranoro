@@ -14,9 +14,9 @@ import React, {
   useRef,
 } from "react";
 import { TabbedPageLayout } from "@/components/layout/tabbed-page-layout";
-import { Loader2, PlusCircle, Printer, Copy, Share2 } from "lucide-react";
+import { Loader2, Printer, Copy, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+
 import type { ServiceRecord, Vehicle, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { inventoryService, adminService, serviceService } from "@/lib/services";
@@ -34,6 +34,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+
 
 const ActivosTabContent = lazy(() => import("./components/tab-activos"));
 const HistorialTabContent = lazy(() => import("./components/tab-historial"));
@@ -53,9 +54,9 @@ function PageInner() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
+
   const activeTab = searchParams.get("tab") || "activos";
 
-  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [personnel, setPersonnel] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -99,7 +100,6 @@ function PageInner() {
     setIsLoading(true);
 
     const unsubs = [
-      serviceService.onServicesUpdate(setAllServices),
       inventoryService.onVehiclesUpdate(setVehicles),
       adminService.onUsersUpdate((users) => {
         setPersonnel(users);
@@ -301,13 +301,7 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
     );
   }
 
-  const pageActions = (
-    <Button asChild className="w-full sm:w-auto">
-      <Link href="/servicios/nuevo">
-        <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Servicio
-      </Link>
-    </Button>
-  );
+  const pageActions = null; // Nuevo Servicio button is now inside the DailyEarningsCard in tab-activos
 
   const tabs = [
     {
@@ -315,7 +309,6 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
       label: "Activos",
       content: (
         <ActivosTabContent
-          allServices={allServices}
           vehicles={vehicles}
           personnel={personnel}
           onShowShareDialog={handleShowShareDialog}
@@ -331,7 +324,6 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
       label: "Agenda",
       content: (
         <AgendaTabContent
-          services={allServices.filter((s) => s.status === "Agendado")}
           vehicles={vehicles}
           personnel={personnel}
           onShowPreview={handleShowShareDialog}
@@ -343,7 +335,6 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
       label: "Cotizaciones",
       content: (
         <CotizacionesTabContent
-          services={allServices.filter((s) => s.status === "Cotizacion")}
           vehicles={vehicles}
           personnel={personnel}
           onShowShareDialog={handleShowShareDialog}
@@ -357,7 +348,6 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
       label: "Historial",
       content: (
         <HistorialTabContent
-          services={allServices}
           vehicles={vehicles}
           personnel={personnel}
           onShowShareDialog={handleShowShareDialog}
@@ -379,11 +369,10 @@ Total: ${formatCurrency(serviceForTicket.totalCost)}
     >
       <TabbedPageLayout
         title="Gestión de Servicios"
-        description={<span className="text-primary-foreground/80">Planifica, gestiona y consulta todo el ciclo de vida de los servicios.</span>}
+        description="Planifica, gestiona y consulta todo el ciclo de vida de los servicios."
         activeTab={activeTab}
         onTabChange={handleTabChange}
         tabs={tabs}
-        actions={pageActions}
       />
       <Suspense fallback={null}>
         {recordForSharing && (

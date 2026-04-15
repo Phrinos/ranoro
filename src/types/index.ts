@@ -26,13 +26,19 @@ export type AppRole = {
 export type PaymentMethod =
   | "Efectivo"
   | "Tarjeta"
-  | "Tarjeta MSI"
+  | "Tarjeta MSI" // legacy support
+  | "Tarjeta 3 MSI"
+  | "Tarjeta 6 MSI"
+  | "Tarjeta 9 MSI"
+  | "Tarjeta 12 MSI"
+  | "Tarjeta 18 MSI"
+  | "Tarjeta 24 MSI"
   | "Transferencia"
   | "Transferencia/Contadora"
   | "Crédito"
   | "Efectivo+Transferencia"
   | "Tarjeta+Transferencia";
-export const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Transferencia/Contadora", "Crédito"] as const;
+export const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Tarjeta 3 MSI", "Tarjeta 6 MSI", "Tarjeta 9 MSI", "Tarjeta 12 MSI", "Tarjeta 18 MSI", "Tarjeta 24 MSI", "Transferencia", "Transferencia/Contadora", "Crédito"] as const;
 
 // ✅ Sub-estatus: tu UI compara estos literales
 export type ServiceSubStatus =
@@ -102,11 +108,13 @@ export type ServiceRecord = {
 // ✅ SaleReceipt
 export type SaleLineItem = {
   itemId: string;
+  inventoryItemId?: string;
   itemName: string;
   quantity: number;
   total: number;
   unitPrice?: number;
   totalPrice?: number;
+  isService?: boolean;
 };
 
 export type SaleReceipt = {
@@ -448,4 +456,13 @@ export interface Infraction {
   totalAmount: number;
   paidAmount: number;
   payments: Payment[];
+}
+
+export interface MonthlyBalances {
+  id: string; // ej. "2026-04"
+  cashTotal: number;
+  cardTotal: number;
+  transferTotal: number;
+  lastUpdated: string;
+  updatedBy: string;
 }

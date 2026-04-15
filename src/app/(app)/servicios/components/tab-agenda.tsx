@@ -12,23 +12,29 @@ const AgendaListContent = lazy(() => import('./agenda-list-content'));
 const ServiceCalendar = lazy(() => import('./service-calendar').then(m => ({ default: m.ServiceCalendar })));
 
 
+import { serviceService } from "@/lib/services";
+
 interface AgendaTabContentProps {
-  services: ServiceRecord[];
   vehicles: Vehicle[];
   personnel: User[];
   onShowPreview?: (service: ServiceRecord) => void;
 }
 
 export default function AgendaTabContent({
-  services,
   vehicles,
   personnel,
   onShowPreview,
 }: AgendaTabContentProps) {
   const router = useRouter();
   const [activeView, setActiveView] = useState('lista');
+  const [activeData, setActiveData] = useState<ServiceRecord[]>([]);
 
-  const agendaServices = useMemo(() => services.filter(s => s.status === 'Agendado'), [services]);
+  React.useEffect(() => {
+    const unsub = serviceService.onActiveServicesUpdate(setActiveData);
+    return () => unsub();
+  }, []);
+
+  const agendaServices = useMemo(() => activeData.filter(s => s.status === 'Agendado'), [activeData]);
 
   return (
     <Tabs value={activeView} onValueChange={setActiveView} className="w-full">

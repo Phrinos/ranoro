@@ -34,36 +34,36 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { User, AppRole, NavigationEntry } from "@/types";
+import type { User, NavigationEntry } from "@/types";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { adminService } from '@/lib/services';
 import { ALL_PERMISSIONS } from '@/lib/permissions';
+import { useRoles } from '@/lib/contexts/roles-context';
 
 
 const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
   // Mi Taller
   { label: 'Nuevo Servicio', path: '/servicios/nuevo', icon: PlusCircle, groupTag: 'Mi Taller', permissions: ['services:create'] },
-  { label: 'Tablero', path: '/tablero', icon: LayoutGrid, groupTag: 'Mi Taller', permissions: ['dashboard:view'] },
-  { label: 'Servicios', path: '/servicios', icon: Wrench, groupTag: 'Mi Taller', permissions: ['services:view_history'] },
-  { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: 'Mi Taller', permissions: ['vehicles:manage'] },
-  { label: 'Precios', path: '/precios', icon: Tags, groupTag: 'Mi Taller', permissions: ['inventory:view_public_info'] },
-  { label: 'Catálogo Maestro', path: '/listadeprecios', icon: ListOrdered, groupTag: 'Mi Taller', permissions: ['inventory:manage'] },
-  { label: 'Flotilla', path: '/flotillav2', icon: Truck, groupTag: 'Mi Taller', permissions: ['fleet:manage'] },
+  { label: 'Tablero', path: '/tablero', icon: LayoutGrid, groupTag: 'Mi Taller' }, // Sin restricción
+  { label: 'Servicios', path: '/servicios', icon: Wrench, groupTag: 'Mi Taller', permissions: ['services:view'] },
+  { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: 'Mi Taller', permissions: ['fleet:view', 'services:create'] },
+  { label: 'Precios', path: '/precios', icon: Tags, groupTag: 'Mi Taller', permissions: ['inventory:view'] },
+  { label: 'Catálogo Maestro', path: '/listadeprecios', icon: ListOrdered, groupTag: 'Mi Taller', permissions: ['inventory:create', 'inventory:edit'] },
+  { label: 'Flotilla', path: '/flotillav2', icon: Truck, groupTag: 'Mi Taller', permissions: ['fleet:view'] },
 
   // Operaciones
-  { label: 'Punto de Venta', path: '/pos', icon: Receipt, groupTag: 'Operaciones', permissions: ['pos:view_sales'] },
-  { label: 'Inventario', path: '/inventario', icon: Package, groupTag: 'Operaciones', permissions: ['inventory:view_public_info'] },
-  { label: 'Compras', path: '/inventario/compras', icon: ShoppingCart, groupTag: 'Operaciones', permissions: ['purchases:manage'] },
+  { label: 'Punto de Venta', path: '/pos', icon: Receipt, groupTag: 'Operaciones', permissions: ['pos:create_sale'] },
+  { label: 'Inventario', path: '/inventario', icon: Package, groupTag: 'Operaciones', permissions: ['inventory:view'] },
+  { label: 'Compras', path: '/inventario/compras', icon: ShoppingCart, groupTag: 'Operaciones', permissions: ['purchases:view', 'purchases:create'] },
   
   // Finanzas
-  { label: 'Reportes Taller', path: '/reportes', icon: DollarSign, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
-  { label: 'Reporte Flotilla', path: '/reporteflotilla', icon: BarChart3, groupTag: 'Finanzas', permissions: ['finances:view_report'] },
+  { label: 'Reportes Taller', path: '/reportes', icon: DollarSign, groupTag: 'Finanzas', permissions: ['finances:view'] },
+  { label: 'Reporte Flotilla', path: '/reporteflotilla', icon: BarChart3, groupTag: 'Finanzas', permissions: ['finances:view'] },
   { label: 'Facturación', path: '/facturacion', icon: FileJson, groupTag: 'Finanzas', permissions: ['billing:manage'] },
 
   // Opciones
-  { label: 'I.A.', path: '/ai', icon: BrainCircuit, groupTag: 'Opciones', permissions: ['dashboard:view'] },
-  { label: 'Personal', path: '/personal', icon: Users, groupTag: 'Opciones', permissions: ['personnel:manage'] },
-  { label: 'Opciones', path: '/opciones', icon: Settings, groupTag: 'Opciones', permissions: ['dashboard:view'] },
+  { label: 'I.A.', path: '/ai', icon: BrainCircuit, groupTag: 'Opciones', permissions: ['admin:settings', 'finances:view'] },
+  { label: 'Personal', path: '/personal', icon: Users, groupTag: 'Opciones', permissions: ['admin:manage_users_roles'] },
+  { label: 'Opciones', path: '/opciones', icon: Settings, groupTag: 'Opciones', permissions: ['admin:settings'] },
 ];
 
 const DESIRED_GROUP_ORDER = ['Mi Taller', 'Operaciones', 'Finanzas', 'Opciones'];
@@ -71,7 +71,8 @@ const DESIRED_GROUP_ORDER = ['Mi Taller', 'Operaciones', 'Finanzas', 'Opciones']
 const useNavigation = (): NavigationEntry[] => {
   const pathname = usePathname();
   const [currentUser, setCurrentUser] = React.useState<User | null>(null);
-  const [roles, setRoles] = React.useState<AppRole[]>([]);
+  // Roles desde el contexto centralizado — NO abre un listener propio
+  const roles = useRoles();
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -81,8 +82,6 @@ const useNavigation = (): NavigationEntry[] => {
             catch (e) { console.error("Could not parse user from localStorage", e); }
         }
     }
-    const unsub = adminService.onRolesUpdate(setRoles);
-    return () => unsub();
   }, []);
 
   const userPermissions = React.useMemo(() => {
@@ -96,7 +95,10 @@ const useNavigation = (): NavigationEntry[] => {
 
   const filteredNavStructure = React.useMemo(() => {
     if (!currentUser) return []; 
-    return BASE_NAV_STRUCTURE.filter(item => item.permissions?.some(p => userPermissions.has(p)));
+    return BASE_NAV_STRUCTURE.filter(item => {
+      if (!item.permissions || item.permissions.length === 0) return true;
+      return item.permissions.some(p => userPermissions.has(p));
+    });
   }, [currentUser, userPermissions]);
 
   return filteredNavStructure.map(entry => ({

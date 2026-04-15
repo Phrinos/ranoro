@@ -23,6 +23,7 @@ import { cleanObjectForFirestore } from '../forms';
 import { adminService } from './admin.service';
 import { cashService } from './cash.service';
 import { inventoryService } from './inventory.service';
+import { getCardCommissionRate } from '../money-helpers';
 import type { POSFormValues } from '@/schemas/pos-form-schema';
 
 const onSalesUpdate = (callback: (sales: SaleReceipt[]) => void): (() => void) => {
@@ -68,9 +69,11 @@ const registerSale = async (
         saleDate: new Date().toISOString(),
         items: saleData.items.map(it => ({
           itemId: it.inventoryItemId ?? crypto.randomUUID(),
+          inventoryItemId: it.inventoryItemId ?? null,
           itemName: it.itemName,
           quantity: it.quantity,
           total: it.totalPrice ?? (it.unitPrice ?? 0) * it.quantity,
+          isService: !!it.isService,
         })),
         subTotal,
         tax,
@@ -110,6 +113,24 @@ const registerSale = async (
                 relatedId: saleId,
                 paymentMethod: 'Efectivo',
             });
+        }
+        const commissionRate = getCardCommissionRate(payment.method);
+        if (commissionRate > 0) {
+            const commAmount = Math.round((payment.amount || 0) * commissionRate * 100) / 100;
+            if (commAmount > 0) {
+                const commTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
+                workBatch.set(commTransactionRef, {
+                    date: new Date().toISOString(),
+                    type: 'out',
+                    amount: commAmount,
+                    concept: `Comisión Terminal (${payment.method}) - Venta POS #${saleId.slice(-6)}`,
+                    userId: currentUser.id,
+                    userName: currentUser.name,
+                    relatedType: 'Venta',
+                    relatedId: saleId,
+                    paymentMethod: payment.method,
+                });
+            }
         }
     }
     

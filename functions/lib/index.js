@@ -1,13 +1,4 @@
 "use strict";
-// functions/src/index.ts
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -41,39 +32,78 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.scheduledCleanup = exports.runDataUnification = void 0;
+exports.generateDailyRentalCharges = void 0;
 const scheduler_1 = require("firebase-functions/v2/scheduler");
-const logger = __importStar(require("firebase-functions/logger"));
 const admin = __importStar(require("firebase-admin"));
-// Initialize Firebase Admin SDK - THIS SHOULD BE DONE ONLY ONCE
-if (admin.apps.length === 0) {
-    admin.initializeApp();
-}
-// Import custom functions and scripts AFTER initialization
-const migration_1 = require("./migration");
-Object.defineProperty(exports, "runDataUnification", { enumerable: true, get: function () { return migration_1.runDataUnification; } });
-// This is a sample function from the Firebase Quickstart
-//
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
-// Scheduled function to clean up old data, for example
-exports.scheduledCleanup = (0, scheduler_1.onSchedule)("every 24 hours", async (event) => {
-    logger.info("Running scheduled cleanup job");
-    // Add your cleanup logic here, e.g., deleting old records
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 30); // 30 days ago
-    const oldRecords = await admin
-        .firestore()
-        .collection("someCollection")
-        .where("timestamp", "<", cutoff)
+const logger = __importStar(require("firebase-functions/logger"));
+const date_fns_1 = require("date-fns");
+const date_fns_tz_1 = require("date-fns-tz");
+admin.initializeApp();
+const db = admin.firestore();
+const TZ = 'America/Mexico_City';
+// --- Daily Rental Charges Generation ---
+exports.generateDailyRentalCharges = (0, scheduler_1.onSchedule)({
+    schedule: '0 8 * * *', // 08:00 every day (Mexico City Time)
+    timeZone: TZ,
+}, async () => {
+    logger.info('Starting daily rental charge generation...');
+    const nowInMexico = (0, date_fns_tz_1.toZonedTime)(new Date(), TZ);
+    const startOfTodayInMexico = (0, date_fns_1.startOfDay)(nowInMexico);
+    const endOfTodayInMexico = (0, date_fns_1.endOfDay)(nowInMexico);
+    const startOfTodayUtc = (0, date_fns_tz_1.toZonedTime)(startOfTodayInMexico, TZ);
+    const endOfTodayUtc = (0, date_fns_tz_1.toZonedTime)(endOfTodayInMexico, TZ);
+    const dateKey = (0, date_fns_tz_1.formatInTimeZone)(nowInMexico, TZ, 'yyyy-MM-dd');
+    const activeDriversSnap = await db
+        .collection('drivers')
+        .where('isArchived', '==', false)
+        .where('assignedVehicleId', '!=', null)
         .get();
-    const batch = admin.firestore().batch();
-    oldRecords.forEach((doc) => {
-        batch.delete(doc.ref);
+    if (activeDriversSnap.empty) {
+        logger.info('No active drivers with assigned vehicles found.');
+        return;
+    }
+    const ops = activeDriversSnap.docs.map(async (driverDoc) => {
+        const driver = driverDoc.data();
+        const vehicleId = driver.assignedVehicleId;
+        if (!vehicleId)
+            return;
+        const vehicleDoc = await db.collection('vehicles').doc(vehicleId).get();
+        const vehicle = vehicleDoc.data();
+        const dailyRentalCost = vehicle?.dailyRentalCost;
+        if (!vehicleDoc.exists || !dailyRentalCost) {
+            logger.warn(`Vehicle ${vehicleId} for driver ${driver.name} not found or has no daily rental cost.`);
+            return;
+        }
+        const chargeId = `${driverDoc.id}_${dateKey}`;
+        const chargeRef = db.collection('dailyRentalCharges').doc(chargeId);
+        try {
+            await chargeRef.create({
+                driverId: driverDoc.id,
+                vehicleId,
+                amount: dailyRentalCost,
+                vehicleLicensePlate: vehicle?.licensePlate || '',
+                date: admin.firestore.Timestamp.fromDate(startOfTodayUtc),
+                dateKey,
+                dayStartUtc: admin.firestore.Timestamp.fromDate(startOfTodayUtc),
+                dayEndUtc: admin.firestore.Timestamp.fromDate(endOfTodayUtc),
+            });
+            logger.info(`Created daily charge for ${driver.name} (${dateKey}).`);
+        }
+        catch (err) {
+            if (err?.code === 6 || err?.code === 'ALREADY_EXISTS') {
+                logger.info(`Charge already exists for ${driver.name} (${dateKey}).`);
+            }
+            else {
+                logger.error(`Failed to create charge for ${driver.name}:`, err);
+            }
+        }
     });
-    await batch.commit();
-    logger.log("Cleanup finished.");
+    await Promise.all(ops);
+    logger.info('Daily rental charge generation finished successfully.');
 });
+// --- Dashboard Stats ---
+__exportStar(require("./dashboard"), exports);

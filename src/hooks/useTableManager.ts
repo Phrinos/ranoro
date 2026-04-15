@@ -19,6 +19,7 @@ interface UseTableManagerOptions<T> {
   dateFilterKey: keyof T | string | FilterFn<T>;
   itemsPerPage?: number;
   initialDateRange?: DateRange;
+  minSearchLength?: number;
 }
 
 const getNestedValue = (obj: any, path: string) =>
@@ -38,6 +39,7 @@ export function useTableManager<T extends Record<string, any>>({
   dateFilterKey,
   itemsPerPage = 20,
   initialDateRange,
+  minSearchLength = 0,
 }: UseTableManagerOptions<T>) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortOption, setSortOption] = useState<string>(initialSortOption);
@@ -47,10 +49,11 @@ export function useTableManager<T extends Record<string, any>>({
 
   const fullFilteredData = useMemo(() => {
     let data = [...initialData];
-    const hasSearchTerm = searchTerm.trim() !== '';
 
-    // 1. Apply search filter first
-    if (hasSearchTerm) {
+    // 1. Apply search filter first (only when minSearchLength threshold is met)
+    const activeSearch = searchTerm.trim().length >= Math.max(1, minSearchLength);
+
+    if (activeSearch) {
       const q = searchTerm.toLowerCase();
       data = data.filter(item =>
         searchKeys.some(key => {
@@ -67,8 +70,8 @@ export function useTableManager<T extends Record<string, any>>({
       );
     }
 
-    // 2. Apply date range filter ONLY if there is no search term
-    if (!hasSearchTerm && dateFilterKey && dateRange?.from) {
+    // 2. Apply date range filter ONLY if there is no active search
+    if (!activeSearch && dateFilterKey && dateRange?.from) {
       const from = startOfDay(dateRange.from);
       const to = dateRange.to ? endOfDay(dateRange.to) : endOfDay(from);
       data = data.filter(item => {
@@ -148,7 +151,7 @@ export function useTableManager<T extends Record<string, any>>({
     }
 
     return data;
-  }, [initialData, searchTerm, sortOption, dateRange, otherFilters, searchKeys, dateFilterKey]);
+  }, [initialData, searchTerm, sortOption, dateRange, otherFilters, searchKeys, dateFilterKey, minSearchLength]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -184,6 +187,8 @@ export function useTableManager<T extends Record<string, any>>({
     goToPreviousPage,
     canGoNext: currentPage < totalPages,
     canGoPrevious: currentPage > 1,
+    minSearchLength,
+    isSearchActive: searchTerm.trim().length >= Math.max(1, minSearchLength),
     paginationSummary: `Mostrando ${paginatedData.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} a ${Math.min(currentPage * itemsPerPage, totalItems)} de ${totalItems} resultados`,
   };
 }

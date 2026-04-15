@@ -6,11 +6,11 @@ import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { calculateSaleProfit, calcEffectiveProfit } from '@/lib/money-helpers';
 import type { User, ServiceRecord, SaleReceipt, InventoryItem, Personnel, MonthlyFixedExpense, Driver, Vehicle, PaymentMethod } from '@/types';
-import { Loader2, Wrench, DollarSign, AlertTriangle, Receipt, Truck } from 'lucide-react'; 
+import { Loader2, Wrench, DollarSign, AlertTriangle, Receipt, Truck, RefreshCw } from 'lucide-react'; 
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { serviceService, saleService, inventoryService, adminService, personnelService, rentalService } from '@/lib/services';
+import { serviceService, inventoryService, personnelService, rentalService, dashboardService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { isValid, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
@@ -54,13 +54,13 @@ export default function DashboardPage() {
   const [userName, setUserName] = useState<string | null>(null);
   const { toast } = useToast();
   
-  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
-  const [allSales, setAllSales] = useState<SaleReceipt[]>([]);
+  const [activeServices, setActiveServices] = useState<ServiceRecord[]>([]);
+  const [completedServicesToday, setCompletedServicesToday] = useState<ServiceRecord[]>([]);
+  const [salesToday, setSalesToday] = useState<SaleReceipt[]>([]);
   const [allInventory, setAllInventory] = useState<InventoryItem[]>([]);
-  const [allPersonnel, setAllPersonnel] = useState<Personnel[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [fixedExpenses, setFixedExpenses] = useState<MonthlyFixedExpense[]>([]);
+  const [dashboardStats, setDashboardStats] = useState<{ financialData: any[], operationalData: any }>({ financialData: [], operationalData: { lineData: [], pieData: [] } });
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -69,12 +69,12 @@ export default function DashboardPage() {
   useEffect(() => {
     setIsLoading(true);
     const unsubs = [
-      serviceService.onServicesUpdate(setAllServices),
-      saleService.onSalesUpdate(setAllSales),
+      serviceService.onActiveServicesUpdate(setActiveServices),
+      dashboardService.onServicesCompletedTodayUpdate(setCompletedServicesToday),
+      dashboardService.onSalesTodayUpdate(setSalesToday),
+      dashboardService.onDashboardStatsUpdate(setDashboardStats),
       inventoryService.onItemsUpdate(setAllInventory),
-      adminService.onUsersUpdate(setAllPersonnel as any),
       personnelService.onDriversUpdate(setDrivers),
-      inventoryService.onFixedExpensesUpdate(setFixedExpenses),
       inventoryService.onVehiclesUpdate((vehicles) => {
         setVehicles(vehicles);
         setIsLoading(false);
@@ -89,24 +89,9 @@ export default function DashboardPage() {
     const dayStart = startOfDay(nowZ);
     const dayEnd = endOfDay(nowZ);
 
-    const salesToday = allSales.filter((s) => {
-      const d = parseDate(s.saleDate || new Date().toDateString());
-      if (!d || !isValid(d)) return false;
-      const dz = toZonedTime(d, TZ);
-      return s.status !== "Cancelado" && isWithinInterval(dz, { start: dayStart, end: dayEnd });
-    });
-
-    const servicesCompletedToday = allServices.filter((s) => {
-      if (s.status !== "Entregado") return false;
-      const d = getDeliveredAt(s);
-      if (!d || !isValid(d)) return false;
-      const dz = toZonedTime(d, TZ);
-      return isWithinInterval(dz, { start: dayStart, end: dayEnd });
-    });
-
     const revenueFromSales = salesToday.reduce((sum, s) => sum + (Number(s.totalAmount) || 0), 0);
 
-    const revenueFromServices = servicesCompletedToday.reduce((sum, s) => {
+    const revenueFromServices = completedServicesToday.reduce((sum, s) => {
       const tc = Number(s.totalCost);
       const value =
         Number.isFinite(tc) && tc > 0 ? tc : sumPaymentsBetween(s, dayStart, dayEnd);
@@ -118,13 +103,13 @@ export default function DashboardPage() {
       0
     );
 
-    const profitFromServices = servicesCompletedToday.reduce(
+    const profitFromServices = completedServicesToday.reduce(
       (sum, s) => sum + calcEffectiveProfit(s, allInventory),
       0
     );
 
-    const repairingServices = allServices.filter((s) => s.status === "En Taller");
-    const scheduledTodayServices = allServices.filter((s) => {
+    const repairingServices = activeServices.filter((s) => s.status === "En Taller");
+    const scheduledTodayServices = activeServices.filter((s) => {
       if (s.status !== "Agendado") return false;
       const d = parseDate(s.serviceDate || new Date().toDateString());
       if (!d || !isValid(d)) return false;
@@ -135,10 +120,10 @@ export default function DashboardPage() {
     return {
       dailyRevenue: revenueFromSales + revenueFromServices,
       dailyProfit: profitFromSales + profitFromServices,
-      activeServices: repairingServices.length + scheduledTodayServices.length + servicesCompletedToday.length,
+      activeServices: repairingServices.length + scheduledTodayServices.length + completedServicesToday.length,
       lowStockAlerts: allInventory.filter((i) => !i.isService && (i.quantity || 0) <= (i.lowStockThreshold || 0)).length,
     };
-  }, [allServices, allSales, allInventory]);
+  }, [activeServices, completedServicesToday, salesToday, allInventory]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -193,6 +178,26 @@ export default function DashboardPage() {
                 <Truck className="mr-2 h-4 w-4 text-orange-600" />
                 Pago de Flotilla
               </Button>
+              <Button 
+                variant="outline" 
+                className="w-full sm:w-auto bg-white border-purple-500 text-black font-bold hover:bg-purple-50" 
+                onClick={async () => {
+                   try {
+                     setIsLoading(true);
+                     toast({ title: "Generando Estadísticas...", description: "Por favor espera unos segundos." });
+                     await dashboardService.forceGenerateDashboardStats();
+                     toast({ title: "¡Éxito!", description: "Las estadísticas han sido calculadas." });
+                   } catch (e: any) {
+                     console.error("Error al generar estadísticas:", e);
+                     toast({ title: "Error", description: e.message || "Fallo en el servidor", variant: "destructive" });
+                   } finally {
+                     setIsLoading(false);
+                   }
+                }}
+              >
+                <RefreshCw className="mr-2 h-4 w-4 text-purple-600" />
+                Actualizar Gráficas
+              </Button>
             </div>
           }
         />
@@ -237,11 +242,8 @@ export default function DashboardPage() {
           </div>
         ) : (
           <DashboardCharts
-            services={allServices}
-            sales={allSales}
-            inventory={allInventory}
-            fixedExpenses={fixedExpenses}
-            personnel={allPersonnel as any}
+            financialData={dashboardStats?.financialData || []}
+            operationalData={dashboardStats?.operationalData || { lineData: [], pieData: [] }}
           />
         )}
 

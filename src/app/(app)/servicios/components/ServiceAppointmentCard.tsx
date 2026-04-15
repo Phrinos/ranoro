@@ -10,12 +10,25 @@ import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
 import { formatCurrency, getStatusInfo, getPaymentMethodVariant, cn } from '@/lib/utils';
-import { User as UserIcon, Clock, Wrench, Edit, Printer, Trash2, Phone, Wallet, CreditCard, Landmark, TrendingUp } from 'lucide-react';
+import {
+  User as UserIcon,
+  Phone,
+  Wrench,
+  Edit,
+  Printer,
+  Wallet,
+  CreditCard,
+  Landmark,
+  TrendingUp,
+  CheckCircle2,
+  Clock,
+  Tag,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { calcEffectiveProfit } from '@/lib/money-helpers';
 import { Icon } from '@iconify/react';
+import { usePermissions } from "@/hooks/usePermissions";
+import { calcEffectiveProfit } from '@/lib/money-helpers';
 
 export type ServiceAppointmentCardProps = {
   service: ServiceRecord;
@@ -32,17 +45,6 @@ export type ServiceAppointmentCardProps = {
 
 const noop = () => {};
 
-const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
-  "Efectivo": Wallet,
-  "Tarjeta": CreditCard,
-  "Tarjeta MSI": CreditCard,
-  "Transferencia": Landmark,
-  "Transferencia/Contadora": Landmark,
-  "Efectivo+Transferencia": Wallet,
-  "Tarjeta+Transferencia": CreditCard,
-  "Crédito": CreditCard,
-};
-
 export function ServiceAppointmentCard({
   service,
   vehicle,
@@ -55,12 +57,12 @@ export function ServiceAppointmentCard({
   onConfirm,
   onShowTicket,
 }: ServiceAppointmentCardProps) {
-  const { toast } = useToast();
+  useToast();
+  const userPermissions = usePermissions();
   const { color, icon: StatusIcon, label } = getStatusInfo(service.status as any, service.subStatus as ServiceSubStatus);
 
   const technician = useMemo(() => personnel.find(u => u.id === service.technicianId), [personnel, service.technicianId]);
-  const advisor = useMemo(() => personnel.find(u => u.id === service.serviceAdvisorId), [personnel, service.serviceAdvisorId]);
-  
+
   const displayDate = service.appointmentDateTime || service.receptionDateTime || service.deliveryDateTime || service.serviceDate;
   const parsedDate = displayDate ? parseDate(displayDate) : null;
 
@@ -72,96 +74,187 @@ export function ServiceAppointmentCard({
     return { totalCost: total, serviceProfit };
   }, [service]);
 
-  const getServiceDescriptionText = (service: ServiceRecord) => {
-    if (service.serviceItems && service.serviceItems.length > 0) {
-      return service.serviceItems.map(item => item.name).join(', ');
-    }
-    return service.description || 'Servicio sin descripción';
-  };
-  
-  const getPrimaryPaymentMethod = (): Payment | undefined => {
+  // Unique service types across all items
+  const serviceTypeLabels = useMemo(() => {
+    const types = new Set<string>();
+    (service.serviceItems ?? []).forEach(item => {
+      if ((item as any).serviceType) types.add((item as any).serviceType);
+    });
+    return Array.from(types);
+  }, [service.serviceItems]);
+
+  // Payment info
+  const primaryPayment: Payment | undefined = useMemo(() => {
     if (service.payments && service.payments.length > 0) {
       if (service.payments.length === 1) return service.payments[0];
-      return service.payments.reduce((prev, current) => ((prev.amount ?? 0) > (current.amount ?? 0)) ? prev : current);
+      return service.payments.reduce((prev, cur) => (prev.amount ?? 0) > (cur.amount ?? 0) ? prev : cur);
     }
     if ((service as any).paymentMethod) {
-      return { method: (service as any).paymentMethod as any, amount: service.totalCost || 0 };
+      return { method: (service as any).paymentMethod as PaymentMethod, amount: calculatedTotals.totalCost };
     }
     return undefined;
-  };
+  }, [service.payments, service, calculatedTotals.totalCost]);
 
-  const primaryPayment = getPrimaryPaymentMethod();
+  const isCobrado = service.status === 'Entregado';
   const handleShowTicket = onShowTicket ?? noop;
 
+  const paymentIcon: Record<string, React.ElementType> = {
+    'Efectivo': Wallet,
+    'Tarjeta': CreditCard,
+    'Tarjeta 3 MSI': CreditCard,
+    'Tarjeta 6 MSI': CreditCard,
+    'Transferencia': Landmark,
+    'Transferencia/Contadora': Landmark,
+  };
+
   return (
-    <Card className={cn("shadow-sm overflow-hidden", 
+    <Card className={cn(
+      "shadow-sm overflow-hidden border",
       service.status === 'Cancelado' ? "bg-muted/60 opacity-80" : "bg-card"
     )}>
       <CardContent className="p-0">
-        <div className="flex flex-col md:flex-row text-sm">
-          {/* Fecha y Folio */}
-          <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-40 flex-shrink-0 bg-muted/30 border-b md:border-b-0 md:border-r">
-            <p className="text-muted-foreground text-xs">{parsedDate && isValid(parsedDate) ? format(parsedDate, "HH:mm 'hrs'", { locale: es }) : 'N/A'}</p>
-            <p className="font-bold text-lg text-foreground">{parsedDate && isValid(parsedDate) ? format(parsedDate, "dd MMM yyyy", { locale: es }) : "N/A"}</p>
-            <p className="text-muted-foreground text-xs mt-1">#{(service as any).folio || service.id.slice(-6)}</p>
-          </div>
+        <div className="flex flex-col md:flex-row text-sm divide-y md:divide-y-0 md:divide-x divide-border">
 
-          {/* Info Cliente y Vehículo */}
-          <div className="p-4 flex flex-col justify-center flex-grow space-y-2 border-b md:border-b-0 md:border-r">
-            <div className="flex items-center gap-2 text-muted-foreground text-xs">
-              <UserIcon className="h-3 w-3" />
-              <span className="font-medium">{vehicle?.ownerName || service.customerName || 'Cliente no registrado'}</span>
-            </div>
-            <p className="font-bold text-base leading-tight">
-              {vehicle ? `${vehicle.licensePlate} — ${vehicle.make} ${vehicle.model}` : service.vehicleIdentifier}
+          {/* ── BLOQUE 1: Fecha / Hora / Folio ────────────────────── */}
+          <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-[7.5rem] flex-shrink-0 bg-muted/20">
+            <p className="text-muted-foreground text-[11px] font-medium uppercase tracking-wider">
+              {parsedDate && isValid(parsedDate) ? format(parsedDate, "HH:mm 'hrs'", { locale: es }) : '—'}
             </p>
-            <p className="text-muted-foreground text-xs line-clamp-1" title={getServiceDescriptionText(service)}>
-              {getServiceDescriptionText(service)}
+            <p className="font-bold text-lg text-foreground leading-tight mt-0.5">
+              {parsedDate && isValid(parsedDate) ? format(parsedDate, "dd MMM", { locale: es }) : '—'}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {parsedDate && isValid(parsedDate) ? format(parsedDate, "yyyy") : ''}
+            </p>
+            <p className="text-[10px] text-muted-foreground/70 mt-1 font-mono">
+              #{(service as any).folio || service.id.slice(-6)}
             </p>
           </div>
 
-          {/* Finanzas */}
-          <div className="p-4 flex flex-col items-center md:items-end justify-center text-center md:text-right w-full md:w-44 flex-shrink-0 space-y-1 border-b md:border-b-0 md:border-r">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Costo Cliente</p>
-              <p className="font-bold text-xl text-primary">{formatCurrency(calculatedTotals.totalCost)}</p>
+          {/* ── BLOQUE 2: Cliente / Vehículo ──────────────────────── */}
+          <div className="p-4 flex flex-col justify-center flex-[2] min-w-0 space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-base text-foreground leading-tight truncate">
+                {vehicle?.ownerName || service.customerName || 'Cliente no registrado'}
+              </span>
+              {service.customerPhone && (
+                <span className="text-xs text-muted-foreground flex items-center gap-0.5 shrink-0">
+                  <Phone className="h-3 w-3" />
+                  {service.customerPhone}
+                </span>
+              )}
             </div>
-            <div>
-              <p className="font-semibold text-xs text-green-600 flex items-center gap-1 justify-end">
-                <TrendingUp className="h-4 w-4" /> {formatCurrency(calculatedTotals.serviceProfit)}
+            <p className="font-bold text-xl text-foreground leading-tight tracking-tight">
+              {vehicle
+                ? `${vehicle.licensePlate} — ${vehicle.make} ${vehicle.model}${vehicle.year ? ` ${vehicle.year}` : ''}`
+                : service.vehicleIdentifier || '—'}
+            </p>
+            {service.notes && (
+              <p className="text-[11px] text-muted-foreground line-clamp-1">{service.notes}</p>
+            )}
+          </div>
+
+          {/* ── BLOQUE 3: Servicios / Estatus / Categoría / Técnico ─ */}
+          <div className="p-4 flex flex-col justify-center flex-1 min-w-0 space-y-2">
+            {/* Service items chips */}
+            {service.serviceItems && service.serviceItems.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {service.serviceItems.slice(0, 3).map((item, i) => (
+                  <span
+                    key={i}
+                    className="inline-block text-[10px] bg-muted px-2 py-0.5 rounded-full text-foreground/80 font-medium border border-border/50 truncate max-w-[140px]"
+                    title={item.name}
+                  >
+                    {item.name}
+                  </span>
+                ))}
+                {service.serviceItems.length > 3 && (
+                  <span className="inline-block text-[10px] bg-muted px-2 py-0.5 rounded-full text-muted-foreground border border-border/50">
+                    +{service.serviceItems.length - 3} más
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Status badge */}
+            <Badge variant={color as any} className="w-fit text-[11px]">
+              <Icon icon={typeof StatusIcon === 'string' ? StatusIcon : "mdi:information"} className="mr-1 h-3.5 w-3.5" />
+              {label}
+            </Badge>
+
+            {/* Service type categories */}
+            {serviceTypeLabels.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {serviceTypeLabels.map((type, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 text-[10px] text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-full font-medium">
+                    <Tag className="h-2.5 w-2.5" />
+                    {type}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Technician */}
+            {(technician || service.technicianName) ? (
+              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                <Wrench className="h-3 w-3 shrink-0" />
+                <span className="font-medium truncate">{technician?.name || service.technicianName}</span>
               </p>
+            ) : (
+              <p className="text-[11px] text-orange-500/90 flex items-center gap-1">
+                <Wrench className="h-3 w-3 shrink-0" />
+                <span>Sin técnico asignado</span>
+              </p>
+            )}
+          </div>
+
+          {/* ── BLOQUE 4: Costo / Ganancia / Pago ─────────────────── */}
+          <div className="p-4 flex flex-col justify-center items-end text-right w-full md:w-40 flex-shrink-0 space-y-1.5">
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total cliente</p>
+              <p className="font-bold text-2xl text-primary leading-tight">{formatCurrency(calculatedTotals.totalCost)}</p>
             </div>
+
+            <p className="text-xs text-green-600 flex items-center gap-1 justify-end font-semibold">
+              <TrendingUp className="h-3.5 w-3.5" />
+              {formatCurrency(calculatedTotals.serviceProfit)}
+            </p>
+
+            {/* Cobrado / Por cobrar */}
+            {isCobrado ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full">
+                <CheckCircle2 className="h-3 w-3" /> Cobrado
+              </span>
+            ) : service.status !== 'Cancelado' ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">
+                <Clock className="h-3 w-3" /> Por cobrar
+              </span>
+            ) : null}
+
+            {/* Payment method */}
             {primaryPayment && (
-              <Badge variant={getPaymentMethodVariant(primaryPayment.method)} className="mt-1">
+              <Badge variant={getPaymentMethodVariant(primaryPayment.method)} className="text-[10px]">
+                {React.createElement(paymentIcon[primaryPayment.method] ?? Wallet, { className: 'h-3 w-3 mr-1' })}
                 {primaryPayment.method}
               </Badge>
             )}
           </div>
 
-          {/* Estatus y Acciones */}
-          <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-48 flex-shrink-0 bg-card space-y-2">
-             <div className="w-full">
-                <Badge variant={color as any} className="w-full justify-center">
-                  <Icon icon={typeof StatusIcon === 'string' ? StatusIcon : "mdi:information"} className="mr-1.5 h-4 w-4" />
-                  {label}
-                </Badge>
-            </div>
-            
-             <div className="flex justify-center items-center gap-1 flex-wrap pt-2">
-                <Button variant="ghost" size="icon" onClick={onView} title="Ver Detalles"><Icon icon="mdi:eye" className="h-4 w-4"/></Button>
-                <Button variant="ghost" size="icon" onClick={onEdit} title="Editar"><Edit className="h-4 w-4" /></Button>
-                <Button variant="ghost" size="icon" title="Ticket" onClick={handleShowTicket}><Printer className="h-4 w-4" /></Button>
-                {onDelete && (
-                    <ConfirmDialog
-                        triggerButton={<Button variant="ghost" size="icon" className="text-destructive" title="Eliminar"><Trash2 className="h-4 w-4"/></Button>}
-                        title="¿Eliminar Registro?"
-                        description="Esta acción eliminará el registro permanentemente."
-                        onConfirm={onDelete}
-                        confirmText="Sí, Eliminar"
-                    />
-                )}
-            </div>
+          {/* ── BLOQUE 5: Acciones verticales ─────────────────────── */}
+          <div className="p-3 flex flex-row md:flex-col justify-center items-center gap-1 w-full md:w-14 flex-shrink-0 bg-muted/10">
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onView} title="Ver Detalles">
+              <Icon icon="mdi:eye" className="h-4 w-4" />
+            </Button>
+            {userPermissions.has('services:edit') && (
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onEdit} title="Editar">
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" className="h-9 w-9" title="Imprimir Ticket" onClick={handleShowTicket}>
+              <Printer className="h-4 w-4" />
+            </Button>
           </div>
+
         </div>
       </CardContent>
     </Card>

@@ -123,7 +123,8 @@ service cloud.firestore {
 
     // Punto de Venta
     match /sales/{saleId} {
-      allow read: if hasPermission('pos:view_sales');
+      // Read allowed for any signed-in user so dashboard KPIs can query today's sales
+      allow read: if isSignedIn();
       allow write: if hasPermission('pos:create_sale');
     }
 
@@ -145,6 +146,28 @@ service cloud.firestore {
     match /auditLogs/{logId} {
         allow read: if hasPermission('audits:view');
         allow write: if isSignedIn();
+    }
+
+    // Sistema / Dashboard Stats (escritura solo desde backend con Admin SDK)
+    match /system/{docId} {
+      allow read: if isSignedIn();
+      allow write: if false; // solo se escribe desde Cloud Functions con Admin SDK
+    }
+
+    // WhatsApp conversaciones (lectura para notificaciones)
+    match /whatsapp-conversations/{id} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // Citas (para campana de notificaciones)
+    match /appointments/{id} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+    match /spaAppointments/{id} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
     }
 
     // Denegar por defecto

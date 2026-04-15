@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHeader, TableRow, TableHead } from '@/components/ui/table';
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { formatCurrency, cn } from "@/lib/utils";
 import { format, isValid, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote, Download, Filter, Landmark, Edit } from 'lucide-react';
+import { Wallet, ArrowUpRight, ArrowDownRight, Search, PlusCircle, DollarSign, Receipt, Wrench, ShoppingCart, CalendarIcon, Info, Trash2, Tag, CreditCard, User as UserIcon, StickyNote, Download, Filter, Landmark, Edit, Settings2 } from 'lucide-react';
 import { parseDate } from '@/lib/forms';
 import { DatePickerWithRange } from '@/components/ui/date-picker-with-range';
 import { useTableManager } from '@/hooks/useTableManager';
@@ -39,7 +39,7 @@ const transactionSchema = z.object({
   concept: z.string().min(3, "El concepto debe tener al menos 3 caracteres."),
   amount: z.coerce.number().min(0.01, "El monto debe ser mayor a 0."),
   date: z.date(),
-  paymentMethod: z.enum(["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Transferencia/Contadora"] as const),
+  paymentMethod: z.enum(["Efectivo", "Tarjeta", "Tarjeta 3 MSI", "Tarjeta 6 MSI", "Transferencia", "Transferencia/Contadora"] as const),
 });
 
 type TransactionFormValues = z.infer<typeof transactionSchema>;
@@ -49,6 +49,7 @@ interface DetallesReporteProps {
   sales: SaleReceipt[];
   cashTransactions: CashDrawerTransaction[];
   users: User[];
+  purchases: any[];
 }
 
 type ReportRow = {
@@ -76,7 +77,8 @@ const metodoOptions = [
   { value: 'all', label: 'Todos los Métodos' },
   { value: 'Efectivo', label: 'Efectivo' },
   { value: 'Tarjeta', label: 'Tarjeta' },
-  { value: 'Tarjeta MSI', label: 'Tarjeta MSI' },
+  { value: 'Tarjeta 3 MSI', label: 'Tarjeta 3 MSI' },
+  { value: 'Tarjeta 6 MSI', label: 'Tarjeta 6 MSI' },
   { value: 'Transferencia', label: 'Transferencia' },
   { value: 'Transferencia/Contadora', label: 'Transferencia/Contadora' },
 ] as const;
@@ -84,12 +86,13 @@ const metodoOptions = [
 const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   "Efectivo": Wallet,
   "Tarjeta": CreditCard,
-  "Tarjeta MSI": CreditCard,
+  "Tarjeta 3 MSI": CreditCard,
+  "Tarjeta 6 MSI": CreditCard,
   "Transferencia": Landmark,
   "Transferencia/Contadora": Landmark,
 };
 
-export default function DetallesReporteContent({ services, sales, cashTransactions, users }: DetallesReporteProps) {
+export default function DetallesReporteContent({ services, sales, cashTransactions, users, purchases }: DetallesReporteProps) {
   const { toast } = useToast();
   const router = useRouter();
   const permissions = usePermissions();
@@ -110,6 +113,13 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       date: new Date(),
       paymentMethod: "Efectivo"
     },
+  });
+
+  const [isBalancesDialogOpen, setIsBalancesDialogOpen] = useState(false);
+  const [currentBalances, setCurrentBalances] = useState<any>(null);
+
+  const formBalances = useForm({
+    defaultValues: { cashTotal: 0, cardTotal: 0, transferTotal: 0 }
   });
 
   const mergedMovements = useMemo(() => {
@@ -164,8 +174,8 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
     });
 
     cashTransactions.forEach(t => {
-      // Omitir operaciones del taller ya contabilizadas (Servicios/Ventas)
-      if (t.relatedType === 'Servicio' || t.relatedType === 'Venta') return;
+      // Omitir operaciones del taller ya contabilizadas (Servicios/Ventas/Compras)
+      if (t.relatedType === 'Servicio' || t.relatedType === 'Venta' || t.relatedType === 'Compra') return;
       
       // EXCLUIR MOVIMIENTOS DE FLOTILLA (Se ven en /flotillav2?tab=detalles)
       if (t.relatedType === 'Flotilla' || t.relatedType === 'RetiroSocio' || t.relatedType === 'GastoVehiculo' || t.relatedType === 'RetiroSocio') return;
@@ -174,7 +184,6 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       const isIncome = t.type === 'in' || t.type === 'Entrada';
       
       let source: ReportRow['source'] = 'Manual';
-      if (t.relatedType === 'Compra') source = 'Compra';
 
       rows.push({
         id: `ledger-${t.id}`,
@@ -191,8 +200,30 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       });
     });
 
+    purchases.forEach(p => {
+      if (p.status === 'Cancelado') return;
+      const d = parseDate(p.invoiceDate);
+      const amount = Number(p.invoiceTotal) || 0;
+      if (amount <= 0) return;
+
+      rows.push({
+        id: `purchase-${p.id}`,
+        realId: p.id,
+        date: d,
+        type: 'Egreso',
+        source: 'Compra',
+        concept: `Compra Proveedor: ${p.supplierName} (Factura: ${p.invoiceId})`,
+        method: p.paymentMethod || 'Efectivo',
+        amount: amount,
+        clientUser: p.supplierName || 'Proveedor',
+        note: '',
+        registeredBy: p.createdBy?.userName || 'Sistema',
+        items: p.items,
+      });
+    });
+
     return rows;
-  }, [services, sales, cashTransactions]);
+  }, [services, sales, cashTransactions, purchases]);
 
   const { fullFilteredData, ...tableManager } = useTableManager<ReportRow>({
     initialData: mergedMovements,
@@ -203,11 +234,59 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
     itemsPerPage: 10000,
   });
 
+  const selectedMonthId = useMemo(() => {
+    if (tableManager.dateRange?.from) {
+      return format(tableManager.dateRange.from, 'yyyy-MM');
+    }
+    return format(new Date(), 'yyyy-MM');
+  }, [tableManager.dateRange]);
+
+  useEffect(() => {
+    const fetchBalances = async () => {
+      try {
+        const data = await cashService.getMonthlyBalances(selectedMonthId);
+        setCurrentBalances(data);
+        if (data) {
+          formBalances.reset({
+            cashTotal: data.cashTotal || 0,
+            cardTotal: data.cardTotal || 0,
+            transferTotal: data.transferTotal || 0,
+          });
+        } else {
+          formBalances.reset({ cashTotal: 0, cardTotal: 0, transferTotal: 0 });
+        }
+      } catch (e) {
+        console.error("Error fetching balances", e);
+      }
+    };
+    fetchBalances();
+  }, [selectedMonthId, formBalances]);
+
+  const handleSaveBalances = async (values: any) => {
+    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+    const currentUser = authUserString ? JSON.parse(authUserString) : null;
+    try {
+      await cashService.setMonthlyBalances(selectedMonthId, {
+        cashTotal: Number(values.cashTotal) || 0,
+        cardTotal: Number(values.cardTotal) || 0,
+        transferTotal: Number(values.transferTotal) || 0,
+        updatedBy: currentUser?.name || 'Sistema',
+      });
+      toast({ title: "Saldos iniciales actualizados correctamente" });
+      setIsBalancesDialogOpen(false);
+      const newD = { ...values, updatedBy: currentUser?.name || 'Sistema' };
+      setCurrentBalances(newD);
+    } catch(e) {
+      toast({ title: "Error", description: "No se pudo guardar", variant: "destructive" });
+    }
+  };
+
   const kpis = useMemo(() => {
     const data = fullFilteredData;
     
     const ingresoTotal = data.filter(r => r.type === 'Ingreso').reduce((s, r) => s + r.amount, 0);
     const egresoTotal = data.filter(r => r.type === 'Egreso').reduce((s, r) => s + r.amount, 0);
+    const comprasTotal = data.filter(r => r.source === 'Compra').reduce((s, r) => s + r.amount, 0);
     
     const incomeByMethod: Record<string, number> = {};
     data.filter(r => r.type === 'Ingreso').forEach(r => {
@@ -219,20 +298,37 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
       });
     });
 
+    const expenseByMethod: Record<string, number> = {};
+    data.filter(r => r.type === 'Egreso').forEach(r => {
+      const methods = r.method.split(' / ');
+      const amountPerMethod = r.amount / methods.length;
+      methods.forEach(m => {
+        const cleanM = m.trim();
+        expenseByMethod[cleanM] = (expenseByMethod[cleanM] || 0) + amountPerMethod;
+      });
+    });
+
     const efectivoIngresoPeriodo = incomeByMethod['Efectivo'] || 0;
+    const efectivoEgresoPeriodo = expenseByMethod['Efectivo'] || 0;
       
-    const efectivoEgresoPeriodo = data
-      .filter(r => r.type === 'Egreso' && r.method.toLowerCase().includes('efectivo'))
-      .reduce((s, r) => s + r.amount, 0);
+    const tarjetaIngresoPeriodo = (incomeByMethod['Tarjeta'] || 0) + (incomeByMethod['Tarjeta 3 MSI'] || 0) + (incomeByMethod['Tarjeta 6 MSI'] || 0);
+    const tarjetaEgresoPeriodo = (expenseByMethod['Tarjeta'] || 0) + (expenseByMethod['Tarjeta 3 MSI'] || 0) + (expenseByMethod['Tarjeta 6 MSI'] || 0);
+
+    const transIngresoPeriodo = (incomeByMethod['Transferencia'] || 0) + (incomeByMethod['Transferencia/Contadora'] || 0);
+    const transEgresoPeriodo = (expenseByMethod['Transferencia'] || 0) + (expenseByMethod['Transferencia/Contadora'] || 0);
 
     return {
       ingresoTotal,
       egresoTotal,
+      comprasTotal,
       incomeByMethod,
+      expenseByMethod,
       balanceNeto: ingresoTotal - egresoTotal,
-      efectivoDelPeriodo: efectivoIngresoPeriodo - efectivoEgresoPeriodo
+      efectivoDelPeriodo: (currentBalances?.cashTotal || 0) + efectivoIngresoPeriodo - efectivoEgresoPeriodo,
+      tarjetaDelPeriodo: (currentBalances?.cardTotal || 0) + tarjetaIngresoPeriodo - tarjetaEgresoPeriodo,
+      transferenciaDelPeriodo: (currentBalances?.transferTotal || 0) + transIngresoPeriodo - transEgresoPeriodo
     };
-  }, [fullFilteredData]);
+  }, [fullFilteredData, currentBalances]);
 
   const handleToggleMethod = (method: string) => {
     const next = selectedMethods.includes(method)
@@ -363,8 +459,33 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
           </CardContent>
         </Card>
 
-        {/* Card 2: Flujo Total (Unificado) */}
-        <Card>
+        {/* Card 2: Egresos por Método */}
+        <Card className="lg:col-span-2 border-red-200 bg-red-50/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-xs font-medium uppercase text-muted-foreground">Egresos por Método de Pago</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {Object.entries(kpis.expenseByMethod).map(([method, amount]) => {
+                const IconComp = paymentMethodIcons[method as PaymentMethod] || Wallet;
+                return (
+                  <div key={method} className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground uppercase flex items-center gap-1">
+                      <IconComp className="h-3 w-3" /> {method}
+                    </p>
+                    <p className="text-sm font-bold text-red-700">{formatCurrency(amount)}</p>
+                  </div>
+                )
+              })}
+              {Object.keys(kpis.expenseByMethod).length === 0 && (
+                <p className="text-sm text-muted-foreground col-span-full py-2">Sin egresos en el periodo.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Card 3: Flujo Total (Unificado) */}
+        <Card className="lg:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-xs font-medium uppercase text-muted-foreground">Flujo Operativo Total</CardTitle>
           </CardHeader>
@@ -377,6 +498,10 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
               <span className="text-xs text-muted-foreground">Egresos:</span>
               <span className="text-sm font-bold text-red-600">-{formatCurrency(kpis.egresoTotal)}</span>
             </div>
+            <div className="flex justify-between items-center text-orange-600">
+              <span className="text-xs text-muted-foreground">De lo cual, Compras:</span>
+              <span className="text-sm font-bold text-orange-600">-{formatCurrency(kpis.comprasTotal)}</span>
+            </div>
             <Separator className="my-1" />
             <div className="flex justify-between items-center">
               <span className="text-xs font-semibold">Balance:</span>
@@ -387,17 +512,44 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
           </CardContent>
         </Card>
 
-        {/* Card 3: Liquidez Efectivo */}
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium uppercase text-blue-800">Liquidez Efectivo</CardTitle>
+        {/* Card 4: Saldos del Período */}
+        <Card className="lg:col-span-2 bg-blue-50 border-blue-200">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-xs font-medium uppercase text-blue-800">Saldos del Período</CardTitle>
+            {canManageManual && (
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600 hover:text-blue-800 hover:bg-blue-100" onClick={() => setIsBalancesDialogOpen(true)}>
+                <Settings2 className="h-4 w-4" />
+              </Button>
+            )}
           </CardHeader>
-          <CardContent>
-            <div className={cn("text-2xl font-bold flex items-center gap-2", kpis.efectivoDelPeriodo >= 0 ? "text-blue-700" : "text-destructive")}>
-              <Wallet className="h-5 w-5"/>
-              {formatCurrency(kpis.efectivoDelPeriodo)}
+          <CardContent className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-blue-800/80 flex items-center gap-1">
+                <Wallet className="h-4 w-4"/> Efectivo {currentBalances?.cashTotal ? `(+Base)` : ''}:
+              </span>
+              <span className={cn("text-sm font-bold", kpis.efectivoDelPeriodo >= 0 ? "text-blue-700" : "text-destructive")}>
+                {formatCurrency(kpis.efectivoDelPeriodo)}
+              </span>
             </div>
-            <p className="text-[10px] text-blue-600/70 mt-1 italic">Ingresos - Egresos (solo efectivo)</p>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-blue-800/80 flex items-center gap-1">
+                <CreditCard className="h-4 w-4"/> Tarjetas (*) {currentBalances?.cardTotal ? `(+Base)` : ''}:
+              </span>
+              <span className={cn("text-sm font-bold", kpis.tarjetaDelPeriodo >= 0 ? "text-blue-700" : "text-destructive")}>
+                {formatCurrency(kpis.tarjetaDelPeriodo)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-blue-800/80 flex items-center gap-1">
+                <Landmark className="h-4 w-4"/> Transferencias {currentBalances?.transferTotal ? `(+Base)` : ''}:
+              </span>
+              <span className={cn("text-sm font-bold", kpis.transferenciaDelPeriodo >= 0 ? "text-blue-700" : "text-destructive")}>
+                {formatCurrency(kpis.transferenciaDelPeriodo)}
+              </span>
+            </div>
+            <p className="text-[10px] text-blue-600/70 mt-2 italic border-t border-blue-200/50 pt-2">
+              (*) Incluye Tarjetas y MSI. Mostrando Ingresos - Egresos desglosado.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -628,7 +780,8 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                         <SelectContent>
                           <SelectItem value="Efectivo">Efectivo</SelectItem>
                           <SelectItem value="Tarjeta">Tarjeta</SelectItem>
-                          <SelectItem value="Tarjeta MSI">Tarjeta MSI</SelectItem>
+                          <SelectItem value="Tarjeta 3 MSI">Tarjeta 3 MSI</SelectItem>
+                          <SelectItem value="Tarjeta 6 MSI">Tarjeta 6 MSI</SelectItem>
                           <SelectItem value="Transferencia">Transferencia</SelectItem>
                           <SelectItem value="Transferencia/Contadora">Transferencia/Contadora</SelectItem>
                         </SelectContent>
@@ -798,6 +951,50 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
             </div>
             <Button variant="outline" className="w-full sm:w-auto" onClick={() => setSelectedMovement(null)}>Cerrar</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* DIALOG SALDOS INICIALES */}
+      <Dialog open={isBalancesDialogOpen} onOpenChange={setIsBalancesDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Saldos de Inicio para {selectedMonthId}</DialogTitle>
+            <DialogDescription>
+              Define la cantidad de dinero exacta en caja y banco al iniciar este mes, para mostrar cálculos reales.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...formBalances}>
+            <form onSubmit={formBalances.handleSubmit(handleSaveBalances)} className="space-y-4">
+              <FormField name="cashTotal" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Efectivo Físico</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" {...field} />
+                  </FormControl>
+                </FormItem>
+              )} />
+              <FormField name="cardTotal" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>En Tarjetas / Terminal</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" {...field} />
+                  </FormControl>
+                </FormItem>
+              )} />
+              <FormField name="transferTotal" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>En Banco (Transferencias)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" {...field} />
+                  </FormControl>
+                </FormItem>
+              )} />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsBalancesDialogOpen(false)}>Cancelar</Button>
+                <Button type="submit">Guardar Saldos</Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>

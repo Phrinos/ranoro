@@ -17,4 +17,4 @@ export * from './sale.service';
 export * from './service.service';
 export * from './operations.service';
 
-    
+    export * from './dashboard.service';

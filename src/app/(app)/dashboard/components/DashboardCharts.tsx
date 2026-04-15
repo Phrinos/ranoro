@@ -14,171 +14,7 @@ import { es } from 'date-fns/locale';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { parseDate } from '@/lib/forms';
 
-// --- Data Processing Functions ---
-const processFinancialChartData = (
-    services: ServiceRecord[], 
-    sales: SaleReceipt[], 
-    inventory: InventoryItem[], 
-    fixedExpenses: MonthlyFixedExpense[], 
-    personnel: Personnel[]
-) => {
-    const dataByMonth: { 
-        [key: string]: { 
-            name: string;
-            ingresos: number;
-            costoInsumos: number;
-            gananciaBruta: number;
-            gastosFijos: number;
-            utilidadNeta: number;
-        } 
-    } = {};
-    const now = new Date();
 
-    for (let i = 2; i >= 0; i--) {
-        const date = subMonths(now, i);
-        const monthKey = format(date, 'yyyy-MM');
-        const monthName = format(date, 'MMM yy', { locale: es });
-        dataByMonth[monthKey] = { name: monthName, ingresos: 0, costoInsumos: 0, gananciaBruta: 0, gastosFijos: 0, utilidadNeta: 0 };
-    }
-    
-    const inventoryMap = new Map(inventory.map(i => [i.id, i]));
-
-    // 1. Procesar servicios completados con la lógica de cálculo correcta
-    services.forEach(service => {
-        if (service.status !== 'Entregado') return;
-
-        const completionDate =
-            parseDate((service as any).deliveryDateTime || '') ??
-            parseDate(service.serviceDate) ??
-            parseDate((service as any).receptionDateTime || '');
-
-        if (completionDate && isValid(completionDate)) {
-            const monthKey = format(completionDate, 'yyyy-MM');
-            if (dataByMonth[monthKey]) {
-                const grossRevenue =
-                    (Array.isArray(service.payments) && service.payments.length > 0
-                        ? service.payments.reduce((s, p) => s + (Number(p.amount) || 0), 0)
-                        : Number(service.totalCost) || 0);
-                
-                const costOfGoods = (service as any).serviceItems?.reduce((totalCost: any, item: any) => {
-                    const itemSuppliesCost = item.suppliesUsed?.reduce((supplySum: any, supply: any) => {
-                        return supplySum + ((supply.unitPrice || 0) * (supply.quantity || 0));
-                    }, 0) || 0;
-                    return totalCost + itemSuppliesCost;
-                }, 0) || 0;
-
-                dataByMonth[monthKey].ingresos += grossRevenue;
-                dataByMonth[monthKey].costoInsumos += costOfGoods;
-            }
-        }
-    });
-
-    // 2. Procesar ventas del POS con la lógica de costo correcta
-    sales.forEach(sale => {
-        if (sale.status === 'Cancelado' || !sale.saleDate) return;
-        const saleDate = parseDate(sale.saleDate);
-        if (saleDate && isValid(saleDate)) {
-            const monthKey = format(saleDate, 'yyyy-MM');
-            if (dataByMonth[monthKey]) {
-                const income = (sale.totalAmount || 0) as number;
-                const costOfGoods = sale.items?.reduce((sum: number, item: any) => {
-                    const inventoryItem = inventoryMap.get(item.inventoryItemId || '');
-                    const itemUnitCost = inventoryItem?.unitPrice ?? 0;
-                    return sum + (itemUnitCost * item.quantity);
-                }, 0) ?? 0;
-                
-                if (income)
-                    dataByMonth[monthKey].ingresos += income;
-                dataByMonth[monthKey].costoInsumos += costOfGoods;
-            }
-        }
-    });
-    
-    const totalMonthlyFixedSalaries = personnel.filter(p => !p.isArchived).reduce((sum, p) => sum + (p.monthlySalary || 0), 0);
-    const totalOtherFixedExpenses = fixedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
-    const totalMonthlyFixedExpenses = totalMonthlyFixedSalaries + totalOtherFixedExpenses;
-
-    // 3. Calcular Ganancia Bruta, Gastos Fijos y Utilidad Neta
-    Object.keys(dataByMonth).forEach(monthKey => {
-        const monthData = dataByMonth[monthKey];
-        monthData.gananciaBruta = monthData.ingresos - monthData.costoInsumos;
-        
-        const [year, month] = monthKey.split('-').map(Number);
-        const monthStartDate = new Date(year, month - 1, 1);
-        
-        if (monthStartDate > now) {
-            monthData.gastosFijos = 0; // Mes futuro, sin gastos aún.
-        } else if (monthStartDate.getFullYear() === now.getFullYear() && monthStartDate.getMonth() === now.getMonth()) {
-            // Mes actual: aplicar prorrata
-            const daysInMonth = getDaysInMonth(monthStartDate);
-            const dayOfMonth = now.getDate();
-            const expenseFactor = dayOfMonth / daysInMonth;
-            monthData.gastosFijos = totalMonthlyFixedExpenses * expenseFactor;
-        } else {
-            // Meses pasados: aplicar el 100% de los gastos fijos
-            monthData.gastosFijos = totalMonthlyFixedExpenses;
-        }
-        
-        monthData.utilidadNeta = monthData.gananciaBruta - monthData.gastosFijos;
-    });
-
-    return Object.values(dataByMonth);
-};
-
-
-const processOperationalChartData = (services: ServiceRecord[], sales: SaleReceipt[]) => {
-    const dataByMonth: { [key: string]: any } = {};
-    const now = new Date();
-    const serviceTypeCounts: { [key: string]: number } = {};
-
-    for (let i = 2; i >= 0; i--) {
-        const date = subMonths(now, i);
-        const monthKey = format(date, 'yyyy-MM');
-        const monthName = format(date, 'MMM yy', { locale: es });
-        dataByMonth[monthKey] = { name: monthName };
-    }
-
-    services.forEach(s => {
-        if (s.status !== 'Entregado') return;
-        const opDate = parseDate((s as any).deliveryDateTime || '') ?? parseDate(s.serviceDate);
-        if (opDate && isValid(opDate)) {
-            const monthKey = format(opDate, 'yyyy-MM');
-            if (dataByMonth[monthKey]) {
-                const type = (s as any).serviceType || 'Servicio General';
-                dataByMonth[monthKey][type] = (dataByMonth[monthKey][type] || 0) + 1;
-                serviceTypeCounts[type] = (serviceTypeCounts[type] || 0) + 1;
-            }
-        }
-    });
-
-    sales.forEach(s => {
-        if (s.status === 'Cancelado' || !s.saleDate) return;
-        const opDate = parseDate(s.saleDate);
-        if (opDate && isValid(opDate)) {
-            const monthKey = format(opDate, 'yyyy-MM');
-            if (dataByMonth[monthKey]) {
-                const type = 'Ventas POS';
-                dataByMonth[monthKey][type] = (dataByMonth[monthKey][type] || 0) + 1;
-                serviceTypeCounts[type] = (serviceTypeCounts[type] || 0) + 1;
-            }
-        }
-    });
-    
-    const allServiceTypes = Object.keys(serviceTypeCounts);
-    Object.values(dataByMonth).forEach(monthData => {
-        allServiceTypes.forEach(type => {
-            if (!monthData[type]) {
-                monthData[type] = 0;
-            }
-        });
-    });
-    
-    const pieData = Object.entries(serviceTypeCounts)
-        .map(([name, value]) => ({ name, value }))
-        .sort((a,b) => b.value - a.value);
-
-    return { lineData: Object.values(dataByMonth), pieData };
-};
 
 const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#00C49F', '#FFBB28', '#FF8042', '#0088FE'];
 
@@ -326,18 +162,13 @@ const ServiceDistributionChart = React.memo(({ data }: { data: any[] }) => {
 ServiceDistributionChart.displayName = "ServiceDistributionChart";
 
 
-// --- Main Component ---
-
-export const DashboardCharts = React.memo(function DashboardCharts({ services, sales, inventory, fixedExpenses, personnel }: {
-    services: ServiceRecord[];
-    sales: SaleReceipt[];
-    inventory: InventoryItem[];
-    fixedExpenses: MonthlyFixedExpense[];
-    personnel: Personnel[];
+export const DashboardCharts = React.memo(function DashboardCharts({ 
+    financialData,
+    operationalData 
+}: {
+    financialData: any[];
+    operationalData: { lineData: any[]; pieData: any[] };
 }) {
-  const financialData = useMemo(() => processFinancialChartData(services, sales, inventory, fixedExpenses, personnel), [services, sales, inventory, fixedExpenses, personnel]);
-  const operationalData = useMemo(() => processOperationalChartData(services, sales), [services, sales]);
-
   return (
     <div className="grid gap-6 grid-cols-1">
       <FinancialChart data={financialData} />

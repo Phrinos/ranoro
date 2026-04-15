@@ -344,7 +344,8 @@ export function RegisterPurchaseDialog({
                               <SelectContent>
                                 <SelectItem value="Efectivo">Efectivo</SelectItem>
                                 <SelectItem value="Tarjeta">Tarjeta</SelectItem>
-                                <SelectItem value="Tarjeta MSI">Tarjeta MSI</SelectItem>
+                                <SelectItem value="Tarjeta 3 MSI">Tarjeta 3 MSI</SelectItem>
+                                <SelectItem value="Tarjeta 6 MSI">Tarjeta 6 MSI</SelectItem>
                                 <SelectItem value="Transferencia">Transferencia</SelectItem>
                                 <SelectItem value="Crédito">Crédito</SelectItem>
                               </SelectContent>

@@ -14,6 +14,7 @@ import {
   type WriteBatch,
   addDoc,
   updateDoc,
+  increment,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { ServiceRecord, Vehicle, InventoryItem, User } from '@/types';
@@ -21,6 +22,7 @@ import { cleanObjectForFirestore, parseDate } from '../forms';
 import { inventoryService } from './inventory.service';
 import { adminService } from './admin.service';
 import { nanoid } from 'nanoid';
+import { getCardCommissionRate } from '../money-helpers';
 
 const toNumber = (v: any): number =>
   typeof v === 'number'
@@ -146,6 +148,40 @@ const onServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() =>
   });
 };
 
+const onActiveServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
+  if (!db) return () => {};
+  // Recovers only the active states to prevent fetching thousands of historical records.
+  // The 'in' operator handles up to 10 equalities.
+  const q = query(
+    collection(db, 'serviceRecords'),
+    where('status', 'in', ['Agendado', 'En Taller', 'Cotizacion']),
+    orderBy('serviceDate', 'desc')
+  );
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ServiceRecord)));
+  });
+};
+
+const onHistoricalServicesUpdate = (
+  startDateISO: string, 
+  endDateISO: string, 
+  callback: (services: ServiceRecord[]) => void
+): (() => void) => {
+  if (!db) return () => {};
+  // Using serviceDate allows us to bypass the need for a composite index on status + date.
+  const q = query(
+    collection(db, 'serviceRecords'),
+    where('serviceDate', '>=', startDateISO),
+    where('serviceDate', '<=', endDateISO),
+    orderBy('serviceDate', 'desc')
+  );
+  return onSnapshot(q, (snapshot) => {
+    // We only care about completed or cancelled workflows in history
+    const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ServiceRecord));
+    callback(data.filter(s => s.status === 'Entregado' || s.status === 'Cancelado'));
+  });
+};
+
 const onServicesUpdatePromise = async (): Promise<ServiceRecord[]> => {
   if (!db) return [];
   const snapshot = await getDocs(query(collection(db, 'serviceRecords')));
@@ -253,20 +289,15 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
     .flatMap((item: any) => item.suppliesUsed || [])
     .filter((supply: any) => !supply.isService && supply.supplyId && supply.quantity > 0);
 
-  if (suppliesToDiscount.length > 0) {
-    const itemRefs = suppliesToDiscount.map((item: any) => doc(db, 'inventory', item.supplyId));
+  // Optimización de concurrencia: Agrupamos por supplyId para que los suministros repetidos no se sobreescriban en el batch.
+  const aggregatedSupplies = suppliesToDiscount.reduce((acc: Record<string, number>, supply: any) => {
+    acc[supply.supplyId] = (acc[supply.supplyId] || 0) + supply.quantity;
+    return acc;
+  }, {});
 
-    // Fetch docs outside the batch write loop if we're not in a transaction
-    if (manageBatch) {
-      const itemDocs = await Promise.all(itemRefs.map((ref) => getDoc(ref)));
-      itemDocs.forEach((itemDoc, index) => {
-        if (itemDoc.exists()) {
-          const currentStock = itemDoc.data().quantity || 0;
-          const newStock = currentStock - suppliesToDiscount[index].quantity;
-          workBatch.update(itemDoc.ref, { quantity: newStock });
-        }
-      });
-    }
+  for (const [supplyId, quantity] of Object.entries(aggregatedSupplies)) {
+    const itemRef = doc(db, 'inventory', supplyId);
+    workBatch.update(itemRef, { quantity: increment(-quantity) });
   }
 
   const cleanedNextServiceInfo = cleanObjectForFirestore(paymentDetails.nextServiceInfo);
@@ -307,6 +338,24 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
         relatedType: 'Servicio',
         relatedId: service.id,
       });
+    }
+    const commissionRate = getCardCommissionRate(payment.method);
+    if (commissionRate > 0) {
+      const commAmount = Math.round((payment.amount || 0) * commissionRate * 100) / 100;
+      if (commAmount > 0) {
+        const commTransactionRef = doc(collection(db, 'cashDrawerTransactions'));
+        workBatch.set(commTransactionRef, {
+          date: deliveryTime,
+          type: 'Salida',
+          amount: commAmount,
+          concept: `Comisión Terminal (${payment.method}) - Servicio #${(service as any).folio || service.id.slice(-6)}`,
+          userId: service.serviceAdvisorId,
+          userName: service.serviceAdvisorName,
+          relatedType: 'Servicio',
+          relatedId: service.id,
+          paymentMethod: payment.method,
+        });
+      }
     }
   }
 
@@ -361,22 +410,22 @@ const cancelService = async (serviceId: string, reason: string): Promise<void> =
   const service = serviceDoc.data() as ServiceRecord;
   const batch = writeBatch(db);
 
-  // Return stock for all used supplies
-  const suppliesToReturn = (service.serviceItems || [])
-    .flatMap((item: any) => item.suppliesUsed || [])
-    .filter((supply: any) => !supply.isService && supply.supplyId && supply.quantity > 0);
+  // IMPORTANTE: Solo devolvemos stock si el servicio *ya* estaba en estado 'Entregado'.
+  // Un servicio en Cotizacion, Agendado, o En Taller NUNCA descontó el stock.
+  if (service.status === 'Entregado') {
+    const suppliesToReturn = (service.serviceItems || [])
+      .flatMap((item: any) => item.suppliesUsed || [])
+      .filter((supply: any) => !supply.isService && supply.supplyId && supply.quantity > 0);
 
-  if (suppliesToReturn.length > 0) {
-    const itemRefs = suppliesToReturn.map((item: any) => doc(db, 'inventory', item.supplyId));
-    const itemDocs = await Promise.all(itemRefs.map((ref) => getDoc(ref)));
+    const aggregatedSupplies = suppliesToReturn.reduce((acc: Record<string, number>, supply: any) => {
+      acc[supply.supplyId] = (acc[supply.supplyId] || 0) + supply.quantity;
+      return acc;
+    }, {});
 
-    itemDocs.forEach((itemDoc, index) => {
-      if (itemDoc.exists()) {
-        const currentStock = itemDoc.data().quantity || 0;
-        const newStock = currentStock + suppliesToReturn[index].quantity;
-        batch.update(itemDoc.ref, { quantity: newStock });
-      }
-    });
+    for (const [supplyId, quantity] of Object.entries(aggregatedSupplies)) {
+      const itemRef = doc(db, 'inventory', supplyId);
+      batch.update(itemRef, { quantity: increment(quantity) });
+    }
   }
 
   // Update service status
@@ -401,6 +450,8 @@ const cancelService = async (serviceId: string, reason: string): Promise<void> =
 
 export const serviceService = {
   onServicesUpdate,
+  onActiveServicesUpdate,
+  onHistoricalServicesUpdate,
   onServicesUpdatePromise,
   onServicesForVehicleUpdate,
   getDocById,

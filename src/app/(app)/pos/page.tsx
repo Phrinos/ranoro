@@ -25,6 +25,7 @@ import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog
 import { TicketContent } from "@/components/ticket-content";
 import { formatCurrency } from "@/lib/utils";
 import html2canvas from "html2canvas";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Tooltip,
   TooltipProvider,
@@ -47,6 +48,7 @@ function PageInner() {
   const searchParams = useSearchParams();
   const defaultTab = searchParams.get("tab") || "resumen";
   const { toast } = useToast();
+  const userPermissions = usePermissions();
 
   const [activeTab, setActiveTab] = useState(defaultTab);
   const [isLoading, setIsLoading] = useState(true);
@@ -94,6 +96,16 @@ function PageInner() {
     return () => unsubs.forEach((u) => u && u());
   }, []);
 
+  const handleReprintTicket = useCallback((sale: SaleReceipt) => {
+    setSaleForReprint(sale);
+    setIsReprintDialogOpen(true);
+  }, []);
+
+  const handleViewSale = useCallback((sale: SaleReceipt) => {
+    setViewingSale(sale);
+    setIsViewSaleDialogOpen(true);
+  }, []);
+
   useEffect(() => {
     const saleIdToShow = searchParams.get("saleId");
     if (saleIdToShow && allSales.length > 0) {
@@ -103,32 +115,22 @@ function PageInner() {
         router.replace("/pos?tab=ventas", { scroll: false });
       }
     }
-  }, [searchParams, allSales, router]);
+  }, [searchParams, allSales, router, handleViewSale]);
 
-  const handleReprintTicket = (sale: SaleReceipt) => {
-    setSaleForReprint(sale);
-    setIsReprintDialogOpen(true);
-  };
-
-  const handleViewSale = (sale: SaleReceipt) => {
-    setViewingSale(sale);
-    setIsViewSaleDialogOpen(true);
-  };
-
-  const handleDeleteSale = async (saleId: string) => {
+  const handleDeleteSale = useCallback(async (saleId: string) => {
     await saleService.deleteSale(saleId, currentUser);
     toast({ title: "Venta Eliminada", description: "La venta ha sido eliminada permanentemente.", variant: "destructive" });
-  };
+  }, [currentUser, toast]);
 
-  const handleCancelSale = async (saleId: string, reason: string) => {
+  const handleCancelSale = useCallback(async (saleId: string, reason: string) => {
     await saleService.cancelSale(saleId, reason, currentUser);
     toast({ title: "Venta Cancelada", description: `La venta #${saleId.slice(-6)} ha sido cancelada.` });
-  };
+  }, [currentUser, toast]);
 
-  const handleEditPayment = (sale: SaleReceipt) => {
+  const handleEditPayment = useCallback((sale: SaleReceipt) => {
     setViewingSale(sale);
     setIsPaymentDialogOpen(true);
-  };
+  }, []);
 
   const handlePaymentUpdate = async (saleId: string, paymentDetails: any) => {
     await saleService.updateSale(saleId, { payments: paymentDetails.payments });
@@ -136,10 +138,17 @@ function PageInner() {
     setIsPaymentDialogOpen(false);
   };
 
-  const handleSendWhatsapp = (record: SaleReceipt | ServiceRecord) => {
-    const text = `Hola, aquí está tu ticket de compra: [enlace]`;
+  const handleSendWhatsapp = useCallback((record: SaleReceipt | ServiceRecord) => {
+    const isSale = 'totalAmount' in record;
+    const folio = record.id?.slice(-6) ?? '';
+    const total = isSale
+      ? formatCurrency((record as SaleReceipt).totalAmount)
+      : formatCurrency((record as ServiceRecord).totalCost ?? 0);
+    const name = (record as any).customerName || 'Cliente';
+    const shopName = workshopInfo?.name || 'nuestro taller';
+    const text = `Hola ${name}, gracias por tu visita a ${shopName}.\nFolio: ${folio}\nTotal: ${total}\n¡Gracias por tu preferencia!`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-  };
+  }, [workshopInfo]);
 
   const handleCopyTicketAsImage = useCallback(
     async (isForSharing: boolean = false) => {
@@ -152,9 +161,14 @@ function PageInner() {
         if (isForSharing) {
           return new File([blob], `ticket_venta_${saleForReprint.id}.png`, { type: "image/png" });
         } else {
-          
-          await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-          toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
+          // Fallback defensivo compatible con Firefox/Safari
+          const _ClipboardItem = (window as any).ClipboardItem ?? (globalThis as any).ClipboardItem;
+          if (_ClipboardItem && (navigator.clipboard as any)?.write) {
+            await (navigator.clipboard as any).write([new _ClipboardItem({ "image/png": blob })]);
+            toast({ title: "Copiado", description: "La imagen del ticket ha sido copiada." });
+          } else {
+            toast({ title: "No disponible", description: "Portapapeles de imágenes no disponible en este navegador." });
+          }
           return null;
         }
       } catch (e) {
@@ -200,13 +214,13 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
     requestAnimationFrame(() => setTimeout(() => window.print(), 100));
   };
 
-  const pageActions = (
+  const pageActions = userPermissions.has('pos:create_sale') ? (
     <Button asChild className="w-full sm:w-auto">
       <Link href="/pos/nuevo">
         <PlusCircle className="mr-2 h-4 w-4" />Nueva Venta
       </Link>
     </Button>
-  );
+  ) : <div />;
 
   const tabs = [
     { value: "resumen", label: "Resumen", content: <InformePosContent allSales={allSales} allServices={allServices} allInventory={allInventory} /> },

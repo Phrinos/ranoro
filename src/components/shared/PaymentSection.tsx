@@ -1,28 +1,26 @@
 // src/components/shared/PaymentSection.tsx
 "use client";
 
-import React, { useEffect, useMemo } from "react";
+import React, { useMemo } from "react";
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Wallet, CreditCard, Landmark, CheckCircle } from "lucide-react";
+import { Wallet, CreditCard, Landmark, CheckCircle, DollarSign, PlusCircle, Trash2 } from "lucide-react";
 import type { Payment, PaymentMethod } from "@/types";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
-import { DollarSign, PlusCircle, Trash2, Minus, Plus } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
-const paymentMethods: PaymentMethod[] = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Transferencia/Contadora"];
+const UI_METHODS = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Transferencia/Contadora", "Crédito"];
+const MSI_OPTIONS = ["3", "6", "9", "12", "18", "24"];
 
-const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
+const paymentMethodIcons: Record<string, React.ElementType> = {
   Efectivo: Wallet,
   Tarjeta: CreditCard,
   "Tarjeta MSI": CreditCard,
   Transferencia: Landmark,
   "Transferencia/Contadora": Landmark,
-  "Efectivo+Transferencia": Wallet,
-  "Tarjeta+Transferencia": CreditCard,
   "Crédito": CreditCard,
 };
 
@@ -35,21 +33,18 @@ interface PaymentSectionProps {
 const toNumber = (v: unknown): number => {
   if (v === null || v === undefined || v === '') return 0;
   if (typeof v === "number") return Number.isFinite(v) ? v : 0;
-  
   const s = String(v).trim();
   if (s === '') return 0;
-  
   const n = parseFloat(s);
   return Number.isFinite(n) ? n : 0;
 };
-
 
 export function PaymentSection({
   onOpenValidateDialog,
   validatedFolios = {},
   totalAmount: totalAmountProp = 0,
 }: PaymentSectionProps) {
-  const { control, setValue } = useFormContext();
+  const { control } = useFormContext();
   const { fields, append, remove } = useFieldArray({ control, name: "payments" });
 
   const items = useWatch({ control, name: "serviceItems" }) as any[] | undefined;
@@ -87,14 +82,14 @@ export function PaymentSection({
                     <FormLabel>Métodos de Pago</FormLabel>
                     <div className="space-y-4 mt-2">
                     {fields.map((field, index) => {
-                        const selectedMethod = watchedPayments?.[index]?.method;
-                        const needsFolio =
-                        selectedMethod === "Tarjeta" ||
-                        selectedMethod === "Tarjeta MSI" ||
-                        selectedMethod === "Transferencia" ||
-                        selectedMethod === "Transferencia/Contadora";
+                        const preciseMethod = watchedPayments?.[index]?.method || "Efectivo";
+                        const isMsi = preciseMethod.startsWith("Tarjeta") && preciseMethod.includes("MSI");
                         
-                        const folioLabel = (selectedMethod === "Transferencia" || selectedMethod === "Transferencia/Contadora") ? "Folio de Transferencia" : "Folio de Voucher / Terminal";
+                        const baseUIMethod = isMsi ? "Tarjeta MSI" : preciseMethod;
+                        const currentMonths = isMsi ? preciseMethod.replace("Tarjeta ", "").replace(" MSI", "") : "6"; // fallback 6
+                        const needsFolio = preciseMethod.includes("Tarjeta") || preciseMethod.includes("Transferencia");
+                        
+                        const folioLabel = preciseMethod.includes("Transferencia") ? "Folio de Transferencia" : "Folio de Voucher / Terminal";
                         const isFolioValidated = validatedFolios[index];
 
                         return (
@@ -129,24 +124,34 @@ export function PaymentSection({
                                 </FormItem>
                                 )}
                             />
+                            
                             <FormField
                                 control={control}
                                 name={`payments.${index}.method`}
                                 render={({ field: formField }) => (
                                 <FormItem className="w-48">
-                                    <Select onValueChange={formField.onChange} value={formField.value}>
+                                    <Select 
+                                      onValueChange={(val) => {
+                                        if (val === "Tarjeta MSI") {
+                                          formField.onChange("Tarjeta 6 MSI"); // default to 6 months
+                                        } else {
+                                          formField.onChange(val);
+                                        }
+                                      }} 
+                                      value={baseUIMethod}
+                                    >
                                     <FormControl>
                                         <SelectTrigger className="bg-card">
                                         <SelectValue />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        {paymentMethods.map((method) => {
-                                        const Icon = paymentMethodIcons[method as keyof typeof paymentMethodIcons] ?? Wallet;
+                                        {UI_METHODS.map((method) => {
+                                        const Icon = paymentMethodIcons[method] ?? Wallet;
                                         return (
                                             <SelectItem key={method} value={method}>
                                             <div className="flex items-center gap-2">
-                                                {Icon && <Icon className="h-4 w-4" />}
+                                                <Icon className="h-4 w-4" />
                                                 <span>{method}</span>
                                             </div>
                                             </SelectItem>
@@ -157,6 +162,36 @@ export function PaymentSection({
                                 </FormItem>
                                 )}
                             />
+
+                            {/* SELECTOR MSI ANIDADO */}
+                            {isMsi && (
+                              <FormField
+                                control={control}
+                                name={`payments.${index}.method`}
+                                render={({ field: formField }) => (
+                                <FormItem className="w-32">
+                                    <Select 
+                                      value={currentMonths}
+                                      onValueChange={(val) => formField.onChange(`Tarjeta ${val} MSI`)} 
+                                    >
+                                    <FormControl>
+                                        <SelectTrigger className="bg-card">
+                                        <SelectValue placeholder="Meses" />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {MSI_OPTIONS.map((opt) => (
+                                            <SelectItem key={opt} value={opt}>
+                                             {opt} Meses
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                    </Select>
+                                </FormItem>
+                                )}
+                              />
+                            )}
+
                             {fields.length > 1 && (
                                 <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -188,7 +223,7 @@ export function PaymentSection({
                                     </FormItem>
                                 )}
                                 />
-                                {(selectedMethod === "Tarjeta" || selectedMethod === "Tarjeta MSI") &&
+                                {preciseMethod.includes("Tarjeta") &&
                                 onOpenValidateDialog && (
                                     <Button
                                     type="button"
@@ -207,14 +242,12 @@ export function PaymentSection({
                         );
                     })}
 
-                    {fields.length < paymentMethods.length && (
-                        <div className="flex justify-end">
+                    <div className="flex justify-end">
                         <Button type="button" variant="outline" size="sm" onClick={handleAddPayment}>
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Añadir método de pago
                         </Button>
-                        </div>
-                    )}
+                    </div>
 
                     <div className="flex justify-between font-semibold pt-2 border-t">
                         <span>Total Pagado:</span>

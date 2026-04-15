@@ -1,7 +1,8 @@
 "use client";
 import React from 'react';
-import { AnimatedDiv } from './AnimatedDiv';
+import { StaggerContainer, StaggerItem, AnimatedDiv } from './AnimatedDiv';
 import { Icon } from '@iconify/react';
+import { motion } from 'framer-motion';
 
 const benefits = [
     {
@@ -28,22 +29,36 @@ const benefits = [
 
 export function WhyRanoroSection() {
     return (
-        <section id="why-ranoro" className="py-20 md:py-28 bg-white">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                <AnimatedDiv className="text-center max-w-3xl mx-auto">
-                    <h2 className="text-3xl md:text-4xl font-extrabold">¿Por qué elegirnos?</h2>
+        <section id="why-ranoro" className="relative py-24 md:py-32 bg-white overflow-hidden">
+            <div className="absolute inset-0 bg-grid-slate-100/[0.04] bg-[bottom_1px_center] opacity-20" />
+            
+            <div className="container relative mx-auto px-4 sm:px-6 lg:px-8">
+                <AnimatedDiv className="text-center max-w-3xl mx-auto mb-20">
+                    <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900">
+                      ¿Por qué elegirnos?
+                    </h2>
+                    <p className="mt-4 text-xl text-slate-600 font-light">
+                      Nuestra filosofía se basa en honestidad, rapidez y calidad insuperable.
+                    </p>
                 </AnimatedDiv>
-                 <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {benefits.map(benefit => (
-                        <AnimatedDiv key={benefit.title} className="text-center p-4 rounded-lg hover:bg-muted transition-colors">
-                            <div className="mx-auto h-16 w-16 text-primary flex items-center justify-center">
-                                <Icon icon={benefit.icon} className="h-12 w-12"/>
-                            </div>
-                            <h4 className="font-bold text-lg mt-4">{benefit.title}</h4>
-                            <p className="text-muted-foreground mt-1 text-sm">{benefit.description}</p>
-                        </AnimatedDiv>
+
+                 <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12" staggerDelay={0.15}>
+                    {benefits.map((benefit, index) => (
+                        <StaggerItem key={benefit.title} className="h-full">
+                            <motion.div 
+                              whileHover={{ y: -8 }}
+                              transition={{ type: "spring", stiffness: 300 }}
+                              className="group h-full bg-slate-50 hover:bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 text-center flex flex-col items-center"
+                            >
+                                <div className="mb-6 h-20 w-20 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
+                                    <Icon icon={benefit.icon} className="h-10 w-10"/>
+                                </div>
+                                <h4 className="font-bold text-xl text-slate-900 mb-3">{benefit.title}</h4>
+                                <p className="text-slate-600 leading-relaxed font-light">{benefit.description}</p>
+                            </motion.div>
+                        </StaggerItem>
                     ))}
-                </div>
+                </StaggerContainer>
             </div>
         </section>
     );

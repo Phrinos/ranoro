@@ -2,15 +2,17 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign } from "lucide-react";
+import Link from "next/link";
+import { DollarSign, PlusCircle, TrendingUp } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { parseISO, isValid, startOfDay, endOfDay } from "date-fns";
 import type { ServiceRecord } from "@/types";
+import { usePermissions } from "@/hooks/usePermissions";
+import { Button } from "@/components/ui/button";
 
 function asDate(iso?: string | null): Date | null {
   if (!iso) return null;
-  const d = parseISO(iso); // "2025-09-24T19:07:51.146Z" -> Date local
+  const d = parseISO(iso);
   return isValid(d) ? d : null;
 }
 
@@ -21,8 +23,11 @@ function toNumberLoose(v: unknown): number {
 }
 
 function getAmount(s: any): number {
-  // Principal: 'Total' (number). Fallbacks si algún registro trae otras claves:
-  return toNumberLoose(s?.Total ?? s?.total ?? s?.payments?.Total ?? s?.payments?.total ?? 0);
+  // Priority: sum of payments array > totalCost field > total field
+  if (Array.isArray(s?.payments) && s.payments.length > 0) {
+    return s.payments.reduce((sum: number, p: any) => sum + toNumberLoose(p?.amount), 0);
+  }
+  return toNumberLoose(s?.totalCost ?? s?.total ?? 0);
 }
 
 interface DailyEarningsCardProps {
@@ -30,6 +35,8 @@ interface DailyEarningsCardProps {
 }
 
 export function DailyEarningsCard({ services }: DailyEarningsCardProps) {
+  const userPermissions = usePermissions();
+
   const { sum, count } = useMemo(() => {
     const now = new Date();
     const start = startOfDay(now);
@@ -45,38 +52,39 @@ export function DailyEarningsCard({ services }: DailyEarningsCardProps) {
       const deliveredAt = asDate(anyS.deliveryDateTime);
       if (!deliveredAt || deliveredAt < start || deliveredAt > end) continue;
 
-      const amount = getAmount(anyS);
-      sum += amount;
+      sum += getAmount(anyS);
       count++;
-      
-      if (process.env.NODE_ENV !== "production") {
-        console.debug(
-          "[DailyEarningsCard] id:", anyS.id,
-          "| delivery:", anyS.deliveryDateTime,
-          "| amount:", amount
-        );
-      }
-    }
-
-    if (process.env.NODE_ENV !== "production") {
-      console.debug("[DailyEarningsCard] entregados hoy:", count, "suma:", sum);
     }
 
     return { sum, count };
   }, [services]);
 
   return (
-    <Card className="mb-6" aria-label="Ingresos del Día">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Ingresos del Día</CardTitle>
-        <DollarSign className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{formatCurrency(sum)}</div>
-        <p className="text-xs text-muted-foreground">
-          Total de servicios entregados hoy ({count}).
-        </p>
-      </CardContent>
-    </Card>
+    <div className="flex items-center gap-4 p-4 bg-card border rounded-xl shadow-sm mb-6">
+      {/* Earnings section */}
+      <div className="flex items-center gap-3 flex-1 min-w-0">
+        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+          <DollarSign className="h-5 w-5 text-primary" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Ingresos del Día</p>
+          <p className="font-bold text-2xl text-foreground leading-tight">{formatCurrency(sum)}</p>
+          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+            <TrendingUp className="h-3 w-3 text-green-500" />
+            {count} servicio{count !== 1 ? 's' : ''} entregado{count !== 1 ? 's' : ''} hoy
+          </p>
+        </div>
+      </div>
+
+      {/* New Service button */}
+      {userPermissions.has('services:create') && (
+        <Button asChild size="default" className="shrink-0">
+          <Link href="/servicios/nuevo">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Nuevo Servicio
+          </Link>
+        </Button>
+      )}
+    </div>
   );
 }

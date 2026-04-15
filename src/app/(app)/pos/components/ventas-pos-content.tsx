@@ -31,7 +31,8 @@ const paymentMethodOptions: { value: PaymentMethod | 'all', label: string }[] = 
     { value: 'all', label: 'Todos' },
     { value: 'Efectivo', label: 'Efectivo' },
     { value: 'Tarjeta', label: 'Tarjeta' },
-    { value: 'Tarjeta MSI', label: 'Tarjeta MSI' },
+    { value: 'Tarjeta 3 MSI', label: 'Tarjeta 3 MSI' },
+    { value: 'Tarjeta 6 MSI', label: 'Tarjeta 6 MSI' },
     { value: 'Transferencia', label: 'Transferencia' },
     { value: 'Transferencia/Contadora', label: 'Transferencia/Contadora' },
 ];
@@ -39,7 +40,8 @@ const paymentMethodOptions: { value: PaymentMethod | 'all', label: string }[] = 
 const paymentMethodIcons: Partial<Record<PaymentMethod, React.ElementType>> = {
   "Efectivo": Wallet,
   "Tarjeta": CreditCard,
-  "Tarjeta MSI": CreditCard,
+  "Tarjeta 3 MSI": CreditCard,
+  "Tarjeta 6 MSI": CreditCard,
   "Transferencia": Landmark,
   "Transferencia/Contadora": Landmark,
 };

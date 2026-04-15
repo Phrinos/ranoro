@@ -104,6 +104,8 @@ export function getPaymentMethodVariant(method?: PaymentMethod): 'success' | 'pu
         case 'Efectivo': return 'success';
         case 'Tarjeta': 
         case 'Tarjeta MSI': 
+        case 'Tarjeta 3 MSI':
+        case 'Tarjeta 6 MSI':
             return 'purple';
         case 'Transferencia':
         case 'Transferencia/Contadora':
@@ -126,10 +128,7 @@ export function formatNumber(
 
 export const optimizeImage = (file: File | string, maxWidthOrHeight: number, quality = 0.9): Promise<string> => {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    const isFile = file instanceof File;
-
-    reader.onload = (event) => {
+    const processImage = (src: string) => {
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
@@ -157,19 +156,23 @@ export const optimizeImage = (file: File | string, maxWidthOrHeight: number, qua
         resolve(canvas.toDataURL('image/jpeg', quality));
       };
       img.onerror = (error) => reject(error);
-      if (event.target?.result) {
-        img.src = event.target.result as string;
-      } else {
-        reject(new Error('Failed to read file.'));
-      }
+      img.src = src;
     };
-    reader.onerror = (error) => reject(error);
-    
-    if (isFile) {
+
+    if (file instanceof File) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          processImage(event.target.result as string);
+        } else {
+          reject(new Error('Failed to read file.'));
+        }
+      };
+      reader.onerror = (error) => reject(error);
       reader.readAsDataURL(file);
     } else {
-        const img = new Image();
-        img.src = file;
+      // file es una URL string — la cargamos directamente
+      processImage(file);
     }
   });
 };
