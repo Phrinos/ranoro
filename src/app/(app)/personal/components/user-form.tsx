@@ -58,6 +58,7 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
     } : {
       name: "",
       email: "",
+      password: "",
       phone: "",
       role: "",
       functions: [],
@@ -74,9 +75,14 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
         <FormField control={form.control} name="name" render={({ field }) => (
           <FormItem><FormLabel>Nombre Completo</FormLabel><FormControl><Input placeholder="Ej: Juan Pérez" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(capitalizeWords(e.target.value))} className="bg-card text-foreground" /></FormControl><FormMessage /></FormItem>
         )}/>
-        <FormField control={form.control} name="email" render={({ field }) => (
-          <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="usuario@ranoro.mx" {...field} value={field.value ?? ''} disabled={!!initialData} className="bg-card text-foreground" /></FormControl><FormDescription>El email se usa para iniciar sesión y no se puede cambiar.</FormDescription></FormItem>
-        )}/>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FormField control={form.control} name="email" render={({ field }) => (
+            <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="usuario@ranoro.mx" {...field} value={field.value ?? ''} disabled={!!initialData} className="bg-card text-foreground" /></FormControl><FormDescription>El email se usa para iniciar sesión y no se puede cambiar.</FormDescription></FormItem>
+          )}/>
+          <FormField control={form.control} name="password" render={({ field }) => (
+            <FormItem><FormLabel>Contraseña {initialData && "(Opcional)"}</FormLabel><FormControl><Input type="password" placeholder={initialData ? "Dejar en blanco para no cambiar" : "Mínimo 6 caracteres"} {...field} value={field.value ?? ''} className="bg-card text-foreground" /></FormControl>{!initialData && <FormDescription>Contraseña para iniciar sesión.</FormDescription>}</FormItem>
+          )}/>
+        </div>
         <FormField control={form.control} name="phone" render={({ field }) => (
           <FormItem><FormLabel>Teléfono (Opcional)</FormLabel><FormControl><Input type="tel" placeholder="4491234567" {...field} value={field.value ?? ''} className="bg-card text-foreground" /></FormControl><FormMessage /></FormItem>
         )}/>

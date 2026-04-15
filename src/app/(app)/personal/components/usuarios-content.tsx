@@ -11,6 +11,7 @@ import type { User as AppUser, AppRole } from "@/types";
 import { PlusCircle, Search, Users, Eye, EyeOff } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
 import { adminService } from '@/lib/services/admin.service';
+import { syncFirebaseAuthUser } from '../actions';
 import { UserDialog } from './user-dialog';
 import type { UserFormValues } from '@/schemas/user-form-schema';
 import { format } from 'date-fns';
@@ -70,20 +71,31 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
     if (!currentUser) return;
     const isEditing = !!editingUser;
     
-    const userData: Partial<AppUser> = {
-        id: editingUser?.id,
-        role: values.role,
-        name: values.name,
-        email: values.email,
-        phone: values.phone,
-        isArchived: values.isArchived ?? false,
-        functions: values.functions ?? [],
-        monthlySalary: values.monthlySalary,
-        commissionRate: values.commissionRate,
-        hireDate: values.hireDate ? values.hireDate.toISOString() : undefined,
-    };
-    
     try {
+        // 1. Sincronizar con Firebase Auth (Server Action)
+        const authUserId = await syncFirebaseAuthUser({
+            id: editingUser?.id,
+            email: values.email,
+            name: values.name,
+            password: values.password
+        });
+        
+        // 2. Guardar en Firestore
+        const userData: Partial<AppUser> & { password?: string, _isNew?: boolean } = {
+            id: editingUser?.id || authUserId, // Use the real Auth UID if new
+            role: values.role,
+            name: values.name,
+            email: values.email,
+            password: values.password,
+            phone: values.phone,
+            isArchived: values.isArchived ?? false,
+            functions: values.functions ?? [],
+            monthlySalary: values.monthlySalary,
+            commissionRate: values.commissionRate,
+            hireDate: values.hireDate ? values.hireDate.toISOString() : undefined,
+            _isNew: !isEditing // Ensures audit log says "Creó"
+        };
+        
         await adminService.saveUser(userData as any, currentUser);
         
         toast({ title: `Usuario ${isEditing ? 'actualizado' : 'creado'}` });

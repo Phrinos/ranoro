@@ -2,6 +2,7 @@
 import 'server-only';
 import { initializeApp, getApps, cert, getApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 import admin from 'firebase-admin';
 
 /**
@@ -43,6 +44,16 @@ export function getAdminDb(): Firestore {
   }
 
   return getFirestore();
+}
+
+/**
+ * Devuelve la instancia de Auth de Firebase Admin.
+ */
+export function getAdminAuth() {
+  if (getApps().length === 0) {
+    getAdminDb(); // inicializa si es necesario
+  }
+  return getAuth(getApp());
 }
 
 export const serverTimestamp = () => admin.firestore.FieldValue.serverTimestamp();

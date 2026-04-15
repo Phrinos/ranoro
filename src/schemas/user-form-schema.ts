@@ -4,6 +4,7 @@ import * as z from "zod";
 export const userFormSchema = z.object({
   name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
   email: z.string().email("Ingrese un correo electrónico válido."),
+  password: z.string().optional(),
   phone: z.string().optional(),
   role: z.string().min(1, "Debe seleccionar un rol."),
   functions: z.array(z.string()).default([]),

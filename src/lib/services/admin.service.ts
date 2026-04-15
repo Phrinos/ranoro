@@ -107,15 +107,18 @@ const onAuditLogsUpdate = (callback: (logs: AuditLog[]) => void): (() => void) =
 const saveUser = async (user: Partial<User>, adminUser: User): Promise<User> => {
     if (!db) throw new Error("Database not initialized.");
     
-    const isEditing = !!user.id;
-    const { password, ...userData } = user as any;
+    const { password, _isNew, ...userData } = user as any;
+    const isEditing = _isNew !== undefined ? !_isNew : !!user.id;
     const cleanedData = cleanObjectForFirestore(userData);
 
     try {
         let userId = user.id;
-        if (isEditing) {
-            if(!userId) throw new Error("User ID is missing for an update operation.");
-            await updateDoc(doc(db, 'users', String(userId)), cleanedData);
+        
+        // We know it's a new user if it has an ID (from Auth) but it's not being explicitly "edited" historically.
+        // To be safe, if we have an ID we can use setDoc with merge: true to handle both creation and updates beautifully.
+        if (userId) {
+            const { setDoc } = await import('firebase/firestore');
+            await setDoc(doc(db, 'users', String(userId)), cleanedData, { merge: true });
         } else {
             const newUserRef = await addDoc(collection(db, 'users'), { ...cleanedData, createdAt: serverTimestamp() });
             userId = newUserRef.id;
