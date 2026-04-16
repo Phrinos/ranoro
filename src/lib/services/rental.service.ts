@@ -212,17 +212,23 @@ const onOwnerWithdrawalsUpdate = (callback: (withdrawals: OwnerWithdrawal[]) => 
 
 const addOwnerWithdrawal = async (data: Omit<OwnerWithdrawal, 'id' | 'date'> & { date: Date }): Promise<OwnerWithdrawal> => {
     if (!db) throw new Error("Database not initialized.");
+    
+    const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
+    const currentUser = authUserString ? JSON.parse(authUserString) : null;
+    
     const newWithdrawal = { ...data, date: data.date.toISOString() };
     const docRef = await addDoc(collection(db, 'ownerWithdrawals'), cleanObjectForFirestore(newWithdrawal));
 
-    // Also create a cash transaction for this withdrawal
     await cashService.addCashTransaction({
-        type: 'out',
+        type: 'Salida',
         amount: data.amount,
         concept: `Retiro de socio: ${data.ownerName}`,
         note: data.note,
+        userId: currentUser?.id || 'system',
+        userName: currentUser?.name || 'Sistema',
         relatedType: 'RetiroSocio',
         relatedId: docRef.id,
+        paymentMethod: 'Efectivo',
     });
     
     return { id: docRef.id, ...newWithdrawal };
@@ -263,6 +269,108 @@ const addVehicleExpense = async (data: Partial<Omit<VehicleExpense, 'id' | 'date
     return { ...newExpense, id: docRef.id } as VehicleExpense;
 };
 
+// --- Monthly Balance Cutoffs ---
+
+export interface FleetMonthlyBalance {
+  id: string; // `{driverId}_{yyyy-MM}`
+  driverId: string;
+  month: string; // "2026-04"
+  carryoverBalance: number; // negative = debt from prior month
+  closedAt: string | null;
+}
+
+const getMonthlyDriverBalance = async (driverId: string, month: string): Promise<FleetMonthlyBalance | null> => {
+    if (!db) return null;
+    const docId = `${driverId}_${month}`;
+    const docSnap = await getDoc(doc(db, 'fleetMonthlyBalances', docId));
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as FleetMonthlyBalance : null;
+};
+
+const onMonthlyBalancesUpdate = (callback: (balances: FleetMonthlyBalance[]) => void, month: string): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, 'fleetMonthlyBalances'), where('month', '==', month));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as FleetMonthlyBalance)));
+    });
+};
+
+/**
+ * Closes a month: Calculates the net balance for each driver in the given month
+ * and persists it as carryover for the next month.
+ * This is NON-DESTRUCTIVE: payments can still be added to closed months.
+ */
+const closeMonth = async (
+  month: string,
+  drivers: Driver[],
+  dailyCharges: DailyRentalCharge[],
+  payments: RentalPayment[],
+  manualDebts: { driverId: string; amount: number; date: string }[],
+): Promise<number> => {
+    if (!db) throw new Error("Database not initialized.");
+    
+    const [year, monthNum] = month.split('-').map(Number);
+    const startDate = new Date(year, monthNum - 1, 1);
+    const endDate = new Date(year, monthNum, 0, 23, 59, 59, 999);
+    
+    // Calculate next month key
+    const nextDate = new Date(year, monthNum, 1);
+    const nextMonth = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
+    
+    const batch = writeBatch(db);
+    let count = 0;
+    
+    const activeDrivers = drivers.filter(d => !d.isArchived);
+    
+    for (const driver of activeDrivers) {
+        // Get carryover FROM this month (set by closing the previous month)
+        const thisMonthBalance = await getMonthlyDriverBalance(driver.id, month);
+        const carryover = thisMonthBalance?.carryoverBalance ?? 0;
+        
+        // Calculate charges for this month
+        const monthCharges = dailyCharges
+            .filter(c => {
+                if (c.driverId !== driver.id) return false;
+                const d = new Date(typeof c.date === 'string' ? c.date : (c.date as any)?.seconds ? new Date((c.date as any).seconds * 1000).toISOString() : '');
+                return d >= startDate && d <= endDate;
+            })
+            .reduce((sum, c) => sum + c.amount, 0);
+        
+        const monthDebts = manualDebts
+            .filter(d => {
+                if (d.driverId !== driver.id) return false;
+                const dt = new Date(d.date);
+                return dt >= startDate && dt <= endDate;
+            })
+            .reduce((sum, d) => sum + d.amount, 0);
+        
+        const monthPayments = payments
+            .filter(p => {
+                if (p.driverId !== driver.id) return false;
+                const dt = new Date(p.paymentDate || p.date);
+                return dt >= startDate && dt <= endDate;
+            })
+            .reduce((sum, p) => sum + p.amount, 0);
+        
+        // Net balance for this month: payments - charges - debts + carryover
+        const netBalance = monthPayments - monthCharges - monthDebts + carryover;
+        
+        // Persist as carryover for NEXT month
+        const nextDocId = `${driver.id}_${nextMonth}`;
+        const nextDocRef = doc(db, 'fleetMonthlyBalances', nextDocId);
+        batch.set(nextDocRef, {
+            driverId: driver.id,
+            month: nextMonth,
+            carryoverBalance: netBalance,
+            closedAt: new Date().toISOString(),
+        }, { merge: true });
+        
+        count++;
+    }
+    
+    if (count > 0) await batch.commit();
+    return count;
+};
+
 export const rentalService = {
   onDailyChargesUpdate,
   saveDailyCharge,
@@ -275,4 +383,7 @@ export const rentalService = {
   onVehicleExpensesUpdate,
   addVehicleExpense,
   generateManualDailyCharges,
+  getMonthlyDriverBalance,
+  onMonthlyBalancesUpdate,
+  closeMonth,
 };

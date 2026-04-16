@@ -41,9 +41,9 @@ interface GlobalTransactionDialogProps {
 const buildDefaults = (): GlobalTransactionFormValues => ({
   driverId: "",
   date: new Date(),
-  amount: 0,
+  amount: undefined as unknown as number,
   note: "",
-  paymentMethod: undefined,
+  paymentMethod: "Efectivo",
 });
 
 export function GlobalTransactionDialog({ open, onOpenChange, drivers, onSave, transactionType }: GlobalTransactionDialogProps) {
@@ -136,10 +136,35 @@ export function GlobalTransactionDialog({ open, onOpenChange, drivers, onSave, t
                     <Input
                       type="number"
                       className="bg-white"
-                      value={Number.isFinite(field.value) ? field.value : 0}
-                      onChange={(e) => field.onChange(e.target.value === "" ? 0 : e.target.valueAsNumber)}
+                      placeholder="$0.00"
+                      value={field.value != null && field.value !== 0 ? field.value : ""}
+                      onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="paymentMethod"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Método de Pago</FormLabel>
+                  <Select value={field.value ?? "Efectivo"} onValueChange={field.onChange}>
+                    <FormControl>
+                      <SelectTrigger className="bg-white">
+                        <SelectValue placeholder="Selecciona un método" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Efectivo">Efectivo</SelectItem>
+                      <SelectItem value="Tarjeta">Tarjeta</SelectItem>
+                      <SelectItem value="Transferencia">Transferencia</SelectItem>
+                      <SelectItem value="Crédito">Crédito</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

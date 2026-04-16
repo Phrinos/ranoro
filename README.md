@@ -46,3 +46,5 @@ react-konva
 PAra generar collages de imagenes. 
 
 firebase deploy --only firestore:indexes
+
+firebase deploy --only firestore:rules

@@ -66,7 +66,8 @@ export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymen
       <div 
         ref={ref}
         data-format="receipt"
-        className="font-mono bg-white text-black p-4 max-w-[300px] mx-auto print-format-receipt"
+        className="font-mono bg-white text-black p-2"
+        style={{ width: '302px', minWidth: '302px', maxWidth: '302px' }}
       >
         <div className="text-center mb-1 space-y-0 leading-tight">
           {branding.logoUrl && (
@@ -119,7 +120,7 @@ export const RentalPaymentTicket = React.forwardRef<HTMLDivElement, RentalPaymen
                     <td className="text-right">{formatCurrency(payment.amount)}</td>
                 </tr>
                  <tr className={cn("font-semibold text-base", driverBalance >= 0 ? 'text-green-700' : 'text-red-700')}>
-                    <td className="text-left">Saldo Global:</td>
+                    <td className="text-left">Saldo del Mes:</td>
                     <td className="text-right">{formatCurrency(driverBalance)}</td>
                 </tr>
             </tbody>

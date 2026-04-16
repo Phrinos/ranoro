@@ -36,40 +36,27 @@ export const SortableTableHeader: React.FC<SortableTableHeaderProps> = ({
   return (
     <TableHead
       aria-sort={ariaSort}
-      className={cn(
-        // Importante: sin decoraciones/underline del th
-        "p-0 select-none align-middle",
-        className
-      )}
+      className={cn("select-none whitespace-nowrap", className)}
     >
       <button
         type="button"
         onClick={() => onSort(sortKey)}
-        // Solo esta celda cambia de fondo; sin subrayado
         className={cn(
-          "w-full h-12 px-4 inline-flex items-center gap-2 rounded-[3px]",
-          "bg-transparent text-inherit outline-none",
+          "inline-flex items-center gap-1.5 outline-none",
           "no-underline [text-decoration:none]",
-          // hover/focus solo en el botón (no toda la fila)
-          "hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-primary/40",
-          // cuando está ordenado, la dejamos con un leve realce
-          isSorted && "bg-white/10"
+          "rounded hover:opacity-80 focus-visible:ring-2 focus-visible:ring-primary/40",
+          "transition-opacity"
         )}
         aria-label={`Ordenar por ${label}`}
         aria-pressed={isSorted ? "true" : "false"}
       >
-        <span
-          className={cn(
-            "truncate no-underline [text-decoration:none]",
-            textClassName
-          )}
-        >
+        <span className={cn("no-underline [text-decoration:none]", textClassName)}>
           {label}
         </span>
         <ArrowUpDown
           aria-hidden
           className={cn(
-            "h-4 w-4 shrink-0 opacity-70 transition-transform",
+            "h-3.5 w-3.5 shrink-0 opacity-50 transition-transform",
             isSorted && "opacity-100",
             direction === "asc" && "rotate-180"
           )}

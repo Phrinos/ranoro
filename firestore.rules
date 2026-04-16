@@ -39,16 +39,20 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
-    // Roles
+    // Roles y Áreas
     match /appRoles/{roleId} {
       allow read: if isSignedIn();
       allow write: if hasPermission('admin:manage_users_roles');
+    }
+    match /workAreas/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('admin:settings');
     }
 
     // Vehículos
     match /vehicles/{vehicleId} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('fleet:view') || hasPermission('fleet:create');
+      allow write: if hasPermission('vehicles:manage') || hasPermission('fleet:create') || hasPermission('fleet:edit');
     }
 
     // Conductores y Flotilla
@@ -75,6 +79,14 @@ service cloud.firestore {
     match /vehicleExpenses/{id} {
       allow read: if isSignedIn();
       allow write: if hasPermission('fleet:manage_rentals');
+    }
+    match /fleetMonthlyBalances/{id} {
+      allow read: if isSignedIn();
+      allow write: if hasPermission('fleet:manage_rentals');
+    }
+    match /cashDrawerState/{id} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
     }
 
     // Inventario
@@ -163,6 +175,10 @@ service cloud.firestore {
     match /system/{docId} {
       allow read: if isSignedIn();
       allow write: if false; // solo se escribe desde Cloud Functions con Admin SDK
+    }
+    match /systemStats/{docId} {
+      allow read: if isSignedIn();
+      allow write: if false; 
     }
 
     // WhatsApp conversaciones (lectura para notificaciones)

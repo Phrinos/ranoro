@@ -13,6 +13,7 @@ import {
   Users, Truck, PlusCircle, ShoppingCart, Car,
   ListOrdered, BarChart3, FileJson, DollarSign,
   MessageCircle, ChevronDown, Menu, X, CalendarDays,
+  HandCoins, TrendingDown, Gauge,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -61,8 +62,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Vehículos',
     items: [
-      { label: 'Ver Vehículos',    path: '/vehiculos',      icon: Car,        permissions: ['fleet:view', 'services:create'] },
-      { label: 'Lista de Precios', path: '/listadeprecios', icon: ListOrdered, permissions: ['inventory:create', 'inventory:edit'] },
+      { label: 'Ver Vehículos',    path: '/vehiculos',      icon: Car,        permissions: ['vehicles:view', 'vehicles:manage', 'fleet:view'] },
+      { label: 'Lista de Precios', path: '/listadeprecios', icon: ListOrdered, permissions: ['inventory:view', 'inventory:create', 'inventory:edit'] },
     ],
   },
   {
@@ -76,8 +77,10 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Flotilla',
     items: [
-      { label: 'Ver Flotilla',      path: '/flotillav2',     icon: Truck,    permissions: ['fleet:view'] },
-      { label: 'Reportes Flotilla', path: '/reporteflotilla', icon: BarChart3, permissions: ['finances:view'] },
+      { label: 'Ver Flotilla',        path: '/flotillav2',                         icon: Truck,       permissions: ['fleet:view'] },
+      { label: 'Registrar Abono',     path: '/flotillav2?action=abono',            icon: HandCoins,   permissions: ['fleet:view'] },
+      { label: 'Registrar Cargo',     path: '/flotillav2?action=cargo',            icon: TrendingDown, permissions: ['fleet:view'] },
+      { label: 'Registrar Salida',    path: '/flotillav2?action=salida',           icon: Gauge,       permissions: ['fleet:view'] },
     ],
   },
   {
@@ -91,7 +94,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Opciones',
     items: [
       { label: 'Configuración', path: '/opciones', icon: Settings,      permissions: ['admin:settings'] },
-      { label: 'WhatsApp',      path: '/whatsapp', icon: MessageCircle, permissions: ['admin:settings'] },
+      { label: 'WhatsApp',      path: '/whatsapp', icon: MessageCircle, permissions: ['messaging:view', 'admin:settings'] },
       { label: 'Usuarios y Roles', path: '/personal', icon: Users, permissions: ['admin:manage_users_roles'] },
       { label: 'Mantenimiento', path: '/opciones?tab=mantenimiento', icon: Wrench, permissions: ['admin:settings'] },
     ],

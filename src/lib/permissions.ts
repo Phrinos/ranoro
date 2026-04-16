@@ -28,6 +28,13 @@ export const PERMISSION_GROUPS = [
         ]
     },
     {
+        groupName: "Vehículos y Directorio",
+        permissions: [
+            { id: 'vehicles:view', label: 'Ver Directorio de Vehículos' },
+            { id: 'vehicles:manage', label: 'Registrar y Editar Vehículos' }
+        ]
+    },
+    {
         groupName: "Abastecimiento y Compras",
         permissions: [
             { id: 'purchases:view', label: 'Ver Historial de Compras' },
@@ -63,6 +70,12 @@ export const PERMISSION_GROUPS = [
             { id: 'admin:manage_users_roles', label: 'Invitar/Bloquear Usuarios y Roles' },
             { id: 'admin:view_audit', label: 'Auditar Bitácora del Sistema' },
             { id: 'admin:settings', label: 'Ajustes de Plantilla y Sucursales' }
+        ]
+    },
+    {
+        groupName: "Comunicaciones Integradas",
+        permissions: [
+            { id: 'messaging:view', label: 'Responder y Ver Bandeja WhatsApp' }
         ]
     }
 ];

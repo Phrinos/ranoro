@@ -13,7 +13,7 @@ const TZ = 'America/Mexico_City';
 // --- Daily Rental Charges Generation ---
 export const generateDailyRentalCharges = onSchedule(
   {
-    schedule: '0 8 * * *', // 08:00 every day (Mexico City Time)
+    schedule: '0 15 * * *', // 15:00 (3:00 PM) every day (Mexico City Time)
     timeZone: TZ,
   },
   async () => {

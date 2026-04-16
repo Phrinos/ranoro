@@ -266,8 +266,7 @@ const searchVehicles = async (term: string): Promise<Vehicle[]> => {
 
 const onVehiclesUpdate = (callback: (vehicles: Vehicle[]) => void): (() => void) => {
     if (!db) return () => {};
-    // Optimized: Only load 25 latest vehicles initially. The rest are loaded through search.
-    const q = query(collection(db, "vehicles"), orderBy("lastServiceDate", "desc"), limit(25));
+    const q = query(collection(db, "vehicles"), orderBy("lastServiceDate", "desc"));
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle)));
     });
@@ -275,7 +274,7 @@ const onVehiclesUpdate = (callback: (vehicles: Vehicle[]) => void): (() => void)
 
 const onVehiclesUpdatePromise = async (): Promise<Vehicle[]> => {
     if (!db) return [];
-    const snapshot = await getDocs(query(collection(db, "vehicles"), orderBy("lastServiceDate", "desc"), limit(25)));
+    const snapshot = await getDocs(query(collection(db, "vehicles"), orderBy("lastServiceDate", "desc")));
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
 };
 

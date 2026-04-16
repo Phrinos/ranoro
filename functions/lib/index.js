@@ -47,7 +47,7 @@ const db = admin.firestore();
 const TZ = 'America/Mexico_City';
 // --- Daily Rental Charges Generation ---
 exports.generateDailyRentalCharges = (0, scheduler_1.onSchedule)({
-    schedule: '0 8 * * *', // 08:00 every day (Mexico City Time)
+    schedule: '0 15 * * *', // 15:00 (3:00 PM) every day (Mexico City Time)
     timeZone: TZ,
 }, async () => {
     logger.info('Starting daily rental charge generation...');

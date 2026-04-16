@@ -26,18 +26,19 @@ for (const group of PERMISSION_GROUPS) {
 const LEGACY_ID_MAP: Record<string, string[]> = {
   'dashboard:view': [],
   'services:view_history': ['services:view'],
+  'services:create': ['services:create', 'vehicles:view', 'vehicles:manage'], // Asesores get vehicles access retroactively
   'inventory:manage': ['inventory:view', 'inventory:create', 'inventory:edit', 'inventory:delete'],
   'inventory:view_public_info': ['inventory:view'],
-  'fleet:manage': ['fleet:view', 'fleet:create', 'fleet:edit'],
+  'fleet:manage': ['fleet:view', 'fleet:create', 'fleet:edit', 'vehicles:view', 'vehicles:manage'],
   'rentals:view': ['fleet:view'],
   'rentals:manage': ['fleet:manage_rentals'],
   'finances:view_report': ['finances:view'],
-  'vehicles:manage': ['fleet:view', 'fleet:create', 'fleet:edit'],
+  'vehicles:manage': ['fleet:view', 'fleet:create', 'fleet:edit', 'vehicles:manage', 'vehicles:view'],
   'personnel:manage': ['admin:manage_users_roles'],
   'audits:view': ['admin:view_audit'],
   'ticket_config:manage': ['admin:settings'],
   'workshop:manage': ['admin:settings'],
-  'messaging:manage': [],
+  'messaging:manage': ['messaging:view'],
 };
 
 /**

@@ -53,7 +53,7 @@ const buildDefaults = (infraction?: Infraction, payment?: any | null): RegisterP
     paymentDate,
     amount:
       payment?.amount ??
-      (infraction ? Math.max(infraction.totalAmount - infraction.paidAmount, 0) : 0),
+      (infraction ? Math.max(infraction.totalAmount - infraction.paidAmount, 0) : undefined),
     paymentMethod: (payment?.paymentMethod as any) ?? "Efectivo",
     note: payment?.note ?? "",
     infractionId: infraction?.id ?? payment?.infractionId,
@@ -152,7 +152,8 @@ export function RegisterPaymentDialog({
                     <Input
                       type="number"
                       className="bg-white"
-                      value={field.value ?? ""}
+                      placeholder="$0.00"
+                      value={field.value != null && field.value !== 0 ? field.value : ""}
                       onChange={(e) => field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)}
                     />
                   </FormControl>

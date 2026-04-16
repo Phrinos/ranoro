@@ -1,0 +1,74 @@
+
+> studio@0.1.0 build
+> NODE_ENV=production next build
+
+▲ Next.js 16.2.4 (Turbopack)
+- Environments: .env.local, .env
+
+  Creating an optimized production build ...
+(node:85274) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:85275) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+✓ Compiled successfully in 11.5s
+  Running TypeScript ...
+  Finished TypeScript in 10.3s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/33) ...
+[AUTH-AUDIT] Auth initialization skipped (possible Server Side execution).
+[AUTH-AUDIT] Auth initialization skipped (possible Server Side execution).
+  Generating static pages using 7 workers (8/33) 
+  Generating static pages using 7 workers (16/33) 
+  Generating static pages using 7 workers (24/33) 
+✓ Generating static pages using 7 workers (33/33) in 430ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /acceso-denegado
+├ ○ /agenda
+├ ƒ /api/config
+├ ƒ /api/contracts/lease
+├ ƒ /api/migrate-commissions
+├ ƒ /api/services/[id]/confirm
+├ ƒ /api/whatsapp/send
+├ ƒ /api/whatsapp/toggle-bot
+├ ƒ /api/whatsapp/webhook
+├ ○ /cotizar
+├ ○ /dashboard
+├ ○ /facturacion
+├ ○ /facturar
+├ ○ /flotillav2
+├ ƒ /flotillav2/conductores/[id]
+├ ƒ /flotillav2/vehiculos/[id]
+├ ○ /inventario
+├ ƒ /inventario/[id]
+├ ○ /inventario/compras
+├ ƒ /inventario/proveedores/[id]
+├ ○ /landing
+├ ○ /legal/privacidad
+├ ○ /legal/terminos
+├ ○ /listadeprecios
+├ ○ /login
+├ ○ /opciones
+├ ○ /personal
+├ ○ /pos
+├ ○ /pos/informe-pos
+├ ○ /pos/nuevo
+├ ○ /recuperar
+├ ○ /reporteflotilla
+├ ○ /reportes
+├ ƒ /s/[id]
+├ ○ /servicios
+├ ƒ /servicios/[id]
+├ ○ /servicios/cotizaciones
+├ ○ /servicios/historial
+├ ○ /vehiculos
+├ ƒ /vehiculos/[id]
+└ ○ /whatsapp
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
