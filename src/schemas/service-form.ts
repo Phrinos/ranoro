@@ -15,10 +15,11 @@ const supplySchema = z.object({
 const serviceItemSchema = z.object({
   id: z.string().optional(),
   name: z.string().optional(), // El 'Tipo de Servicio' (ej: Afinación, Frenos)
-  itemName: z.string().min(1, "El nombre del trabajo es obligatorio."), // La descripción específica (ej: Cambio de balatas traseras)
+  itemName: z.string().min(1, "La descripción del servicio es obligatoria."), // Descripción del servicio
   sellingPrice: z.coerce.number().min(0, 'El precio debe ser un número positivo.'),
   isNew: z.boolean().optional(),
   suppliesUsed: z.array(supplySchema).optional(),
+  notes: z.string().optional(), // Notas/detalles del trabajo individual
 }).passthrough(); // Allow extra fields
 
 const photoReportSchema = z.object({

@@ -266,8 +266,8 @@ const searchVehicles = async (term: string): Promise<Vehicle[]> => {
 
 const onVehiclesUpdate = (callback: (vehicles: Vehicle[]) => void): (() => void) => {
     if (!db) return () => {};
-    // Escalabilidad: Elevamos a 1500 vehículos para asegurar que toda la flotilla cargue
-    const q = query(collection(db, "vehicles"), limit(1500));
+    // Optimized: Only load 25 latest vehicles initially. The rest are loaded through search.
+    const q = query(collection(db, "vehicles"), orderBy("lastServiceDate", "desc"), limit(25));
     return onSnapshot(q, (snapshot) => {
         callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle)));
     });
@@ -275,8 +275,19 @@ const onVehiclesUpdate = (callback: (vehicles: Vehicle[]) => void): (() => void)
 
 const onVehiclesUpdatePromise = async (): Promise<Vehicle[]> => {
     if (!db) return [];
-    const snapshot = await getDocs(query(collection(db, "vehicles"), limit(1500)));
+    const snapshot = await getDocs(query(collection(db, "vehicles"), orderBy("lastServiceDate", "desc"), limit(25)));
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
+};
+
+const onSystemVehicleStatsUpdate = (callback: (stats: any) => void): (() => void) => {
+    if (!db) return () => {};
+    return onSnapshot(doc(db, "systemStats", "vehicles"), (docSnap) => {
+        if (docSnap.exists()) {
+            callback(docSnap.data());
+        } else {
+            callback(null);
+        }
+    });
 };
 
 const getVehicleById = async (id: string): Promise<Vehicle | undefined> => {
@@ -494,7 +505,7 @@ export const inventoryService = {
   getVehicleCount,
   searchVehicles,
   onVehiclesUpdate,
-  onVehiclesUpdatePromise,
+  onVehiclesUpdatePromise, onSystemVehicleStatsUpdate,
   getVehicleById,
   addVehicle,
   saveVehicle,

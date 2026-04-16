@@ -23,9 +23,7 @@ import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/f
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { inventoryService } from "@/lib/services";
-import { VehiclePricingCard } from "../../precios/components/VehiclePricingCard";
 import type { EngineData } from "@/lib/data/vehicle-database-types";
-import { EditEngineDataDialog } from "@/app/(app)/precios/components/EditEngineDataDialog";
 import { useToast } from "@/hooks/use-toast";
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
@@ -267,13 +265,6 @@ export function VehicleSelectionCard({
                   </FormItem>
                 )}
               />
-              
-              <VehiclePricingCard 
-                engineData={vehicleEngineData}
-                make={selectedVehicle.make}
-                onEdit={() => setIsEngineEditDialogOpen(true)}
-              />
-
             </div>
           ) : (
             <Button
@@ -298,14 +289,6 @@ export function VehicleSelectionCard({
         }}
       />
       
-      {vehicleEngineData && (
-          <EditEngineDataDialog
-            open={isEngineEditDialogOpen}
-            onOpenChange={setIsEngineEditDialogOpen}
-            engineData={vehicleEngineData}
-            onSave={handleEngineDataSave}
-          />
-      )}
     </>
   );
 }

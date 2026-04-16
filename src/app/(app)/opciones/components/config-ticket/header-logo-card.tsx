@@ -2,7 +2,8 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FormField, FormItem, FormLabel, FormControl, FormDescription } from '@/components/ui/form';
+import { FormField, FormItem, FormControl } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -34,15 +35,15 @@ export const HeaderLogoCard: React.FC<HeaderLogoCardProps> = ({
           name="blankLinesTop"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Líneas en Blanco (Arriba)</FormLabel>
+              <Label className="mb-2 block">Líneas en Blanco (Arriba)</Label>
               <FormControl>
                 <Input type="number" min={0} max={10} {...field} value={field.value ?? 0} />
               </FormControl>
             </FormItem>
           )}
         />
-        <FormItem>
-          <FormLabel>Subir Logo</FormLabel>
+        <div className="space-y-2">
+          <Label>Subir Logo</Label>
           <Button
             type="button"
             variant="outline"
@@ -64,14 +65,14 @@ export const HeaderLogoCard: React.FC<HeaderLogoCardProps> = ({
             accept="image/png, image/jpeg, image/webp"
             onChange={handleImageUpload}
           />
-          <FormDescription>El logo se guarda y actualiza en la vista previa.</FormDescription>
-        </FormItem>
+          <p className="text-[0.8rem] text-muted-foreground">El logo se guarda y actualiza en la vista previa.</p>
+        </div>
         <FormField
           control={control}
           name="logoWidth"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Ancho del Logo: {field.value ?? defaultLogoWidth}px</FormLabel>
+              <Label className="mb-2 block">Ancho del Logo: {field.value ?? defaultLogoWidth}px</Label>
               <FormControl>
                 <Slider
                   value={[field.value ?? defaultLogoWidth ?? 120]}

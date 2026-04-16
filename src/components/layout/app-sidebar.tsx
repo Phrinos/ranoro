@@ -1,30 +1,18 @@
 
 "use client";
+
 import { usePathname, useRouter } from "next/navigation";
 import { withSuspense } from "@/lib/withSuspense";
-import { useMemo } from "react";
-import Link from "next/link";
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-} from "@/components/ui/sidebar";
-import { useSidebar } from "@/hooks/use-sidebar"; 
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
-  Settings,
-  LogOut,
-  LayoutGrid, Wrench, Receipt, Package, DollarSign, Users, 
-  Truck, PlusCircle, ShoppingCart, FileJson, BrainCircuit, LifeBuoy, Tags, Car, ListOrdered, BarChart3
+  Settings, LogOut, Wrench, Receipt, Package,
+  Users, Truck, PlusCircle, ShoppingCart, Car,
+  ListOrdered, BarChart3, FileJson, DollarSign,
+  MessageCircle, ChevronDown, Menu, X, CalendarDays,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -39,77 +27,135 @@ import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { ALL_PERMISSIONS } from '@/lib/permissions';
 import { useRoles } from '@/lib/contexts/roles-context';
 import { normalizePermissions } from '@/hooks/usePermissions';
+import { NotificationBell } from "@/components/layout/NotificationBell";
 
+// ── Nav structure ────────────────────────────────────────────────────
 
-const BASE_NAV_STRUCTURE: ReadonlyArray<Omit<NavigationEntry, 'isActive'>> = [
-  // Mi Taller
-  { label: 'Nuevo Servicio', path: '/servicios/nuevo', icon: PlusCircle, groupTag: 'Mi Taller', permissions: ['services:create'] },
-  { label: 'Tablero', path: '/tablero', icon: LayoutGrid, groupTag: 'Mi Taller' }, // Sin restricción
-  { label: 'Servicios', path: '/servicios', icon: Wrench, groupTag: 'Mi Taller', permissions: ['services:view'] },
-  { label: 'Vehículos', path: '/vehiculos', icon: Car, groupTag: 'Mi Taller', permissions: ['fleet:view', 'services:create'] },
-  { label: 'Precios', path: '/precios', icon: Tags, groupTag: 'Mi Taller', permissions: ['inventory:view'] },
-  { label: 'Catálogo Maestro', path: '/listadeprecios', icon: ListOrdered, groupTag: 'Mi Taller', permissions: ['inventory:create', 'inventory:edit'] },
-  { label: 'Flotilla', path: '/flotillav2', icon: Truck, groupTag: 'Mi Taller', permissions: ['fleet:view'] },
+interface NavGroup {
+  label: string;
+  items: ReadonlyArray<Omit<NavigationEntry, 'isActive'>>;
+}
 
-  // Operaciones
-  { label: 'Punto de Venta', path: '/pos', icon: Receipt, groupTag: 'Operaciones', permissions: ['pos:create_sale'] },
-  { label: 'Inventario', path: '/inventario', icon: Package, groupTag: 'Operaciones', permissions: ['inventory:view'] },
-  { label: 'Compras', path: '/inventario/compras', icon: ShoppingCart, groupTag: 'Operaciones', permissions: ['purchases:view', 'purchases:create'] },
-  
-  // Finanzas
-  { label: 'Reportes Taller', path: '/reportes', icon: DollarSign, groupTag: 'Finanzas', permissions: ['finances:view'] },
-  { label: 'Reporte Flotilla', path: '/reporteflotilla', icon: BarChart3, groupTag: 'Finanzas', permissions: ['finances:view'] },
-  { label: 'Facturación', path: '/facturacion', icon: FileJson, groupTag: 'Finanzas', permissions: ['billing:manage'] },
-
-  // Opciones
-  { label: 'I.A.', path: '/ai', icon: BrainCircuit, groupTag: 'Opciones', permissions: ['admin:settings', 'finances:view'] },
-  { label: 'Personal', path: '/personal', icon: Users, groupTag: 'Opciones', permissions: ['admin:manage_users_roles'] },
-  { label: 'Opciones', path: '/opciones', icon: Settings, groupTag: 'Opciones', permissions: ['admin:settings'] },
+const NAV_GROUPS: NavGroup[] = [
+  {
+    label: 'Dashboard',
+    items: [
+      { label: 'Inicio', path: '/dashboard', icon: BarChart3, permissions: ['services:view'] }
+    ]
+  },
+  {
+    label: 'Agenda',
+    items: [
+      { label: 'Agenda', path: '/agenda', icon: CalendarDays, permissions: ['services:view'] },
+    ],
+  },
+  {
+    label: 'Servicios',
+    items: [
+      { label: 'Nuevo Servicio', path: '/servicios/nuevo', icon: PlusCircle, permissions: ['services:create'] },
+      { label: 'Mis Servicios',  path: '/servicios',       icon: Wrench,     permissions: ['services:view'] },
+      { label: 'Cotizaciones',   path: '/servicios/cotizaciones', icon: Receipt, permissions: ['services:view'] },
+      { label: 'Historial',      path: '/servicios/historial',   icon: Truck, permissions: ['services:view'] },
+    ],
+  },
+  {
+    label: 'Vehículos',
+    items: [
+      { label: 'Ver Vehículos',    path: '/vehiculos',      icon: Car,        permissions: ['fleet:view', 'services:create'] },
+      { label: 'Lista de Precios', path: '/listadeprecios', icon: ListOrdered, permissions: ['inventory:create', 'inventory:edit'] },
+    ],
+  },
+  {
+    label: 'Punto de Venta',
+    items: [
+      { label: 'Nueva Venta', path: '/pos/nuevo',          icon: PlusCircle,  permissions: ['pos:create_sale'] },
+      { label: 'Inventario',  path: '/inventario',          icon: Package,     permissions: ['inventory:view'] },
+      { label: 'Compras',     path: '/inventario/compras',  icon: ShoppingCart, permissions: ['purchases:view', 'purchases:create'] },
+    ],
+  },
+  {
+    label: 'Flotilla',
+    items: [
+      { label: 'Ver Flotilla',      path: '/flotillav2',     icon: Truck,    permissions: ['fleet:view'] },
+      { label: 'Reportes Flotilla', path: '/reporteflotilla', icon: BarChart3, permissions: ['finances:view'] },
+    ],
+  },
+  {
+    label: 'Administración',
+    items: [
+      { label: 'Reportes Taller', path: '/reportes',     icon: DollarSign, permissions: ['finances:view'] },
+      { label: 'Facturación',     path: '/facturacion',   icon: FileJson,   permissions: ['billing:manage'] },
+    ],
+  },
+  {
+    label: 'Opciones',
+    items: [
+      { label: 'Configuración', path: '/opciones', icon: Settings,      permissions: ['admin:settings'] },
+      { label: 'WhatsApp',      path: '/whatsapp', icon: MessageCircle, permissions: ['admin:settings'] },
+      { label: 'Usuarios y Roles', path: '/personal', icon: Users, permissions: ['admin:manage_users_roles'] },
+      { label: 'Mantenimiento', path: '/opciones?tab=mantenimiento', icon: Wrench, permissions: ['admin:settings'] },
+    ],
+  },
 ];
 
-const DESIRED_GROUP_ORDER = ['Mi Taller', 'Operaciones', 'Finanzas', 'Opciones'];
+// ── Dropdown nav group ────────────────────────────────────────────────
 
-const useNavigation = (): NavigationEntry[] => {
-  const pathname = usePathname();
-  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
-  // Roles desde el contexto centralizado — NO abre un listener propio
-  const roles = useRoles();
+function NavGroupDropdown({ group, pathname, onNavigate }: { group: NavGroup; pathname: string; onNavigate?: () => void }) {
+  const isGroupActive = group.items.some(
+    i => pathname === i.path || (i.path !== '/' && pathname.startsWith(i.path!))
+  );
 
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-        const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-        if (authUserString) {
-            try { setCurrentUser(JSON.parse(authUserString)); } 
-            catch (e) { console.error("Could not parse user from localStorage", e); }
-        }
-    }
-  }, []);
+  const triggerClass = cn(
+    "flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 whitespace-nowrap select-none",
+    isGroupActive
+      ? "bg-white/20 text-white"
+      : "text-white/70 hover:text-white hover:bg-white/10"
+  );
 
-  const userPermissions = React.useMemo(() => {
-    if (!currentUser) return new Set<string>();
-    if (currentUser.role === 'Superadministrador') {
-        return new Set(ALL_PERMISSIONS.map(p => p.id));
-    }
-    const userRole = roles.find(r => r && r.name === currentUser.role);
-    const rawPermissions = userRole?.permissions || [];
-    return normalizePermissions(rawPermissions);
-  }, [currentUser, roles]);
+  if (group.items.length === 1) {
+    const item = group.items[0];
+    const Icon = item.icon as React.ElementType;
+    return (
+      <Link href={item.path!} onClick={onNavigate} className={triggerClass}>
+        <Icon className="h-4 w-4 opacity-80" />
+        {group.label}
+      </Link>
+    );
+  }
 
-  const filteredNavStructure = React.useMemo(() => {
-    if (!currentUser) return []; 
-    return BASE_NAV_STRUCTURE.filter(item => {
-      if (!item.permissions || item.permissions.length === 0) return true;
-      return item.permissions.some(p => userPermissions.has(p));
-    });
-  }, [currentUser, userPermissions]);
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className={triggerClass}>
+          {group.label}
+          <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[180px]">
+        {group.items.map(item => {
+          const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path!));
+          const Icon = item.icon as React.ElementType;
+          return (
+            <DropdownMenuItem key={item.path} asChild>
+              <Link
+                href={item.path!}
+                onClick={onNavigate}
+                className={cn("flex items-center gap-2", isActive && "font-semibold text-primary")}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {item.label}
+              </Link>
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
 
-  return filteredNavStructure.map(entry => ({
-    ...entry,
-    isActive: pathname === entry.path || (entry.path !== '/' && pathname.startsWith(entry.path!))
-  }));
-};
+// ── Main component ───────────────────────────────────────────────────
 
-function AppSidebarInner({
+function AppTopNavInner({
   currentUser,
   onLogout,
 }: {
@@ -117,115 +163,151 @@ function AppSidebarInner({
   onLogout: () => void;
 }) {
   const router = useRouter();
-  const navItems = useNavigation();
-  const { isMobile, setOpenMobile } = useSidebar();
+  const pathname = usePathname();
+  const roles = useRoles();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleLogout = async () => {
+  const userPermissions = React.useMemo(() => {
+    if (!currentUser) return new Set<string>();
+    if (currentUser.role === 'Superadministrador') {
+      return new Set(ALL_PERMISSIONS.map(p => p.id));
+    }
+    const userRole = roles.find(r => r && r.name === currentUser.role);
+    return normalizePermissions(userRole?.permissions || []);
+  }, [currentUser, roles]);
+
+  // Filter groups / items by permission
+  const visibleGroups = React.useMemo(() => {
+    if (!currentUser) return [];
+    return NAV_GROUPS.map(group => ({
+      ...group,
+      items: group.items.filter(item => {
+        if (!item.permissions || item.permissions.length === 0) return true;
+        return item.permissions.some(p => userPermissions.has(p));
+      }),
+    })).filter(g => g.items.length > 0);
+  }, [currentUser, userPermissions]);
+
+  const handleLogout = () => {
     onLogout();
     router.push("/login");
   };
 
-  const groupedByTag = React.useMemo(() => {
-    return navItems.reduce((acc, item) => {
-      const tag = item.groupTag ?? 'Otros';
-      if (!acc[tag]) acc[tag] = [];
-      acc[tag].push(item);
-      return acc;
-    }, {} as Record<string, NavigationEntry[]>);
-  }, [navItems]);
-
-  const sortedGroupEntries = React.useMemo(() => {
-    return DESIRED_GROUP_ORDER.map(groupName => [
-        groupName,
-        groupedByTag[groupName] || [],
-    ]).filter(group => (group[1] as NavigationEntry[]).length > 0);
-  }, [groupedByTag]);
-
   return (
-    <Sidebar collapsible="icon" side="left" variant="sidebar" className="app-sidebar">
-      <SidebarHeader className="border-b border-sidebar-border h-16 flex items-center justify-center">
-        <Link
-          href="/dashboard"
-          className="flex items-center justify-center text-lg font-semibold text-sidebar-foreground hover:text-sidebar-primary transition-colors h-full"
-        >
-          <div className="relative w-[120px] h-[30px]">
+    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black text-white backdrop-blur-md shadow-sm print:hidden">
+      <div className="flex h-14 items-center px-4 md:px-6 gap-4">
+
+        {/* Logo */}
+        <div className="flex-1 shrink-0 flex items-center justify-start">
+          <Link href="/dashboard" className="relative w-[100px] h-[26px]">
             <Image
-                src="/ranoro-logo.png"
-                alt="Ranoro Logo"
-                fill
-                style={{objectFit: 'contain'}}
-                sizes="120px"
-                data-ai-hint="ranoro logo"
+              src="/ranoro-logo.png"
+              alt="Ranoro"
+              fill
+              style={{ objectFit: 'contain' }}
+              sizes="100px"
+              className="drop-shadow-sm" 
             />
-          </div>
-        </Link>
-      </SidebarHeader>
-      <SidebarContent className="p-0">
-        {sortedGroupEntries.map(([tag, entriesInGroup]) => (
-          <SidebarGroup key={tag as string} className="p-2">
-            <SidebarGroupLabel className="group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-              <span className="group-data-[collapsible=icon]:hidden uppercase text-[10px] tracking-widest font-bold">
-                {tag as string}
-              </span>
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {(entriesInGroup as NavigationEntry[]).map((entry) => (
-                  <SidebarMenuItem key={entry.path}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={entry.isActive}
-                      tooltipLabel={entry.label}
-                    >
-                      <Link href={entry.path!} onClick={() => { if(isMobile) setOpenMobile(false) }}>
-                        {React.createElement(entry.icon as any)}
-                        <span className="group-data-[collapsible=icon]:hidden">
-                          {entry.label}
-                        </span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        ))}
-      </SidebarContent>
-      <SidebarFooter className="mt-auto border-t border-sidebar-border p-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="h-auto w-full justify-start gap-2 py-2 text-left hover:bg-sidebar-accent group-data-[collapsible=icon]:justify-center"
-            >
-              <div className="group-data-[collapsible=icon]:hidden flex flex-col items-start overflow-hidden">
-                  <span className="text-sm font-semibold truncate w-full">
-                      {currentUser?.name || "Mi Cuenta"}
-                  </span>
-                  <span className="text-[10px] uppercase opacity-70">
-                      {String(currentUser?.role ?? 'Usuario')}
-                  </span>
-              </div>
-              <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center h-8 w-8 rounded-full bg-sidebar-accent">
-                 <span className="text-sm font-bold">
+          </Link>
+        </div>
+
+        {/* Desktop nav */}
+        <nav className="hidden md:flex items-center justify-center gap-1 shrink-0 px-4">
+          {visibleGroups.map(group => (
+            <NavGroupDropdown
+              key={group.label}
+              group={group}
+              pathname={pathname}
+            />
+          ))}
+        </nav>
+
+        {/* Right side: user card & notifications */}
+        <div className="flex items-center justify-end gap-2 flex-1 shrink-0 ml-auto">
+          <NotificationBell />
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2 rounded-xl border border-white/20 px-3 py-1.5 hover:bg-white/10 transition-colors text-sm text-white">
+                <div className="h-7 w-7 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-bold text-white">
                     {currentUser?.name?.[0]?.toUpperCase() || 'U'}
-                 </span>
-              </div>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" side="top" className="w-56">
-            <DropdownMenuLabel>{currentUser?.name || "Mi Cuenta"}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild><Link href="/opciones?tab=perfil"><Users className="mr-2 h-4 w-4" /> Mi Perfil</Link></DropdownMenuItem>
-            <DropdownMenuItem asChild><Link href="/opciones?tab=manual"><LifeBuoy className="mr-2 h-4 w-4" /> Manual</Link></DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="text-destructive"><LogOut className="mr-2 h-4 w-4" /> Salir</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SidebarFooter>
-    </Sidebar>
+                  </span>
+                </div>
+                <div className="hidden sm:flex flex-col items-start leading-tight">
+                  <span className="font-semibold text-xs truncate max-w-[120px]">
+                    {currentUser?.name || 'Mi Cuenta'}
+                  </span>
+                  <span className="text-[10px] text-white/70 uppercase tracking-wide">
+                    {currentUser?.role ?? 'Usuario'}
+                  </span>
+                </div>
+                <ChevronDown className="h-3.5 w-3.5 text-white/50" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuLabel>{currentUser?.name || 'Mi Cuenta'}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/personal?tab=perfil">
+                  <Users className="mr-2 h-4 w-4" /> Mi Perfil
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout} className="text-destructive">
+                <LogOut className="mr-2 h-4 w-4" /> Salir
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Mobile hamburger */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setMobileOpen(o => !o)}
+            aria-label="Menú"
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t bg-background px-4 py-3 space-y-1">
+          {visibleGroups.map(group => (
+            <div key={group.label}>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2 pt-3 pb-1">
+                {group.label}
+              </p>
+              {group.items.map(item => {
+                const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path!));
+                const Icon = item.icon as React.ElementType;
+                return (
+                  <Link
+                    key={item.path}
+                    href={item.path!}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
+                      isActive
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : "text-foreground hover:bg-muted"
+                    )}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      )}
+    </header>
   );
 }
 
-export const AppSidebar = withSuspense(AppSidebarInner, <div className="w-64 p-4">Cargando...</div>);
-export default AppSidebar;
+export const AppTopNav = withSuspense(AppTopNavInner, <div className="h-14 w-full border-b bg-background" />);
+export default AppTopNav;

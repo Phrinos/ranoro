@@ -107,6 +107,32 @@ export type ServiceRecord = {
   [k: string]: any;
 };
 
+// ✅ Appointment – standalone appointment record (nueva agenda unificada)
+export type AppointmentStatus = 'Pendiente' | 'Confirmada' | 'Cancelada' | 'Completada' | 'No se presentó';
+
+export interface Appointment {
+  id: string;
+  vehicleId: string;
+  licensePlate: string;          // identificador principal del vehículo
+  vehicleIdentifier?: string;    // "Make Model Year – Placa"
+  ownerName?: string;
+  ownerPhone?: string;
+  technicianId?: string;
+  technicianName?: string;
+  serviceAdvisorId?: string;
+  serviceAdvisorName?: string;
+  appointmentDateTime: string;   // ISO
+  durationMinutes?: number;
+  status: AppointmentStatus;
+  notes?: string;
+  serviceTypeLabels?: string[];  // categorías de servicio a realizar
+  relatedQuoteId?: string;       // si viene de una cotización previa
+  relatedServiceId?: string;     // si ya se convirtió en servicio
+  createdAt?: string;
+  updatedAt?: string;
+  [k: string]: any;
+}
+
 // ✅ SaleReceipt
 export type SaleLineItem = {
   itemId: string;
@@ -377,12 +403,27 @@ export interface Vehicle {
   assignedDriverName?: string;
 }
 
-// ✅ Nuevo tipo para Grupos de Vehículos (Hermanados)
+// ✅ Grupos de Vehículos para Reglas de Precios (Precotizador Inteligente)
+export interface GroupItemOption {
+  inventoryItemId: string;
+  name: string;
+  quantity: number;
+}
+
 export interface VehicleGroup {
   id: string;
   name: string;
   description?: string;
-  sharedEngineData?: any; // EngineData
+  
+  // Categorías de insumos compatibles
+  items: {
+    aceites: GroupItemOption[];
+    filtrosAceite: GroupItemOption[];
+    filtrosAire: GroupItemOption[];
+    bujias: GroupItemOption[];
+    otros: GroupItemOption[];
+  };
+
   members: {
     make: string;
     model: string;
@@ -467,4 +508,96 @@ export interface MonthlyBalances {
   transferTotal: number;
   lastUpdated: string;
   updatedBy: string;
+}
+
+// ── WhatsApp Bot ────────────────────────────────────────────────────
+
+export interface WhatsAppAgentConfig {
+  enabled: boolean;
+  botName: string;
+  workshopName: string;
+  defaultCountryCode: string;
+  baileysHost: string;
+  baileysPort: string;
+  baileysSessionId: string;
+  baileysAdminUser?: string;
+  baileysAdminPassword?: string;
+  webhookSecret: string;
+  greetingMessage: string;
+  tone: 'profesional-calido' | 'amigable-casual' | 'eficiente-directo';
+  emojiLevel: 'ninguno' | 'minimo' | 'moderado' | 'frecuente';
+  customInstructions: string;
+  outOfHoursMessage: string;
+  fallbackErrorMessage: string;
+  // ── Recordatorios ──
+  remindersEnabled: boolean;
+  reminderHoursBefore: number;
+  confirmationHoursBefore: number;
+  // ── Mensajería ──
+  pollsEnabled: boolean;
+  messageExpirationHours: number;
+  systemPromptOverride: string;
+  // ── Sesión & IA ──
+  sessionTTLHours: number;
+  geminiModel: string;
+  geminiMaxRetries: number;
+  geminiRetryDelayMs: number;
+  // ── Escalamiento (Asesor ↔ IA) ──
+  escalationEnabled: boolean;
+  advisorTakeoverKeyword: string;
+  aiReturnKeyword: string;
+  escalationTimeoutHours: number;
+  autoEscalateOnComplaint: boolean;
+  autoEscalateOnRequest: boolean;
+  escalationMessage: string;
+  returnMessage: string;
+  advisorPhoneNumber: string;
+  // ── Base de Conocimiento ──
+  knowledgeBase: string;
+  // ── Display ──
+  whatsappPhone: string;
+  updatedAt?: any;
+}
+
+export interface WhatsAppTemplate {
+  welcome: string;
+  reminder: string;
+  confirmation: string;
+  cancellation: string;
+  updatedAt?: any;
+}
+
+export interface WhatsAppConversation {
+  id: string;
+  pushName: string;
+  clientPhone?: string;
+  escalatedUntil: any | null;
+  lastMessageAt: any;
+  totalMessages: number;
+}
+
+export interface WhatsAppMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: any;
+}
+
+// ── Agenda del Taller (Citas) ───────────────────────────────────────
+
+export interface WorkshopAppointment {
+  id: string;
+  clientName: string;
+  clientPhone: string;
+  vehicleInfo: string;          // "Honda Civic 2020" o descripción breve
+  serviceType: string;          // "Cambio de aceite", "Afinación", etc.
+  date: string;                 // ISO date: "2026-04-16"
+  timeSlot: '08:30' | '13:30';
+  slotIndex: number;            // 0-3 (posición dentro del bloque)
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled';
+  notes?: string;
+  createdAt?: any;
+  createdBy?: string;
+  source?: 'platform' | 'whatsapp';
+  serviceRecordId?: string;     // Link al servicio creado
 }

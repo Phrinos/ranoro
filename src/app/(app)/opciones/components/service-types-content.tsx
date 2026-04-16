@@ -66,16 +66,17 @@ export function TiposDeServicioPageContent({ serviceTypes }: TiposDeServicioProp
     }, [toast]);
     
     return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle>Tipos de Servicio</CardTitle>
-                    <CardDescription>Gestiona las categorías de los servicios que ofreces.</CardDescription>
-                </div>
-                <Button onClick={() => handleOpenDialog()}><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Tipo</Button>
-            </CardHeader>
-            <CardContent>
-                 <div className="rounded-md border">
+        <div className="max-w-3xl mx-auto">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Tipos de Servicio</CardTitle>
+                        <CardDescription>Gestiona las categorías de los servicios que ofreces.</CardDescription>
+                    </div>
+                    <Button onClick={() => handleOpenDialog()}><PlusCircle className="mr-2 h-4 w-4"/>Nuevo Tipo</Button>
+                </CardHeader>
+                <CardContent>
+                     <div className="rounded-md border">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -89,19 +90,21 @@ export function TiposDeServicioPageContent({ serviceTypes }: TiposDeServicioProp
                                     <TableRow key={type.id}>
                                         <TableCell className="font-medium">{type.name}</TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(type)} aria-label={`Editar ${type.name}`}>
-                                                <Edit className="h-4 w-4"/>
-                                            </Button>
-                                             <ConfirmDialog
-                                                triggerButton={
-                                                    <Button variant="ghost" size="icon" aria-label={`Eliminar ${type.name}`}>
-                                                        <Trash2 className="h-4 w-4 text-destructive"/>
-                                                    </Button>
-                                                }
-                                                title={`¿Eliminar "${type.name}"?`}
-                                                description="Esta acción no se puede deshacer. Los servicios existentes que usen este tipo no serán afectados, pero no podrá ser seleccionado para nuevos servicios."
-                                                onConfirm={() => handleDeleteType(type)}
-                                            />
+                                            <div className="flex items-center justify-end gap-1">
+                                                <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(type)} aria-label={`Editar ${type.name}`}>
+                                                    <Edit className="h-4 w-4"/>
+                                                </Button>
+                                                 <ConfirmDialog
+                                                    triggerButton={
+                                                        <Button variant="ghost" size="icon" aria-label={`Eliminar ${type.name}`}>
+                                                            <Trash2 className="h-4 w-4 text-destructive"/>
+                                                        </Button>
+                                                    }
+                                                    title={`¿Eliminar "${type.name}"?`}
+                                                    description="Esta acción no se puede deshacer. Los servicios existentes que usen este tipo no serán afectados, pero no podrá ser seleccionado para nuevos servicios."
+                                                    onConfirm={() => handleDeleteType(type)}
+                                                />
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))
@@ -136,6 +139,7 @@ export function TiposDeServicioPageContent({ serviceTypes }: TiposDeServicioProp
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </Card>
+            </Card>
+        </div>
     );
 }

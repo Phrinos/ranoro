@@ -107,3 +107,4 @@ exports.generateDailyRentalCharges = (0, scheduler_1.onSchedule)({
 });
 // --- Dashboard Stats ---
 __exportStar(require("./dashboard"), exports);
+__exportStar(require("./stats-cron"), exports);

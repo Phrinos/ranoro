@@ -87,3 +87,4 @@ export const generateDailyRentalCharges = onSchedule(
 
 // --- Dashboard Stats ---
 export * from './dashboard';
+export * from './stats-cron';

@@ -58,7 +58,8 @@ const ProductosContent: React.FC<{
   onEditItem: (item: InventoryItem) => void;
   onDeleteItem: (id: string) => void;
   onNewItem: () => void;
-}> = ({ inventoryItems, categories, onPrint, onEditItem, onDeleteItem, onNewItem }) => {
+  onRegisterPurchase: () => void;
+}> = ({ inventoryItems, categories, onPrint, onEditItem, onDeleteItem, onNewItem, onRegisterPurchase }) => {
   const router = useRouter();
   const userPermissions = usePermissions();
 
@@ -145,35 +146,53 @@ const ProductosContent: React.FC<{
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Total en vista', value: kpis.total, icon: Package, cls: 'text-foreground', onClick: () => setQuickFilter('all') },
-          { label: 'Productos', value: kpis.productos, icon: ShoppingCart, cls: 'text-blue-600', onClick: () => setQuickFilter('productos') },
-          { label: 'Servicios', value: kpis.servicios, icon: Tags, cls: 'text-purple-600', onClick: () => setQuickFilter('servicios') },
-          { label: 'Stock bajo', value: kpis.bajoStock, icon: AlertTriangle, cls: 'text-amber-600', onClick: () => setQuickFilter('bajo-stock') },
-          { label: 'Sin stock', value: kpis.sinStock, icon: Layers, cls: 'text-red-600', onClick: () => setQuickFilter('sin-stock') },
-          { label: 'Valor Costo', value: formatCurrency(kpis.valorCosto), isText: true, icon: DollarSign, cls: 'text-green-600', onClick: () => {} },
-        ].map(({ label, value, isText, icon: Icon, cls, onClick }) => (
-          <Card key={label} className="cursor-pointer hover:border-primary/40 hover:shadow-md transition-all" onClick={onClick}>
-            <CardContent className="p-3 flex items-center gap-2">
-              <Icon className={cn("h-5 w-5 shrink-0", cls)} />
-              <div className="min-w-0">
-                <p className={cn("font-extrabold leading-tight truncate", isText ? "text-base" : "text-xl", cls)}>{value}</p>
-                <p className="text-[10px] text-muted-foreground leading-tight">{label}</p>
+          { label: 'Total en vista', value: kpis.total, icon: Package, cls: 'text-foreground', bg: 'bg-slate-50', onClick: () => setQuickFilter('all') },
+          { label: 'Productos', value: kpis.productos, icon: ShoppingCart, cls: 'text-blue-600', bg: 'bg-blue-50', onClick: () => setQuickFilter('productos') },
+          { label: 'Servicios', value: kpis.servicios, icon: Tags, cls: 'text-purple-600', bg: 'bg-purple-50', onClick: () => setQuickFilter('servicios') },
+          { label: 'Stock bajo', value: kpis.bajoStock, icon: AlertTriangle, cls: 'text-amber-600', bg: 'bg-amber-50', onClick: () => setQuickFilter('bajo-stock') },
+          { label: 'Sin stock', value: kpis.sinStock, icon: Layers, cls: 'text-red-600', bg: 'bg-red-50', onClick: () => setQuickFilter('sin-stock') },
+          { label: 'Valor Costo', value: formatCurrency(kpis.valorCosto), isText: true, icon: DollarSign, cls: 'text-green-600', bg: 'bg-green-50', onClick: () => {} },
+        ].map(({ label, value, isText, icon: Icon, cls, bg, onClick }) => (
+          <Card key={label} className="cursor-pointer hover:border-primary/40 hover:shadow-md transition-all border border-border/60" onClick={onClick}>
+            <CardContent className="p-4">
+              <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center mb-2", bg)}>
+                <Icon className={cn("h-4 w-4", cls)} />
               </div>
+              <p className={cn("font-extrabold leading-tight truncate", isText ? "text-base" : "text-2xl", cls)}>{value}</p>
+              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 uppercase tracking-wide">{label}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Search + Filters */}
-      <div className="space-y-3">
-        <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
-          <div className="relative w-full sm:max-w-sm">
+      {/* Action buttons row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <Button onClick={() => onPrint(filteredItems)} variant="outline" className="h-9 bg-white gap-2 text-sm">
+          <Printer className="h-4 w-4" /> Imprimir
+        </Button>
+        {userPermissions.has('inventory:create') && (
+          <Button onClick={onRegisterPurchase} variant="outline" className="h-9 bg-white gap-2 text-sm">
+            <ShoppingCart className="h-4 w-4" /> Registrar Compra
+          </Button>
+        )}
+        {userPermissions.has('inventory:create') && (
+          <Button onClick={onNewItem} className="h-9 gap-2 text-sm">
+            <PlusCircle className="h-4 w-4" /> Nuevo Producto
+          </Button>
+        )}
+      </div>
+
+      {/* Search + Category + Quick filter pills — all inline */}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 items-stretch">
+          {/* Search */}
+          <div className="relative flex-1 min-w-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             <Input
               placeholder={`Buscar nombre, SKU, marca… (mín. ${MIN_SEARCH} chars)`}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="h-10 pl-9 pr-8 bg-white"
+              className="h-10 pl-9 pr-8 bg-white w-full"
             />
             {searchTerm && (
               <button onClick={() => setSearchTerm('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -181,73 +200,83 @@ const ProductosContent: React.FC<{
               </button>
             )}
           </div>
-          {!isSearchActive && searchTerm.length > 0 && (
-            <p className="text-xs text-amber-600 font-medium">Escribe al menos {MIN_SEARCH} caracteres</p>
-          )}
 
-          <div className="flex gap-2 ml-auto items-center">
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="h-10 w-[160px] bg-white text-sm">
-                <SelectValue placeholder="Categoría" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas las categorías</SelectItem>
-                {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Button onClick={() => onPrint(filteredItems)} variant="outline" className="h-10 bg-white shrink-0 gap-2">
-              <Printer className="h-4 w-4" /> Imprimir
-            </Button>
-            {userPermissions.has('inventory:create') && (
-              <Button className="h-10 shrink-0" onClick={onNewItem}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Nuevo
-              </Button>
+          {/* Category selector */}
+          <Select value={filterCategory} onValueChange={setFilterCategory}>
+            <SelectTrigger className="h-10 w-full sm:w-48 bg-white text-sm shrink-0">
+              <SelectValue placeholder="Categoría" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las categorías</SelectItem>
+              {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          {/* Quick filter pills as buttons (same height as search bar) */}
+          <div className="flex gap-1.5 flex-wrap sm:flex-nowrap items-center shrink-0">
+            {QUICK_FILTERS.map(({ id, label }) => (
+              <button
+                key={id}
+                onClick={() => setQuickFilter(id)}
+                className={cn(
+                  "h-10 px-3 rounded-lg border text-xs font-medium transition-all whitespace-nowrap",
+                  quickFilter === id
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-white text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+                )}
+              >
+                {label}
+              </button>
+            ))}
+            {(quickFilter !== 'all' || filterCategory !== 'all') && (
+              <button
+                onClick={() => { setQuickFilter('all'); setFilterCategory('all'); }}
+                className="h-10 px-3 rounded-lg border border-border/60 text-xs text-primary bg-primary/5 hover:bg-primary/10 whitespace-nowrap transition-all"
+              >
+                × Limpiar
+              </button>
             )}
           </div>
         </div>
 
-        {/* Quick filters */}
-        <div className="flex flex-wrap gap-2 items-center">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide shrink-0">Vista rápida:</span>
-          {QUICK_FILTERS.map(({ id, label }) => (
-            <button
-              key={id}
-              onClick={() => setQuickFilter(id)}
-              className={cn(
-                "inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-all",
-                quickFilter === id
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "text-muted-foreground border-border bg-card hover:bg-muted"
-              )}
-            >
-              {label}
-            </button>
-          ))}
-          {(quickFilter !== 'all' || filterCategory !== 'all') && (
-            <button
-              onClick={() => { setQuickFilter('all'); setFilterCategory('all'); }}
-              className="text-xs text-primary underline hover:no-underline ml-1"
-            >
-              Limpiar
-            </button>
-          )}
-        </div>
+        {!isSearchActive && searchTerm.length > 0 && (
+          <p className="text-xs text-amber-600 font-medium">Escribe al menos {MIN_SEARCH} caracteres para buscar</p>
+        )}
       </div>
 
-      {/* Pagination summary */}
+      {/* Pagination */}
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-          Mostrando {pageData.length > 0 ? (page - 1) * PAGE_SIZE + 1 : 0}–{Math.min(page * PAGE_SIZE, filteredItems.length)} de {filteredItems.length}
+        <p className="text-xs text-muted-foreground">
+          {pageData.length > 0 ? <>{(page-1)*PAGE_SIZE+1}–{Math.min(page*PAGE_SIZE, filteredItems.length)} de {filteredItems.length} resultados</> : '0 resultados'}
         </p>
-        <div className="flex items-center gap-2">
-          <Button size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} variant="outline" className="bg-card">
-            <ChevronLeft className="h-4 w-4" /> Anterior
-          </Button>
-          <span className="text-xs text-muted-foreground">{page}/{Math.max(1, totalPages)}</span>
-          <Button size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} variant="outline" className="bg-card">
-            Siguiente <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            <Button size="sm" onClick={() => setPage(p => Math.max(1, p-1))} disabled={page===1} variant="outline" className="h-8 w-8 p-0 bg-white">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+              const pg = start + i;
+              return pg <= totalPages ? (
+                <button
+                  key={pg}
+                  onClick={() => setPage(pg)}
+                  className={cn(
+                    "h-8 w-8 rounded-md text-xs font-medium border transition-all",
+                    pg === page
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-white border-border text-muted-foreground hover:bg-muted"
+                  )}
+                >
+                  {pg}
+                </button>
+              ) : null;
+            })}
+            <Button size="sm" onClick={() => setPage(p => Math.min(totalPages, p+1))} disabled={page>=totalPages} variant="outline" className="h-8 w-8 p-0 bg-white">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -564,7 +593,7 @@ function PageInner() {
     <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
       <div className="space-y-6">
 
-        {/* ── Header limpio ───────────────────────────────────────── */}
+        {/* ── Header: título izq, tabs der ────────────────────────── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">Inventario</h1>
@@ -572,36 +601,24 @@ function PageInner() {
               Gestiona productos, servicios, stock y categorías.
             </p>
           </div>
-          <div className="flex gap-2 shrink-0">
-            {userPermissions.has('inventory:create') && (
-              <Button onClick={() => setIsRegisterPurchaseOpen(true)} variant="outline">
-                <ShoppingCart className="mr-2 h-4 w-4" /> Registrar Compra
-              </Button>
-            )}
-            {userPermissions.has('inventory:create') && (
-              <Button onClick={() => handleOpenItemDialog()}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Producto
-              </Button>
-            )}
-          </div>
-        </div>
 
-        {/* ── Pill tabs ────────────────────────────────────────────── */}
-        <div className="inline-flex flex-wrap gap-2 bg-muted/50 p-1.5 rounded-2xl border border-border/50">
-          {TABS.map(tab => (
-            <button
-              key={tab.value}
-              onClick={() => onTabChange(tab.value)}
-              className={cn(
-                'inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap',
-                activeTab === tab.value
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {/* Pill tabs a la derecha */}
+          <div className="inline-flex flex-wrap gap-2 bg-muted/50 p-1.5 rounded-2xl border border-border/50 shrink-0">
+            {TABS.map(tab => (
+              <button
+                key={tab.value}
+                onClick={() => onTabChange(tab.value)}
+                className={cn(
+                  'inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap',
+                  activeTab === tab.value
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── Tab content ──────────────────────────────────────────── */}
@@ -615,6 +632,7 @@ function PageInner() {
                 onEditItem={handleOpenItemDialog}
                 onDeleteItem={handleDeleteItem}
                 onNewItem={() => handleOpenItemDialog()}
+                onRegisterPurchase={() => setIsRegisterPurchaseOpen(true)}
               />
             </Suspense>
           </TabsContent>

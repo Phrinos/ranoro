@@ -3,9 +3,9 @@
 
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
-import { Loader2, ShieldAlert, Printer } from "lucide-react";
+import { Loader2, ShieldAlert } from "lucide-react";
 import { doc, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebasePublic";
 import { useToast } from "@/hooks/use-toast";
@@ -13,9 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ServiceSheetContent } from "@/components/shared/ServiceSheetContent";
 import { SignatureDialog } from "@/app/(app)/servicios/components/signature-dialog";
 import { AppointmentScheduler } from "@/components/shared/AppointmentScheduler";
-import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
-import { TicketContent } from "@/components/ticket-content";
-import { Button } from "@/components/ui/button";
+import { TicketPreviewModal } from "@/app/(app)/ticket/components";
 import {
   getPublicServiceData,
   scheduleAppointmentAction,
@@ -109,7 +107,6 @@ export default function PublicServicePage() {
   const [isScheduling, setIsScheduling] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
-  const ticketContentRef = useRef<HTMLDivElement>(null);
   const [workshopInfo, setWorkshopInfo] = useState<any | null>(null);
 
   useEffect(() => {
@@ -281,25 +278,13 @@ export default function PublicServicePage() {
         onConfirm={handleScheduleAppointment}
       />
 
-      <UnifiedPreviewDialog
+      <TicketPreviewModal
         open={isTicketDialogOpen}
         onOpenChange={setIsTicketDialogOpen}
-        title="Ticket de Servicio"
-        footerContent={
-          <Button onClick={() => window.print()}>
-            <Printer className="mr-2 h-4 w-4" />
-            Imprimir
-          </Button>
-        }
         service={service as any}
-      >
-        <TicketContent
-          ref={ticketContentRef}
-          service={service as any}
-          vehicle={vehicle as any}
-          previewWorkshopInfo={workshopInfo}
-        />
-      </UnifiedPreviewDialog>
+        vehicle={vehicle as any}
+        workshopInfo={workshopInfo}
+      />
     </>
   );
 }

@@ -71,7 +71,7 @@ function ListaDePreciosPage() {
     },
     { 
       value: 'grupos', 
-      label: 'Grupos (Compatibilidad)', 
+      label: 'Reglas de Precios y Refacciones', 
       content: <GroupsTab groups={groups} priceLists={priceLists} /> 
     },
   ];

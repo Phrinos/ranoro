@@ -19,8 +19,8 @@ export function isEngineDataComplete(engine: EngineData): boolean {
   
   // Check at least one brake set is defined
   const hasBalatas = 
-    (insumos?.balatas?.delanteras?.length > 0 && insumos.balatas.delanteras.every(b => b.modelo && b.costoJuego)) ||
-    (insumos?.balatas?.traseras?.length > 0 && insumos.balatas.traseras.every(b => b.modelo && b.costoJuego));
+    (insumos?.balatas?.delanteras?.length > 0 && insumos.balatas.delanteras.every((b: any) => b.modelo && b.costoJuego)) ||
+    (insumos?.balatas?.traseras?.length > 0 && insumos.balatas.traseras.every((b: any) => b.modelo && b.costoJuego));
     
   const hasServicios = 
     servicios?.afinacionIntegral?.precioPublico && 

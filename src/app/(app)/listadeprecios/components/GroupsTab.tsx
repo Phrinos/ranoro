@@ -50,11 +50,11 @@ export default function GroupsTab({ groups, priceLists }: GroupsTabProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="space-y-1">
-          <h3 className="text-lg font-semibold">Grupos de Compatibilidad</h3>
-          <p className="text-sm text-muted-foreground">Agrupa modelos que comparten las mismas refacciones (ej. Versa/March).</p>
+          <h3 className="text-lg font-semibold">Reglas de Precios / Compatibilidad</h3>
+          <p className="text-sm text-muted-foreground">Agrupa modelos que comparten las mismas refacciones e insumos (ej. Versa/March).</p>
         </div>
         <Button onClick={() => handleOpenDialog()}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Grupo
+          <PlusCircle className="mr-2 h-4 w-4" /> Nueva Regla
         </Button>
       </div>
 
@@ -70,12 +70,12 @@ export default function GroupsTab({ groups, priceLists }: GroupsTabProps) {
                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenDialog(group)}>
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <ConfirmDialog
-                    triggerButton={<Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4" /></Button>}
-                    title="¿Eliminar Grupo?"
-                    description="Los vehículos vinculados ya no compartirán estos datos técnicos."
-                    onConfirm={() => handleDeleteGroup(group.id)}
-                  />
+                    <ConfirmDialog
+                      triggerButton={<Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="h-4 w-4" /></Button>}
+                      title="¿Eliminar Regla de Precios?"
+                      description="Los vehículos vinculados ya no tendrán estos insumos sugeridos en su cotizador."
+                      onConfirm={() => handleDeleteGroup(group.id)}
+                    />
                 </div>
               </div>
               <CardTitle className="mt-3">{group.name}</CardTitle>
@@ -95,7 +95,13 @@ export default function GroupsTab({ groups, priceLists }: GroupsTabProps) {
               </div>
               <Separator />
               <Button variant="ghost" className="w-full justify-between text-xs h-8 p-0 hover:bg-transparent" onClick={() => handleOpenDialog(group)}>
-                <span>Configurar Datos Técnicos</span>
+                <span>
+                 {((group.items?.aceites?.length || 0) + 
+                   (group.items?.filtrosAceite?.length || 0) + 
+                   (group.items?.filtrosAire?.length || 0) + 
+                   (group.items?.bujias?.length || 0) + 
+                   (group.items?.otros?.length || 0))} Refacciones Configuradas
+                </span>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </CardContent>
@@ -103,12 +109,12 @@ export default function GroupsTab({ groups, priceLists }: GroupsTabProps) {
         )) : (
           <div className="col-span-full py-20 text-center border-2 border-dashed rounded-lg bg-muted/20">
             <Layers className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h4 className="text-lg font-medium">No hay grupos creados</h4>
+            <h4 className="text-lg font-medium">No hay reglas configuradas</h4>
             <p className="text-sm text-muted-foreground max-w-xs mx-auto mt-2">
-              Los grupos te ayudan a gestionar precios de varios modelos al mismo tiempo cuando usan las mismas piezas.
+              Las reglas te ayudan a gestionar precios agrupando opciones de inventario por modelos compatibles.
             </p>
             <Button variant="outline" className="mt-6 bg-white" onClick={() => handleOpenDialog()}>
-              Crear el primer grupo
+              Crear primera regla
             </Button>
           </div>
         )}

@@ -20,7 +20,7 @@ import { InformacionNegocioCard } from "./config-ticket/informacion-negocio-card
 import { EstiloTextoTicketCard } from "./config-ticket/estilo-texto-ticket-card";
 import { MensajesPiePaginaCard } from "./config-ticket/mensajes-pie-pagina-card";
 import { PieTicketEspaciadoCard } from "./config-ticket/pie-ticket-espaciado-card";
-import { TicketContent } from "@/components/ticket-content";
+import { TicketContent } from "@/app/(app)/ticket/components";
 import { useDebouncedCallback } from "use-debounce";
 import { defaultTicketSettings } from "@/lib/placeholder-data";
 
@@ -198,8 +198,9 @@ export function ConfiguracionTicketPageContent() {
   );
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-      <div className="lg:col-span-1">
+    <div className="max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_450px] gap-6">
+        <div className="flex-1">
         <FormProvider {...methods}>
           <Form {...methods}>
             <form
@@ -237,7 +238,7 @@ export function ConfiguracionTicketPageContent() {
           </Form>
         </FormProvider>
       </div>
-      <div className="lg:col-span-2">
+      <div className="w-full">
         <Card className="shadow-lg sticky top-24">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
@@ -263,6 +264,7 @@ export function ConfiguracionTicketPageContent() {
           </CardContent>
         </Card>
       </div>
+    </div>
     </div>
   );
 }

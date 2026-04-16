@@ -1,272 +1,53 @@
-
 // src/app/(app)/vehiculos/[id]/page.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trash2, Loader2, Edit, ClipboardList } from "lucide-react";
+import { ArrowLeft, Trash2, Loader2, Edit, ClipboardList, Car, Gauge, Calendar, Phone, AlertTriangle, FileText, ChevronRight, CheckCircle2, X } from "lucide-react";
 import { inventoryService, serviceService } from "@/lib/services";
-import type { Vehicle, ServiceRecord } from "@/types";
+import type { Vehicle, ServiceRecord, NextServiceInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { VehicleInfoCard } from "../components/VehicleInfoCard";
 import { VehicleDialog } from "../components/vehicle-dialog";
 import type { VehicleFormValues } from "@/schemas/vehicle-form-schema";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHeader, TableRow } from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { parseDate } from "@/lib/forms";
-import { formatNumber, formatCurrency, getStatusInfo } from "@/lib/utils";
+import { formatNumber, formatCurrency, getStatusInfo, cn } from "@/lib/utils";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
-import { SortableTableHeader } from "@/components/shared/SortableTableHeader";
-import { useTableManager } from "@/hooks/useTableManager";
-import { MaintenanceCard } from "../../vehiculos/components/MaintenanceCard";
-import { VehiclePricingCard } from "../../precios/components/VehiclePricingCard";
-import type { EngineData } from "@/lib/data/vehicle-database-types";
-import { EditEngineDataDialog } from "@/app/(app)/precios/components/EditEngineDataDialog";
-import { doc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebaseClient";
-import { VEHICLE_COLLECTION } from "@/lib/vehicle-constants";
 import { usePermissions } from "@/hooks/usePermissions";
+import { pickLatestDeliveredService, getServiceMileage } from "@/lib/vehicles/serviceRecordHelpers";
 
 const getServiceDescriptionText = (service: ServiceRecord) => {
   if (service.serviceItems && service.serviceItems.length > 0) {
     return service.serviceItems.map((item) => item.name).join(", ");
   }
-  return service.description;
+  return service.description || "Mantenimiento / Servicio General";
 };
 
-function ServiceHistoryTable({
-  services,
-  onRowClick,
-}: {
-  services: ServiceRecord[];
-  onRowClick: (service: ServiceRecord) => void;
-}) {
-  const { filteredData: sortedServices, sortOption, onSortOptionChange } =
-    useTableManager<ServiceRecord>({
-      initialData: services,
-      searchKeys: [],
-      dateFilterKey: "serviceDate",
-      initialSortOption: "folio_desc",
-    });
-
-  const handleSort = (key: string) => {
-    const isAsc = sortOption.endsWith("_asc");
-    onSortOptionChange(`${key}_${isAsc ? "desc" : "asc"}`);
-  };
-
-  const formatRelevantDate = (service: ServiceRecord) => {
-    const relevantDate = parseDate(
-      service.deliveryDateTime || service.receptionDateTime || service.serviceDate
-    );
-    return relevantDate && isValid(relevantDate)
-      ? format(relevantDate, "dd MMM yyyy, HH:mm", { locale: es })
-      : "N/A";
-  };
-
-  const renderMobileCards = () => (
-    <div className="space-y-3">
-      {sortedServices.map((service) => {
-        const statusInfo = getStatusInfo(service.status as any);
-        const folio = service.folio || service.id.slice(-6);
-        const dateText = formatRelevantDate(service);
-        const mileageText = (service as any).mileage
-          ? `${formatNumber((service as any).mileage)} km`
-          : "N/A";
-        const desc = getServiceDescriptionText(service);
-
-        return (
-          <button
-            key={service.id}
-            type="button"
-            onClick={() => onRowClick(service)}
-            className="w-full text-left rounded-lg border p-3 hover:bg-muted/50 active:bg-muted transition-colors"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {folio}
-                  </span>
-                  <Badge variant={statusInfo.color as any} className="shrink-0">
-                    {service.status}
-                  </Badge>
-                </div>
-                <div className="mt-1 text-sm font-medium">
-                  {vehicleSafeText(desc)}
-                </div>
-              </div>
-              <div className="shrink-0 text-right">
-                <div className="text-sm font-semibold">
-                  {formatCurrency(service.totalCost || 0)}
-                </div>
-                <div className="mt-1 text-xs text-muted-foreground">
-                  {mileageText}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-2 text-xs text-muted-foreground">
-              {dateText}
-            </div>
-          </button>
-        );
-      })}
-    </div>
-  );
-
-  const renderDesktopTable = () => (
-    <div className="rounded-md border overflow-x-auto">
-      <Table className="min-w-[880px]">
-        <TableHeader className="bg-black">
-          <TableRow>
-            <SortableTableHeader
-              sortKey="folio"
-              label="Folio"
-              onSort={handleSort}
-              currentSort={sortOption}
-              textClassName="text-white"
-            />
-            <SortableTableHeader
-              sortKey="serviceDate"
-              label="Fecha"
-              onSort={handleSort}
-              currentSort={sortOption}
-              textClassName="text-white"
-            />
-            <SortableTableHeader
-              sortKey="mileage"
-              label="Kilometraje"
-              onSort={handleSort}
-              currentSort={sortOption}
-              textClassName="text-white"
-            />
-            <SortableTableHeader
-              sortKey="description"
-              label="Descripción"
-              onSort={handleSort}
-              currentSort={sortOption}
-              textClassName="text-white"
-            />
-            <SortableTableHeader
-              sortKey="totalCost"
-              label="Costo"
-              onSort={handleSort}
-              currentSort={sortOption}
-              textClassName="text-white"
-              className="text-right"
-            />
-            <SortableTableHeader
-              sortKey="status"
-              label="Estado"
-              onSort={handleSort}
-              currentSort={sortOption}
-              textClassName="text-white"
-            />
-          </TableRow>
-        </TableHeader>
-
-        <TableBody>
-          {sortedServices.map((service) => {
-            const statusInfo = getStatusInfo(service.status as any);
-            const relevantDate = formatRelevantDate(service);
-
-            return (
-              <TableRow
-                key={service.id}
-                onClick={() => onRowClick(service)}
-                className="cursor-pointer"
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") onRowClick(service);
-                }}
-              >
-                <TableCell className="font-mono text-xs">
-                  {service.folio || service.id.slice(-6)}
-                </TableCell>
-                <TableCell className="whitespace-nowrap">{relevantDate}</TableCell>
-                <TableCell className="whitespace-nowrap">
-                  {(service as any).mileage
-                    ? `${formatNumber((service as any).mileage)} km`
-                    : "N/A"}
-                </TableCell>
-                <TableCell className="max-w-[420px] truncate">
-                  {vehicleSafeText(getServiceDescriptionText(service))}
-                </TableCell>
-                <TableCell className="text-right whitespace-nowrap">
-                  {formatCurrency(service.totalCost || 0)}
-                </TableCell>
-                <TableCell className="whitespace-nowrap">
-                  <Badge variant={statusInfo.color as any}>{service.status}</Badge>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
-  );
+const NextServiceDisplay = ({ nextServiceInfo }: { nextServiceInfo?: NextServiceInfo | null }) => {
+  if (!nextServiceInfo || (!nextServiceInfo.date && !nextServiceInfo.mileage)) {
+    return <span className="font-semibold text-sm">No programado</span>;
+  }
+  const date = nextServiceInfo.date ? parseDate(nextServiceInfo.date) : null;
+  const isOverdue = date && isValid(date) ? new Date() > date : false;
 
   return (
-    <Card className="overflow-hidden border-0 shadow-lg relative bg-card h-full flex flex-col">
-      <CardHeader className="space-y-1 bg-muted/10 border-b pb-4">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-lg font-bold tracking-tight">Registro de Servicios</CardTitle>
-          {sortedServices.length > 0 && (
-            <div className="text-xs font-semibold px-3 py-1 bg-primary/10 text-primary rounded-full w-fit">
-              {sortedServices.length} intervenci{sortedServices.length === 1 ? "ón" : "ones"}
-            </div>
-          )}
-        </div>
-        <CardDescription>
-          Mantenimientos y reparaciones ingresadas al historial.
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent className="p-0 flex-1 flex flex-col">
-        {sortedServices.length > 0 ? (
-          <>
-            {/* Mobile (Cards) */}
-            <div className="sm:hidden p-4 bg-muted/5">{renderMobileCards()}</div>
-
-            {/* Tablet/Web (Table) */}
-            <div className="hidden sm:block p-0.5">{renderDesktopTable()}</div>
-          </>
-        ) : (
-          <div className="flex flex-col items-center justify-center p-8 text-center flex-1 bg-muted/5 border-t border-dashed min-h-[200px]">
-            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-3">
-              <ClipboardList className="h-6 w-6 text-muted-foreground/50" />
-            </div>
-            <p className="font-semibold text-foreground">Aún no hay servicios</p>
-            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-              Cuando el taller finalice un trabajo para este vehículo, el registro histórico se desplegará aquí automáticamente.
-            </p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <div className={cn("flex flex-wrap items-center gap-2", isOverdue ? "text-red-600 font-bold" : "text-amber-700")}>
+      <span className="font-semibold text-sm">
+        {date && isValid(date) ? format(date, "dd MMM yyyy", { locale: es }) : ""}
+        {(date && nextServiceInfo.mileage) && " o a los "}
+        {nextServiceInfo.mileage ? `${formatNumber(nextServiceInfo.mileage)} km` : ""}
+      </span>
+      {isOverdue && (
+        <Badge variant="destructive" className="px-1.5 py-0 text-[10px] uppercase">Vencido</Badge>
+      )}
+    </div>
   );
-}
-
-/**
- * Evita que "undefined" o strings vacíos se vean feos en UI.
- * (No cambia datos, solo presentación).
- */
-function vehicleSafeText(text: any) {
-  const s = typeof text === "string" ? text.trim() : "";
-  return s.length ? s : "Sin descripción";
-}
+};
 
 export default function VehicleDetailPage() {
   const params = useParams();
@@ -277,12 +58,9 @@ export default function VehicleDetailPage() {
 
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [services, setServices] = useState<ServiceRecord[]>([]);
-  const [priceLists, setPriceLists] = useState<any[]>([]);
-
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isViewServiceDialogOpen, setIsViewServiceDialogOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceRecord | null>(null);
-  const [isEngineEditDialogOpen, setIsEngineEditDialogOpen] = useState(false);
+  const [isViewServiceDialogOpen, setIsViewServiceDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!vehicleId) return;
@@ -294,49 +72,14 @@ export default function VehicleDetailPage() {
       } catch (error) {
         console.error("Error fetching vehicle:", error);
         setVehicle(null);
-        toast({
-          title: "Error",
-          description: "No se pudo cargar el vehículo.",
-          variant: "destructive",
-        });
+        toast({ title: "Error", description: "No se pudo cargar el vehículo.", variant: "destructive" });
       }
     };
 
     fetchVehicle();
-
     const unsubscribeServices = serviceService.onServicesForVehicleUpdate(vehicleId, setServices);
-
-    return () => {
-      unsubscribeServices();
-    };
+    return () => unsubscribeServices();
   }, [vehicleId, toast]);
-
-  // OPTIMIZATION: Only fetch the price list data for this specific vehicle's make
-  useEffect(() => {
-    if (!vehicle?.make) return;
-    const unsubscribeMakeData = inventoryService.onVehicleMakeDataUpdate(vehicle.make, (data) => {
-       setPriceLists(data ? [data] : []);
-    });
-    return () => unsubscribeMakeData();
-  }, [vehicle?.make]);
-
-  const vehicleEngineData = useMemo(() => {
-    if (!vehicle || !vehicle.engine || priceLists.length === 0) return null;
-
-    // priceLists now only contains 1 element (the specific make)
-    const makeData = priceLists[0];
-    if (!makeData || !makeData.models) return null;
-
-    const modelData = makeData.models.find((m: any) => m.name === vehicle.model);
-    if (!modelData || !modelData.generations) return null;
-
-    const generationData = modelData.generations.find(
-      (g: any) => vehicle.year >= g.startYear && vehicle.year <= g.endYear
-    );
-    if (!generationData || !generationData.engines) return null;
-
-    return generationData.engines.find((e: any) => e.name === vehicle.engine) || null;
-  }, [vehicle, priceLists]);
 
   const handleSaveEditedVehicle = async (formData: VehicleFormValues) => {
     if (!vehicle) return;
@@ -346,11 +89,7 @@ export default function VehicleDetailPage() {
       setIsEditDialogOpen(false);
       toast({ title: "Vehículo actualizado" });
     } catch {
-      toast({
-        title: "Error",
-        description: "No se pudieron guardar los cambios.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "No se pudieron guardar los cambios.", variant: "destructive" });
     }
   };
 
@@ -361,134 +100,250 @@ export default function VehicleDetailPage() {
       toast({ title: "Vehículo eliminado", variant: "destructive" });
       router.push("/vehiculos");
     } catch {
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el vehículo.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "No se pudo eliminar el vehículo.", variant: "destructive" });
     }
   };
 
-  const handleEngineDataSave = async (updatedEngineData: EngineData) => {
-    if (!vehicle || !db) return;
-    const { make, model, year } = vehicle;
+  const latestService = useMemo(() => pickLatestDeliveredService(services), [services]);
+  const lastServiceDate = useMemo(() => {
+    const fromHistory = latestService?.date ?? null;
+    if (fromHistory && isValid(fromHistory)) return fromHistory;
+    return vehicle?.lastServiceDate ? parseDate(vehicle.lastServiceDate) : null;
+  }, [latestService, vehicle?.lastServiceDate]);
 
-    if (!make) {
-      toast({
-        title: "Error de Datos",
-        description: "La marca del vehículo (make) no está definida. No se puede guardar.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const lastServiceMileage = latestService?.mileage ?? null;
 
-    try {
-      const makeData = priceLists.find((pl) => pl.make === make);
-      if (!makeData) throw new Error("Make data not found in price list.");
+  const currentMileage = useMemo(() => {
+    if (!vehicle) return 0;
+    const base = Number(vehicle.currentMileage || 0) || 0;
+    const maxFromServices = services
+      .map(getServiceMileage)
+      .filter((n): n is number => typeof n === "number" && !isNaN(n))
+      .reduce((max, n) => Math.max(max, n), 0);
+    return Math.max(base, maxFromServices, lastServiceMileage ?? 0);
+  }, [vehicle, services, lastServiceMileage]);
 
-      const modelIndex = makeData.models.findIndex((m: any) => m.name === model);
-      if (modelIndex === -1) throw new Error("Model data not found.");
-
-      const genIndex = makeData.models[modelIndex].generations.findIndex(
-        (g: any) => year >= g.startYear && year <= g.endYear
-      );
-      if (genIndex === -1) throw new Error("Generation data not found.");
-
-      const engineIndex = makeData.models[modelIndex].generations[genIndex].engines.findIndex(
-        (e: any) => e.name === vehicleEngineData?.name
-      );
-      if (engineIndex === -1) throw new Error("Engine data not found.");
-
-      const updatedModels = [...makeData.models];
-      const updatedGenerations = [...updatedModels[modelIndex].generations];
-      const updatedEngines = [...updatedGenerations[genIndex].engines];
-
-      updatedEngines[engineIndex] = updatedEngineData;
-      updatedGenerations[genIndex] = { ...updatedGenerations[genIndex], engines: updatedEngines };
-      updatedModels[modelIndex] = { ...updatedModels[modelIndex], generations: updatedGenerations };
-
-      await setDoc(doc(db, VEHICLE_COLLECTION, make), { models: updatedModels }, { merge: true });
-
-      toast({
-        title: "Guardado",
-        description: `Se actualizaron los datos para ${updatedEngineData.name}.`,
-      });
-      setIsEngineEditDialogOpen(false);
-    } catch (error) {
-      console.error("Error saving engine data:", error);
-      toast({
-        title: "Error",
-        description: "No se pudieron guardar los cambios en la base de datos de precios.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const openServicePreview = (service: ServiceRecord) => {
-    setSelectedService(service);
-    setIsViewServiceDialogOpen(true);
-  };
+  // Derived sorted services (descending)
+  const recentServices = useMemo(() => {
+    return [...services].sort((a, b) => {
+      const da = parseDate(a.deliveryDateTime || a.serviceDate || '')?.getTime() || 0;
+      const db = parseDate(b.deliveryDateTime || b.serviceDate || '')?.getTime() || 0;
+      return db - da;
+    });
+  }, [services]);
 
   if (vehicle === undefined)
-    return (
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center">
-        <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-      </div>
-    );
+    return <div className="flex justify-center items-center h-[60vh]"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
 
   if (vehicle === null)
     return (
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center space-y-4">
-        <h1 className="text-lg font-semibold">Vehículo no encontrado</h1>
-        <Button onClick={() => router.push("/vehiculos")}>Volver</Button>
+      <div className="container mx-auto px-4 py-8 text-center space-y-4">
+        <h1 className="text-xl font-bold bg-muted/20 p-8 rounded-xl">Registro Inexistente</h1>
+        <Button onClick={() => router.push("/vehiculos")}>Volver a Directorio</Button>
       </div>
     );
 
+  const formatRelevantDate = (service: ServiceRecord) => {
+    const date = parseDate(service.deliveryDateTime || service.receptionDateTime || service.serviceDate);
+    return date && isValid(date) ? format(date, "dd MMM yyyy", { locale: es }) : "N/A";
+  };
+
   return (
-    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-      {/* Top Actions Bar */}
+    <div className="container mx-auto px-4 lg:px-8 py-6 sm:py-8 animate-in fade-in duration-500 max-w-6xl">
+      
+      {/* HEADER ACTIONS */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-muted-foreground hover:text-foreground pl-0 -ml-2"
-          onClick={() => router.back()}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Volver al Directorio
+        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground pl-0 -ml-2" onClick={() => router.back()}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Volver al Directorio
         </Button>
-        <div className="w-full sm:w-auto flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {userPermissions.has('fleet:edit') && (
+            <Button variant="outline" className="w-full sm:w-auto shadow-sm" onClick={() => setIsEditDialogOpen(true)}>
+              <Edit className="mr-2 h-4 w-4" /> Editar Vehículo
+            </Button>
+          )}
           {userPermissions.has('fleet:delete') && (
-            <ConfirmDialog
-              triggerButton={
-                <Button variant="outline" size="sm" className="w-full sm:w-auto text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 transition-colors">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Eliminar Registro
-                </Button>
-              }
-              title="¿Eliminar este vehículo?"
-              description="Esta acción es permanente. Se eliminará localmente el vehículo."
-              onConfirm={handleDeleteVehicle}
-            />
+             <ConfirmDialog
+               triggerButton={
+                 <Button variant="outline" className="w-full sm:w-auto text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 shadow-sm transition-colors">
+                   <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                 </Button>
+               }
+               title="¿Eliminar este vehículo?"
+               description="Esta acción eliminará de la base local el vehículo."
+               onConfirm={handleDeleteVehicle}
+             />
           )}
         </div>
       </div>
 
-      {/* En md ya se muestra 2 columnas (tablet), en lg 5 cols con spans */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
-        <div className="md:col-span-2 lg:col-span-3 space-y-4 sm:space-y-6">
-          <VehicleInfoCard vehicle={vehicle} onEdit={() => setIsEditDialogOpen(true)} />
-          <ServiceHistoryTable services={services} onRowClick={openServicePreview} />
-        </div>
+      <div className="space-y-6">
+        {/* EXPEDIENTE MAIN UNIFIED CARD */}
+        <Card className="overflow-hidden border border-border/60 shadow-xl bg-card rounded-2xl">
+          
+          {/* SEC 1: IDENTIFICATION */}
+          <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 p-6 sm:p-8 lg:p-10 text-white">
+            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+              <Car className="w-48 h-48 -mr-16 -mt-16" />
+            </div>
+            
+            <div className="relative z-10 grid md:grid-cols-[1fr_auto] gap-6 items-start">
+              
+              <div className="space-y-4">
+                <Badge variant="outline" className="bg-white/10 text-xl tracking-widest text-white border-white/20 px-4 py-1.5 font-mono shadow-sm">
+                  {vehicle.licensePlate || 'SIN PLACA'}
+                </Badge>
+                
+                <div>
+                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white mb-1">
+                    {vehicle.make} <span className="font-medium text-slate-300">{vehicle.model}</span>
+                  </h1>
+                  <div className="flex items-center gap-3 text-slate-300 font-medium">
+                    <span className="bg-white/10 px-2.5 py-0.5 rounded-lg border border-white/10">{vehicle.year}</span>
+                    {vehicle.color && <span className="flex items-center gap-1.5 hidden"><div className="w-3 h-3 rounded-full border border-white/20" style={{backgroundColor: vehicle.color.toLowerCase()}} /></span>}
+                    {vehicle.color && <span>{vehicle.color}</span>}
+                  </div>
+                </div>
+              </div>
 
-        <div className="md:col-span-1 lg:col-span-2 space-y-4 sm:space-y-6">
-          <MaintenanceCard vehicle={vehicle} serviceHistory={services} />
-          <VehiclePricingCard
-            engineData={vehicleEngineData as EngineData | null}
-            make={vehicle.make}
-            onEdit={() => setIsEngineEditDialogOpen(true)}
-          />
-        </div>
+              {/* OWNER BLOCK */}
+              <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 md:min-w-[280px] shadow-sm">
+                <h3 className="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-3">Dueño / Contacto</h3>
+                <div className="space-y-1">
+                  <p className="text-lg font-bold text-white tracking-snug">{vehicle.ownerName || <span className="italic font-normal opacity-50">Sin Asignar</span>}</p>
+                  {vehicle.ownerPhone && (
+                     <div className="flex items-center gap-2 text-slate-300 font-mono text-sm">
+                       <Phone className="w-3.5 h-3.5 opacity-70" />
+                       {vehicle.ownerPhone}
+                     </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* SEC 2: MAINTENANCE METRICS */}
+          <div className="p-6 sm:p-8 bg-slate-50 border-b border-border/50">
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+               
+               {/* Current Mileage */}
+               <div className="bg-white p-5 rounded-2xl border shadow-sm flex flex-col justify-between">
+                 <div className="flex items-center gap-2 mb-3">
+                   <div className="bg-primary/10 p-2 rounded-xl"><Gauge className="w-4 h-4 text-primary" /></div>
+                   <span className="text-xs tracking-widest font-bold text-muted-foreground uppercase">Kilometraje</span>
+                 </div>
+                 <p className="text-3xl font-black font-mono text-slate-900">{formatNumber(currentMileage) || '—'} <span className="text-base text-muted-foreground font-medium">km</span></p>
+               </div>
+
+                {/* Last Service Date */}
+                <div className="bg-white p-5 rounded-2xl border shadow-sm flex flex-col justify-between">
+                 <div className="flex items-center gap-2 mb-3">
+                   <div className="bg-blue-500/10 p-2 rounded-xl"><Calendar className="w-4 h-4 text-blue-600" /></div>
+                   <span className="text-xs tracking-widest font-bold text-muted-foreground uppercase">Última Visita</span>
+                 </div>
+                 <div>
+                   <p className="text-2xl font-black text-slate-900">{lastServiceDate && isValid(lastServiceDate) ? format(lastServiceDate, "dd MMM yyyy", { locale: es }) : '—'}</p>
+                   {lastServiceMileage !== null && <p className="text-xs text-muted-foreground font-medium mt-1">Ref: {formatNumber(lastServiceMileage)} km</p>}
+                 </div>
+               </div>
+
+                {/* Next Recommended */}
+                <div className="bg-amber-50 p-5 rounded-2xl border border-amber-200/60 shadow-sm flex flex-col justify-between sm:col-span-2 lg:col-span-2">
+                 <div className="flex items-center gap-2 mb-3">
+                   <div className="bg-amber-500/20 p-2 rounded-xl"><AlertTriangle className="w-4 h-4 text-amber-700" /></div>
+                   <span className="text-xs tracking-widest font-bold text-amber-800 uppercase">Aviso de Próximo Servicio</span>
+                 </div>
+                 <div className="bg-white/60 p-3 rounded-xl border border-amber-200/50">
+                    <NextServiceDisplay nextServiceInfo={(vehicle as any).nextServiceInfo} />
+                 </div>
+               </div>
+
+             </div>
+          </div>
+
+          {/* SEC 3: SERVICE HISTORY INTEGRATED */}
+          <div className="p-0">
+             <div className="px-6 sm:px-8 py-5 bg-card border-b border-border flex items-center justify-between">
+               <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 text-muted-foreground" />
+                  Historial de Intervenciones
+               </h3>
+               <Badge variant="secondary" className="font-mono">{recentServices.length} Registros</Badge>
+             </div>
+
+             {recentServices.length === 0 ? (
+               <div className="p-12 text-center text-muted-foreground bg-slate-50/50 flex flex-col items-center">
+                  <div className="bg-white p-4 rounded-full shadow-sm mb-4 border">
+                    <ClipboardList className="h-8 w-8 text-slate-300" />
+                  </div>
+                  <p className="font-medium text-slate-600">Este vehículo no tiene servicios realizados en el taller aún.</p>
+               </div>
+             ) : (
+                <div className="divide-y divide-border/60">
+                  {recentServices.map((service, idx) => {
+                     const statusInfo = getStatusInfo(service.status as any);
+                     return (
+                        <div 
+                           key={service.id} 
+                           className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 px-6 sm:px-8 hover:bg-slate-50 transition-colors cursor-pointer"
+                           onClick={() => {
+                             setSelectedService(service);
+                             setIsViewServiceDialogOpen(true);
+                           }}
+                        >
+                           <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 sm:items-center">
+                              <div className="flex items-center gap-3 w-[140px] shrink-0">
+                                 {service.status === "Entregado" ? (
+                                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                                 ) : service.status === "Cancelado" ? (
+                                   <X className="w-4 h-4 text-red-500" />
+                                 ) : (
+                                   <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                                 )}
+                                 <div className="flex flex-col">
+                                    <span className="font-semibold text-sm">{formatRelevantDate(service)}</span>
+                                    <span className="font-mono text-[10px] text-muted-foreground uppercase">{service.folio || service.id.slice(-6)}</span>
+                                 </div>
+                              </div>
+                              
+                              <div className="flex flex-col justify-center max-w-[400px]">
+                                 <span className="text-sm font-medium text-slate-800 line-clamp-1">{getServiceDescriptionText(service)}</span>
+                                 <Badge variant={statusInfo.color as any} className="w-fit mt-1 px-1.5 py-0 text-[10px] uppercase font-bold">{service.status}</Badge>
+                              </div>
+                           </div>
+
+                           <div className="flex items-center gap-6 mt-3 sm:mt-0 opacity-80 sm:opacity-100 pr-2">
+                             {(service as any).mileage && (
+                               <div className="text-right hidden md:block">
+                                  <span className="text-xs text-muted-foreground uppercase tracking-wider block">KM</span>
+                                  <span className="font-mono font-medium text-sm text-slate-700">{formatNumber((service as any).mileage)}</span>
+                               </div>
+                             )}
+                             <div className="text-right">
+                                <span className="text-xs text-muted-foreground uppercase tracking-wider block">Total</span>
+                                <span className="font-bold text-slate-900">{formatCurrency(service.totalCost || 0)}</span>
+                             </div>
+                             <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity -ml-2" />
+                           </div>
+                        </div>
+                     )
+                  })}
+                </div>
+             )}
+          </div>
+          
+          {/* SEC 4: NOTES */}
+          {vehicle.notes && (
+             <div className="p-6 sm:p-8 bg-amber-50/50 border-t border-border mt-auto">
+               <h4 className="font-bold text-xs tracking-widest text-amber-800 uppercase flex items-center gap-2 mb-3">
+                 <FileText className="w-3.5 h-3.5" /> Notas Adicionales
+               </h4>
+               <p className="text-sm text-amber-950/80 whitespace-pre-wrap leading-relaxed">{vehicle.notes}</p>
+             </div>
+          )}
+
+        </Card>
       </div>
 
       <VehicleDialog
@@ -498,20 +353,11 @@ export default function VehicleDetailPage() {
         onSave={handleSaveEditedVehicle}
       />
 
-      {vehicleEngineData && (
-        <EditEngineDataDialog
-          open={isEngineEditDialogOpen}
-          onOpenChange={setIsEngineEditDialogOpen}
-          engineData={vehicleEngineData}
-          onSave={handleEngineDataSave}
-        />
-      )}
-
       {selectedService && (
         <UnifiedPreviewDialog
           open={isViewServiceDialogOpen}
           onOpenChange={setIsViewServiceDialogOpen}
-          title="Vista Previa del Servicio"
+          title="Resumen del Servicio"
           service={selectedService}
         >
           <div className="hidden" />

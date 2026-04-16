@@ -13,13 +13,11 @@ import { inventoryService } from '@/lib/services';
 import { VehicleDialog } from './components/vehicle-dialog';
 import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
-import { DatabaseManagementTab } from './components/database-management-tab';
 
-type ActiveView = "vehiculos" | "catalogo";
+type ActiveView = "vehiculos";
 
 const TABS: { value: ActiveView; label: string }[] = [
-  { value: "vehiculos", label: "Directorio de Vehículos" },
-  { value: "catalogo", label: "Catálogo de Marcas y Modelos" },
+  { value: "vehiculos", label: "Directorio de Vehículos" }
 ];
 
 function PageInner() {
@@ -30,6 +28,8 @@ function PageInner() {
   const [activeView, setActiveView] = useState<ActiveView>("vehiculos");
   const [isLoading, setIsLoading] = useState(true);
   const [allVehicles, setAllVehicles] = useState<Vehicle[]>([]);
+  const [systemStats, setSystemStats] = useState<any>(null);
+
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Partial<Vehicle> | null>(null);
 
@@ -39,7 +39,16 @@ function PageInner() {
       setAllVehicles(data);
       setIsLoading(false);
     });
-    return () => unsub();
+    
+    // Fallback if the export isn't defined yet (since it's a hot change)
+    let unsubStats = () => {};
+    if (inventoryService.onSystemVehicleStatsUpdate) {
+        unsubStats = inventoryService.onSystemVehicleStatsUpdate((stats) => {
+            setSystemStats(stats);
+        });
+    }
+
+    return () => { unsub(); unsubStats(); };
   }, []);
 
   const handleSaveVehicle = async (data: any) => {
@@ -82,51 +91,45 @@ function PageInner() {
 
   return (
     <div className="space-y-6">
-      {/* ── Page header (sin banner rojo) ──────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      
+      {/* ── Top Header Row (Title + Tabs) ────────────────────── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Directorio de Vehículos</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
+          <h1 className="text-3xl font-extrabold text-foreground tracking-tight">Directorio de Vehículos</h1>
+          <p className="text-sm text-muted-foreground mt-1 max-w-lg">
             Administra los vehículos de tus clientes y el catálogo de marcas y modelos.
           </p>
         </div>
-        {userPermissions.has('fleet:create') && activeView === 'vehiculos' && (
-          <Button onClick={() => handleOpenVehicleDialog()} className="shrink-0">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Nuevo Vehículo
-          </Button>
-        )}
-      </div>
 
-      {/* ── Pill tab navigation ─────────────────────────────────── */}
-      <div className="inline-flex flex-wrap gap-2 bg-muted/50 p-1.5 rounded-2xl border border-border/50">
-        {TABS.map(tab => (
-          <button
-            key={tab.value}
-            onClick={() => setActiveView(tab.value)}
-            className={cn(
-              'inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap',
-              activeView === tab.value
-                ? 'bg-primary text-primary-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {/* ── Pill tab navigation ─────────────────────────────────── */}
+        <div className="inline-flex flex-wrap gap-2 bg-muted/50 p-1.5 rounded-2xl border border-border/50 shrink-0">
+          {TABS.map(tab => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveView(tab.value)}
+              className={cn(
+                'inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap',
+                activeView === tab.value
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ── Content ─────────────────────────────────────────────── */}
       {activeView === 'vehiculos' && (
         <VehiclesTable
           vehicles={allVehicles}
+          systemStats={systemStats}
+          permissions={userPermissions}
           onSave={handleSaveVehicle}
           onDelete={handleDeleteVehicle}
           onAdd={() => handleOpenVehicleDialog()}
         />
-      )}
-      {activeView === 'catalogo' && (
-        <DatabaseManagementTab />
       )}
 
       <VehicleDialog

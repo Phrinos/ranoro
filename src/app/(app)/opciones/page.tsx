@@ -2,39 +2,29 @@
 "use client";
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { Suspense, lazy, useState, useEffect, useMemo, useCallback } from 'react';
-import { Loader2, BookOpen, Settings, UserCircle, Building, Shapes, Wrench, ShieldAlert } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Suspense, lazy, useState, useEffect, useMemo } from 'react';
+import { Loader2, Settings, Building, Shapes, Wrench, FileJson } from 'lucide-react';
+import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import type { User, AppRole, ServiceTypeRecord } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
-import { adminService, inventoryService } from '@/lib/services';
-import { collection, getDocs, query, where, writeBatch, doc } from "firebase/firestore";
-import { db } from "@/lib/firebaseClient";
-import { parseDate } from "@/lib/forms";
-import { useToast } from '@/hooks/use-toast';
+import { inventoryService } from '@/lib/services';
 import { useRoles } from '@/lib/contexts/roles-context';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-
-const PerfilPageContent = lazy(() => import('./components/perfil-content').then(module => ({ default: module.PerfilPageContent })));
 const ConfigTallerPageContent = lazy(() => import('./components/config-taller-content').then(module => ({ default: module.ConfigTallerPageContent })));
 const ConfiguracionTicketPageContent = lazy(() => import('./components/config-ticket-content').then(module => ({ default: module.ConfiguracionTicketPageContent })));
+const ConfigFacturacionPageContent = lazy(() => import('./components/config-facturacion-content').then(module => ({ default: module.ConfigFacturacionPageContent })));
 const TiposDeServicioPageContent = lazy(() => import('./components/service-types-content').then(module => ({ default: module.TiposDeServicioPageContent })));
-const RolesContent = lazy(() => import('./components/roles-content').then(module => ({ default: module.RolesContent })));
-const ManualUsuarioPageContent = lazy(() => import('./components/manual-content').then(module => ({ default: module.ManualUsuarioPageContent })));
+const ConfigMantenimientoPageContent = lazy(() => import('./components/config-mantenimiento-content').then(module => ({ default: module.ConfigMantenimientoPageContent })));
 
 function PageInner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const tab = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState(tab || 'perfil');
+  const activeTabQuery = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(activeTabQuery || 'usuarios');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const roles = useRoles(); // Usa el contexto centralizado — sin listener propio
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isBackfilling, setIsBackfilling] = useState(false);
-  const { toast } = useToast();
 
   useEffect(() => {
     setIsLoading(true);
@@ -52,52 +42,6 @@ function PageInner() {
     return () => unsub();
   }, []);
   
-  const handleBackfill = async () => {
-    setIsBackfilling(true);
-    toast({ title: "Iniciando proceso...", description: "Buscando servicios para corregir. Esto puede tardar unos momentos." });
-
-    const q = query(
-      collection(db, "serviceRecords"),
-      where("status", "==", "Entregado")
-    );
-    
-    try {
-      const snap = await getDocs(q);
-      const batch = writeBatch(db);
-      let updates = 0;
-
-      snap.forEach((d) => {
-        const s = d.data();
-        if (!s.deliveryDateTime) {
-          const candidate =
-            parseDate(s.completedAt) ||
-            parseDate(s.closedAt) ||
-            (Array.isArray(s.payments) && s.payments.length ? parseDate(s.payments[0]?.date) : null) ||
-            parseDate(s.serviceDate) ||
-            new Date();
-
-          batch.update(doc(db, "serviceRecords", d.id), {
-            deliveryDateTime: candidate.toISOString(),
-          });
-          updates++;
-        }
-      });
-
-      if (updates > 0) {
-        await batch.commit();
-        toast({ title: "¡Éxito!", description: `Se corrigieron ${updates} documentos. Los datos históricos ahora son consistentes.` });
-      } else {
-        toast({ title: "Todo en orden", description: "No se encontraron servicios que necesiten ser corregidos." });
-      }
-    } catch (error) {
-      console.error("Error durante el backfill:", error);
-      toast({ title: "Error en el proceso", description: "Ocurrió un error al corregir los datos. Revisa la consola para más detalles.", variant: "destructive" });
-    } finally {
-      setIsBackfilling(false);
-    }
-  };
-
-
   const userPermissions = useMemo(() => {
     if (!currentUser) return new Set<string>();
     
@@ -111,25 +55,31 @@ function PageInner() {
   }, [currentUser, roles]);
 
   const tabs = useMemo(() => [
-    { value: "perfil", label: "Mi Perfil", icon: UserCircle, component: <PerfilPageContent />, requiredPermission: 'services:view' },
     { value: "taller", label: "Mi Taller", icon: Building, component: <ConfigTallerPageContent />, requiredPermission: 'admin:settings' },
+    { value: "facturacion", label: "Facturación", icon: FileJson, component: <ConfigFacturacionPageContent />, requiredPermission: 'admin:settings' },
     { value: "ticket", label: "Ticket", icon: Settings, component: <ConfiguracionTicketPageContent />, requiredPermission: 'admin:settings' },
-    { value: "roles", label: "Roles", icon: ShieldAlert, component: <RolesContent />, requiredPermission: 'admin:manage_users_roles' },
     { value: "service_types", label: "Tipos de Servicio", icon: Shapes, component: <TiposDeServicioPageContent serviceTypes={serviceTypes} />, requiredPermission: 'admin:settings' },
-    { value: "manual", label: "Manual", icon: BookOpen, component: <ManualUsuarioPageContent />, requiredPermission: 'services:view' },
+    { value: "mantenimiento", label: "Mantenimiento", icon: Wrench, component: <ConfigMantenimientoPageContent />, requiredPermission: 'admin:settings' },
   ], [serviceTypes]);
 
   const availableTabs = useMemo(() => tabs.filter(tab => tab.requiredPermission && userPermissions.has(tab.requiredPermission)), [tabs, userPermissions]);
 
-  useEffect(() => {
-    if (availableTabs.length > 0 && !availableTabs.some(t => t.value === activeTab)) {
-      setActiveTab(availableTabs[0].value);
-    }
-  }, [availableTabs, activeTab]);
+  const tabConfigs = useMemo(() => {
+    return availableTabs.map(tab => ({
+      value: tab.value,
+      label: tab.label,
+      icon: <tab.icon className="w-4 h-4" />,
+      content: (
+        <Suspense fallback={<div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+          {tab.component}
+        </Suspense>
+      )
+    }));
+  }, [availableTabs]);
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex justify-center items-center h-[50vh]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <span className="ml-3 text-muted-foreground">Cargando opciones...</span>
       </div>
@@ -137,52 +87,16 @@ function PageInner() {
   }
   
   return (
-    <>
-      <header className="bg-card border rounded-lg p-6 mb-6 shadow-sm">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Opciones y Configuración</h1>
-        <p className="text-muted-foreground mt-1">Gestiona tu perfil, el sistema y la configuración general.</p>
-      </header>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-          {availableTabs.map(tab => (
-            <TabsTrigger key={tab.value} value={tab.value} aria-label={`Ir a la pestaña ${tab.label}`}>
-              <tab.icon className="h-5 w-5 mr-2 flex-shrink-0" />
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        
-        <Suspense fallback={<div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-            {availableTabs.map(tab => (
-              <TabsContent key={tab.value} value={tab.value} className="mt-6 focus-visible:ring-0 focus-visible:ring-offset-0">
-                {activeTab === tab.value && tab.component}
-              </TabsContent>
-            ))}
-        </Suspense>
-      </Tabs>
-      
-      {currentUser?.role === 'Superadministrador' && (
-        <Card className="mt-8 max-w-2xl mx-auto shadow-lg border-destructive">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Wrench className="h-5 w-5 text-destructive" /> Acciones de Mantenimiento</CardTitle>
-            <CardDescription>Estas acciones son para administradores y ayudan a mantener la consistencia de los datos.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row items-center justify-between p-4 border rounded-md bg-card">
-              <div>
-                <h3 className="font-semibold">Corregir Fechas de Entrega</h3>
-                <p className="text-sm text-muted-foreground mt-1">Asigna una fecha de entrega a servicios pasados que están marcados como "Entregado" pero no tienen una fecha, para que aparezcan correctamente en los historiales.</p>
-              </div>
-              <Button onClick={handleBackfill} disabled={isBackfilling} className="mt-4 sm:mt-0 sm:ml-4 w-full sm:w-auto">
-                {isBackfilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wrench className="mr-2 h-4 w-4" />}
-                {isBackfilling ? 'Corrigiendo...' : 'Ejecutar Corrección'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-    </>
+    <TabbedPageLayout
+      title="Opciones y Configuración"
+      description="Gestiona tu perfil, el personal y la configuración general del taller."
+      activeTab={activeTab}
+      onTabChange={(v) => {
+        setActiveTab(v);
+        router.push(`${pathname}?tab=${v}`);
+      }}
+      tabs={tabConfigs}
+    />
   );
 }
 

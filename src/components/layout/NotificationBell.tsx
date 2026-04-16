@@ -4,10 +4,13 @@ import * as React from 'react';
 import { Bell, Calendar, MessageCircle, X, CheckCheck, Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { db } from '@/lib/firebaseClient';
 const useFirestore = () => db;
@@ -261,8 +264,8 @@ export function NotificationBell() {
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
@@ -279,49 +282,40 @@ export function NotificationBell() {
             </span>
           )}
         </Button>
-      </PopoverTrigger>
+      </SheetTrigger>
 
-      <PopoverContent
-        align="end"
-        sideOffset={12}
-        className="w-[340px] p-0 rounded-2xl shadow-2xl border-zinc-100 overflow-hidden"
-      >
+      <SheetContent className="w-full sm:max-w-md border-l p-0 flex flex-col bg-zinc-50">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b bg-zinc-50">
-          <div className="flex items-center gap-2">
-            <Bell className="h-4 w-4 text-zinc-500" />
-            <span className="text-sm font-semibold text-zinc-800">Notificaciones</span>
-            {unreadCount > 0 && (
-              <span className="bg-red-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                {unreadCount}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
+        <SheetHeader className="px-6 py-4 border-b bg-white shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <SheetTitle className="text-lg font-semibold flex items-center gap-2 m-0 text-zinc-900">
+                <Bell className="h-5 w-5 text-zinc-500" />
+                Notificaciones
+              </SheetTitle>
+              {unreadCount > 0 && (
+                <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full mt-0.5">
+                  {unreadCount}
+                </span>
+              )}
+            </div>
             {unreadCount > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleMarkAllRead}
-                className="text-[10px] text-zinc-500 hover:text-zinc-900 h-7 px-2 rounded-lg font-medium"
+                className="text-[11px] text-zinc-500 hover:text-zinc-900 h-8 px-2.5 rounded-lg font-medium"
               >
-                <CheckCheck className="h-3 w-3 mr-1" />
-                Leídas
+                <CheckCheck className="h-3.5 w-3.5 mr-1" />
+                Marcar todas leídas
               </Button>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setOpen(false)}
-              className="h-6 w-6 text-zinc-400 hover:text-zinc-700 rounded-lg"
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
           </div>
-        </div>
+          <SheetDescription className="hidden">Últimas actualizaciones del sistema</SheetDescription>
+        </SheetHeader>
 
         {/* List */}
-        <div className="max-h-96 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 gap-2">
               <Bell className="h-8 w-8 text-zinc-200" />
@@ -401,7 +395,7 @@ export function NotificationBell() {
             </div>
           )}
         </div>
-      </PopoverContent>
-    </Popover>
+      </SheetContent>
+    </Sheet>
   );
 }

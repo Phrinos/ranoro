@@ -7,7 +7,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
 import { serviceService, inventoryService, adminService } from '@/lib/services';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronLeft } from 'lucide-react';
 import { ServiceForm } from '../components/ServiceForm';
 import type {
   ServiceRecord,
@@ -28,7 +28,7 @@ import { FormProvider, useForm, type SubmitErrorHandler, FieldValues, Resolver }
 import { zodResolver } from '@hookform/resolvers/zod';
 import { doc, collection, writeBatch } from 'firebase/firestore';
 import { db } from '@/lib/firebaseClient';
-import { ShareServiceDialog } from '@/components/shared/ShareServiceDialog';
+import { TicketPreviewModal } from '@/app/(app)/ticket/components';
 import { ServiceMobileBar } from '../components/ServiceMobileBar';
 import { ActiveServicesSheet } from '../components/ActiveServicesSheet';
 import { PhotoReportModal } from '../components/PhotoReportModal';
@@ -113,7 +113,7 @@ export default function ServicioPage() {
   const [recordForPreview, setRecordForPreview] = useState<ServiceRecord | null>(null);
   const redirectUrl = useRef<string | null>(null);
   const hydratedRef = useRef<string | null>(null);
-  const [activeTab, setActiveTab] = useState('service-items');
+  const [activeTab, setActiveTab] = useState('payment');
   const [isServicesSheetOpen, setIsServicesSheetOpen] = useState(false);
   const [isChecklistWizardOpen, setIsChecklistWizardOpen] = useState(false);
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
@@ -362,13 +362,22 @@ export default function ServicioPage() {
 
   const formMode: 'quote' | 'service' = isEditMode ? (initialData?.status === 'Cotizacion' ? 'quote' : 'service') : 'quote';
   
-  const pageTitle = isEditMode
-    ? `Editar ${formMode === 'quote' ? 'Cotización' : 'Servicio'} #${initialData?.folio || initialData?.id?.slice(-6)}`
-    : `Nueva ${formMode === 'quote' ? 'Cotización' : 'Servicio'}`;
+  const pageTitle = (
+    <div className="flex items-center gap-2">
+      <Button variant="ghost" size="icon" onClick={() => router.back()} className="-ml-2">
+        <ChevronLeft className="h-6 w-6" />
+      </Button>
+      <span>
+        {isEditMode
+          ? `Editar ${formMode === 'quote' ? 'Cotización' : 'Servicio'} #${initialData?.folio || initialData?.id?.slice(-6)}`
+          : `Nueva ${formMode === 'quote' ? 'Cotización' : 'Servicio'}`}
+      </span>
+    </div>
+  );
   
   const pageDescription = isEditMode
-    ? `Modifica los detalles para el vehículo ${initialData?.vehicleIdentifier || ''}.`
-    : "Completa los datos para crear un nuevo registro.";
+    ? <span className="text-foreground font-medium">Modifica los detalles para el vehículo {initialData?.vehicleIdentifier || ''}.</span>
+    : <span className="text-foreground font-medium">Completa los datos para crear un nuevo registro.</span>;
     
   const isReadOnly = (initialData?.status === 'Entregado' || initialData?.status === 'Cancelado') && currentUser?.role !== 'Superadministrador';
   
@@ -421,7 +430,7 @@ export default function ServicioPage() {
         isSubmitting={isSubmitting}
       />
       
-      <ShareServiceDialog
+      <TicketPreviewModal
         open={isShareDialogOpen}
         onOpenChange={handleShareDialogClose}
         service={recordForPreview}

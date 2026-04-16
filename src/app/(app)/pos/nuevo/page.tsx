@@ -25,7 +25,7 @@ import type { InventoryItemFormValues } from "@/schemas/inventory-item-form-sche
 import { db } from "@/lib/firebaseClient";
 import { writeBatch, doc, collection } from "firebase/firestore";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
-import { TicketContent } from "@/components/ticket-content";
+import { TicketContent } from "@/app/(app)/ticket/components";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, cn } from "@/lib/utils";
 import { nanoid } from "nanoid";

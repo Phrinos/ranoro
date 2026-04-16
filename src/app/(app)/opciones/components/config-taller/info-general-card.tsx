@@ -3,6 +3,7 @@ import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Building, Upload, Loader2 } from 'lucide-react';
@@ -42,7 +43,7 @@ export const InfoGeneralCard: React.FC<InfoGeneralCardProps> = ({
             )}
           </div>
           <div className="w-full">
-            <FormLabel>Subir/Cambiar Logo</FormLabel>
+            <Label>Subir/Cambiar Logo</Label>
             <Button
               type="button"
               variant="outline"

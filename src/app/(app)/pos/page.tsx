@@ -13,7 +13,7 @@ import React, {
   lazy,
   useRef,
 } from "react";
-import { TabbedPageLayout } from "@/components/layout/tabbed-page-layout";
+
 import { Loader2, PlusCircle, Printer, Copy, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -22,7 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 import { inventoryService, saleService, serviceService, adminService } from "@/lib/services";
 import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
-import { TicketContent } from "@/components/ticket-content";
+import { TicketContent } from "@/app/(app)/ticket/components";
 import { formatCurrency } from "@/lib/utils";
 import html2canvas from "html2canvas";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -33,7 +33,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const InformePosContent = lazy(() => import("./components/informe-pos-content"));
 const VentasPosContent = lazy(() => import("./components/ventas-pos-content"));
 const PaymentDetailsDialog = lazy(() =>
   import("@/components/shared/PaymentDetailsDialog").then((module) => ({
@@ -46,11 +45,9 @@ function PageInner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const defaultTab = searchParams.get("tab") || "resumen";
   const { toast } = useToast();
   const userPermissions = usePermissions();
 
-  const [activeTab, setActiveTab] = useState(defaultTab);
   const [isLoading, setIsLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
@@ -112,7 +109,7 @@ function PageInner() {
       const sale = allSales.find((s) => s.id === saleIdToShow);
       if (sale) {
         handleViewSale(sale);
-        router.replace("/pos?tab=ventas", { scroll: false });
+        router.replace("/pos", { scroll: false });
       }
     }
   }, [searchParams, allSales, router, handleViewSale]);
@@ -222,23 +219,6 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
     </Button>
   ) : <div />;
 
-  const tabs = [
-    { value: "resumen", label: "Resumen", content: <InformePosContent allSales={allSales} allServices={allServices} allInventory={allInventory} /> },
-    { value: "ventas", label: "Ventas", content: (
-      <VentasPosContent
-        allSales={allSales}
-        allInventory={allInventory}
-        allUsers={allUsers}
-        currentUser={currentUser}
-        onReprintTicket={handleReprintTicket}
-        onViewSale={handleViewSale}
-        onDeleteSale={handleDeleteSale}
-        onEditPayment={handleEditPayment}
-        onCancelSale={handleCancelSale}
-      />
-    ) },
-  ];
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -248,15 +228,33 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
   }
 
   return (
-    <Suspense fallback={<div className="flex h-64 w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-      <TabbedPageLayout
-        title="Punto de Venta"
-        description="Gestiona ventas de mostrador, revisa el historial y realiza tu corte de caja."
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        tabs={tabs}
-        actions={pageActions}
-      />
+    <>
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Punto de Venta</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Gestiona ventas de mostrador, revisa el historial y realiza tu corte de caja.
+            </p>
+          </div>
+          {pageActions}
+        </div>
+
+        <Suspense fallback={<div className="h-40 flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>}>
+          <VentasPosContent
+            allSales={allSales}
+            allInventory={allInventory}
+            allUsers={allUsers}
+            allServices={allServices}
+            currentUser={currentUser}
+            onReprintTicket={handleReprintTicket}
+            onViewSale={handleViewSale}
+            onDeleteSale={handleDeleteSale}
+            onEditPayment={handleEditPayment}
+            onCancelSale={handleCancelSale}
+          />
+        </Suspense>
+      </div>
 
       <Suspense fallback={null}>
         {saleForReprint && (
@@ -332,7 +330,7 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
           />
         )}
       </Suspense>
-    </Suspense>
+    </>
   );
 }
 

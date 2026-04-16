@@ -12,7 +12,7 @@ import { Loader2, Car, Wrench, AlertTriangle } from 'lucide-react';
 import { inventoryService } from '@/lib/services';
 import { formatCurrency } from '@/lib/utils';
 import { AnimatedDiv } from '../landing/AnimatedDiv';
-import type { VehicleMake, EngineData } from '@/lib/data/vehicle-database-types';
+import type { VehicleMake } from '@/lib/data/vehicle-database-types';
 
 const normalizeString = (str?: string): string => {
     if (!str) return '';
@@ -72,7 +72,7 @@ function PageInner() {
     const modelData = makeData?.models.find(m => m.name === selectedModel);
     const year = Number(selectedYear);
     const generation = modelData?.generations.find(g => year >= g.startYear && year <= g.endYear);
-    return generation ? generation.engines.map(e => e.name).sort() : [];
+    return generation ? generation.engines.map((e: any) => e.name).sort() : [];
   }, [vehicleDb, selectedMake, selectedModel, selectedYear]);
 
   const services = useMemo(() => {
@@ -114,26 +114,6 @@ function PageInner() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSearching(true);
-    setResult(null);
-    setSearchError(null);
-
-    setTimeout(() => {
-        const makeData = vehicleDb.find(m => m.make === selectedMake);
-        const modelData = makeData?.models.find(m => m.name === selectedModel);
-        const year = Number(selectedYear);
-        const generation = modelData?.generations.find(g => year >= g.startYear && year <= g.endYear);
-        const engineData = generation?.engines.find(e => e.name === selectedEngine);
-
-        const serviceInfo = (engineData?.servicios as any)?.[selectedService];
-
-        if (serviceInfo && serviceInfo.precioPublico) {
-            setResult({ price: serviceInfo.precioPublico });
-        } else {
-            setSearchError("No se encontró una cotización para los criterios seleccionados. Por favor, contáctanos directamente.");
-        }
-        setIsSearching(false);
-    }, 1000);
   };
 
   return (
@@ -164,54 +144,22 @@ function PageInner() {
                         Obtén un estimado para el servicio de tu vehículo en segundos.
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                       {isLoading ? <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div> : (
-                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <Select value={selectedMake} onValueChange={handleMakeChange}>
-                                <SelectTrigger><SelectValue placeholder="Selecciona la Marca..." /></SelectTrigger>
-                                <SelectContent>{makes.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
-                            </Select>
-                            <Select value={selectedModel} onValueChange={handleModelChange} disabled={!selectedMake}>
-                                <SelectTrigger><SelectValue placeholder={!selectedMake ? 'Primero elige una marca' : 'Selecciona el Modelo...'} /></SelectTrigger>
-                                <SelectContent>{models.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
-                            </Select>
-                            <Select value={selectedYear} onValueChange={handleYearChange} disabled={!selectedModel}>
-                                <SelectTrigger><SelectValue placeholder={!selectedModel ? 'Primero elige un modelo' : 'Selecciona el Año...'} /></SelectTrigger>
-                                <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
-                            </Select>
-                             <Select value={selectedEngine} onValueChange={handleEngineChange} disabled={!selectedYear}>
-                                <SelectTrigger><SelectValue placeholder={!selectedYear ? 'Primero elige un año' : 'Selecciona el Motor...'} /></SelectTrigger>
-                                <SelectContent>{engines.map(e => <SelectItem key={e} value={e}>{e}</SelectItem>)}</SelectContent>
-                            </Select>
-                             <Select value={selectedService} onValueChange={setSelectedService} disabled={!selectedEngine}>
-                                <SelectTrigger><SelectValue placeholder={!selectedEngine ? 'Primero elige un motor' : 'Selecciona el Servicio...'} /></SelectTrigger>
-                                <SelectContent>{services.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
-                            </Select>
-                            <Button type="submit" className="w-full h-12 text-lg" disabled={!selectedService || isSearching}>
-                                {isSearching ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Buscando...</> : "Cotizar Ahora"}
-                            </Button>
-                         </form>
-                       )}
-
-                       {result && (
-                         <AnimatedDiv>
-                            <div className="mt-6 p-6 bg-green-50 border-2 border-dashed border-green-200 rounded-lg text-center">
-                                <h3 className="text-lg font-semibold text-green-800">Estimación de Costo</h3>
-                                <p className="text-4xl font-bold text-green-600 my-2">{formatCurrency(result.price)}</p>
-                                <Button asChild className="mt-4"><Link href="https://wa.me/524491425323?text=Vengo%20de%20su%20sitio%20web" target="_blank" rel="noopener noreferrer">Agendar por WhatsApp</Link></Button>
-                            </div>
-                         </AnimatedDiv>
-                       )}
-
-                       {searchError && (
-                          <AnimatedDiv>
-                            <div className="mt-6 p-6 bg-yellow-50 border-2 border-dashed border-yellow-200 rounded-lg text-center">
-                              <AlertTriangle className="mx-auto h-8 w-8 text-yellow-600 mb-2" />
-                              <h3 className="font-semibold text-yellow-800">No disponible</h3>
-                              <p className="text-sm text-yellow-700">{searchError}</p>
-                            </div>
-                          </AnimatedDiv>
-                       )}
+                    <CardContent className="py-12">
+                       <div className="flex flex-col items-center justify-center text-center space-y-4">
+                           <Wrench className="h-16 w-16 text-muted-foreground/30 mb-4" />
+                           <h3 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                               Cotizador en Mantenimiento
+                           </h3>
+                           <p className="text-muted-foreground max-w-sm">
+                               Estamos actualizando nuestro sistema de cotizaciones para ofrecerte precios más precisos y opciones personalizadas.
+                           </p>
+                           <Button asChild className="mt-8 relative overflow-hidden group">
+                               <Link href="https://wa.me/524491425323?text=Hola,%20me%20gustar%C3%ADa%20una%20cotizaci%C3%B3n" target="_blank" rel="noopener noreferrer">
+                                   <span className="relative z-10 font-semibold tracking-wide">Cotizar por WhatsApp</span>
+                                   <div className="absolute inset-0 bg-primary/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out" />
+                               </Link>
+                           </Button>
+                       </div>
                     </CardContent>
                  </Card>
             </div>

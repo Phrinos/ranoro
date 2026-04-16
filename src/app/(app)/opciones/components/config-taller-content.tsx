@@ -21,7 +21,6 @@ import 'react-image-crop/dist/ReactCrop.css';
 
 import { InfoGeneralCard } from './config-taller/info-general-card';
 import { ContactoAdicionalCard } from './config-taller/contacto-adicional-card';
-import { FacturacionCard } from './config-taller/facturacion-card';
 
 const FIRESTORE_DOC_ID = 'main';
 
@@ -174,14 +173,15 @@ export function ConfigTallerPageContent() {
       <FormProvider {...methods}>
         <Form {...methods}>
           <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
-            <InfoGeneralCard
-              watchedLogoUrl={watchedLogoUrl}
-              fileInputRef={fileInputRef}
-              isUploading={isUploading}
-              onFileChange={onFileChange}
-            />
-            <ContactoAdicionalCard />
-            <FacturacionCard />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+              <InfoGeneralCard
+                watchedLogoUrl={watchedLogoUrl}
+                fileInputRef={fileInputRef}
+                isUploading={isUploading}
+                onFileChange={onFileChange}
+              />
+              <ContactoAdicionalCard />
+            </div>
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={methods.formState.isSubmitting || isUploading}>
                 <Save className="mr-2 h-4 w-4" />

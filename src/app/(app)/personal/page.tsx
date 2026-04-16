@@ -7,7 +7,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
 import type { User, ServiceRecord, SaleReceipt, MonthlyFixedExpense, AppRole } from '@/types';
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users, Shield, TrendingUp, BookOpen, DatabaseZap } from 'lucide-react';
+import { Loader2, Users, Shield, TrendingUp, BookOpen, DatabaseZap, UserCircle } from 'lucide-react';
 import { adminService, serviceService } from '@/lib/services';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
@@ -16,6 +16,7 @@ const RendimientoPersonalContent = lazy(() => import('./components/rendimiento-c
 const ComisionesContent = lazy(() => import('./components/comisiones-content'));
 const UsuariosPageContent = lazy(() => import('./components/usuarios-content').then(m => ({ default: m.UsuariosPageContent })));
 const RolesPageContent = lazy(() => import('./components/roles-content').then(m => ({ default: m.RolesPageContent })));
+const PerfilPageContent = lazy(() => import('@/app/(app)/opciones/components/perfil-content').then(m => ({ default: m.PerfilPageContent })));
 
 function PageInner() {
   const router = useRouter();
@@ -24,7 +25,7 @@ function PageInner() {
   const tab = searchParams.get('tab');
     
   const { toast } = useToast();
-  const defaultTab = tab || 'rendimiento';
+  const defaultTab = tab || 'perfil';
   const [activeTab, setActiveTab] = useState(defaultTab);
     
   const [allUsers, setAllUsers] = useState<User[]>([]);
@@ -63,10 +64,11 @@ function PageInner() {
   if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
     
   const tabs = [
-    { value: "rendimiento", label: "Rendimiento", content: <Suspense fallback={<Loader2 className="animate-spin" />}><RendimientoPersonalContent /></Suspense> },
-    { value: "comisiones", label: "Comisiones", content: <Suspense fallback={<Loader2 className="animate-spin" />}><ComisionesContent allServices={allServices} allUsers={allUsers} /></Suspense> },
+    { value: "perfil", label: "Mi Perfil", content: <Suspense fallback={<Loader2 className="animate-spin" />}><PerfilPageContent /></Suspense> },
     { value: "usuarios", label: "Personal", content: <Suspense fallback={<Loader2 className="animate-spin" />}><UsuariosPageContent currentUser={currentUser} initialUsers={allUsers} initialRoles={allRoles} /></Suspense> },
     { value: "roles", label: "Roles y Permisos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><RolesPageContent currentUser={currentUser} initialRoles={allRoles} /></Suspense> },
+    { value: "rendimiento", label: "Rendimiento", content: <Suspense fallback={<Loader2 className="animate-spin" />}><RendimientoPersonalContent /></Suspense> },
+    { value: "comisiones", label: "Comisiones", content: <Suspense fallback={<Loader2 className="animate-spin" />}><ComisionesContent allServices={allServices} allUsers={allUsers} /></Suspense> },
   ];
 
   return (

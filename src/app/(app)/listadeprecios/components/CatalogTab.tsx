@@ -1,16 +1,10 @@
 "use client";
 
 import React, { useMemo, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-  ChevronRight, 
-  Car, 
   Trash2, 
-  LayoutGrid, 
-  Settings,
-  ArrowLeft,
-  Wrench,
+  LayoutGrid,
   PlusCircle,
   Pencil,
   AlertCircle
@@ -18,31 +12,29 @@ import {
 import { inventoryService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { VehicleCatalogEditor } from '@/app/(app)/precios/components/VehicleCatalogEditor';
-import { MASTER_CATALOG_COLLECTION } from '@/lib/vehicle-constants';
-import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
+import { MASTER_CATALOG_COLLECTION } from '@/lib/vehicle-constants';
 
 interface CatalogTabProps {
   priceLists: any[];
 }
 
-type ViewState = 'makes' | 'editor';
-
 export default function CatalogTab({ priceLists }: CatalogTabProps) {
   const { toast } = useToast();
-  const [view, setView] = useState<ViewState>('makes');
-  const [selectedMake, setSelectedMake] = useState<string | null>(null);
   
   // States for brand editing
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingBrand, setEditingBrand] = useState<{ name: string; modelsCount: number } | null>(null);
   const [newBrandName, setNewBrandName] = useState('');
+
+  // States for adding model
+  const [makeToAddModel, setMakeToAddModel] = useState<string | null>(null);
+  const [newModelName, setNewModelName] = useState('');
 
   const sortedMakes = useMemo(() => {
     return [...priceLists].sort((a, b) => a.make.localeCompare(b.make));
@@ -77,31 +69,49 @@ export default function CatalogTab({ priceLists }: CatalogTabProps) {
     }
   };
 
-  if (view === 'editor' && selectedMake) {
-    return (
-      <div className="space-y-6 animate-in zoom-in-95 duration-300">
-        <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-primary/5">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => setView('makes')} className="hover:bg-primary/5">
-              <ArrowLeft className="mr-2 h-4 w-4" /> Volver a Marcas
-            </Button>
-            <div className="flex items-center gap-3">
-              <Badge className="px-4 py-1 text-lg font-black uppercase tracking-tight">
-                {selectedMake}
-              </Badge>
-              <Badge variant="outline" className="hidden sm:flex px-3 py-1 text-sm bg-muted font-bold text-muted-foreground">
-                Editor Maestro
-              </Badge>
-            </div>
-          </div>
-        </div>
-        <VehicleCatalogEditor 
-          make={selectedMake} 
-          collectionName={MASTER_CATALOG_COLLECTION}
-        />
-      </div>
-    );
-  }
+  const handleAddModel = async (make: string) => {
+      if (!newModelName.trim() || !db) return;
+      try {
+          const docRef = doc(db, MASTER_CATALOG_COLLECTION, make);
+          const snap = await getDoc(docRef);
+          if (!snap.exists()) return;
+          
+          const data = snap.data();
+          const models = data.models || [];
+          
+          const modelNameUpper = newModelName.toUpperCase().trim();
+          if (models.some((m: any) => m.name === modelNameUpper)) {
+              toast({ title: 'Error', description: 'El modelo ya existe', variant: 'destructive' });
+              return;
+          }
+          
+          models.push({ name: modelNameUpper, generations: [] });
+          await setDoc(docRef, { models }, { merge: true });
+          
+          toast({ title: 'Modelo añadido' });
+          setNewModelName('');
+          setMakeToAddModel(null);
+      } catch (e) {
+          toast({ title: 'Error', description: 'No se pudo añadir el modelo', variant: 'destructive' });
+      }
+  };
+
+  const handleDeleteModel = async (make: string, modelName: string) => {
+      if (!db) return;
+      try {
+          const docRef = doc(db, MASTER_CATALOG_COLLECTION, make);
+          const snap = await getDoc(docRef);
+          if (!snap.exists()) return;
+          
+          const data = snap.data();
+          const models = (data.models || []).filter((m: any) => m.name !== modelName);
+          
+          await setDoc(docRef, { models }, { merge: true });
+          toast({ title: 'Modelo eliminado' });
+      } catch (e) {
+          toast({ title: 'Error', description: 'No se pudo eliminar el modelo', variant: 'destructive' });
+      }
+  };
 
   return (
     <div className="space-y-4">
@@ -124,34 +134,53 @@ export default function CatalogTab({ priceLists }: CatalogTabProps) {
               </div>
 
               <AccordionContent className="px-6 pb-6 pt-2 border-t border-primary/5 bg-muted/5">
-                {m.models && m.models.length > 0 ? (
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {m.models.sort((a:any, b:any) => a.name.localeCompare(b.name)).map((model: any) => (
-                        <div 
-                          key={model.name} 
-                          className="flex items-center justify-between p-3 rounded-lg border bg-white hover:border-primary/30 cursor-pointer transition-all"
-                          onClick={() => { setSelectedMake(m.make); setView('editor'); }}
-                        >
-                          <span className="font-semibold text-sm">{model.name}</span>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    {m.models && m.models.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {m.models.sort((a:any, b:any) => a.name.localeCompare(b.name)).map((model: any) => (
+                            <div 
+                            key={model.name} 
+                            className="flex items-center justify-between p-3 rounded-lg border bg-white group cursor-default"
+                            >
+                            <span className="font-semibold text-sm">{model.name}</span>
+                            <ConfirmDialog
+                                triggerButton={
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                }
+                                title={`¿Eliminar ${model.name}?`}
+                                description="Esta acción borrará el modelo del catálogo."
+                                onConfirm={() => handleDeleteModel(m.make, model.name)}
+                            />
+                            </div>
+                        ))}
                         </div>
-                      ))}
-                    </div>
-                    <div className="flex justify-end pt-2">
-                      <Button size="sm" onClick={() => { setSelectedMake(m.make); setView('editor'); }}>
-                        <Wrench className="mr-2 h-4 w-4" /> Gestionar Catálogo
-                      </Button>
-                    </div>
+                    ) : (
+                        <div className="py-4 text-center border-2 border-dashed rounded-xl bg-white space-y-2">
+                        <p className="text-sm text-muted-foreground">Esta marca no tiene modelos registrados.</p>
+                        </div>
+                    )}
+                    
+                    {makeToAddModel === m.make ? (
+                        <div className="flex items-center gap-2 max-w-sm mt-4">
+                            <Input 
+                                placeholder="Nombre del modelo..." 
+                                value={newModelName} 
+                                onChange={e => setNewModelName(e.target.value)}
+                                autoFocus
+                            />
+                            <Button size="sm" onClick={() => handleAddModel(m.make)}>Añadir</Button>
+                            <Button size="sm" variant="ghost" onClick={() => setMakeToAddModel(null)}>Cancelar</Button>
+                        </div>
+                    ) : (
+                        <div className="flex justify-start pt-2">
+                            <Button size="sm" variant="outline" onClick={() => { setMakeToAddModel(m.make); setNewModelName(''); }}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Añadir Modelo
+                            </Button>
+                        </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="py-8 text-center border-2 border-dashed rounded-xl bg-white space-y-4">
-                    <p className="text-sm text-muted-foreground">Esta marca no tiene modelos registrados.</p>
-                    <Button onClick={() => { setSelectedMake(m.make); setView('editor'); }}>
-                      <PlusCircle className="mr-2 h-4 w-4" /> Añadir Primer Modelo
-                    </Button>
-                  </div>
-                )}
               </AccordionContent>
             </AccordionItem>
           ))}

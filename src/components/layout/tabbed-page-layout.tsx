@@ -36,7 +36,7 @@ export function TabbedPageLayout({
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">{title}</h1>
           {description && (
-            <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
+            <div className="text-sm text-muted-foreground mt-0.5">{description}</div>
           )}
         </div>
         {actions && <div className="shrink-0">{actions}</div>}
