@@ -24,6 +24,7 @@ import { inventoryService } from './inventory.service';
 import { adminService } from './admin.service';
 import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 import { startOfDay, endOfDay } from 'date-fns';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '../placeholder-data';
 
 // --- Daily Rental Charges ---
 
@@ -151,7 +152,7 @@ const addRentalPayment = async (
 
     const dailyRate = vehicle.dailyRentalCost || 0;
     
-    const authUserString = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
+    const authUserString = typeof window !== 'undefined' ? localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY) : null;
     const currentUser = authUserString ? JSON.parse(authUserString) : null;
     
     const rawPaymentData = {
@@ -181,7 +182,7 @@ const addRentalPayment = async (
 
     if (paymentMethod === 'Efectivo') {
         await cashService.addCashTransaction({
-            type: 'in',
+            type: 'Entrada',
             amount: Number(amount) || 0,
             concept: `Renta de ${driver.name} (${vehicle.licensePlate})`,
             userId: currentUser?.id || 'system',
@@ -251,23 +252,15 @@ const addVehicleExpense = async (data: Partial<Omit<VehicleExpense, 'id' | 'date
     
     const docRef = await addDoc(collection(db, 'vehicleExpenses'), cleanObjectForFirestore(newExpense));
 
-    // Also create a cash transaction for this expense
     await cashService.addCashTransaction({
-        type: 'out',
+        type: 'Salida',
         amount: newExpense.amount,
         concept: `Gasto vehículo: ${newExpense.description} (${vehicle.licensePlate})`,
         relatedType: 'GastoVehiculo',
         relatedId: docRef.id,
     });
 
-    const result: VehicleExpense = { 
-        id: docRef.id, 
-        vehicleId: newExpense.vehicleId,
-        description: newExpense.description,
-        amount: newExpense.amount,
-        ...newExpense 
-    };
-    return result;
+    return { ...newExpense, id: docRef.id } as VehicleExpense;
 };
 
 export const rentalService = {

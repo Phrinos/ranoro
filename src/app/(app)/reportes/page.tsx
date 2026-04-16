@@ -15,6 +15,7 @@ import { calcSuppliesCostFromItems, calcEffectiveProfit } from '@/lib/money-help
 const DetallesReporteContent = lazy(() => import('./components/detalles-reporte-content'));
 const MensualReporteContent = lazy(() => import('./components/mensual-reporte-content'));
 const EgresosContent = lazy(() => import('./components/egresos-content').then(m => ({ default: m.EgresosContent })));
+const CorteDiarioContent = lazy(() => import('./components/corte-diario').then(m => ({ default: m.CorteDiario })));
 
 interface DateRange {
   from: Date | undefined;
@@ -27,7 +28,7 @@ function ReportesPageInner() {
   const searchParams = useSearchParams();
   const tab = searchParams.get('tab') || 'movimientos';
   
-  const [activeTab, setActiveTab] = useState(tab);
+  const [activeTab, setActiveTab] = useState(tab || 'corte');
   const [isLoading, setIsLoading] = useState(true);
   
   const [services, setServices] = useState<ServiceRecord[]>([]);
@@ -140,6 +141,7 @@ function ReportesPageInner() {
   }
 
   const tabs = [
+    { value: "corte", label: "Corte Diario", content: <CorteDiarioContent cashTransactions={cashTransactions} /> },
     { value: "movimientos", label: "Movimientos", content: <DetallesReporteContent services={services} sales={sales} cashTransactions={cashTransactions} users={users} purchases={purchases} /> },
     { value: "mensual", label: "Resumen Anual", content: <MensualReporteContent services={services} sales={sales} cashTransactions={cashTransactions} inventory={inventory} purchases={purchases} /> },
     { value: "egresos", label: "Gastos Fijos", content: <EgresosContent financialSummary={financialSummary} fixedExpenses={expenses} personnel={users} onExpensesUpdated={setExpenses} /> },

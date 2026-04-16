@@ -121,6 +121,12 @@ export default function BalanceTab({ drivers, dailyCharges, payments, manualDebt
     setSortOption(`${key}_${isAsc ? 'desc' : 'asc'}`);
   };
 
+  const totals = useMemo(() => ({
+    charges: driverBalances.reduce((s, d) => s + d.totalCharges, 0),
+    payments: driverBalances.reduce((s, d) => s + d.totalPayments, 0),
+    balance: driverBalances.reduce((s, d) => s + d.balance, 0),
+  }), [driverBalances]);
+
   return (
     <div className="space-y-4">
         <div className="flex justify-end items-center gap-4">
@@ -141,7 +147,12 @@ export default function BalanceTab({ drivers, dailyCharges, payments, manualDebt
         <Card>
             <CardHeader>
                 <CardTitle>Balance de Conductores</CardTitle>
-                <CardDescription>Resumen de cargos y abonos acumulados.</CardDescription>
+                <CardDescription>
+                  Cargos y abonos acumulados. 
+                  <span className="ml-2 text-red-600 font-semibold">{driverBalances.filter(d => d.balance < 0).length} con deuda</span>
+                  {' · '}
+                  <span className="text-green-600 font-semibold">{driverBalances.filter(d => d.balance >= 0).length} al corriente</span>
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="overflow-x-auto rounded-md border">
@@ -156,24 +167,45 @@ export default function BalanceTab({ drivers, dailyCharges, payments, manualDebt
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {driverBalances.map(item => (
+                            {driverBalances.map(item => {
+                              const isDebt = item.balance < 0;
+                              const rowBg = isDebt ? 'bg-red-50/50 hover:bg-red-50' : 'hover:bg-muted/50';
+                              return (
                                 <TableRow 
                                     key={item.id} 
                                     onClick={() => router.push(`/flotillav2/conductores/${item.id}?tab=history`)} 
-                                    className="cursor-pointer hover:bg-muted/50"
+                                    className={cn('cursor-pointer transition-colors', rowBg)}
                                 >
-                                    <TableCell className="font-medium">{item.name}</TableCell>
-                                    <TableCell className="text-right text-destructive">{formatCurrency(item.totalCharges)}</TableCell>
-                                    <TableCell className="text-right text-green-600">{formatCurrency(item.totalPayments)}</TableCell>
-                                    <TableCell className={cn("text-right font-bold", item.balance >= 0 ? 'text-green-700' : 'text-red-700')}>
+                                    <TableCell>
+                                      <div className="flex items-center gap-2">
+                                        <div className={cn('h-2 w-2 rounded-full shrink-0', isDebt ? 'bg-red-500' : 'bg-emerald-500')} />
+                                        <span className="font-medium">{item.name}</span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="text-right text-destructive font-mono">{formatCurrency(item.totalCharges)}</TableCell>
+                                    <TableCell className="text-right text-green-600 font-mono">{formatCurrency(item.totalPayments)}</TableCell>
+                                    <TableCell className={cn('text-right font-bold font-mono', isDebt ? 'text-red-700' : 'text-green-700')}>
                                         {formatCurrency(item.balance)}
                                     </TableCell>
-                                    <TableCell className="text-right hidden md:table-cell">
+                                    <TableCell className="text-right hidden md:table-cell text-muted-foreground text-sm">
                                       {item.lastPaymentDate ? format(parseISO(item.lastPaymentDate), 'dd/MM/yy', { locale: es }) : '—'}
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                              );
+                            })}
                         </TableBody>
+                        {/* Totals row */}
+                        {driverBalances.length > 1 && (
+                          <tfoot>
+                            <tr className="border-t-2 border-border bg-muted/30">
+                              <td className="px-4 py-3 text-sm font-bold text-muted-foreground uppercase tracking-wider">Totales</td>
+                              <td className="px-4 py-3 text-right font-bold text-destructive font-mono">{formatCurrency(totals.charges)}</td>
+                              <td className="px-4 py-3 text-right font-bold text-green-600 font-mono">{formatCurrency(totals.payments)}</td>
+                              <td className={cn('px-4 py-3 text-right font-black font-mono', totals.balance >= 0 ? 'text-green-700' : 'text-red-700')}>{formatCurrency(totals.balance)}</td>
+                              <td className="px-4 py-3 hidden md:table-cell"></td>
+                            </tr>
+                          </tfoot>
+                        )}
                     </Table>
                 </div>
             </CardContent>

@@ -17,7 +17,8 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
-import type { PurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';
+import type { RegisterPurchaseFormValues } from '@/schemas/register-purchase-schema';
+type PurchaseFormValues = RegisterPurchaseFormValues;
 import type { User, PayableAccount, PaymentMethod } from '@/types';
 import { inventoryService } from './inventory.service';
 import { adminService } from './admin.service';

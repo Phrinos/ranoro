@@ -1,14 +1,14 @@
 // src/app/(app)/servicios/components/SafetyChecklist.tsx
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useFormContext, Controller } from "react-hook-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from "@/components/ui/button";
 import { FormField, FormItem } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { BrainCircuit, Loader2, PlayCircle } from "lucide-react";
+import { PlayCircle } from "lucide-react";
 import type { SafetyInspection, SafetyCheckStatus, SafetyCheckValue } from '@/types';
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -81,9 +81,7 @@ const SafetyChecklistReport = ({ inspection, signatureDataUrl, technicianName }:
   signatureDataUrl?: string;
   technicianName?: string;
 }) => {
-  const { control, getValues } = useFormContext();
-  const isEnhancingText = null; // Placeholder for AI feature
-  const handleEnhanceText = () => {}; // Placeholder for AI feature
+  const { control } = useFormContext();
 
   return (
     <div className="space-y-6">
@@ -109,18 +107,12 @@ const SafetyChecklistReport = ({ inspection, signatureDataUrl, technicianName }:
             </div>
           ))}
         </div>
-         <FormField
+                 <FormField
             control={control}
             name="safetyInspection.inspectionNotes"
             render={({ field }) => (
                 <FormItem className="pt-4">
-                    <Label className="text-base font-semibold flex justify-between items-center w-full">
-                      <span>Observaciones Generales de la Inspección</span>
-                        <Button type="button" size="sm" variant="ghost" onClick={() => handleEnhanceText()} disabled={isEnhancingText === 'safetyInspection.inspectionNotes' || !getValues('safetyInspection.inspectionNotes')}>
-                            {isEnhancingText === 'safetyInspection.inspectionNotes' ? <Loader2 className="animate-spin" /> : <BrainCircuit className="h-4 w-4" />}
-                            <span className="ml-2 hidden sm:inline">Mejorar texto</span>
-                        </Button>
-                    </Label>
+                    <Label className="text-base font-semibold">Observaciones Generales de la Inspección</Label>
                     <div>
                         <Textarea
                             placeholder="Anotaciones sobre la inspección, detalles de los puntos que requieren atención, etc."
@@ -167,13 +159,7 @@ export const SafetyChecklist = ({ isWizardOpen, setIsWizardOpen }: SafetyCheckli
     setValue(`${fieldName}.photos`, [...currentPhotos, url]);
   };
   
-  useEffect(() => {
-    // This effect ensures that if the prop changes (e.g., from the mobile bar),
-    // the wizard will open.
-    if (isWizardOpen) {
-      // The setIsWizardOpen from the parent is already managing the state.
-    }
-  }, [isWizardOpen]);
+
 
   return (
     <>
