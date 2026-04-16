@@ -317,6 +317,7 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
             onDeleteSale={handleDeleteSale}
             onPaymentUpdate={handlePaymentUpdate}
             onSendWhatsapp={() => handleSendWhatsapp(viewingSale)}
+            currentUser={currentUser}
           />
         )}
 

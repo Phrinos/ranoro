@@ -44,6 +44,7 @@ interface ViewSaleDialogProps {
   onDeleteSale: (saleId: string) => void;
   onPaymentUpdate: (saleId: string, paymentDetails: PaymentDetailsFormValues) => Promise<void>;
   onSendWhatsapp: (sale: SaleReceipt) => void;
+  currentUser: User | null;
 }
 
 const resolver = zodResolver(posFormSchema) as unknown as Resolver<POSFormValues>;
@@ -59,6 +60,7 @@ export function ViewSaleDialog({
   onDeleteSale,
   onPaymentUpdate,
   onSendWhatsapp,
+  currentUser
 }: ViewSaleDialogProps) {
   const { toast } = useToast();
   const userPermissions = usePermissions();
@@ -123,7 +125,7 @@ export function ViewSaleDialog({
 
         <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex flex-row justify-between items-center w-full gap-2">
           <div>
-            {userPermissions.has('pos:delete_sale') && (
+            {currentUser?.role === 'Superadministrador' && (
               <ConfirmDialog
                 triggerButton={<Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isCancelled}><Ban className="mr-2 h-4 w-4" />Cancelar Venta</Button>}
                 title="¿Está seguro de cancelar esta venta?"
