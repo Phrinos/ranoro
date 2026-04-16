@@ -92,7 +92,7 @@ export function ServiceForm({
   initialData, vehicles, users, inventoryItems, serviceTypes, categories, suppliers, serviceHistory,
   onSave, onComplete, onVehicleCreated, onCancel, onValidationErrors, mode, activeTab, onTabChange,
   isChecklistWizardOpen, setIsChecklistWizardOpen, onOpenNewVehicleDialog, isNewRecord, onSaveSuccess,
-  isReadOnly
+  isReadOnly, currentUser
 }: {
   initialData: ServiceRecord | null;
   vehicles: Vehicle[];
@@ -116,6 +116,7 @@ export function ServiceForm({
   onOpenNewVehicleDialog: (vehicle?: Partial<Vehicle> | null) => void;
   isNewRecord: boolean;
   isReadOnly?: boolean; 
+  currentUser?: User | null;
 }) {
   const { toast } = useToast();
   const [isSignatureDialogOpen, setIsSignatureDialogOpen] = React.useState(false);
@@ -255,6 +256,8 @@ export function ServiceForm({
           mode={mode}
           initialData={initialData}
           isSubmitting={isSubmitting}
+          currentUser={currentUser}
+          isReadOnly={isReadOnly}
         />
       </form>
 

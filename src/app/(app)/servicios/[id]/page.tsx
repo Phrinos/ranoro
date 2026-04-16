@@ -417,6 +417,7 @@ export default function ServicioPage() {
         onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
         isNewRecord={!isEditMode}
         isReadOnly={isReadOnly}
+        currentUser={currentUser}
       />
 
       <ServiceMobileBar

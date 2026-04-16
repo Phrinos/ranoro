@@ -23,7 +23,10 @@ export function useAuth() {
     console.log("[AUTH-AUDIT] User logging out...");
     cleanupDocListener();
     setCurrentUser(null);
-    localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
+      localStorage.removeItem("ranoro_login_date");
+    }
     if (auth) {
         await signOut(auth);
     }
@@ -54,6 +57,23 @@ export function useAuth() {
       cleanupDocListener();
 
       if (firebaseUser) {
+        // --- Midnight Expiration Check ---
+        if (typeof window !== 'undefined') {
+          const savedLoginDate = localStorage.getItem("ranoro_login_date");
+          const todayStr = new Date().toDateString();
+          
+          if (savedLoginDate && savedLoginDate !== todayStr) {
+            console.warn("[AUTH-AUDIT] Session expired (past midnight). Forcing sign out.");
+            localStorage.removeItem("ranoro_login_date");
+            if (auth) await signOut(auth);
+            return;
+          }
+          if (!savedLoginDate) {
+            localStorage.setItem("ranoro_login_date", todayStr);
+          }
+        }
+        // ---------------------------------
+
         console.log("[AUTH-AUDIT] Firebase User detected UID:", firebaseUser.uid, "Email:", firebaseUser.email);
         
         try {
@@ -124,7 +144,10 @@ export function useAuth() {
       } else {
         console.log("[AUTH-AUDIT] No active Firebase user. Clearing state.");
         setCurrentUser(null);
-        localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
+          localStorage.removeItem("ranoro_login_date");
+        }
         setIsLoading(false);
       }
     }, (error) => {

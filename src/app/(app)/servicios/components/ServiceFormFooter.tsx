@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Save, Ban, DollarSign } from 'lucide-react';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import type { ServiceFormValues } from '@/schemas/service-form';
-import type { ServiceRecord } from '@/types';
+import type { ServiceRecord, User } from '@/types';
 import { Textarea } from '@/components/ui/textarea';
 import { useRouter } from 'next/navigation';
 
@@ -18,6 +18,8 @@ interface ServiceFormFooterProps {
   mode: 'service' | 'quote';
   initialData: ServiceRecord | null;
   isSubmitting: boolean;
+  currentUser?: User | null;
+  isReadOnly?: boolean;
 }
 
 const toNumber = (v: any) =>
@@ -33,7 +35,9 @@ export const ServiceFormFooter = ({
   onSaveClick,
   mode,
   initialData,
-  isSubmitting
+  isSubmitting,
+  currentUser,
+  isReadOnly
 }: ServiceFormFooterProps) => {
   const { control } = useFormContext<ServiceFormValues>();
   const [cancellationReason, setCancellationReason] = useState("");
@@ -47,6 +51,7 @@ export const ServiceFormFooter = ({
   const isEditMode = !!initialData?.id;
   const isQuoteMode = status === 'Cotizacion';
   const isScheduledMode = status === 'Agendado';
+  const isSuperAdmin = currentUser?.role === 'Superadministrador';
 
   const totalCost = useMemo(() => {
     return (serviceItems || []).reduce((acc, item: any) => {
@@ -96,7 +101,7 @@ export const ServiceFormFooter = ({
     <footer className="sticky bottom-0 z-10 border-t bg-background/95 p-4 backdrop-blur-sm hidden md:block">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          {
+          {isSuperAdmin && (
             <ConfirmDialog
               triggerButton={
                 <Button variant="destructive" type="button" className="w-full sm:w-auto">
@@ -118,11 +123,11 @@ export const ServiceFormFooter = ({
                 />
               )}
             </ConfirmDialog>
-          }
+          )}
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          {isEditMode && onComplete && status !== 'Entregado' && status !== 'Cancelado' && (
+          {isEditMode && onComplete && status !== 'Entregado' && status !== 'Cancelado' && !isReadOnly && (
             <Button
               type="button"
               onClick={onComplete}
@@ -142,18 +147,20 @@ export const ServiceFormFooter = ({
           )}
           
           <Button type="button" variant="outline" onClick={() => (window.history.length > 1 ? window.history.back() : router.push('/servicios'))} disabled={isSubmitting}>
-              Cancelar
+              {isReadOnly ? 'Volver' : 'Cancelar'}
           </Button>
 
-          <Button
-            type="button"
-            onClick={onSaveClick}
-            disabled={isSubmitting}
-            className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
-          >
-            {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 h-4 w-4" />}
-            Guardar
-          </Button>
+          {!isReadOnly && (
+            <Button
+              type="button"
+              onClick={onSaveClick}
+              disabled={isSubmitting}
+              className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+            >
+              {isSubmitting ? <Loader2 className="animate-spin mr-2" /> : <Save className="mr-2 h-4 w-4" />}
+              Guardar
+            </Button>
+          )}
         </div>
       </div>
     </footer>

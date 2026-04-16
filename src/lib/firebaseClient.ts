@@ -7,6 +7,7 @@ import { getAuth, Auth, browserLocalPersistence, setPersistence, GoogleAuthProvi
 import { firebaseConfig } from './firebase.config';
 
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 /**
  * ----------------------------------------------------------

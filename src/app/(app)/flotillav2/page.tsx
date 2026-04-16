@@ -18,6 +18,7 @@ import {
 import { GlobalTransactionDialog, type GlobalTransactionFormValues } from './components/GlobalTransactionDialog';
 import { VehicleExpenseDialog } from './components/VehicleExpenseDialog';
 import { OwnerWithdrawalDialog } from './components/OwnerWithdrawalDialog';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const BalanceTab = lazy(() => import('./components/BalanceTab'));
 const ConductoresTab = lazy(() => import('./components/ConductoresTab'));
@@ -31,6 +32,7 @@ function FlotillaV2Page() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'balance');
   const [quickAction, setQuickAction] = useState<QuickAction>(null);
+  const permissions = usePermissions();
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -143,7 +145,7 @@ function FlotillaV2Page() {
   );
 
   // Quick-action dropdown in header
-  const headerActions = (
+  const headerActions = permissions.has('fleet:manage_rentals') ? (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button className="bg-zinc-900 hover:bg-zinc-800 text-white font-semibold shadow-sm gap-2 border border-zinc-700">
@@ -176,7 +178,7 @@ function FlotillaV2Page() {
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+  ) : null;
 
   if (isLoading) {
     return <div className="flex h-64 items-center justify-center"><Loader2 className="animate-spin h-8 w-8" /></div>;

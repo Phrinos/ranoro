@@ -78,9 +78,9 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Flotilla',
     items: [
       { label: 'Ver Flotilla',        path: '/flotillav2',                         icon: Truck,       permissions: ['fleet:view'] },
-      { label: 'Registrar Abono',     path: '/flotillav2?action=abono',            icon: HandCoins,   permissions: ['fleet:view'] },
-      { label: 'Registrar Cargo',     path: '/flotillav2?action=cargo',            icon: TrendingDown, permissions: ['fleet:view'] },
-      { label: 'Registrar Salida',    path: '/flotillav2?action=salida',           icon: Gauge,       permissions: ['fleet:view'] },
+      { label: 'Registrar Abono',     path: '/flotillav2?action=abono',            icon: HandCoins,   permissions: ['fleet:manage_rentals'] },
+      { label: 'Registrar Cargo',     path: '/flotillav2?action=cargo',            icon: TrendingDown, permissions: ['fleet:manage_rentals'] },
+      { label: 'Registrar Salida',    path: '/flotillav2?action=salida',           icon: Gauge,       permissions: ['fleet:manage_rentals'] },
     ],
   },
   {

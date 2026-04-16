@@ -16,6 +16,7 @@ import { format, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { parseDate } from '@/lib/forms';
 import Link from 'next/link';
+import { usePermissions } from '@/hooks/usePermissions';
 
 import { HistoryTabContent } from '../../components/HistoryTabContent';
 import { EditContactInfoDialog } from '../../components/EditContactInfoDialog';
@@ -31,6 +32,7 @@ export default function DriverProfilePageV2() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const permissions = usePermissions();
 
   const [driver, setDriver] = useState<Driver | null>(null);
   const [assignedVehicle, setAssignedVehicle] = useState<Vehicle | null>(null);
@@ -147,21 +149,25 @@ export default function DriverProfilePageV2() {
 
           <div className="flex flex-wrap gap-2 shrink-0">
             {/* Payment — large green */}
-            <Button
-              size="default"
-              className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-md gap-2 h-10 px-4"
-              onClick={() => setIsPaymentDialogOpen(true)}
-            >
-              <HandCoins className="h-4 w-4" /> Registrar Abono
-            </Button>
+            {permissions.has('fleet:manage_rentals') && (
+              <Button
+                size="default"
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-md gap-2 h-10 px-4"
+                onClick={() => setIsPaymentDialogOpen(true)}
+              >
+                <HandCoins className="h-4 w-4" /> Registrar Abono
+              </Button>
+            )}
             {/* Charge — large red */}
-            <Button
-              size="default"
-              className="bg-red-500 hover:bg-red-600 text-white font-bold shadow-md gap-2 h-10 px-4"
-              onClick={() => setIsChargeDialogOpen(true)}
-            >
-              <PlusCircle className="h-4 w-4" /> Registrar Cargo
-            </Button>
+            {permissions.has('fleet:manage_rentals') && (
+              <Button
+                size="default"
+                className="bg-red-500 hover:bg-red-600 text-white font-bold shadow-md gap-2 h-10 px-4"
+                onClick={() => setIsChargeDialogOpen(true)}
+              >
+                <PlusCircle className="h-4 w-4" /> Registrar Cargo
+              </Button>
+            )}
             {/* Back */}
             <Button variant="outline" size="default" onClick={() => router.push('/flotillav2?tab=conductores')}
               className="bg-white/5 border-white/20 text-white hover:bg-white/15 hover:text-white h-10">
