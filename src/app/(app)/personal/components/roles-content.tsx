@@ -39,6 +39,7 @@ const SUPERADMIN_ONLY_IDS = new Set([
   'inventory:delete',
   'inventory:manage_categories',
   'services:delete',
+  'vehicles:delete',
   'pos:delete_sale',
   'purchases:delete',
   'fleet:delete',
@@ -52,8 +53,12 @@ const SUPERADMIN_ONLY_IDS = new Set([
 // Permissions requiring extra caution
 const HIGH_RISK_IDS = new Set([
   'finances:manage_manual_entries',
+  'finances:view',
   'billing:manage',
   'fleet:manage_rentals',
+  'reports:view_payroll',
+  'inventory:view_costs',
+  'services:view_profits',
 ]);
 
 function PermissionBadge({ permissionId }: { permissionId: string }) {
