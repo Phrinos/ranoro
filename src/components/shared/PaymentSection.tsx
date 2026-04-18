@@ -10,7 +10,6 @@ import { Wallet, CreditCard, Landmark, CheckCircle, DollarSign, PlusCircle, Tras
 import type { Payment, PaymentMethod } from "@/types";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
-import { Card } from "@/components/ui/card";
 
 const UI_METHODS = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Transferencia/Contadora", "Crédito"];
 const MSI_OPTIONS = ["3", "6", "9", "12", "18", "24"];
@@ -73,7 +72,7 @@ export function PaymentSection({
   };
 
   return (
-    <Card className="p-4 bg-card">
+    <div className="w-full">
         <FormField
             control={control}
             name="payments"
@@ -262,6 +261,6 @@ export function PaymentSection({
                 </FormItem>
             )}
         />
-    </Card>
+    </div>
   );
 }

@@ -14,8 +14,6 @@ interface ServiceSummaryProps {
   totalAmount?: number;
 }
 
-const IVA_RATE = 0.16;
-
 const toNumber = (v: unknown): number => {
   if (typeof v === "number") return Number.isFinite(v) ? v : 0;
   if (typeof v === "string") {
@@ -37,10 +35,7 @@ export function ServiceSummary({
     [items]
   );
 
-  const { subTotal, taxAmount, costOfSupplies, workProfit } = useMemo(() => {
-    const sub = totalAmount / (1 + IVA_RATE);
-    const tax = totalAmount - sub;
-    
+  const { costOfSupplies, workProfit } = useMemo(() => {
     const suppliesCost = (items ?? [])
       .flatMap((i) => (Array.isArray(i?.suppliesUsed) ? i.suppliesUsed : []))
       .reduce(
@@ -49,11 +44,10 @@ export function ServiceSummary({
         0
       );
       
-    const profit = sub - suppliesCost;
+    // Ganancia = precio cliente directo menos costo de insumos (sin IVA)
+    const profit = totalAmount - suppliesCost;
     
     return { 
-        subTotal: sub, 
-        taxAmount: tax, 
         costOfSupplies: suppliesCost, 
         workProfit: profit 
     };
@@ -73,17 +67,7 @@ export function ServiceSummary({
         />
 
         <div className="w-full mt-auto space-y-2 text-sm border-t pt-4">
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Subtotal Servicio:</span>
-            <span className="font-medium">{formatCurrency(subTotal)}</span>
-          </div>
-
-          <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">IVA Servicio ({(IVA_RATE * 100).toFixed(0)}%):</span>
-            <span className="font-medium">{formatCurrency(taxAmount)}</span>
-          </div>
-
-          <div className="flex justify-between items-center text-lg font-bold pt-1">
+          <div className="flex justify-between items-center text-lg font-bold">
             <span>Total del Servicio:</span>
             <span className="text-primary">{formatCurrency(totalAmount)}</span>
           </div>
@@ -96,7 +80,7 @@ export function ServiceSummary({
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-muted-foreground">Ganancia del Trabajo:</span>
+            <span className="font-semibold text-green-700">Ganancia:</span>
             <span className="font-medium text-green-600">{formatCurrency(workProfit)}</span>
           </div>
         </div>

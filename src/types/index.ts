@@ -210,6 +210,7 @@ export type AuditLog = {
 export type InventoryCategory = {
   id: string;
   name: string;
+  type: 'product' | 'service';
 };
 
 export interface Supplier {

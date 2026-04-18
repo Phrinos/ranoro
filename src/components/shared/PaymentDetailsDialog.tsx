@@ -11,7 +11,7 @@ import { useForm, FormProvider, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { paymentDetailsSchema, PaymentDetailsFormValues } from "@/schemas/payment-details-form-schema";
 import { useToast } from "@/hooks/use-toast";
-import { NextServiceInfoCard } from '@/app/(app)/servicios/components/NextServiceInfoCard';
+import { MileageServiceCard as NextServiceInfoCard } from '@/app/(app)/servicios/components/cards/mileage-service-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { parseISO } from 'date-fns';
 import { z } from 'zod';
@@ -153,7 +153,6 @@ export function PaymentDetailsDialog({
                         { shouldDirty: true }
                       );
                     }}
-                    isSubmitting={isSubmitting}
                     currentMileage={vehicle?.currentMileage} 
                   />
                 )}

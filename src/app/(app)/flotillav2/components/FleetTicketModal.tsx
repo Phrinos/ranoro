@@ -52,38 +52,45 @@ export function FleetTicketModal({
     } catch {}
   }, []);
 
-  const captureImage = useCallback(async (): Promise<Blob | null> => {
-    if (!ticketRef.current) return null;
+  const captureImagePromise = useCallback(async (): Promise<Blob> => {
+    if (!ticketRef.current) throw new Error("No ticket ref");
     const canvas = await html2canvas(ticketRef.current, {
       scale: 2.5,
       backgroundColor: "white",
       useCORS: true,
+      logging: false,
     });
-    return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+    return new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => {
+        if (b) resolve(b);
+        else reject(new Error("Failed to create blob"));
+      }, "image/png");
+    });
   }, []);
 
   const handleCopyImage = useCallback(async () => {
     try {
-      const blob = await captureImage();
-      if (!blob) throw new Error();
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      const item = new ClipboardItem({
+        "image/png": captureImagePromise() as any
+      });
+      await navigator.clipboard.write([item]);
       setCopiedImage(true);
       toast({ title: "Imagen copiada al portapapeles" });
       setTimeout(() => setCopiedImage(false), 2500);
     } catch {
       toast({ title: "Error al copiar", variant: "destructive" });
     }
-  }, [captureImage, toast]);
+  }, [captureImagePromise, toast]);
 
   const handleBeforeWhatsApp = useCallback(async () => {
     try {
-      const blob = await captureImage();
-      if (blob) {
-        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-        toast({ title: "Imagen copiada", description: "Pégala en el chat de WhatsApp." });
-      }
+      const item = new ClipboardItem({
+        "image/png": captureImagePromise() as any
+      });
+      await navigator.clipboard.write([item]);
+      toast({ title: "Imagen copiada", description: "Pégala en el chat de WhatsApp." });
     } catch {}
-  }, [captureImage, toast]);
+  }, [captureImagePromise, toast]);
 
   const handlePrint = useCallback(() => window.print(), []);
 
@@ -173,7 +180,6 @@ export function FleetTicketModal({
                 <div className="flex justify-center p-6">
                   <div className="shadow-xl rounded-sm">
                     <RentalPaymentTicket
-                      ref={ticketRef}
                       payment={payment}
                       driver={driver}
                       vehicle={vehicle ?? undefined}
@@ -185,6 +191,19 @@ export function FleetTicketModal({
               </ScrollArea>
             </div>
 
+          </div>
+
+          {/* ── OFF-SCREEN RENDERER FOR HTML2CANVAS ─────────────────────── */}
+          <div className="fixed top-0 left-[200vw]">
+             <div ref={ticketRef} className="bg-white">
+               <RentalPaymentTicket
+                 payment={payment}
+                 driver={driver}
+                 vehicle={vehicle ?? undefined}
+                 driverBalance={monthBalance}
+                 previewBranding={branding ?? undefined}
+               />
+             </div>
           </div>
         </DialogContent>
       </Dialog>

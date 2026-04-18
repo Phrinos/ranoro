@@ -618,14 +618,22 @@ Total: ${formatCurrency(saleForTicket.totalAmount)}
 
   return (
     <>
-      <div className="bg-primary text-primary-foreground rounded-lg p-6 mb-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+      <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-xl p-6 mb-6 shadow-md relative overflow-hidden">
+        <div className="absolute right-0 top-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 relative z-10">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Registrar Nueva Venta
+            <button
+              type="button"
+              onClick={() => router.push('/pos')}
+              className="text-sm text-white/60 hover:text-white flex items-center gap-1 mb-2 transition-colors"
+            >
+              ← Historial de Ventas
+            </button>
+            <h1 className="text-3xl font-black tracking-tight">
+              Nueva Venta
             </h1>
-            <p className="text-primary-foreground/80 mt-1">
-              Añada artículos y finalice la transacción para generar el ticket.
+            <p className="text-white/70 mt-1 text-sm">
+              Añade artículos del inventario y finaliza la transacción para generar el ticket.
             </p>
           </div>
         </div>

@@ -26,6 +26,7 @@ const photoReportSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
   photos: z.array(z.string()),
+  category: z.enum(['reception', 'service']).optional().default('service'),
 });
 
 const paymentSchema = z.object({

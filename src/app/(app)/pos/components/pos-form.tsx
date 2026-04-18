@@ -41,12 +41,9 @@ export function PosForm({
   const { control, getValues, setValue, reset } = methods;
   const openAddItem = onOpenAddItemDialog ?? (() => {});
   
-  useEffect(() => {
-    if (initialData?.id) {
-      reset(initialData);
-    }
-    // sólo cuando cambia el ID de la venta
-  }, [initialData, reset]);
+  // Removed useEffect that called reset(initialData) because it causes 'mount' of undefined crash.
+  // The parent component should supply initialData via useForm({ defaultValues: ... }) 
+  // or use key={} to remount when initialData changes.
 
   return (
     <>

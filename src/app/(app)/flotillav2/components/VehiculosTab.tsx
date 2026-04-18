@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { formatCurrency } from '@/lib/utils';
 import { SortableTableHeader } from '@/components/shared/SortableTableHeader';
-import { VehicleSelectionDialog } from '@/app/(app)/servicios/components/VehicleSelectionDialog';
+import { VehicleSelectorDialog as VehicleSelectionDialog } from '@/app/(app)/servicios/components/dialogs/vehicle-selector-dialog';
 import { VehicleDialog } from '@/app/(app)/vehiculos/components/vehicle-dialog';
 import { inventoryService, personnelService } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';

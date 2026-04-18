@@ -1,73 +1,53 @@
+// src/app/(app)/servicios/historial/page.tsx
 "use client";
 
+import React from "react";
 import { withSuspense } from "@/lib/withSuspense";
-import React, { Suspense, lazy } from "react";
-import { Loader2 } from "lucide-react";
-import { useServiciosSharedState } from "../components/useServiciosSharedState";
+import { HistoryList } from "../components/lists/history-list";
+import { useServicesData } from "../components/hooks/use-services-data";
 import { TicketPreviewModal } from "@/app/(app)/ticket/components";
-
-const HistorialTabContent = lazy(() => import("../components/tab-historial"));
 
 function PageInner() {
   const {
     vehicles,
     personnel,
     currentUser,
-    isLoading,
-    isShareDialogOpen,
-    recordForSharing,
-    isTicketDialogOpen,
-    serviceForTicket,
-    handleShowShareDialog,
-    handleShowTicketDialog,
-    handleDeleteService,
-    handleCloseModals,
-  } = useServiciosSharedState();
-
-  if (isLoading) {
-    return (
-      <div className="flex h-64 w-full items-center justify-center">
-         <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
+    shareDialog,
+    openShareDialog,
+    closeAllDialogs,
+    deleteService,
+  } = useServicesData();
 
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-64 w-full items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      }
-    >
+    <>
       <div className="space-y-6">
+        {/* Header */}
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Historial de Servicios</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Base de datos de todos los servicios pasados finalizados.</p>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Registro completo de servicios entregados y cancelados con reportes exportables.
+          </p>
         </div>
-        <HistorialTabContent
+
+        <HistoryList
           vehicles={vehicles}
           personnel={personnel}
-          onShowShareDialog={handleShowShareDialog}
           currentUser={currentUser}
-          onDelete={handleDeleteService}
-          onShowTicket={handleShowTicketDialog}
+          onView={openShareDialog}
+          onShowTicket={openShareDialog}
+          onDelete={deleteService}
         />
       </div>
 
-      <Suspense fallback={null}>
-        {(recordForSharing || serviceForTicket) && (
-          <TicketPreviewModal
-            open={isShareDialogOpen || isTicketDialogOpen}
-            onOpenChange={handleCloseModals}
-            service={recordForSharing || serviceForTicket || null}
-            vehicle={vehicles.find(
-              (v) => v.id === (recordForSharing || serviceForTicket)?.vehicleId
-            )}
-          />
-        )}
-      </Suspense>
-    </Suspense>
+      {shareDialog.data && (
+        <TicketPreviewModal
+          open={shareDialog.open}
+          onOpenChange={closeAllDialogs}
+          service={shareDialog.data}
+          vehicle={vehicles.find((v) => v.id === shareDialog.data?.vehicleId)}
+        />
+      )}
+    </>
   );
 }
 

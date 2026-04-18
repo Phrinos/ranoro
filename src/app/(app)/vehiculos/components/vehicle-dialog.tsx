@@ -38,7 +38,7 @@ const buildDefaults = (v?: Partial<Vehicle> | null): Partial<VehicleFormInput> =
   color: v?.color ?? "",
   ownerName: v?.ownerName ?? "",
   ownerPhone: v?.ownerPhone ?? "",
-  chatMetaLink: (v as any)?.chatMetaLink ?? "",
+
   notes: v?.notes ?? "",
   isFleetVehicle: v?.isFleetVehicle ?? false,
   purchasePrice: safeNumber(v?.purchasePrice),
@@ -113,7 +113,7 @@ export function VehicleDialog({
       formId="vehicle-form"
       isSubmitting={isSubmitting}
       submitButtonText={isEdit ? "Actualizar Vehículo" : "Crear Vehículo"}
-      dialogContentClassName="sm:max-w-2xl"
+      dialogContentClassName="sm:max-w-3xl"
     >
       <FormProvider {...methods}>
         <form id="vehicle-form" onSubmit={handleSubmit(handleSubmitForm)}>

@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Trash2, Loader2, Edit, ClipboardList, Car, Gauge, Calendar, Phone, AlertTriangle, FileText, ChevronRight, CheckCircle2, X } from "lucide-react";
+import { ArrowLeft, Trash2, Loader2, Edit, ClipboardList, Car, Gauge, Calendar, Phone, AlertTriangle, FileText, ChevronRight, CheckCircle2, X, MessageCircle } from "lucide-react";
 import { inventoryService, serviceService } from "@/lib/services";
 import type { Vehicle, ServiceRecord, NextServiceInfo } from "@/types";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +17,7 @@ import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { parseDate } from "@/lib/forms";
 import { formatNumber, formatCurrency, getStatusInfo, cn } from "@/lib/utils";
-import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
+
 import { usePermissions } from "@/hooks/usePermissions";
 import { pickLatestDeliveredService, getServiceMileage } from "@/lib/vehicles/serviceRecordHelpers";
 
@@ -59,8 +59,8 @@ export default function VehicleDetailPage() {
   const [vehicle, setVehicle] = useState<Vehicle | null | undefined>(undefined);
   const [services, setServices] = useState<ServiceRecord[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState<ServiceRecord | null>(null);
-  const [isViewServiceDialogOpen, setIsViewServiceDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
   useEffect(() => {
     if (!vehicleId) return;
@@ -132,6 +132,25 @@ export default function VehicleDetailPage() {
     });
   }, [services]);
 
+  const totalPages = Math.ceil(recentServices.length / itemsPerPage);
+  const paginatedServices = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return recentServices.slice(startIndex, startIndex + itemsPerPage);
+  }, [recentServices, currentPage]);
+
+  const handleWhatsApp = () => {
+    if (vehicle?.ownerPhone) {
+        let phone = vehicle.ownerPhone.replace(/\D/g, '');
+        // Default to MX code if none provided and 10 digits
+        if (phone.length === 10) phone = '52' + phone; 
+        window.open(`https://wa.me/${phone}`, '_blank');
+    }
+  };
+
+  const nextServiceData = useMemo(() => {
+    return (latestService as any)?.s?.nextServiceInfo || (vehicle as any)?.nextServiceInfo;
+  }, [latestService, vehicle]);
+
   if (vehicle === undefined)
     return <div className="flex justify-center items-center h-[60vh]"><Loader2 className="h-10 w-10 animate-spin text-primary" /></div>;
 
@@ -151,198 +170,232 @@ export default function VehicleDetailPage() {
   return (
     <div className="container mx-auto px-4 lg:px-8 py-6 sm:py-8 animate-in fade-in duration-500 max-w-6xl">
       
-      {/* HEADER ACTIONS */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground pl-0 -ml-2" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Volver al Directorio
-        </Button>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          {userPermissions.has('fleet:edit') && (
-            <Button variant="outline" className="w-full sm:w-auto shadow-sm" onClick={() => setIsEditDialogOpen(true)}>
-              <Edit className="mr-2 h-4 w-4" /> Editar Vehículo
-            </Button>
-          )}
-          {userPermissions.has('fleet:delete') && (
-             <ConfirmDialog
-               triggerButton={
-                 <Button variant="outline" className="w-full sm:w-auto text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20 shadow-sm transition-colors">
-                   <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                 </Button>
-               }
-               title="¿Eliminar este vehículo?"
-               description="Esta acción eliminará de la base local el vehículo."
-               onConfirm={handleDeleteVehicle}
-             />
-          )}
-        </div>
-      </div>
-
       <div className="space-y-6">
-        {/* EXPEDIENTE MAIN UNIFIED CARD */}
-        <Card className="overflow-hidden border border-border/60 shadow-xl bg-card rounded-2xl">
-          
-          {/* SEC 1: IDENTIFICATION */}
-          <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 p-6 sm:p-8 lg:p-10 text-white">
-            <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-              <Car className="w-48 h-48 -mr-16 -mt-16" />
-            </div>
+        {/* HEADER BACK BUTTON */}
+        <div className="mb-2">
+          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground pl-0 -ml-2" onClick={() => router.back()}>
+            <ArrowLeft className="mr-2 h-4 w-4" /> Directorio de Vehículos
+          </Button>
+        </div>
+
+        {/* TOP ROW: UNIFIED VEHICLE & CONTACT CARD */}
+        <Card className="border-border/60 shadow-lg overflow-hidden bg-white relative rounded-2xl">
+            {/* AMBIENT BACKGROUND ICON */}
+            <Car className="w-[500px] h-[500px] absolute -right-24 -top-32 opacity-[0.03] pointer-events-none text-red-600" />
             
-            <div className="relative z-10 grid md:grid-cols-[1fr_auto] gap-6 items-start">
-              
-              <div className="space-y-4">
-                <Badge variant="outline" className="bg-white/10 text-xl tracking-widest text-white border-white/20 px-4 py-1.5 font-mono shadow-sm">
-                  {vehicle.licensePlate || 'SIN PLACA'}
-                </Badge>
-                
-                <div>
-                  <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white mb-1">
-                    {vehicle.make} <span className="font-medium text-slate-300">{vehicle.model}</span>
-                  </h1>
-                  <div className="flex items-center gap-3 text-slate-300 font-medium">
-                    <span className="bg-white/10 px-2.5 py-0.5 rounded-lg border border-white/10">{vehicle.year}</span>
-                    {vehicle.color && <span className="flex items-center gap-1.5 hidden"><div className="w-3 h-3 rounded-full border border-white/20" style={{backgroundColor: vehicle.color.toLowerCase()}} /></span>}
-                    {vehicle.color && <span>{vehicle.color}</span>}
-                  </div>
-                </div>
-              </div>
-
-              {/* OWNER BLOCK */}
-              <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 md:min-w-[280px] shadow-sm">
-                <h3 className="text-xs uppercase tracking-widest text-slate-400 font-semibold mb-3">Dueño / Contacto</h3>
-                <div className="space-y-1">
-                  <p className="text-lg font-bold text-white tracking-snug">{vehicle.ownerName || <span className="italic font-normal opacity-50">Sin Asignar</span>}</p>
-                  {vehicle.ownerPhone && (
-                     <div className="flex items-center gap-2 text-slate-300 font-mono text-sm">
-                       <Phone className="w-3.5 h-3.5 opacity-70" />
-                       {vehicle.ownerPhone}
-                     </div>
-                  )}
-                </div>
-              </div>
-
+            {/* FLOATING ACTIONS TOP RIGHT */}
+            <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center gap-2">
+               {userPermissions.has('fleet:edit') && (
+                 <Button variant="outline" size="icon" className="text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full w-10 h-10 transition-all bg-white shadow-sm border-slate-200" onClick={() => setIsEditDialogOpen(true)}>
+                   <Edit className="w-4 h-4" />
+                 </Button>
+               )}
+               {userPermissions.has('fleet:delete') && (
+                  <ConfirmDialog
+                    triggerButton={
+                      <Button variant="outline" size="icon" className="text-red-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 rounded-full w-10 h-10 transition-all bg-white shadow-sm border-slate-200">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    }
+                    title="¿Eliminar este vehículo?"
+                    description="Esta acción eliminará de la base local el vehículo."
+                    onConfirm={handleDeleteVehicle}
+                  />
+               )}
             </div>
-          </div>
 
-          {/* SEC 2: MAINTENANCE METRICS */}
-          <div className="p-6 sm:p-8 bg-slate-50 border-b border-border/50">
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="flex flex-col md:flex-row gap-8 p-6 sm:p-10 relative z-10 w-full">
                
-               {/* Current Mileage */}
-               <div className="bg-white p-5 rounded-2xl border shadow-sm flex flex-col justify-between">
-                 <div className="flex items-center gap-2 mb-3">
-                   <div className="bg-primary/10 p-2 rounded-xl"><Gauge className="w-4 h-4 text-primary" /></div>
-                   <span className="text-xs tracking-widest font-bold text-muted-foreground uppercase">Kilometraje</span>
-                 </div>
-                 <p className="text-3xl font-black font-mono text-slate-900">{formatNumber(currentMileage) || '—'} <span className="text-base text-muted-foreground font-medium">km</span></p>
-               </div>
+               {/* 1. VEHICLE DETAILS */}
+               <div className="flex-1 space-y-6 md:border-r md:border-slate-100 md:pr-10">
+                  <h1 className="text-5xl sm:text-6xl md:text-[5rem] font-black tracking-tighter text-red-600 leading-none pt-2">
+                     {vehicle.licensePlate || 'SIN PLACA'}
+                  </h1>
 
-                {/* Last Service Date */}
-                <div className="bg-white p-5 rounded-2xl border shadow-sm flex flex-col justify-between">
-                 <div className="flex items-center gap-2 mb-3">
-                   <div className="bg-blue-500/10 p-2 rounded-xl"><Calendar className="w-4 h-4 text-blue-600" /></div>
-                   <span className="text-xs tracking-widest font-bold text-muted-foreground uppercase">Última Visita</span>
-                 </div>
-                 <div>
-                   <p className="text-2xl font-black text-slate-900">{lastServiceDate && isValid(lastServiceDate) ? format(lastServiceDate, "dd MMM yyyy", { locale: es }) : '—'}</p>
-                   {lastServiceMileage !== null && <p className="text-xs text-muted-foreground font-medium mt-1">Ref: {formatNumber(lastServiceMileage)} km</p>}
-                 </div>
-               </div>
-
-                {/* Next Recommended */}
-                <div className="bg-amber-50 p-5 rounded-2xl border border-amber-200/60 shadow-sm flex flex-col justify-between sm:col-span-2 lg:col-span-2">
-                 <div className="flex items-center gap-2 mb-3">
-                   <div className="bg-amber-500/20 p-2 rounded-xl"><AlertTriangle className="w-4 h-4 text-amber-700" /></div>
-                   <span className="text-xs tracking-widest font-bold text-amber-800 uppercase">Aviso de Próximo Servicio</span>
-                 </div>
-                 <div className="bg-white/60 p-3 rounded-xl border border-amber-200/50">
-                    <NextServiceDisplay nextServiceInfo={(vehicle as any).nextServiceInfo} />
-                 </div>
-               </div>
-
-             </div>
-          </div>
-
-          {/* SEC 3: SERVICE HISTORY INTEGRATED */}
-          <div className="p-0">
-             <div className="px-6 sm:px-8 py-5 bg-card border-b border-border flex items-center justify-between">
-               <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
-                  <ClipboardList className="w-5 h-5 text-muted-foreground" />
-                  Historial de Intervenciones
-               </h3>
-               <Badge variant="secondary" className="font-mono">{recentServices.length} Registros</Badge>
-             </div>
-
-             {recentServices.length === 0 ? (
-               <div className="p-12 text-center text-muted-foreground bg-slate-50/50 flex flex-col items-center">
-                  <div className="bg-white p-4 rounded-full shadow-sm mb-4 border">
-                    <ClipboardList className="h-8 w-8 text-slate-300" />
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-lg font-medium text-slate-600">
+                    <span className="text-slate-900 font-extrabold tracking-tight text-xl sm:text-2xl">{vehicle.make}</span>
+                    <span className="text-xl sm:text-2xl">{vehicle.model}</span>
+                    <span className="bg-slate-100 px-3.5 py-1 rounded-full border border-slate-200 text-slate-700 text-sm font-bold shadow-sm">{vehicle.year}</span>
+                    {vehicle.color && (
+                      <span className="flex items-center gap-1.5 ml-1">
+                         <div className="w-4 h-4 rounded-full border border-slate-200 shadow-inner" style={{backgroundColor: vehicle.color.toLowerCase()}} title={vehicle.color} />
+                         <span className="capitalize text-base opacity-80">{vehicle.color}</span>
+                      </span>
+                    )}
                   </div>
-                  <p className="font-medium text-slate-600">Este vehículo no tiene servicios realizados en el taller aún.</p>
+                  
+                  {/* TECHNICAL BADGES */}
+                  <div className="flex flex-wrap gap-x-10 gap-y-6 items-center text-sm font-mono text-slate-500 pt-6">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-400 uppercase tracking-widest font-sans font-bold">Tipo de Motor</span>
+                        <span className="text-base font-bold text-slate-800 bg-slate-50 px-3.5 py-1.5 rounded-lg border border-slate-100 shadow-sm">{vehicle.engine || '—'}</span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-400 uppercase tracking-widest font-sans font-bold">Núm. de Motor</span>
+                        <span className="text-base text-slate-700 font-medium px-1">{vehicle.engineSerialNumber || '—'}</span>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[10px] text-slate-400 uppercase tracking-widest font-sans font-bold">Número VIN</span>
+                        <span className="text-base text-slate-700 font-medium bg-slate-50 px-3.5 py-1.5 rounded-lg border border-slate-100 shadow-sm tracking-wider">{vehicle.vin || '—'}</span>
+                      </div>
+                  </div>
                </div>
-             ) : (
-                <div className="divide-y divide-border/60">
-                  {recentServices.map((service, idx) => {
-                     const statusInfo = getStatusInfo(service.status as any);
-                     return (
-                        <div 
-                           key={service.id} 
-                           className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 px-6 sm:px-8 hover:bg-slate-50 transition-colors cursor-pointer"
-                           onClick={() => {
-                             setSelectedService(service);
-                             setIsViewServiceDialogOpen(true);
-                           }}
-                        >
-                           <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 sm:items-center">
-                              <div className="flex items-center gap-3 w-[140px] shrink-0">
-                                 {service.status === "Entregado" ? (
-                                   <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                                 ) : service.status === "Cancelado" ? (
-                                   <X className="w-4 h-4 text-red-500" />
-                                 ) : (
-                                   <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
-                                 )}
-                                 <div className="flex flex-col">
-                                    <span className="font-semibold text-sm">{formatRelevantDate(service)}</span>
-                                    <span className="font-mono text-[10px] text-muted-foreground uppercase">{service.folio || service.id.slice(-6)}</span>
-                                 </div>
-                              </div>
-                              
-                              <div className="flex flex-col justify-center max-w-[400px]">
-                                 <span className="text-sm font-medium text-slate-800 line-clamp-1">{getServiceDescriptionText(service)}</span>
-                                 <Badge variant={statusInfo.color as any} className="w-fit mt-1 px-1.5 py-0 text-[10px] uppercase font-bold">{service.status}</Badge>
-                              </div>
-                           </div>
 
-                           <div className="flex items-center gap-6 mt-3 sm:mt-0 opacity-80 sm:opacity-100 pr-2">
-                             {(service as any).mileage && (
-                               <div className="text-right hidden md:block">
-                                  <span className="text-xs text-muted-foreground uppercase tracking-wider block">KM</span>
-                                  <span className="font-mono font-medium text-sm text-slate-700">{formatNumber((service as any).mileage)}</span>
-                               </div>
-                             )}
-                             <div className="text-right">
-                                <span className="text-xs text-muted-foreground uppercase tracking-wider block">Total</span>
-                                <span className="font-bold text-slate-900">{formatCurrency(service.totalCost || 0)}</span>
-                             </div>
-                             <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity -ml-2" />
-                           </div>
+               {/* 2. CONTACT DETAILS */}
+               <div className="w-full md:w-[320px] lg:w-[380px] flex-shrink-0 flex flex-col justify-center pt-6 border-t border-slate-100 md:border-0 md:pt-0">
+                  <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-slate-200/50 to-transparent rounded-bl-full pointer-events-none" />
+                      
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm border border-slate-200">
+                          <Phone className="w-3.5 h-3.5 text-slate-600" />
                         </div>
-                     )
-                  })}
-                </div>
-             )}
-          </div>
-          
-          {/* SEC 4: NOTES */}
-          {vehicle.notes && (
-             <div className="p-6 sm:p-8 bg-amber-50/50 border-t border-border mt-auto">
-               <h4 className="font-bold text-xs tracking-widest text-amber-800 uppercase flex items-center gap-2 mb-3">
-                 <FileText className="w-3.5 h-3.5" /> Notas Adicionales
-               </h4>
-               <p className="text-sm text-amber-950/80 whitespace-pre-wrap leading-relaxed">{vehicle.notes}</p>
-             </div>
-          )}
+                        <h3 className="font-bold text-xs text-slate-500 uppercase tracking-widest">Contacto Directo</h3>
+                      </div>
+                      
+                      <div className="relative z-10">
+                        <p className="text-2xl font-black text-slate-900 mb-3 leading-tight line-clamp-2">
+                           {vehicle.ownerName || <span className="italic font-normal text-lg opacity-50">Dueño no asignado</span>}
+                        </p>
+                        
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <span className="text-lg font-mono text-slate-700 font-bold bg-white px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+                             {vehicle.ownerPhone || 'S/N'}
+                          </span>
+                          
+                          {vehicle.ownerPhone && (
+                             <Button 
+                               onClick={handleWhatsApp} 
+                               className="bg-[#25D366] hover:bg-[#1ebe5d] text-white rounded-xl transition-all h-[42px] px-3.5 shadow-sm font-bold flex gap-2 items-center"
+                               title="Contactar vía WhatsApp"
+                             >
+                               <MessageCircle className="w-5 h-5 shrink-0" />
+                               <span className="inline">Chat</span>
+                             </Button>
+                          )}
+                        </div>
+                      </div>
+                  </div>
+               </div>
+            </div>
+        </Card>
 
+        {/* MIDDLE ROW: KM AND NEXT SERVICE */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+           <Card className="border-border/60 shadow-sm flex items-center p-6 bg-white gap-6 hover:shadow-md transition-shadow">
+              <div className="bg-primary/10 p-4 rounded-2xl flex-shrink-0"><Gauge className="w-8 h-8 text-primary" /></div>
+              <div>
+                <h3 className="font-bold text-xs text-muted-foreground uppercase tracking-widest mb-1.5">Kilometraje Actual</h3>
+                <p className="font-black font-mono text-3xl sm:text-4xl text-slate-900">{formatNumber(currentMileage)} <span className="text-lg font-bold text-slate-400 font-sans">km</span></p>
+              </div>
+           </Card>
+           
+           <Card className="border-amber-200/60 shadow-sm flex items-center p-6 bg-amber-50 gap-6 hover:shadow-md transition-shadow">
+              <div className="bg-amber-500/20 p-4 rounded-2xl flex-shrink-0"><Calendar className="w-8 h-8 text-amber-700" /></div>
+              <div>
+                <h3 className="font-bold text-xs text-amber-800 uppercase tracking-widest mb-2">Aviso de Próximo Servicio</h3>
+                <div className="scale-110 origin-left">
+                  <NextServiceDisplay nextServiceInfo={nextServiceData} />
+                </div>
+              </div>
+           </Card>
+        </div>
+
+        {/* BOTTOM SECTION: PAGINATED SERVICES */}
+        <Card className="border-border/60 shadow-md">
+           <div className="px-6 py-5 bg-slate-50/50 border-b border-border flex flex-wrap items-center justify-between gap-4">
+             <div className="flex items-center gap-3">
+               <div className="bg-white p-2 rounded-lg border shadow-sm"><ClipboardList className="w-4 h-4 text-primary" /></div>
+               <h3 className="font-bold text-lg text-slate-800">Historial de Intervenciones</h3>
+             </div>
+             <Badge variant="secondary" className="font-mono text-sm px-3 py-1">{recentServices.length} Registros</Badge>
+           </div>
+
+           {recentServices.length === 0 ? (
+             <div className="p-12 text-center text-muted-foreground bg-white flex flex-col items-center">
+                <div className="bg-slate-50 p-4 rounded-full shadow-sm mb-4 border border-slate-100">
+                  <ClipboardList className="h-8 w-8 text-slate-400" />
+                </div>
+                <p className="font-medium text-slate-600">Este vehículo no tiene servicios realizados en el taller aún.</p>
+             </div>
+           ) : (
+             <div className="bg-white">
+                <div className="divide-y divide-border/60">
+                {paginatedServices.map((service) => {
+                    const statusInfo = getStatusInfo(service.status as any);
+                    return (
+                      <div 
+                         key={service.id} 
+                         className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 px-6 sm:px-8 hover:bg-slate-50 transition-colors cursor-pointer"
+                         onClick={() => router.push(`/servicios/${service.id}`)}
+                      >
+                         <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 sm:items-center">
+                            <div className="flex items-center gap-3 w-[140px] shrink-0">
+                               {service.status === "Entregado" ? (
+                                 <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                               ) : service.status === "Cancelado" ? (
+                                 <X className="w-4 h-4 text-red-500" />
+                               ) : (
+                                 <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />
+                               )}
+                               <div className="flex flex-col">
+                                  <span className="font-semibold text-sm text-slate-700">{formatRelevantDate(service)}</span>
+                                  <span className="font-mono text-[10px] text-muted-foreground uppercase">{service.folio || service.id.slice(-6)}</span>
+                               </div>
+                            </div>
+                            
+                            <div className="flex flex-col justify-center max-w-[400px]">
+                               <span className="text-sm font-medium text-slate-800 line-clamp-1">{getServiceDescriptionText(service)}</span>
+                               <Badge variant={statusInfo.color as any} className="w-fit mt-1 px-1.5 py-0 text-[10px] uppercase font-bold">{service.status}</Badge>
+                            </div>
+                         </div>
+
+                         <div className="flex items-center gap-6 mt-3 sm:mt-0 pr-2">
+                           {(service as any).mileage && (
+                             <div className="text-right hidden md:block">
+                                <span className="text-xs text-muted-foreground uppercase tracking-wider block">KM</span>
+                                <span className="font-mono font-medium text-sm text-slate-700">{formatNumber((service as any).mileage)}</span>
+                             </div>
+                           )}
+                           <div className="text-right">
+                              <span className="text-xs text-muted-foreground uppercase tracking-wider block">Total</span>
+                              <span className="font-bold text-slate-900">{formatCurrency(service.totalCost || 0)}</span>
+                           </div>
+                           <div className="bg-white group-hover:bg-primary shadow-sm border border-slate-200 group-hover:border-primary rounded-full p-1.5 transition-colors">
+                             <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white" />
+                           </div>
+                         </div>
+                      </div>
+                    )
+                })}
+                </div>
+                
+                {/* PAGINATION CONTROLS */}
+                {totalPages > 1 && (
+                  <div className="p-4 border-t flex items-center justify-between bg-slate-50">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Anterior
+                    </Button>
+                    <span className="text-sm font-medium text-muted-foreground">
+                      Página {currentPage} de {totalPages}
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Siguiente
+                    </Button>
+                  </div>
+                )}
+             </div>
+           )}
         </Card>
       </div>
 
@@ -352,17 +405,6 @@ export default function VehicleDetailPage() {
         vehicle={vehicle}
         onSave={handleSaveEditedVehicle}
       />
-
-      {selectedService && (
-        <UnifiedPreviewDialog
-          open={isViewServiceDialogOpen}
-          onOpenChange={setIsViewServiceDialogOpen}
-          title="Resumen del Servicio"
-          service={selectedService}
-        >
-          <div className="hidden" />
-        </UnifiedPreviewDialog>
-      )}
     </div>
   );
 }

@@ -135,22 +135,28 @@ export function TicketPreviewModal({
 
   const isDelivered = service?.status === "Entregado";
 
-  // ── Image capture ──
-  const captureTicketImage = useCallback(async (): Promise<Blob | null> => {
-    if (!ticketRef.current) return null;
+  const captureTicketImagePromise = useCallback(async (): Promise<Blob> => {
+    if (!ticketRef.current) throw new Error("No ticket ref");
     const canvas = await html2canvas(ticketRef.current, {
       scale: 2.5,
       backgroundColor: "white",
       useCORS: true,
+      logging: false,
     });
-    return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+    return new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => {
+        if (b) resolve(b);
+        else reject(new Error("Failed to create blob"));
+      }, "image/png");
+    });
   }, []);
 
   const handleCopyTicketImage = useCallback(async () => {
     try {
-      const blob = await captureTicketImage();
-      if (!blob) throw new Error("No se pudo generar la imagen.");
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      const item = new ClipboardItem({
+        "image/png": captureTicketImagePromise() as any
+      });
+      await navigator.clipboard.write([item]);
       setCopiedImage(true);
       toast({ title: "Ticket copiado", description: "Imagen copiada al portapapeles." });
       setTimeout(() => setCopiedImage(false), 2500);
@@ -158,19 +164,19 @@ export function TicketPreviewModal({
       console.error("Error copying ticket:", err);
       toast({ title: "Error", description: "No se pudo copiar la imagen del ticket.", variant: "destructive" });
     }
-  }, [captureTicketImage, toast]);
+  }, [captureTicketImagePromise, toast]);
 
   const handleBeforeWhatsApp = useCallback(async () => {
     try {
-      const blob = await captureTicketImage();
-      if (blob) {
-        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-        toast({ title: "Imagen copiada", description: "Pégala en el chat de WhatsApp." });
-      }
+      const item = new ClipboardItem({
+        "image/png": captureTicketImagePromise() as any
+      });
+      await navigator.clipboard.write([item]);
+      toast({ title: "Imagen copiada", description: "Pégala en el chat de WhatsApp." });
     } catch {
       // Non-fatal: user may not have clipboard write support
     }
-  }, [captureTicketImage, toast]);
+  }, [captureTicketImagePromise, toast]);
 
   const handleCopyLink = useCallback(async () => {
     if (!publicUrl) return;
@@ -305,7 +311,6 @@ export function TicketPreviewModal({
                 <div className="flex justify-center p-6">
                   <div className="shadow-xl rounded-sm">
                     <TicketContent
-                      ref={ticketRef}
                       service={service ?? undefined}
                       sale={sale ?? undefined}
                       vehicle={vehicle ?? undefined}
@@ -316,6 +321,18 @@ export function TicketPreviewModal({
               </ScrollArea>
             </div>
 
+          </div>
+
+          {/* ── OFF-SCREEN RENDERER FOR HTML2CANVAS ─────────────────────── */}
+          <div className="fixed top-0 left-[200vw]">
+             <div ref={ticketRef} className="bg-white">
+               <TicketContent
+                 service={service ?? undefined}
+                 sale={sale ?? undefined}
+                 vehicle={vehicle ?? undefined}
+                 previewWorkshopInfo={mergedWorkshopInfo}
+               />
+             </div>
           </div>
         </DialogContent>
       </Dialog>

@@ -13,7 +13,7 @@ import Image from 'next/image';
 import { PhotoUploader } from './PhotoUploader';
 import type { ServiceFormValues } from '@/schemas/service-form';
 
-export default function PhotoReportTab() {
+export function PhotoReportTab({ category = 'service' }: { category?: 'service' | 'reception' }) {
   const { control, watch, setValue } = useFormContext<ServiceFormValues>();
   const serviceId = watch('id');
 
@@ -24,6 +24,7 @@ export default function PhotoReportTab() {
 
   const handleAddReport = () => {
     append({
+      category,
       photos: [],
       title: 'Fotografías del vehículo',
       description: '',

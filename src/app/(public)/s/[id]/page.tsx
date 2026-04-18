@@ -11,7 +11,7 @@ import { db } from "@/lib/firebasePublic";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ServiceSheetContent } from "@/components/shared/ServiceSheetContent";
-import { SignatureDialog } from "@/app/(app)/servicios/components/signature-dialog";
+import { SignatureDialog } from "@/app/(app)/servicios/components/dialogs/signature-dialog";
 import { AppointmentScheduler } from "@/components/shared/AppointmentScheduler";
 import { TicketPreviewModal } from "@/app/(app)/ticket/components";
 import {

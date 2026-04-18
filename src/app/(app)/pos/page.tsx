@@ -212,12 +212,12 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
   };
 
   const pageActions = userPermissions.has('pos:create_sale') ? (
-    <Button asChild className="w-full sm:w-auto">
+    <Button asChild className="w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90">
       <Link href="/pos/nuevo">
         <PlusCircle className="mr-2 h-4 w-4" />Nueva Venta
       </Link>
     </Button>
-  ) : <div />;
+  ) : null;
 
   if (isLoading) {
     return (
@@ -230,18 +230,9 @@ Total: ${formatCurrency(saleForReprint.totalAmount)}
   return (
     <>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Punto de Venta</h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Gestiona ventas de mostrador, revisa el historial y realiza tu corte de caja.
-            </p>
-          </div>
-          {pageActions}
-        </div>
-
         <Suspense fallback={<div className="h-40 flex items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>}>
           <VentasPosContent
+            pageActions={pageActions}
             allSales={allSales}
             allInventory={allInventory}
             allUsers={allUsers}

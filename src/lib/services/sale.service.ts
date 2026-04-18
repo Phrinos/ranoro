@@ -97,6 +97,20 @@ const registerSale = async (
 
     if (inventoryUpdateItems.length > 0) {
         await inventoryService.updateInventoryStock(workBatch, inventoryUpdateItems, 'subtract');
+        // Register movement records for audit trail (each physical product sold)
+        for (const item of saleData.items) {
+            if (!item.isService && item.inventoryItemId) {
+                const movRef = doc(collection(db, 'inventoryMovements'));
+                workBatch.set(movRef, {
+                    itemId: item.inventoryItemId,
+                    saleId: saleId,
+                    type: 'sale',
+                    quantityChanged: -item.quantity,
+                    date: new Date().toISOString(),
+                    itemName: item.itemName,
+                });
+            }
+        }
     }
 
     for (const payment of saleData.payments) {

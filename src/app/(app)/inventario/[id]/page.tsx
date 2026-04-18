@@ -9,7 +9,6 @@ import type {
   InventoryCategory,
   Supplier,
 } from "@/types";
-import { PageHeader } from "@/components/page-header";
 import {
   Card,
   CardContent,
@@ -17,7 +16,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { Button } from "@/components/ui/button";
 import {
   ShieldAlert,
@@ -53,10 +52,11 @@ import { format, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import Link from "next/link";
 import { useEffect, useState, useMemo } from "react";
+
 import { useToast } from "@/hooks/use-toast";
 import { inventoryService } from "@/lib/services";
 import { parseDate } from "@/lib/forms";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { InventoryItemDialog } from "../components/inventory-item-dialog";
 import type { InventoryItemFormValues } from "../components/inventory-item-form";
@@ -125,6 +125,7 @@ export default function InventoryItemDetailPage() {
   const [categories, setCategories] = useState<InventoryCategory[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'details' | 'history'>('details');
   const userPermissions = usePermissions();
 
   // ===== Data fetch =====
@@ -273,68 +274,92 @@ export default function InventoryItemDetailPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <PageHeader
-        title="Detalles del Artículo"
-        description="Información de producto, disponibilidad y movimientos recientes."
-        actions={
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.back()}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Regresar
-            </Button>
-            {userPermissions.has('inventory:delete') && (
-              <ConfirmDialog
-                triggerButton={
-                  <Button variant="destructive" className="hidden sm:flex">
-                    <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                  </Button>
-                }
-                title={`¿Eliminar "${item.name}"?`}
-                description="Esta acción eliminará el producto del catálogo y no se puede deshacer."
-                onConfirm={handleDeleteItem}
-                confirmText="Sí, eliminar"
-              />
-            )}
-            {userPermissions.has('inventory:edit') && (
-              <Button onClick={() => setIsEditDialogOpen(true)}>
-                  <Edit className="mr-2 h-4 w-4" /> Modificar
-              </Button>
-            )}
-          </div>
-        }
-      />
+      
+      <div className="flex items-center gap-4 mb-8">
+        <Button variant="outline" size="icon" onClick={() => router.back()} className="h-10 w-10 shrink-0 rounded-full">
+          <ArrowLeft className="h-5 w-5" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Detalles del Artículo</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Información de producto, disponibilidad y movimientos recientes.</p>
+        </div>
+      </div>
 
-      <Tabs defaultValue="details" className="w-full mt-6">
-        <TabsList className="mb-4 shadow-sm border bg-card">
-          <TabsTrigger value="details" className="px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            Ficha Técnica
-          </TabsTrigger>
-          <TabsTrigger value="history" className="px-6 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+      {/* Pill tabs */}
+      <div className="inline-flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200 mb-6">
+        <button
+          onClick={() => setActiveTab('details')}
+          className={cn(
+            "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200",
+            activeTab === 'details'
+              ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+              : "text-slate-500 hover:text-slate-700"
+          )}
+        >
+          Ficha Técnica
+        </button>
+        {!item.isService && (
+          <button
+            onClick={() => setActiveTab('history')}
+            className={cn(
+              "px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-200",
+              activeTab === 'history'
+                ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                : "text-slate-500 hover:text-slate-700"
+            )}
+          >
             Historial de Movimientos
-          </TabsTrigger>
-        </TabsList>
+            {history.length > 0 && (
+              <span className="ml-2 px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full">
+                {history.length}
+              </span>
+            )}
+          </button>
+        )}
+      </div>
 
-        {/* =============== DETAILS TAB =============== */}
-        <TabsContent value="details" className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {/* Tab content */}
+      {activeTab === 'details' && (
+        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
             {/* CARD 1: INFORMACIÓN PRINCIPAL (Cubre 2 columnas) */}
-            <Card className="md:col-span-2 shadow-sm border-t-4 border-t-primary">
-              <CardHeader className="pb-4">
+            <Card className="md:col-span-2 shadow-sm border overflow-hidden rounded-xl">
+              <div className={cn("px-6 py-1.5 flex items-center justify-center font-bold uppercase tracking-widest text-[11px]", item.isService ? "bg-blue-600 text-white" : "bg-red-600 text-white")}>
+                 {item.isService ? "Servicio" : "Producto Físico"}
+              </div>
+              <CardHeader className="pb-4 relative pt-6">
+                <div className="absolute top-4 right-4 flex items-center gap-1">
+                   {userPermissions.has('inventory:edit') && (
+                     <Button size="icon" variant="ghost" className="h-9 w-9 hover:bg-slate-100 text-slate-500 hover:text-slate-900" onClick={() => setIsEditDialogOpen(true)}>
+                         <Edit className="h-4 w-4" />
+                     </Button>
+                   )}
+                   {userPermissions.has('inventory:delete') && (
+                     <ConfirmDialog
+                       triggerButton={
+                         <Button size="icon" variant="ghost" className="h-9 w-9 hover:bg-red-50 text-slate-500 hover:text-red-600">
+                             <Trash2 className="h-4 w-4" />
+                         </Button>
+                       }
+                       title={`¿Eliminar "${item.name}"?`}
+                       description="Esta acción eliminará el producto del catálogo y no se puede deshacer."
+                       onConfirm={handleDeleteItem}
+                       confirmText="Sí, eliminar"
+                     />
+                   )}
+                </div>
                 <div className="flex justify-between items-start">
-                    <div>
+                    <div className="pr-20">
                         <div className="flex items-center gap-2 mb-2">
-                            <Badge variant={item.isService ? "secondary" : "default"} className="uppercase tracking-wider text-xs">
-                                {item.isService ? "Servicio" : "Producto Físico"}
-                            </Badge>
                             <span className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                                <Tag className="h-3 w-3" /> {item.category || "General"}
+                                <Tag className="h-3.5 w-3.5" /> {item.category || "General"}
                             </span>
                         </div>
-                        <CardTitle className="text-3xl font-extrabold tracking-tight">
+                        <CardTitle className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
                         {item.name}
                         </CardTitle>
-                        <CardDescription className="text-base mt-1">
+                        <CardDescription className="text-base mt-2 font-medium text-slate-500">
                         {item.brand ? `Marca: ${item.brand}` : "Distribución General"}
                         </CardDescription>
                     </div>
@@ -439,15 +464,17 @@ export default function InventoryItemDetailPage() {
             </Card>
 
           </div>
-        </TabsContent>
+        </div>
+      )}
 
-        {/* =============== HISTORY TAB =============== */}
-        <TabsContent value="history" className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+      {/* =============== HISTORY TAB =============== */}
+      {activeTab === 'history' && !item.isService && (
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           <Card className="shadow-sm border-t-4 border-t-primary">
             <CardHeader className="bg-muted/10 border-b">
               <CardTitle>Rastreo de Movimientos</CardTitle>
               <CardDescription>
-                Auditoría detallada de todas las entradas (compras) y salidas (servicios/ventas directas) relacionadas de manera oficial al sistema de inventario de este componente o servicio.
+                Entradas por compra y salidas por servicio o venta directa.
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0">
@@ -529,18 +556,18 @@ export default function InventoryItemDetailPage() {
                   </Table>
                 </div>
               ) : (
-                <div className="text-center py-12 px-4 shadow-inner bg-muted/10 rounded-b-lg">
+                <div className="text-center py-16 px-4 bg-muted/10 rounded-b-lg">
                     <Boxes className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                    <h3 className="text-lg font-medium text-foreground">Inventario Limpio</h3>
-                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                        No existen movimientos de compra o venta registrados históricamente para este componente.
+                    <h3 className="text-lg font-medium">Sin movimientos registrados</h3>
+                    <p className="text-sm text-muted-foreground max-w-sm mx-auto mt-1">
+                        No hay entradas o salidas de inventario registradas para este artículo.
                     </p>
                 </div>
               )}
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
 
       {item && (
         <InventoryItemDialog

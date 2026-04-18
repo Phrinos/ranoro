@@ -70,6 +70,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Punto de Venta',
     items: [
       { label: 'Nueva Venta', path: '/pos/nuevo',          icon: PlusCircle,  permissions: ['pos:create_sale'] },
+      { label: 'Historial Ventas', path: '/pos',           icon: Receipt,     permissions: ['pos:view_sales', 'pos:create_sale'] },
       { label: 'Inventario',  path: '/inventario',          icon: Package,     permissions: ['inventory:view'] },
       { label: 'Compras',     path: '/inventario/compras',  icon: ShoppingCart, permissions: ['purchases:view', 'purchases:create'] },
     ],

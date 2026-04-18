@@ -1,12 +1,10 @@
 // src/app/(app)/pos/components/ventas-pos-content.tsx
 "use client";
 
-import React, { useMemo, useState, useCallback } from 'react';
+import React, { useMemo, useState, useCallback, ReactNode } from 'react';
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Wallet, CreditCard, TrendingUp, Edit, Printer, Trash2, User as UserIcon, Landmark, Search, ShoppingCart, DollarSign, BarChart2, X, CalendarDays } from "lucide-react";
+import { ChevronLeft, ChevronRight, Wallet, CreditCard, TrendingUp, Edit, Printer, Trash2, User as UserIcon, Landmark, Search, ShoppingCart, DollarSign, BarChart2, X, CalendarDays, MoreHorizontal, Receipt } from "lucide-react";
 import type { SaleReceipt, InventoryItem, User, PaymentMethod, ServiceRecord } from "@/types";
-import { useTableManager } from '@/hooks/useTableManager';
-import { Receipt } from 'lucide-react';
 import { startOfMonth, endOfMonth, isValid, format as formatLocale, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency, getPaymentMethodVariant, cn } from '@/lib/utils';
@@ -24,6 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // ── Month selector helpers ─────────────────────────────────────────────────
 const getLast12Months = () => {
@@ -73,6 +78,7 @@ interface VentasPosContentProps {
   onDeleteSale: (saleId: string) => void;
   onEditPayment: (sale: SaleReceipt) => void;
   onCancelSale: (saleId: string, reason: string) => void;
+  pageActions?: ReactNode;
 }
 
 export default function VentasPosContent({
@@ -86,6 +92,7 @@ export default function VentasPosContent({
   onDeleteSale,
   onEditPayment,
   onCancelSale,
+  pageActions,
 }: VentasPosContentProps) {
 
   // ── Shared filter state ────────────────────────────────────────────────
@@ -142,39 +149,63 @@ export default function VentasPosContent({
   const handleMonth = useCallback((v: string) => { setSelectedMonth(v); setPage(1); }, []);
   const handlePayment = useCallback((v: string) => { setSelectedPayment(v as PaymentMethod | 'all'); setPage(1); }, []);
 
-  // ── Stats cards (based on filteredSales excl. cancelled) ───────────────
+  // ── Stats cards — siempre del mes seleccionado en el selector ──────
   const stats = useMemo(() => {
-    const active = filteredSales.filter(s => s.status !== 'Cancelado');
-    const services = allServices.filter(s => {
-      if (s.status !== 'Entregado') return false;
-      const d = parseDate(s.deliveryDateTime);
-      return d && isValid(d) && isWithinInterval(d, { start: startOfDay(monthRange.from), end: endOfDay(monthRange.to) });
+    const from = startOfDay(monthRange.from);
+    const to   = endOfDay(monthRange.to);
+
+    // Ventas del mes (excluyendo canceladas)
+    const activeSales = allSales.filter(s => {
+      if (s.status === 'Cancelado') return false;
+      const d = parseDate(s.saleDate);
+      return d && isValid(d) && isWithinInterval(d, { start: from, end: to });
     });
 
-    const totalRevenue = active.reduce((sum, s) => sum + (s.totalAmount ?? 0), 0)
-      + services.reduce((sum, s) => sum + (s.totalCost ?? 0), 0);
-    const totalProfit = active.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0)
-      + services.reduce((sum, s) => sum + calcEffectiveProfit(s, allInventory), 0);
+    const totalRevenue = activeSales.reduce((sum, s) => sum + (s.totalAmount ?? 0), 0);
 
-    const itemCounts = active.flatMap(s => s.items ?? []).reduce((acc, item) => {
-      const key = item.itemName ?? 'Sin nombre';
-      acc[key] = (acc[key] ?? 0) + (item.quantity ?? 0);
-      return acc;
-    }, {} as Record<string, number>);
+    const totalProfit = activeSales.reduce((sum, s) => sum + calculateSaleProfit(s, allInventory), 0);
+
+    const itemCounts = activeSales
+      .flatMap(s => s.items ?? [])
+      .reduce((acc, item) => {
+        const key = item.itemName ?? 'Sin nombre';
+        acc[key] = (acc[key] ?? 0) + (item.quantity ?? 0);
+        return acc;
+      }, {} as Record<string, number>);
     const topEntry = Object.entries(itemCounts).sort((a, b) => b[1] - a[1])[0];
 
     return {
-      operations: active.length + services.length,
-      salesCount: active.length,
-      serviceCount: services.length,
+      operations: activeSales.length,
+      salesCount: activeSales.length,
       totalRevenue,
       totalProfit,
       mostSold: topEntry ? { name: topEntry[0], qty: topEntry[1] } : null,
     };
-  }, [filteredSales, allServices, allInventory, monthRange]);
+  }, [allSales, allInventory, monthRange]);
 
   return (
     <div className="space-y-6">
+      {/* ── Page Header & Month Selector ──────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Punto de Venta</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Gestiona ventas de mostrador, revisa el historial y visualiza ganancias.
+          </p>
+        </div>
+        
+        <Select value={selectedMonth} onValueChange={handleMonth}>
+          <SelectTrigger className="w-full sm:w-56 bg-white h-10 shrink-0 font-medium shadow-sm">
+            <CalendarDays className="h-4 w-4 text-muted-foreground mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {MONTH_OPTIONS.map(m => (
+              <SelectItem key={m.value} value={m.value} className="capitalize">{m.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* ── Stats Cards ────────────────────────────────────────────── */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
@@ -187,7 +218,7 @@ export default function VentasPosContent({
           </CardHeader>
           <CardContent className="pb-4 px-4">
             <div className="text-3xl font-bold text-foreground">{stats.operations}</div>
-            <p className="text-xs text-muted-foreground mt-1">{stats.salesCount} ventas · {stats.serviceCount} servicios</p>
+            <p className="text-xs text-muted-foreground mt-1">{stats.salesCount} ventas de mostrador</p>
           </CardContent>
         </Card>
 
@@ -200,7 +231,7 @@ export default function VentasPosContent({
           </CardHeader>
           <CardContent className="pb-4 px-4">
             <div className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalRevenue)}</div>
-            <p className="text-xs text-muted-foreground mt-1">Ventas + servicios del período</p>
+            <p className="text-xs text-muted-foreground mt-1">Ventas de mostrador del período</p>
           </CardContent>
         </Card>
 
@@ -240,10 +271,10 @@ export default function VentasPosContent({
         <div className="relative flex-1 min-w-0">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           <Input
-            placeholder="Buscar por ID, cliente, artículo..."
+            placeholder="Buscar por ID, vendedor, artículo..."
             value={search}
             onChange={e => handleSearch(e.target.value)}
-            className="pl-9 bg-white h-10"
+            className="pl-9 bg-white h-10 shadow-sm"
           />
           {search && (
             <button onClick={() => handleSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -252,20 +283,8 @@ export default function VentasPosContent({
           )}
         </div>
 
-        <Select value={selectedMonth} onValueChange={handleMonth}>
-          <SelectTrigger className="w-full sm:w-48 bg-white h-10 shrink-0">
-            <CalendarDays className="h-4 w-4 text-muted-foreground mr-2" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {MONTH_OPTIONS.map(m => (
-              <SelectItem key={m.value} value={m.value} className="capitalize">{m.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
         <Select value={selectedPayment} onValueChange={handlePayment}>
-          <SelectTrigger className="w-full sm:w-52 bg-white h-10 shrink-0">
+          <SelectTrigger className="w-full sm:w-52 bg-white h-10 shrink-0 shadow-sm">
             <Wallet className="h-4 w-4 text-muted-foreground mr-2" />
             <SelectValue />
           </SelectTrigger>
@@ -275,20 +294,24 @@ export default function VentasPosContent({
             ))}
           </SelectContent>
         </Select>
+
+        {pageActions}
       </div>
 
       {/* ── Sales Table ─────────────────────────────────────────────── */}
       {paginatedSales.length > 0 ? (
-        <div className="border rounded-xl bg-white shadow-sm overflow-hidden">
+        <div className="border border-slate-200 rounded-xl bg-white shadow-sm overflow-hidden mt-4">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/40 hover:bg-muted/40">
-                <TableHead className="font-semibold text-xs uppercase tracking-wide">Fecha / Hora</TableHead>
-                <TableHead className="font-semibold text-xs uppercase tracking-wide">ID · Vendedor</TableHead>
-                <TableHead className="font-semibold text-xs uppercase tracking-wide">Producto · Cliente</TableHead>
-                <TableHead className="font-semibold text-xs uppercase tracking-wide text-right">Cobro</TableHead>
-                <TableHead className="font-semibold text-xs uppercase tracking-wide">Método</TableHead>
-                <TableHead className="font-semibold text-xs uppercase tracking-wide text-center">Acciones</TableHead>
+              <TableRow className="bg-slate-50/80 hover:bg-slate-50/80 border-b border-slate-200">
+                <TableHead className="font-semibold text-xs tracking-wider text-slate-500 uppercase w-24 text-left">ID Venta</TableHead>
+                <TableHead className="font-semibold text-xs tracking-wider text-slate-500 uppercase w-48 text-left whitespace-nowrap">Fecha / Hora</TableHead>
+                <TableHead className="font-semibold text-xs tracking-wider text-slate-500 uppercase w-64 text-left">Vendedor</TableHead>
+                <TableHead className="font-semibold text-xs tracking-wider text-slate-500 uppercase w-32 text-left">Categoría</TableHead>
+                <TableHead className="font-semibold text-xs tracking-wider text-slate-500 uppercase w-80 text-left">Producto</TableHead>
+                <TableHead className="font-semibold text-xs tracking-wider text-slate-500 uppercase text-center w-32">Monto</TableHead>
+                <TableHead className="font-semibold text-xs tracking-wider text-slate-500 uppercase text-center w-40">Método</TableHead>
+                <TableHead className="font-semibold text-xs tracking-wider text-slate-500 uppercase text-right pr-6">⋮</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -296,10 +319,19 @@ export default function VentasPosContent({
                 const saleDate = parseDate(sale.saleDate);
                 const isCancelled = sale.status === 'Cancelado';
                 const profit = calculateSaleProfit(sale, allInventory);
-                const itemsDescription = sale.items
-                  ?.filter((item: any) => item.inventoryItemId !== 'COMMISSION_FEE' && item.itemId !== 'COMMISSION_FEE')
-                  .map(item => `${item.quantity}x ${item.itemName}`)
-                  .join(', ');
+                const validItems = sale.items?.filter((item: any) => item.inventoryItemId !== 'COMMISSION_FEE' && item.itemId !== 'COMMISSION_FEE') || [];
+                const itemsDescription = validItems.map(item => `${item.quantity}x ${item.itemName}`).join(', ');
+                
+                const categoriesSet = new Set<string>();
+                validItems.forEach((item: any) => {
+                  if (item.category) {
+                    categoriesSet.add(item.category);
+                  } else if (item.inventoryItemId) {
+                    const inv = allInventory.find(i => i.id === item.inventoryItemId);
+                    if (inv && inv.category) categoriesSet.add(inv.category);
+                  }
+                });
+                const categoriesArray = Array.from(categoriesSet);
 
                 const paymentBadges = isCancelled
                   ? [<Badge key="cancelled" variant="destructive" className="font-bold text-[10px]">CANCELADO</Badge>]
@@ -325,64 +357,87 @@ export default function VentasPosContent({
                   <TableRow
                     key={sale.id}
                     className={cn(
-                      "group transition-colors hover:bg-muted/20 border-b border-border/50",
-                      isCancelled && "bg-muted/30 opacity-70"
+                      "group transition-colors hover:bg-slate-50/50 border-b border-slate-100",
+                      isCancelled && "bg-slate-50 opacity-70"
                     )}
                   >
-                    {/* Bloque 1: Fecha / Hora */}
-                    <TableCell className="align-middle py-3 w-28 whitespace-nowrap">
-                      <p className="font-bold text-sm text-foreground">
-                        {saleDate && isValid(saleDate) ? formatLocale(saleDate, 'dd MMM yy', { locale: es }) : 'N/A'}
-                      </p>
-                      <p className="text-muted-foreground text-xs mt-0.5">
-                        {saleDate && isValid(saleDate) ? formatLocale(saleDate, "HH:mm 'hrs'", { locale: es }) : '—'}
+                    {/* Columna 1: ID Venta */}
+                    <TableCell className="align-middle py-3 w-24 text-left">
+                      <p className="font-mono text-xs font-semibold text-slate-600">#{sale.id.slice(-6)}</p>
+                    </TableCell>
+
+                    {/* Columna 2: Fecha y Hora */}
+                    <TableCell className="align-middle py-3 w-48 text-left whitespace-nowrap">
+                      <p className="font-medium text-sm text-slate-700">
+                        {saleDate && isValid(saleDate) ? formatLocale(saleDate, "dd MMM yyyy, HH:mm 'hrs'", { locale: es }) : 'N/A'}
                       </p>
                     </TableCell>
 
-                    {/* Bloque 2: ID · Vendedor */}
-                    <TableCell className="align-middle py-3 w-36">
-                      <p className="font-mono text-sm font-bold text-muted-foreground">{sale.id.slice(-6)}</p>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <UserIcon className="h-3 w-3 text-muted-foreground shrink-0" />
-                        <span className="text-xs text-muted-foreground truncate max-w-[110px]" title={sellerName}>{sellerName}</span>
+                    {/* Columna 3: Vendedor */}
+                    <TableCell className="align-middle py-3 w-64 text-left">
+                      <div className="flex items-center justify-start gap-1.5 text-slate-700">
+                        <UserIcon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="text-sm font-medium truncate" title={sellerName}>{sellerName}</span>
                       </div>
                     </TableCell>
 
-                    {/* Bloque 3: Producto · Cliente */}
-                    <TableCell className="align-middle py-3">
-                      <p className="font-semibold text-sm leading-snug line-clamp-2 text-foreground" title={itemsDescription}>{itemsDescription}</p>
-                      <p className="text-xs text-primary/70 font-medium mt-0.5">{sale.customerName || 'Cliente Mostrador'}</p>
+                    {/* Columna Extra: Categoría */}
+                    <TableCell className="align-middle py-3 w-32 text-left">
+                      <div className="flex flex-wrap gap-1">
+                        {categoriesArray.length > 0 ? categoriesArray.map(c => (
+                          <Badge key={c} variant="secondary" className="text-[10px] font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">{c}</Badge>
+                        )) : <span className="text-xs text-slate-400">Genérica</span>}
+                      </div>
                     </TableCell>
 
-                    {/* Bloque 4: Cobro · Ganancia */}
-                    <TableCell className="align-middle py-3 text-right w-28">
-                      <p className="font-bold text-base text-foreground">{formatCurrency(sale.totalAmount ?? 0)}</p>
-                      <p className="font-semibold text-xs text-green-600 mt-0.5 flex items-center justify-end gap-1">
-                        <TrendingUp className="h-3 w-3" /> {formatCurrency(profit)}
-                      </p>
+                    {/* Columna 4: Producto */}
+                    <TableCell className="align-middle py-3 text-slate-700 text-left w-80">
+                      <p className="font-bold text-base text-slate-900 leading-snug line-clamp-2" title={itemsDescription}>{itemsDescription || 'Sin artículos'}</p>
                     </TableCell>
 
-                    {/* Bloque 5: Método de Pago */}
+                    {/* Columna 5: Monto & Ganancia */}
+                    <TableCell className="align-middle py-3 text-center w-32">
+                      <div className="flex flex-col items-center">
+                        <p className="font-bold text-base text-slate-900">{formatCurrency(sale.totalAmount ?? 0)}</p>
+                        <p className="font-medium text-[11px] text-green-600 mt-0.5 flex items-center gap-1" title="Ganancia bruta">
+                          <TrendingUp className="h-3 w-3 inline" /> {formatCurrency(profit)}
+                        </p>
+                      </div>
+                    </TableCell>
+
+                    {/* Columna 6: Método de Pago */}
                     <TableCell className="align-middle py-3 w-40">
-                      <div className="flex flex-col gap-1 items-start">{paymentBadges}</div>
+                      <div className="flex flex-col gap-1 items-center justify-center">{paymentBadges}</div>
                     </TableCell>
 
-                    {/* Bloque 6: Acciones */}
-                    <TableCell className="align-middle py-3 text-center w-24">
-                      <div className="flex justify-center gap-0.5 opacity-30 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onViewSale(sale)} title="Ver / Editar"><Edit className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onReprintTicket(sale)} title="Reimprimir" disabled={isCancelled}><Printer className="h-4 w-4" /></Button>
-                        <ConfirmDialog
-                          triggerButton={
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-destructive/10" title={isCancelled ? 'Ya cancelada' : 'Cancelar Venta'} disabled={isCancelled}>
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          }
-                          title={`¿Cancelar Venta #${sale.id.slice(-6)}?`}
-                          description="Esta acción no se puede deshacer. El stock se restaurará y los movimientos de caja asociados se eliminan."
-                          onConfirm={() => onCancelSale(sale.id, prompt('Motivo de cancelación:') || 'Sin motivo especificado.')}
-                        />
-                      </div>
+                    {/* Columna 7: Acciones */}
+                    <TableCell className="align-middle py-3 text-right pr-6" onClick={e => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-600 hover:text-slate-900 bg-white border border-slate-200 shadow-sm hover:bg-slate-50 rounded-full">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="min-w-[180px] bg-white/95 backdrop-blur-xl shadow-xl border-white/40">
+                          <DropdownMenuItem onClick={() => onViewSale(sale)} className="gap-2 cursor-pointer font-medium">
+                            <Edit className="h-4 w-4 text-blue-500" /> Ver / Editar Venta
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onReprintTicket(sale)} className="gap-2 cursor-pointer font-medium" disabled={isCancelled}>
+                            <Printer className="h-4 w-4 text-slate-500" /> Reimprimir Ticket
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <ConfirmDialog
+                            triggerButton={
+                              <DropdownMenuItem onSelect={e => e.preventDefault()} className="gap-2 text-destructive focus:bg-red-50 focus:text-destructive cursor-pointer font-medium" disabled={isCancelled}>
+                                <Trash2 className="h-4 w-4" /> {isCancelled ? 'Ya cancelada' : 'Cancelar Venta'}
+                              </DropdownMenuItem>
+                            }
+                            title={`¿Cancelar Venta #${sale.id.slice(-6)}?`}
+                            description="Esta acción no se puede deshacer. El stock se restaurará y los movimientos de caja asociados se eliminan."
+                            onConfirm={() => onCancelSale(sale.id, prompt('Motivo de cancelación:') || 'Sin motivo especificado.')}
+                          />
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 );

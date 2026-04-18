@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import PhotoReportTab from './PhotoReportTab'; // Reutilizamos el componente existente
+import { PhotoReportTab } from './PhotoReportTab'; // Reutilizamos el componente existente
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PhotoReportModalProps {

@@ -266,16 +266,27 @@ const searchVehicles = async (term: string): Promise<Vehicle[]> => {
 
 const onVehiclesUpdate = (callback: (vehicles: Vehicle[]) => void): (() => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, "vehicles"), orderBy("lastServiceDate", "desc"));
+    const q = query(collection(db, "vehicles"));
     return onSnapshot(q, (snapshot) => {
-        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle)));
+        const vehicles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
+        vehicles.sort((a, b) => {
+            const dateA = a.lastServiceDate ? new Date(a.lastServiceDate).getTime() : 0;
+            const dateB = b.lastServiceDate ? new Date(b.lastServiceDate).getTime() : 0;
+            return dateB - dateA;
+        });
+        callback(vehicles);
     });
 };
 
 const onVehiclesUpdatePromise = async (): Promise<Vehicle[]> => {
     if (!db) return [];
-    const snapshot = await getDocs(query(collection(db, "vehicles"), orderBy("lastServiceDate", "desc")));
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
+    const snapshot = await getDocs(query(collection(db, "vehicles")));
+    const vehicles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
+    return vehicles.sort((a, b) => {
+        const dateA = a.lastServiceDate ? new Date(a.lastServiceDate).getTime() : 0;
+        const dateB = b.lastServiceDate ? new Date(b.lastServiceDate).getTime() : 0;
+        return dateB - dateA;
+    });
 };
 
 const onSystemVehicleStatsUpdate = (callback: (stats: any) => void): (() => void) => {

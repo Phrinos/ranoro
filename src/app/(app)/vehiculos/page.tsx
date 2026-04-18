@@ -9,15 +9,19 @@ import { PlusCircle, Loader2 } from "lucide-react";
 import type { Vehicle } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { VehiclesTable } from './components/vehicles-table';
+import { VehicleCatalogManager } from './components/vehicle-catalog-manager';
+import { VehicleAuditManager } from './components/vehicle-audit-manager';
 import { inventoryService } from '@/lib/services';
 import { VehicleDialog } from './components/vehicle-dialog';
 import { usePermissions } from "@/hooks/usePermissions";
 import { cn } from "@/lib/utils";
 
-type ActiveView = "vehiculos";
+type ActiveView = "vehiculos" | "marcas" | "auditoria";
 
 const TABS: { value: ActiveView; label: string }[] = [
-  { value: "vehiculos", label: "Directorio de Vehículos" }
+  { value: "vehiculos", label: "Directorio de Vehículos" },
+  { value: "auditoria", label: "Auditoría de Datos" },
+  { value: "marcas", label: "Catálogo de Marcas y Modelos" }
 ];
 
 function PageInner() {
@@ -129,6 +133,20 @@ function PageInner() {
           onSave={handleSaveVehicle}
           onDelete={handleDeleteVehicle}
           onAdd={() => handleOpenVehicleDialog()}
+          onEdit={(v) => handleOpenVehicleDialog(v)}
+        />
+      )}
+
+      {activeView === 'marcas' && (
+        <VehicleCatalogManager />
+      )}
+
+      {activeView === 'auditoria' && (
+        <VehicleAuditManager 
+          vehicles={allVehicles} 
+          permissions={userPermissions} 
+          onEdit={(v) => handleOpenVehicleDialog(v)} 
+          onDelete={handleDeleteVehicle} 
         />
       )}
 

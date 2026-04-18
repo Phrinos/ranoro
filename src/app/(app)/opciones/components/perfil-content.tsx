@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SignatureDialog } from '@/app/(app)/servicios/components/signature-dialog';
+import { SignatureDialog } from '@/app/(app)/servicios/components/dialogs/signature-dialog';
 import { Save, Signature, Loader2 } from 'lucide-react';
 import type { User } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';

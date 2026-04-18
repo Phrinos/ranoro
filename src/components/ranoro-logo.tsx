@@ -11,6 +11,7 @@ const RanoroLogo = () => {
         alt="Ranoro Logo" 
         width={40} 
         height={40} 
+        priority
       />
       <span style={{ marginLeft: '10px', fontSize: '1.5rem', fontWeight: 'bold' }}>
         RANORO

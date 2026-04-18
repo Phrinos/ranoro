@@ -60,12 +60,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             // Error
             invalid &&
               "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/40",
-            // Icon paddings
-            leftIcon && "pl-10",
-            rightIcon && "pr-10",
+            // Icon paddings go AFTER sizeClasses so they can override px
+            sizeClasses,
+            leftIcon && "pl-[34px]",
+            rightIcon && "pr-[34px]",
             // Evitar fondo de autofill también por clase utilitaria
-            "[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#fff] [&:-webkit-autofill]:[-webkit-text-fill-color:inherit]",
-            sizeClasses
+            "[&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#fff] [&:-webkit-autofill]:[-webkit-text-fill-color:inherit]"
           )}
         />
 

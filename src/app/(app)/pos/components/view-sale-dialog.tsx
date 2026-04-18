@@ -1,6 +1,4 @@
-
 // src/app/(app)/pos/components/view-sale-dialog.tsx
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -9,28 +7,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import type { SaleReceipt, InventoryItem, User, InventoryCategory, Supplier, Payment } from "@/types";
-import { format, parseISO, isValid } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { Ban, Save, Trash2, MessageSquare, Repeat } from "lucide-react";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { PosForm } from "./pos-form";
 import { posFormSchema, type POSFormValues } from '@/schemas/pos-form-schema';
-import { useToast } from "@/hooks/use-toast";
+import type { SaleReceipt, InventoryItem, User, InventoryCategory, Supplier } from "@/types";
 import { saleService } from "@/lib/services";
-import { PaymentDetailsDialog } from "@/components/shared/PaymentDetailsDialog";
-import { PaymentDetailsFormValues } from "@/schemas/payment-details-form-schema";
-import { Textarea } from "@/components/ui/textarea";
-import { z } from "zod";
-import { usePermissions } from "@/hooks/usePermissions";
-
+import { useToast } from "@/hooks/use-toast";
+import type { PaymentDetailsFormValues } from "@/schemas/payment-details-form-schema";
+import { Loader2 } from "lucide-react";
 
 interface ViewSaleDialogProps {
   open: boolean;
@@ -38,8 +23,8 @@ interface ViewSaleDialogProps {
   sale: SaleReceipt;
   inventory: InventoryItem[];
   users: User[];
-  categories: InventoryCategory[];
-  suppliers: Supplier[];
+  categories?: InventoryCategory[];
+  suppliers?: Supplier[];
   onCancelSale: (saleId: string, reason: string) => void;
   onDeleteSale: (saleId: string) => void;
   onPaymentUpdate: (saleId: string, paymentDetails: PaymentDetailsFormValues) => Promise<void>;
@@ -49,119 +34,121 @@ interface ViewSaleDialogProps {
 
 const resolver = zodResolver(posFormSchema) as unknown as Resolver<POSFormValues>;
 
-export function ViewSaleDialog({ 
-  open, 
-  onOpenChange, 
-  sale, 
+function EditableSaleForm({
+  sale,
   inventory,
   categories,
   suppliers,
-  onCancelSale,
-  onDeleteSale,
-  onPaymentUpdate,
-  onSendWhatsapp,
-  currentUser
-}: ViewSaleDialogProps) {
+  onOpenChange,
+}: {
+  sale: SaleReceipt;
+  inventory: InventoryItem[];
+  categories?: InventoryCategory[];
+  suppliers?: Supplier[];
+  onOpenChange: (isOpen: boolean) => void;
+}) {
   const { toast } = useToast();
-  const userPermissions = usePermissions();
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [cancellationReason, setCancellationReason] = useState("");
-  const [validatedFolios, setValidatedFolios] = useState<Record<number, boolean>>({});
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [validatedFolios] = useState<Record<number, boolean>>({});
 
   const methods = useForm<POSFormValues>({
     resolver,
-    defaultValues: sale as any,
+    defaultValues: {
+      ...sale,
+      cancellationReason: sale.cancellationReason || "",
+    } as any,
   });
 
-  useEffect(() => {
-      if (sale?.id) {
-          methods.reset(sale as any);
-      }
-  }, [sale, methods]);
+  const handleSaleCompletion = async (data: POSFormValues) => {
+    setIsUpdating(true);
+    try {
+      // Calculamos total igual que en la creación
+      const items = data.items ?? [];
+      const paymentLines = data.payments ?? [];
+      
+      const itemsTotal = items.reduce((acc, curr) => {
+        return acc + (Number(curr.unitPrice ?? 0) * Number(curr.quantity ?? 1));
+      }, 0);
+      
+      const paymentsTotal = paymentLines.reduce((acc, curr) => acc + (Number(curr.amount ?? 0)), 0);
+      const difference = Math.abs(itemsTotal - paymentsTotal);
 
-  if (!sale) return null;
-
-  const isCancelled = sale.status === 'Cancelado';
-  const saleDate = typeof sale.saleDate === 'string' ? parseISO(sale.saleDate) : sale.saleDate;
-  const formattedDate = saleDate && isValid(saleDate) ? format(saleDate as Date, "dd 'de' MMMM 'de' yyyy, HH:mm", { locale: es }) : '';
-  
-  const handleOpenValidateDialog = (index: number) => {
-    console.log("Validation requested for payment index:", index);
-  };
-  
-  const handleConfirmCancellation = () => {
-    if (!cancellationReason.trim()) {
-        toast({ title: 'Motivo Requerido', description: 'Por favor, ingrese un motivo para la cancelación.', variant: 'destructive' });
+      // Pequeña validación
+      if (difference > 0.01) {
+        toast({
+          title: "Los pagos no cuadran",
+          description: "La suma de los pagos debe ser igual al total de la venta.",
+          variant: "destructive"
+        });
+        setIsUpdating(false);
         return;
+      }
+
+      await saleService.updateSale(sale.id, {
+        ...data,
+        totalAmount: itemsTotal,
+      } as unknown as Partial<SaleReceipt>);
+
+      toast({
+        title: "Venta Actualizada",
+        description: `Los cambios en la venta #${sale.id.slice(-6)} han sido guardados.`,
+      });
+
+      onOpenChange(false);
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la venta.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUpdating(false);
     }
-    onCancelSale(sale.id, cancellationReason);
-    setCancellationReason("");
   };
 
   return (
-    <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] flex flex-col p-0">
-        <DialogHeader className="p-6 pb-2">
-          <DialogTitle>Detalle de Venta: {sale.id}</DialogTitle>
-          <DialogDescription>
-            Información detallada de la venta realizada el {formattedDate}.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className="flex-grow overflow-y-auto px-6 py-4">
-          <FormProvider key={sale.id} {...methods}>
-            <PosForm
-              inventoryItems={inventory}
-              categories={categories}
-              suppliers={suppliers}
-              onSaleComplete={() => {}}
-              initialData={sale}
-              onOpenValidateDialog={handleOpenValidateDialog}
-              validatedFolios={validatedFolios}
-            />
-          </FormProvider>
+    <div className="relative">
+      {isUpdating && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-sm rounded-xl">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
+      )}
+      <FormProvider {...methods}>
+        <div className="p-1">
+          <DialogTitle className="text-2xl font-black mb-4">
+            Editando Venta #{sale.id.slice(-6)}
+          </DialogTitle>
+          <PosForm
+            inventoryItems={inventory}
+            categories={categories ?? []}
+            suppliers={suppliers ?? []}
+            onSaleComplete={handleSaleCompletion}
+            initialData={sale}
+            onOpenValidateDialog={() => {}}
+            validatedFolios={validatedFolios}
+          />
+        </div>
+      </FormProvider>
+    </div>
+  );
+}
 
-        <DialogFooter className="p-6 pt-4 border-t flex-shrink-0 bg-background flex flex-row justify-between items-center w-full gap-2">
-          <div>
-            {currentUser?.role === 'Superadministrador' && (
-              <ConfirmDialog
-                triggerButton={<Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isCancelled}><Ban className="mr-2 h-4 w-4" />Cancelar Venta</Button>}
-                title="¿Está seguro de cancelar esta venta?"
-                description="El stock de los artículos será restaurado. Esta acción no se puede deshacer. Por favor, especifique un motivo."
-                onConfirm={handleConfirmCancellation}
-                confirmText="Sí, Cancelar Venta"
-              >
-                  <Textarea
-                    placeholder="Motivo de la cancelación..."
-                    value={cancellationReason}
-                    onChange={(e) => setCancellationReason(e.target.value)}
-                    className="mt-4"
-                  />
-              </ConfirmDialog>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => onSendWhatsapp(sale)} className="bg-green-100 text-green-800 border-green-200 hover:bg-green-200">
-                <MessageSquare className="mr-2 h-4 w-4"/> Enviar por WhatsApp
-            </Button>
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cerrar
-            </Button>
-          </div>
-        </DialogFooter>
+export function ViewSaleDialog({ ...props }: ViewSaleDialogProps) {
+  if (!props.sale) return null;
+
+  return (
+    <Dialog open={props.open} onOpenChange={props.onOpenChange}>
+      <DialogContent aria-describedby={undefined} className="max-w-[95vw] sm:max-w-[85vw] lg:max-w-6xl max-h-[95vh] overflow-y-auto w-full p-6">
+        <EditableSaleForm
+           key={props.sale.id}
+           sale={props.sale}
+           inventory={props.inventory}
+           categories={props.categories}
+           suppliers={props.suppliers}
+           onOpenChange={props.onOpenChange}
+        />
       </DialogContent>
     </Dialog>
-    {isPaymentDialogOpen && (
-       <PaymentDetailsDialog
-          open={isPaymentDialogOpen}
-          onOpenChange={setIsPaymentDialogOpen}
-          record={sale}
-          onConfirm={onPaymentUpdate as any}
-          recordType="sale"
-        />
-    )}
-    </>
   );
 }

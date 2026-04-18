@@ -65,6 +65,7 @@ export function InventoryItemDialog({
       trigger={trigger}
       title={dialogTitle}
       description={dialogDescription}
+      dialogContentClassName="sm:max-w-4xl"
       formId="inventory-item-form"
       isSubmitting={isSubmitting}
       submitButtonText={submitButtonText}

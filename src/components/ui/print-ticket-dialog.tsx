@@ -131,7 +131,7 @@ function PrintTicketDialogInner(props: any) {
   
   const handleSaveCategory = useCallback(async (name: string, id?: string) => {
     try {
-      await inventoryService.saveCategory({ name }, id);
+      await inventoryService.saveCategory({ name, type: 'product' } as any, id);
       toast({ title: `Categoría ${id ? 'Actualizada' : 'Agregada'}` });
     } catch (error) {
       console.error("Error saving category:", error);

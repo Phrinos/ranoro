@@ -448,12 +448,30 @@ const cancelService = async (serviceId: string, reason: string): Promise<void> =
   await batch.commit();
 };
 
+/**
+ * Returns a real-time listener for scheduled (Agendado) services only.
+ * This is used by the Agenda module to display scheduled appointments
+ * without loading the full active services set.
+ */
+const onScheduledServicesUpdate = (callback: (services: ServiceRecord[]) => void): (() => void) => {
+  if (!db) return () => {};
+  const q = query(
+    collection(db, 'serviceRecords'),
+    where('status', '==', 'Agendado'),
+    orderBy('appointmentDateTime', 'asc')
+  );
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ServiceRecord)));
+  });
+};
+
 export const serviceService = {
   onServicesUpdate,
   onActiveServicesUpdate,
   onHistoricalServicesUpdate,
   onServicesUpdatePromise,
   onServicesForVehicleUpdate,
+  onScheduledServicesUpdate,
   getDocById,
   saveService,
   updateService,

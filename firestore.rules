@@ -3,201 +3,248 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Funciones de Ayuda ---
+    // ═══════════════════════════════════════════════════════════════════
+    // FUNCIONES DE AYUDA — Simples, sin lecturas extra innecesarias
+    // ═══════════════════════════════════════════════════════════════════
+
     function isSignedIn() {
       return request.auth != null;
-    }
-
-    function userDocExists() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid));
     }
 
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    function getUserPermissions() {
-      let roleRef = /databases/$(database)/documents/appRoles/$(getUserData().role);
-      return exists(roleRef) ? get(roleRef).data.permissions : [];
+    function getUserRole() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? getUserData().role
+        : '';
     }
 
-    function hasPermission(permission) {
-      return isSignedIn() && userDocExists() && (getUserData().role == 'Superadministrador' || permission in getUserPermissions());
-    }
-    
+    // Roles del sistema:
+    //   'Superadministrador' — acceso total
+    //   'Asesor'             — operaciones del taller (ventas, servicios, inventario)
+    //   'Técnico'            — solo lectura + actualizar servicios asignados
+
     function isSuperAdmin() {
-      return isSignedIn() && userDocExists() && getUserData().role == 'Superadministrador';
+      return getUserRole() == 'Superadministrador';
     }
-    
-    // --- Reglas por Colección ---
 
-    // Usuarios
+    function isStaff() {
+      // Superadmin o Asesor — pueden leer y escribir en casi todo
+      return getUserRole() == 'Superadministrador' || getUserRole() == 'Asesor';
+    }
+
+    function isAnyRole() {
+      // Cualquier usuario con rol válido
+      let role = getUserRole();
+      return role == 'Superadministrador' || role == 'Asesor' || role == 'Técnico';
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // REGLAS POR COLECCIÓN
+    // ═══════════════════════════════════════════════════════════════════
+
+    // ─── Usuarios y Roles ─────────────────────────────────────────────
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isSuperAdmin() || hasPermission('admin:manage_users_roles');
-      allow update: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin() || hasPermission('admin:manage_users_roles'));
+      allow create: if isSuperAdmin();
+      allow update: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
       allow delete: if isSuperAdmin();
     }
 
-    // Roles y Áreas
     match /appRoles/{roleId} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('admin:manage_users_roles');
+      allow write: if isSuperAdmin();
     }
+
     match /workAreas/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('admin:settings');
+      allow write: if isSuperAdmin();
     }
 
-    // Vehículos
-    match /vehicles/{vehicleId} {
+    // ─── Operaciones del Taller ───────────────────────────────────────
+    // Vehículos, Servicios, Ventas, Inventario, Compras, etc.
+    // Cualquier usuario logueado puede LEER.
+    // Staff (Super + Asesor) puede ESCRIBIR.
+    // Solo Super puede BORRAR datos sensibles.
+
+    match /vehicles/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('vehicles:manage') || hasPermission('fleet:create') || hasPermission('fleet:edit');
+      allow write: if isStaff();
     }
 
-    // Conductores y Flotilla
-    match /drivers/{driverId} {
+    match /serviceRecords/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('fleet:manage_drivers');
+      allow create: if isStaff();
+      allow update: if isSignedIn();  // Técnicos pueden actualizar servicios
+      allow delete: if isSuperAdmin();
     }
+
+    match /publicServices/{id} {
+      allow read: if true;   // Público (clientes ven estado de su servicio)
+      allow update: if true; // Los clientes pueden autorizar/firmar
+      allow create, delete: if isStaff();
+    }
+
+    match /sales/{id} {
+      allow read: if isSignedIn();
+      allow create, update: if isStaff();
+      allow delete: if isSuperAdmin();
+    }
+
+    match /inventory/{id} {
+      allow read: if isSignedIn();
+      allow create, update: if isStaff();
+      allow delete: if isSuperAdmin();
+    }
+
+    match /inventoryCategories/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
+    match /inventoryMovements/{id} {
+      allow read: if isSignedIn();
+      allow create: if isStaff();
+      allow update, delete: if isSuperAdmin();
+    }
+
+    match /suppliers/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
+    match /purchases/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
+    match /payableAccounts/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
+    match /serviceTypes/{id} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
+    }
+
+    match /masterCatalogData/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
+    // ─── Directorio Vehicular ─────────────────────────────────────────
+    match /vehicleData/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
+    match /vehicleGroups/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
+    // ─── Flotilla ─────────────────────────────────────────────────────
+    match /drivers/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
     match /rentalPayments/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('fleet:manage_rentals');
+      allow write: if isStaff();
     }
+
     match /dailyRentalCharges/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('fleet:manage_rentals');
+      allow write: if isStaff();
     }
+
     match /manualDebts/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('fleet:manage_rentals');
+      allow write: if isStaff();
     }
+
     match /ownerWithdrawals/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('fleet:manage_rentals');
+      allow write: if isStaff();
     }
+
     match /vehicleExpenses/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('fleet:manage_rentals');
+      allow write: if isStaff();
     }
+
     match /fleetMonthlyBalances/{id} {
       allow read: if isSignedIn();
-      allow write: if hasPermission('fleet:manage_rentals');
+      allow write: if isStaff();
     }
+
+    // ─── Caja y Finanzas ──────────────────────────────────────────────
     match /cashDrawerState/{id} {
       allow read: if isSignedIn();
       allow write: if isSignedIn();
     }
 
-    // Inventario
-    match /inventory/{itemId} {
-      allow read: if hasPermission('inventory:view');
-      allow write: if hasPermission('inventory:create') || hasPermission('inventory:edit');
-    }
-    match /inventoryCategories/{id} {
-      allow read: if isSignedIn();
-      allow write: if hasPermission('inventory:manage_categories');
-    }
-    match /suppliers/{id} {
-      allow read: if isSignedIn();
-      allow write: if hasPermission('suppliers:manage');
-    }
-    match /inventoryMovements/{id} {
-      allow read: if isSignedIn();
-      allow write: if false;
-    }
-    match /serviceTypes/{id} {
-      allow read: if isSignedIn();
-      allow write: if hasPermission('admin:settings');
-    }
-    match /vehicleGroups/{id} {
-      allow read: if isSignedIn();
-      allow write: if hasPermission('fleet:view');
-    }
-    match /masterCatalogData/{id} {
-      allow read: if isSignedIn();
-      allow write: if hasPermission('inventory:create');
-    }
-    match /vehicleData/{id} {
-      allow read: if isSignedIn();
-      allow write: if hasPermission('fleet:view');
-    }
-
-    // Compras y Cuentas por Pagar
-    match /purchases/{id} {
-      allow read: if hasPermission('purchases:view');
-      allow write: if hasPermission('purchases:create');
-    }
-    match /payableAccounts/{id} {
-      allow read: if hasPermission('purchases:view');
-      allow write: if hasPermission('purchases:create');
-    }
-
-    // Servicios
-    match /serviceRecords/{serviceId} {
-      allow read: if isSignedIn();
-      allow write: if hasPermission('services:create') || hasPermission('services:edit');
-    }
-    match /publicServices/{serviceId} {
-      allow read: if true;
-      allow update: if true;
-      allow create, delete: if false;
-    }
-
-    // Punto de Venta
-    match /sales/{saleId} {
-      // Read allowed for any signed-in user so dashboard KPIs can query today's sales
-      allow read: if isSignedIn();
-      allow write: if hasPermission('pos:create_sale');
-    }
-
-    // Caja y Finanzas
     match /cashDrawerTransactions/{id} {
       allow read: if isSignedIn();
       allow write: if isSignedIn();
     }
+
+    match /monthlyBalances/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
     match /fixedMonthlyExpenses/{id} {
-      allow read: if hasPermission('finances:view');
-      allow write: if hasPermission('admin:settings');
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
     }
+
+    // ─── Configuración ────────────────────────────────────────────────
     match /workshopConfig/{id} {
-      allow read: if true;
-      allow write: if hasPermission('admin:settings');
-    }
-    
-    // Auditoría
-    match /auditLogs/{logId} {
-        allow read: if hasPermission('admin:view_audit');
-        allow write: if isSignedIn();
+      allow read: if true;  // Público (logo, nombre del taller, etc.)
+      allow write: if isSuperAdmin();
     }
 
-    // Sistema / Dashboard Stats (escritura solo desde backend con Admin SDK)
-    match /system/{docId} {
-      allow read: if isSignedIn();
-      allow write: if false; // solo se escribe desde Cloud Functions con Admin SDK
-    }
-    match /systemStats/{docId} {
-      allow read: if isSignedIn();
-      allow write: if false; 
+    // ─── Auditoría ────────────────────────────────────────────────────
+    match /auditLogs/{id} {
+      allow read: if isSuperAdmin();
+      allow create: if isSignedIn();    // Cualquier acción genera log
+      allow update, delete: if false;   // Los logs son inmutables
     }
 
-    // WhatsApp conversaciones (lectura para notificaciones)
-    match /whatsapp-conversations/{id} {
+    // ─── Sistema ──────────────────────────────────────────────────────
+    match /system/{id} {
+      allow read: if isSignedIn();
+      allow write: if false;  // Solo Cloud Functions
+    }
+
+    match /systemStats/{id} {
       allow read: if isSignedIn();
       allow write: if false;
     }
 
-    // Citas (para campana de notificaciones)
+    // ─── Comunicaciones ───────────────────────────────────────────────
+    match /whatsapp-conversations/{id} {
+      allow read: if isSignedIn();
+      allow write: if false;  // Solo Cloud Functions
+    }
+
+    // ─── Citas ────────────────────────────────────────────────────────
     match /appointments/{id} {
       allow read: if isSignedIn();
       allow write: if isSignedIn();
     }
+
     match /spaAppointments/{id} {
       allow read: if isSignedIn();
       allow write: if isSignedIn();
     }
 
-    // Denegar por defecto
+    // ─── Denegar por defecto ──────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
     }
