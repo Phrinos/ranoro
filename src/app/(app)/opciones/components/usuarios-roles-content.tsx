@@ -6,8 +6,8 @@ import type { User, AppRole } from '@/types';
 import { adminService } from '@/lib/services';
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 
-import { UsuariosPageContent } from '@/app/(app)/personal/components/usuarios-content';
-import { RolesPageContent } from '@/app/(app)/personal/components/roles-content';
+import { UsuariosPageContent } from '@/app/(app)/usuarios/components/usuarios-content';
+import { RolesPageContent } from '@/app/(app)/usuarios/components/roles-content';
 import { PerfilPageContent } from './perfil-content';
 
 export function UsuariosRolesContent() {

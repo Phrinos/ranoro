@@ -13,7 +13,7 @@ import {
   Users, Truck, PlusCircle, ShoppingCart, Car,
   ListOrdered, BarChart3, FileJson, DollarSign,
   MessageCircle, ChevronDown, Menu, X, CalendarDays,
-  HandCoins, TrendingDown, Gauge,
+  HandCoins, TrendingDown, Gauge, FileText,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -23,6 +23,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import type { User, NavigationEntry } from "@/types";
 import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
 import { ALL_PERMISSIONS } from '@/lib/permissions';
@@ -69,38 +76,43 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Punto de Venta',
     items: [
-      { label: 'Nueva Venta', path: '/pos/nuevo',          icon: PlusCircle,  permissions: ['pos:create_sale'] },
-      { label: 'Historial Ventas', path: '/pos',           icon: Receipt,     permissions: ['pos:view_sales', 'pos:create_sale'] },
-      { label: 'Inventario',  path: '/inventario',          icon: Package,     permissions: ['inventory:view'] },
-      { label: 'Compras',     path: '/inventario/compras',  icon: ShoppingCart, permissions: ['purchases:view', 'purchases:create'] },
+      { label: 'Nueva Venta',       path: '/punto-de-venta/nueva-venta', icon: PlusCircle,   permissions: ['pos:create_sale'] },
+      { label: 'Inventario',        path: '/punto-de-venta?tab=inventario', icon: Package,   permissions: ['inventory:view'] },
+      { label: 'Ventas',            path: '/punto-de-venta?tab=ventas',   icon: Receipt,     permissions: ['pos:view_sales'] },
+      { label: 'Compras',           path: '/punto-de-venta?tab=compras',  icon: ShoppingCart, permissions: ['purchases:view'] },
+      { label: 'Proveedores',       path: '/punto-de-venta?tab=proveedores', icon: Truck,   permissions: ['purchases:view'] },
     ],
   },
   {
     label: 'Flotilla',
     items: [
-      { label: 'Ver Flotilla',        path: '/flotillav2',                         icon: Truck,       permissions: ['fleet:view'] },
-      { label: 'Registrar Abono',     path: '/flotillav2?action=abono',            icon: HandCoins,   permissions: ['fleet:manage_rentals'] },
-      { label: 'Registrar Cargo',     path: '/flotillav2?action=cargo',            icon: TrendingDown, permissions: ['fleet:manage_rentals'] },
-      { label: 'Registrar Salida',    path: '/flotillav2?action=salida',           icon: Gauge,       permissions: ['fleet:manage_rentals'] },
+      { label: 'Ver Flotilla',        path: '/flotilla',                         icon: Truck,        permissions: ['fleet:view'] },
+      { label: 'Registrar Abono',     path: '/flotilla?action=abono',            icon: HandCoins,    permissions: ['fleet:manage_rentals'] },
+      { label: 'Registrar Cargo',     path: '/flotilla?action=cargo',            icon: TrendingDown, permissions: ['fleet:manage_rentals'] },
+      { label: 'Registrar Salida',    path: '/flotilla?action=salida',           icon: Gauge,        permissions: ['fleet:manage_rentals'] },
     ],
   },
   {
     label: 'Administración',
     items: [
-      { label: 'Reportes Taller', path: '/reportes',     icon: DollarSign, permissions: ['finances:view'] },
-      { label: 'Facturación',     path: '/facturacion',   icon: FileJson,   permissions: ['billing:manage'] },
+      { label: 'Corte de Caja',   path: '/administracion?tab=corte',       icon: DollarSign, permissions: ['finances:view'] },
+      { label: 'Movimientos',     path: '/administracion?tab=movimientos',  icon: BarChart3,  permissions: ['finances:view'] },
+      { label: 'Facturación',     path: '/facturacion',                     icon: FileJson,   permissions: ['billing:manage'] },
+      { label: 'Contratos',       path: '/contratos',                       icon: FileText,   permissions: ['admin:settings'] },
+      { label: 'Personal',        path: '/personal',                        icon: Users,      permissions: ['admin:manage_users_roles', 'finances:view'] },
     ],
   },
   {
     label: 'Opciones',
     items: [
-      { label: 'Configuración', path: '/opciones', icon: Settings,      permissions: ['admin:settings'] },
-      { label: 'WhatsApp',      path: '/whatsapp', icon: MessageCircle, permissions: ['messaging:view', 'admin:settings'] },
-      { label: 'Usuarios y Roles', path: '/personal', icon: Users, permissions: ['admin:manage_users_roles'] },
-      { label: 'Mantenimiento', path: '/opciones?tab=mantenimiento', icon: Wrench, permissions: ['admin:settings'] },
+      { label: 'Configuración',   path: '/opciones',   icon: Settings,      permissions: ['admin:settings'] },
+      { label: 'WhatsApp',        path: '/whatsapp',   icon: MessageCircle, permissions: ['messaging:view', 'admin:settings'] },
+      { label: 'Usuarios',        path: '/usuarios',   icon: Users,         permissions: ['admin:manage_users_roles'] },
+      { label: 'Mantenimiento',   path: '/opciones?tab=mantenimiento', icon: Wrench, permissions: ['admin:settings'] },
     ],
   },
 ];
+
 
 // ── Dropdown nav group ────────────────────────────────────────────────
 
@@ -198,8 +210,9 @@ function AppTopNavInner({
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black text-white backdrop-blur-md shadow-sm print:hidden">
-      <div className="flex h-14 items-center px-4 md:px-6 gap-4">
+    <>
+      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black text-white backdrop-blur-md shadow-sm print:hidden">
+        <div className="flex h-14 items-center px-4 md:px-6 gap-4">
 
         {/* Logo */}
         <div className="flex-1 shrink-0 flex items-center justify-start">
@@ -264,52 +277,173 @@ function AppTopNavInner({
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Mobile hamburger */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setMobileOpen(o => !o)}
-            aria-label="Menú"
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </Button>
+          {/* Mobile hamburger (Sheet trigger) - Note: Trigger is now in the Bottom Nav */}
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetContent side="right" className="w-[80vw] sm:w-[350px] p-0 flex flex-col bg-black text-white border-white/10 [&>button]:text-white focus:[&>button]:ring-white">
+              <SheetHeader className="p-4 border-b border-white/10 text-left pt-6">
+                <SheetTitle className="text-lg font-bold text-left flex items-start">
+                  <div className="relative w-[100px] h-[26px]">
+                    <Image
+                      src="/ranoro-logo.png"
+                      alt="Ranoro"
+                      fill
+                      style={{ objectFit: 'contain' }}
+                      sizes="100px"
+                      className="drop-shadow-sm" 
+                    />
+                  </div>
+                </SheetTitle>
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1 pb-24">
+                {visibleGroups
+                  // Ocultar del menú lateral las opciones que ya están en el Bottom Nav
+                  .filter(
+                    (g) =>
+                      g.label !== "Agenda" &&
+                      g.label !== "Servicios" &&
+                      g.label !== "Vehículos" &&
+                      g.label !== "Punto de Venta" &&
+                      g.label !== "Flotilla"
+                  )
+                  .map((group) => (
+                    <div key={group.label} className="mt-2 text-white">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 px-2 pt-3 pb-1">
+                        {group.label}
+                      </p>
+                      {group.items.map((item) => {
+                        const isActive =
+                          pathname === item.path ||
+                          (item.path !== "/" && pathname.startsWith(item.path!));
+                        const Icon = item.icon as React.ElementType;
+                        return (
+                          <Link
+                            key={item.path}
+                            href={item.path!}
+                            onClick={() => setMobileOpen(false)}
+                            className={cn(
+                              "flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                              isActive
+                                ? "bg-white/10 text-primary font-semibold"
+                                : "text-white/70 hover:bg-white/10 hover:text-white"
+                            )}
+                          >
+                            <Icon className="h-5 w-5 shrink-0" />
+                            {item.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  ))}
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+        </div>
+      </header>
+
+      {/* ── Mobile Bottom Navigation ── */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-black text-white backdrop-blur-none border-t pb-safe border-white/10 shadow-[0_-4px_12px_rgba(0,0,0,0.5)]">
+        <div className="flex items-center justify-around h-16 px-2">
+          {(() => {
+            const bottomNavLabels = ["Servicios", "Vehículos", "Punto de Venta", "Flotilla"];
+            const bottomGroups = visibleGroups.filter(g => bottomNavLabels.includes(g.label));
+
+            // Map each group to its respective icon
+            const groupIcons: Record<string, React.ElementType> = {
+              "Servicios": Wrench,
+              "Vehículos": Car,
+              "Punto de Venta": Package,
+              "Flotilla": Truck,
+            };
+
+            const renderedGroups = bottomGroups.map(group => {
+              const isActive = group.items.some(
+                i => pathname === i.path || (i.path !== '/' && pathname.startsWith(i.path!))
+              );
+              const GroupIcon = groupIcons[group.label] || Wrench;
+
+              // If group has only 1 item, render directly
+              if (group.items.length === 1) {
+                 const item = group.items[0];
+                 const isItemActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path!));
+                 return (
+                    <Link
+                      key={item.path}
+                      href={item.path!}
+                      className={cn(
+                        "flex flex-col items-center justify-center w-[60px] h-[52px] space-y-1 transition-all rounded-xl",
+                        isItemActive ? "bg-red-600 text-white shadow-lg shadow-red-900/20" : "text-white/70 hover:text-white hover:bg-white/5"
+                      )}
+                    >
+                      <GroupIcon className={cn("h-5 w-5 transition-transform duration-200", isItemActive && "scale-110")} />
+                      <span className={cn("text-[10px] tracking-tight", isItemActive ? "font-bold" : "font-medium")}>
+                        {group.label}
+                      </span>
+                    </Link>
+                 );
+              }
+
+              // Otherwise render DropdownMenu pointing upwards
+              return (
+                <DropdownMenu key={group.label}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className={cn(
+                        "flex flex-col items-center justify-center w-[60px] h-[52px] space-y-1 transition-all outline-none focus:outline-none rounded-xl",
+                        isActive ? "bg-red-600 text-white shadow-lg shadow-red-900/20" : "text-white/70 hover:text-white hover:bg-white/5"
+                      )}
+                    >
+                      <GroupIcon className={cn("h-5 w-5 transition-transform duration-200", isActive && "scale-110")} />
+                      <span className={cn("text-[10px] tracking-tight", isActive ? "font-bold" : "font-medium")}>
+                        {group.label}
+                      </span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="center" side="top" sideOffset={12} className="min-w-[180px] bg-black text-white border-white/20 shadow-2xl mb-1">
+                    <DropdownMenuLabel className="text-white/50 text-[10px] uppercase tracking-widest px-3 pt-2 pb-1">{group.label}</DropdownMenuLabel>
+                    <DropdownMenuSeparator className="bg-white/10" />
+                    {group.items.map(item => {
+                      const isItemActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path!));
+                      const Icon = item.icon as React.ElementType;
+                      return (
+                        <DropdownMenuItem key={item.path} asChild className="focus:bg-white/10 cursor-pointer">
+                          <Link
+                            href={item.path!}
+                            className={cn("flex items-center gap-2 px-3 py-2.5", isItemActive && "font-semibold text-primary")}
+                          >
+                            <Icon className="h-4 w-4 shrink-0" />
+                            {item.label}
+                          </Link>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            });
+
+            return (
+              <>
+                {renderedGroups}
+                {/* Trigger for the rest of the menu items */}
+                <button
+                  onClick={() => setMobileOpen(true)}
+                  className={cn(
+                    "flex flex-col items-center justify-center w-[60px] h-[52px] space-y-1 transition-all outline-none focus:outline-none rounded-xl",
+                    mobileOpen ? "bg-red-600 text-white shadow-lg shadow-red-900/20" : "text-white/70 hover:text-white hover:bg-white/5"
+                  )}
+                >
+                  <Menu className={cn("h-5 w-5 transition-transform duration-200", mobileOpen && "scale-110")} />
+                  <span className={cn("text-[10px] tracking-tight", mobileOpen ? "font-bold" : "font-medium")}>
+                    Más
+                  </span>
+                </button>
+              </>
+            );
+          })()}
         </div>
       </div>
-
-      {/* Mobile menu */}
-      {mobileOpen && (
-        <div className="md:hidden border-t bg-background px-4 py-3 space-y-1">
-          {visibleGroups.map(group => (
-            <div key={group.label}>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2 pt-3 pb-1">
-                {group.label}
-              </p>
-              {group.items.map(item => {
-                const isActive = pathname === item.path || (item.path !== '/' && pathname.startsWith(item.path!));
-                const Icon = item.icon as React.ElementType;
-                return (
-                  <Link
-                    key={item.path}
-                    href={item.path!}
-                    onClick={() => setMobileOpen(false)}
-                    className={cn(
-                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors",
-                      isActive
-                        ? "bg-primary/10 text-primary font-semibold"
-                        : "text-foreground hover:bg-muted"
-                    )}
-                  >
-                    <Icon className="h-4 w-4 shrink-0" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      )}
-    </header>
+    </>
   );
 }
 

@@ -12,6 +12,7 @@ export const userFormSchema = z.object({
   commissionRate: z.coerce.number().optional(),
   hireDate: z.date().optional(),
   isArchived: z.boolean().optional(),
+  signatureDataUrl: z.string().optional(),
 });
 
 export type UserFormValues = z.infer<typeof userFormSchema>;

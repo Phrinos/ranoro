@@ -106,16 +106,16 @@ function PageInner() {
         </div>
 
         {/* ── Pill tab navigation ─────────────────────────────────── */}
-        <div className="inline-flex flex-wrap gap-2 bg-muted/50 p-1.5 rounded-2xl border border-border/50 shrink-0">
-          {TABS.map(tab => (
+        <div className="flex gap-1 p-1.5 bg-muted/70 backdrop-blur-sm rounded-xl overflow-x-auto ring-1 ring-muted mb-4">
+          {TABS.map((tab) => (
             <button
               key={tab.value}
               onClick={() => setActiveView(tab.value)}
               className={cn(
-                'inline-flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap',
+                "flex-shrink-0 flex-1 min-w-[100px] px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap",
                 activeView === tab.value
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  ? "bg-white text-black shadow-md ring-1 ring-black/10 dark:bg-slate-800 dark:text-white dark:ring-white/10 scale-[1.02]"
+                  : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
               )}
             >
               {tab.label}

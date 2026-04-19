@@ -17,6 +17,7 @@ interface DialogState<T> {
 interface ServicesContextType {
   vehicles: Vehicle[];
   personnel: User[];
+  serviceTypes: import('@/types').ServiceTypeRecord[];
   currentUser: User | null;
   isLoading: boolean;
   shareDialog: DialogState<ServiceRecord>;
@@ -39,6 +40,7 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [personnel, setPersonnel] = useState<User[]>([]);
+  const [serviceTypes, setServiceTypes] = useState<import('@/types').ServiceTypeRecord[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,6 +62,7 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     const unsubs = [
       inventoryService.onVehiclesUpdate(setVehicles),
+      inventoryService.onServiceTypesUpdate(setServiceTypes),
       adminService.onUsersUpdate((users) => {
         setPersonnel(users);
         setIsLoading(false);
@@ -135,6 +138,7 @@ export function ServicesProvider({ children }: { children: React.ReactNode }) {
       value={{
         vehicles,
         personnel,
+        serviceTypes,
         currentUser,
         isLoading,
         shareDialog,

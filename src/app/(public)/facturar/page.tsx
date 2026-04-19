@@ -1,4 +1,3 @@
-// src/app/(public)/facturar/page.tsx
 "use client";
 
 import { withSuspense } from "@/lib/withSuspense";
@@ -10,11 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Loader2, Search, FileText, FileJson, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, Search, FileText, FileJson, CheckCircle, AlertTriangle, Receipt } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from '@/hooks/use-toast';
 import { billingService } from '@/lib/services/billing.service';
-import type { SaleReceipt, ServiceRecord, TicketType } from '@/types';
+import type { TicketType } from '@/types';
 import { BillingForm } from './components/billing-form';
 import { billingFormSchema, type BillingFormValues } from './components/billing-schema';
 import { createInvoiceAction } from './actions';
@@ -36,7 +35,7 @@ type SearchFormInput = z.input<typeof searchSchema>;
 type SearchFormValues = z.output<typeof searchSchema>;
 
 const LoadingOverlay = ({ message }: { message: string }) => (
-    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-20 transition-opacity duration-300">
+    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-20 transition-opacity duration-300 rounded-xl">
         <div className="text-center p-8 space-y-4">
             <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
             <h3 className="text-xl font-semibold tracking-tight">Procesando Solicitud</h3>
@@ -55,6 +54,7 @@ function PageInner() {
   const [searchResult, setSearchResult] = useState<TicketType | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
+  const [invoiceUrl, setInvoiceUrl] = useState<string | null>(null);
 
   const searchForm = useForm<SearchFormInput, any, SearchFormValues>({
     resolver: zodResolver(searchSchema),
@@ -64,7 +64,6 @@ function PageInner() {
   const billingMethods = useForm<z.input<typeof billingFormSchema>, any, BillingFormValues>({
     resolver: zodResolver(billingFormSchema),
   });
-
 
   const onSearchSubmit = useCallback(async (data: SearchFormValues) => {
     setIsLoading(true);
@@ -77,7 +76,7 @@ function PageInner() {
         setSearchResult(result);
         toast({ title: "Ticket Encontrado", description: "Por favor, complete sus datos fiscales para facturar." });
       } else {
-        setError("No se encontró ningún ticket con la información proporcionada. Por favor, verifique el folio y el monto.");
+        setError("No se encontró ningún ticket con la información proporcionada. Por favor, verifique el folio (Ej. RNR-A1B2) y el monto exacto.");
       }
     } catch (e: any) {
        setError(e.message || "Ocurrió un error al buscar el ticket.");
@@ -106,6 +105,7 @@ function PageInner() {
       if (!result.success) {
         throw new Error(result.error || 'Error al crear factura');
       }
+      setInvoiceUrl(result.invoiceUrl || null);
       setSubmissionSuccess(true);
     } catch (err: any) {
       console.error('❌ Error al crear factura:', err);
@@ -135,73 +135,75 @@ function PageInner() {
   
   if (submissionSuccess) {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-             <Card className="max-w-md w-full text-center shadow-lg animate-in fade-in zoom-in-95">
-                <CardContent className="p-8">
-                    <CheckCircle className="mx-auto h-20 w-20 text-green-500 mb-6" />
-                    <CardTitle className="text-2xl mb-2">¡Factura Generada!</CardTitle>
-                    <CardDescription className="mb-8">
-                        Tu factura ha sido creada exitosamente. En breve la recibirás en tu correo electrónico.
-                    </CardDescription>
-                    <Button onClick={() => window.location.reload()} className="w-full">
-                        Facturar otro ticket
-                    </Button>
-                </CardContent>
-            </Card>
+        <div className="min-h-screen flex flex-col bg-gradient-to-br from-black via-zinc-900 to-black text-white">
+            <header className="w-full p-6 flex justify-center">
+              <Image src="/ranoro-logo.png" alt="Ranoro" width={140} height={40} className="invert object-contain" />
+            </header>
+            <div className="flex-1 flex items-center justify-center p-4">
+              <Card className="max-w-md w-full text-center shadow-2xl bg-white/10 backdrop-blur-xl border-white/20 text-white animate-in fade-in zoom-in-95">
+                  <CardContent className="p-8">
+                      <CheckCircle className="mx-auto h-20 w-20 text-green-400 mb-6 drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]" />
+                      <CardTitle className="text-2xl mb-2">¡Factura Generada!</CardTitle>
+                      <CardDescription className="text-zinc-300 mb-8">
+                          Tu factura ha sido timbrada exitosamente y enviada al SAT.
+                      </CardDescription>
+                      
+                      {invoiceUrl && (
+                        <Button asChild className="w-full bg-white text-black hover:bg-zinc-200 mb-4" size="lg">
+                          <a href={invoiceUrl} target="_blank" rel="noreferrer">
+                            Descargar Factura (PDF/XML)
+                          </a>
+                        </Button>
+                      )}
+                      
+                      <Button onClick={() => window.location.reload()} variant="outline" className="w-full border-white/20 hover:bg-white/10 text-white">
+                          Facturar otro ticket
+                      </Button>
+                  </CardContent>
+              </Card>
+            </div>
         </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-muted/30">
-       <header className="sticky top-0 z-40 w-full border-b bg-background">
-        <div className="container mx-auto flex h-20 items-center justify-between px-4 md:px-6">
-          <Link href="/" className="relative w-[140px] h-[40px]">
-            <Image
-              src="/ranoro-logo.png"
-              alt="Ranoro Logo"
-              fill
-              style={{ objectFit: 'contain' }}
-              className="dark:invert"
-              priority
-              sizes="(max-width: 768px) 120px, 140px"
-              data-ai-hint="ranoro logo"
-            />
-          </Link>
-        </div>
-      </header>
-      <main className="flex-1 py-8 md:py-12 lg:py-16">
-        <div className="container mx-auto max-w-xl px-4 md:px-6">
-           <Alert variant="destructive" className="mb-6">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Sitio en Fase de Pruebas</AlertTitle>
-                <AlertDescription>
-                  El módulo de facturación se encuentra en fase de desarrollo. La funcionalidad podría no operar como se espera.
-                </AlertDescription>
-            </Alert>
-          <Card className="relative overflow-hidden">
-             {isSubmitting && <LoadingOverlay message="Estamos timbrando tu factura, por favor espera un momento..." />}
-            <CardHeader>
-              <CardTitle className="text-2xl">Portal de Auto-Facturación</CardTitle>
-              <CardDescription>
-                Ingresa los datos de tu ticket de servicio o venta para generar tu factura CFDI.
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-black via-zinc-900 to-black text-white">
+       <header className="w-full p-6 flex justify-center border-b border-white/10 bg-black/40 backdrop-blur-md sticky top-0 z-40">
+           <Link href="/">
+             <Image src="/ranoro-logo.png" alt="Ranoro Logo" width={140} height={40} className="invert object-contain transition-opacity hover:opacity-80" />
+           </Link>
+       </header>
+
+      <main className="flex-1 py-12 px-4 flex justify-center">
+        <div className="w-full max-w-xl">
+          <Card className="relative overflow-hidden bg-white/10 backdrop-blur-xl border-white/20 shadow-2xl text-white">
+             {isSubmitting && <LoadingOverlay message="Estamos conectando con el SAT y timbrando tu factura..." />}
+            
+            <CardHeader className="text-center pb-8 border-b border-white/10">
+              <div className="mx-auto bg-primary/20 p-3 rounded-full w-fit mb-4">
+                <Receipt className="h-8 w-8 text-primary" />
+              </div>
+              <CardTitle className="text-2xl md:text-3xl font-black">Portal de Facturación</CardTitle>
+              <CardDescription className="text-zinc-300 mt-2 text-sm md:text-base">
+                Ingresa los datos de tu ticket RNR para generar tu CFDI.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            
+            <CardContent className="pt-8">
               {!searchResult ? (
                 <FormProvider {...searchForm}>
                   <Form {...searchForm}>
-                    <form onSubmit={searchForm.handleSubmit(onSearchSubmit)} className="space-y-4">
+                    <form onSubmit={searchForm.handleSubmit(onSearchSubmit)} className="space-y-6">
                       <FormField
                         control={searchForm.control}
                         name="folio"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Folio del Ticket</FormLabel>
+                            <FormLabel className="text-zinc-300 uppercase text-xs tracking-wider font-bold">Folio del Ticket</FormLabel>
                             <FormControl>
-                              <Input placeholder="Ej: SALE-ABC123XYZ" {...field} value={field.value ?? ''} />
+                              <Input className="bg-black/50 border-white/20 text-white placeholder:text-zinc-600 h-12 text-lg focus-visible:ring-primary uppercase" placeholder="Ej: RNR-A1B2" {...field} value={field.value ?? ''} />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="text-red-400" />
                           </FormItem>
                         )}
                       />
@@ -210,9 +212,10 @@ function PageInner() {
                         name="total"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Monto Total (con IVA)</FormLabel>
+                            <FormLabel className="text-zinc-300 uppercase text-xs tracking-wider font-bold">Monto Exacto (con IVA)</FormLabel>
                             <FormControl>
                               <Input
+                                className="bg-black/50 border-white/20 text-white placeholder:text-zinc-600 h-12 text-lg focus-visible:ring-primary"
                                 type="number"
                                 step="0.01"
                                 placeholder="Ej: 1599.00"
@@ -221,42 +224,76 @@ function PageInner() {
                                 onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
                               />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="text-red-400" />
                           </FormItem>
                         )}
                       />
-                      {error && <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert>}
-                      <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
+                      
+                      {error && (
+                        <Alert className="bg-red-950/50 border-red-900/50 text-red-200">
+                          <AlertTriangle className="h-4 w-4 text-red-400" />
+                          <AlertDescription>{error}</AlertDescription>
+                        </Alert>
+                      )}
+                      
+                      <Button type="submit" className="w-full h-12 font-bold text-base" disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Search className="mr-2 h-5 w-5" />}
                         Buscar Ticket
                       </Button>
                     </form>
                   </Form>
                 </FormProvider>
               ) : (
-                <div className="space-y-6">
-                   <Alert variant="default" className="border-green-500 bg-green-50">
-                      <FileText className="h-4 w-4 text-green-600" />
-                      <AlertTitle className="text-green-700">Ticket Encontrado</AlertTitle>
-                      <AlertDescription>
-                        <p><strong>Folio:</strong> {searchResult.id}</p>
-                        <p><strong>Fecha:</strong> {ticketDate && isValid(ticketDate) ? format(ticketDate, "dd MMMM, yyyy", {locale: es}) : 'N/A'}</p>
-                        <p><strong>Total:</strong> {formatCurrency(ticketTotal)}</p>
-                      </AlertDescription>
-                  </Alert>
+                <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+                   <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+                      <div className="flex items-center gap-3 mb-4">
+                        <CheckCircle className="h-5 w-5 text-green-400" />
+                        <h3 className="font-semibold text-lg">Ticket Validado</h3>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-sm text-zinc-300">
+                        <div>
+                          <p className="text-zinc-500 uppercase text-xs mb-1">Folio</p>
+                          <p className="font-medium text-white">{searchResult.id}</p>
+                        </div>
+                        <div>
+                          <p className="text-zinc-500 uppercase text-xs mb-1">Monto</p>
+                          <p className="font-medium text-white">{formatCurrency(ticketTotal)}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-zinc-500 uppercase text-xs mb-1">Fecha</p>
+                          <p className="text-white">{ticketDate && isValid(ticketDate) ? format(ticketDate, "dd MMMM, yyyy", {locale: es}) : 'N/A'}</p>
+                        </div>
+                      </div>
+                  </div>
 
-                  <h3 className="text-lg font-semibold border-t pt-4">Ingresa tus Datos Fiscales</h3>
-                  <FormProvider {...billingMethods}>
-                    <Form {...billingMethods}>
-                      <form onSubmit={billingMethods.handleSubmit(onBillingDataSubmit)} className="space-y-4">
-                          <BillingForm />
-                          <Button type="submit" className="w-full" disabled={isSubmitting}>
-                              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileJson className="mr-2 h-4 w-4"/>}
-                              {isSubmitting ? 'Generando Factura...' : 'Generar Factura'}
-                          </Button>
-                      </form>
-                    </Form>
-                  </FormProvider>
+                  <div>
+                    <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
+                      <FileJson className="text-primary h-5 w-5" />
+                      Datos Fiscales
+                    </h3>
+                    
+                    <FormProvider {...billingMethods}>
+                      <Form {...billingMethods}>
+                        <form onSubmit={billingMethods.handleSubmit(onBillingDataSubmit)} className="space-y-6">
+                            {/* Make the Billing Form Fields text-white and custom borders via CSS if needed, 
+                                since BillingForm is imported, its internals are Shadcn standard. 
+                                We wrap it in a div that forces dark mode. */}
+                            <div className="dark">
+                              <BillingForm />
+                            </div>
+                            
+                            <Button type="submit" className="w-full h-12 font-bold text-base mt-4" disabled={isSubmitting}>
+                                {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin"/> : <FileJson className="mr-2 h-5 w-5"/>}
+                                {isSubmitting ? 'Procesando...' : 'Timbrar Factura'}
+                            </Button>
+                            
+                            <Button type="button" variant="ghost" onClick={() => setSearchResult(null)} className="w-full h-12 hover:bg-white/5 text-zinc-400">
+                                Volver a buscar
+                            </Button>
+                        </form>
+                      </Form>
+                    </FormProvider>
+                  </div>
                 </div>
               )}
             </CardContent>

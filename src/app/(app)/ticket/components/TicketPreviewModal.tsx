@@ -23,6 +23,7 @@ import {
   Image as ImageIcon,
   Printer,
   MessageSquare,
+  Share2,
 } from "lucide-react";
 import { Icon } from "@iconify/react";
 import { useToast } from "@/hooks/use-toast";
@@ -89,6 +90,13 @@ export function TicketPreviewModal({
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
   const [whatsappOpen, setWhatsappOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof navigator !== "undefined") {
+      setIsMobile(/iPhone|iPad|Android/i.test(navigator.userAgent));
+    }
+  }, []);
 
   // Branding from localStorage (same key used by ticket config page)
   const [branding, setBranding] = useState<Partial<TicketSettings>>(defaultTicketSettings);
@@ -151,6 +159,12 @@ export function TicketPreviewModal({
     });
   }, []);
 
+  const captureImageFile = useCallback(async (): Promise<File> => {
+    const blob = await captureTicketImagePromise();
+    const name = (customerName || 'ticket').replace(/\s+/g, '-').toLowerCase();
+    return new File([blob], `ticket-${name}.png`, { type: "image/png" });
+  }, [captureTicketImagePromise, customerName]);
+
   const handleCopyTicketImage = useCallback(async () => {
     try {
       const item = new ClipboardItem({
@@ -189,6 +203,19 @@ export function TicketPreviewModal({
       toast({ title: "Error al copiar", variant: "destructive" });
     }
   }, [publicUrl, toast]);
+
+  const handleShare = useCallback(async () => {
+    if (navigator.share) {
+      try {
+        const file = await captureImageFile();
+        await navigator.share({ files: [file], title: `Ticket — ${customerName}` });
+      } catch (e: any) {
+        if (e?.name !== "AbortError") toast({ title: "Error al compartir", variant: "destructive" });
+      }
+    } else {
+      await handleCopyTicketImage();
+    }
+  }, [captureImageFile, customerName, toast, handleCopyTicketImage]);
 
   const handlePrint = useCallback(() => window.print(), []);
 
@@ -241,11 +268,7 @@ export function TicketPreviewModal({
                 )}
               </div>
 
-              {/* Print */}
-              <Button variant="outline" onClick={handlePrint} className="w-full gap-2">
-                <Printer className="h-4 w-4" />
-                Imprimir Ticket
-              </Button>
+
 
               {/* Copy image */}
               <Button
@@ -290,7 +313,7 @@ export function TicketPreviewModal({
               {/* WhatsApp */}
               <div className="space-y-2">
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  Enviar por WhatsApp
+                  Compartir
                 </label>
                 <Button
                   onClick={() => setWhatsappOpen(true)}
@@ -298,6 +321,14 @@ export function TicketPreviewModal({
                 >
                   <Icon icon="logos:whatsapp-icon" className="h-5 w-5" />
                   Enviar Ticket
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={handleShare}
+                  className="w-full gap-2"
+                >
+                  <Share2 className="h-4 w-4" />
+                  Compartir como Imagen
                 </Button>
               </div>
             </div>

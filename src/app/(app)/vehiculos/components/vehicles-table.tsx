@@ -338,21 +338,18 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
         </div>
       </div>
 
-      {/* ── Table ────────────────────────────────────────── */}
-      <div className="rounded-2xl overflow-hidden shadow-xl bg-white/50 backdrop-blur-xl border border-white/60">
-        <div className="overflow-x-auto">
+      {/* ── Table & Cards ────────────────────────────────────────── */}
+      <div className="rounded-xl md:rounded-2xl overflow-hidden shadow-sm md:shadow-xl bg-white/50 backdrop-blur-xl border border-white/60">
+        
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-900 hover:bg-slate-900 border-none">
-                {/* Placa */}
                 <SortHeader k="licensePlate" label="Placa"   className="pl-5 w-[130px]" />
-                {/* Vehículo */}
                 <SortHeader k="make"         label="Vehículo" className="min-w-[220px]" />
-                {/* Propietario */}
                 <SortHeader k="ownerName"    label="Propietario / Contacto" className="min-w-[200px]" />
-                {/* Último servicio */}
                 <SortHeader k="lastServiceDate" label="Último Servicio" className="text-right w-[160px]" />
-                {/* Acciones */}
                 <TableHead className="w-[60px] pr-4" />
               </TableRow>
             </TableHeader>
@@ -372,7 +369,6 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
                         isDup ? "bg-purple-50/50 hover:bg-purple-50" : "hover:bg-slate-50/80"
                       )}
                     >
-                      {/* Placa */}
                       <TableCell className="pl-5">
                         {v.licensePlate ? (
                           <span className={cn(
@@ -386,7 +382,6 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
                         )}
                       </TableCell>
 
-                      {/* Vehículo: Marca · Modelo · Año (una sola línea) */}
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
                           <span className="font-bold text-slate-900 text-base leading-tight">
@@ -401,7 +396,6 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
                         </div>
                       </TableCell>
 
-                      {/* Propietario + Contacto */}
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
                           <span className="font-semibold text-slate-900 text-sm leading-tight">
@@ -417,7 +411,6 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
                         </div>
                       </TableCell>
 
-                      {/* Último Servicio */}
                       <TableCell className="text-right pr-4">
                         <div className={cn("flex flex-col items-end", getServiceColor(days))}>
                           <span className="text-sm font-medium">{getServiceLabel(v)}</span>
@@ -429,7 +422,6 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
                         </div>
                       </TableCell>
 
-                      {/* Acciones */}
                       <TableCell className="pr-4 text-right" onClick={e => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -476,7 +468,7 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
                   <TableCell colSpan={5} className="h-64 text-center">
                     <div className="flex flex-col items-center justify-center gap-3 text-slate-400">
                       <div className="bg-slate-100 p-5 rounded-full">
-                        <Car className="h-10 w-10 text-slate-300" />
+                         <Car className="h-10 w-10 text-slate-300" />
                       </div>
                       <p className="font-semibold text-slate-600 text-lg">No se encontraron vehículos</p>
                       {hasActiveFilters && (
@@ -488,6 +480,109 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
               )}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Mobile Cards View */}
+        <div className="md:hidden flex flex-col divide-y divide-slate-100">
+          {pageData.length > 0 ? (
+            pageData.map(v => {
+              const days = daysSinceService(v);
+              const isDup = duplicateIds.has(v.id);
+              const isIncomplete = !v.make || !v.model;
+              return (
+                <div 
+                  key={`mob-${v.id}`} 
+                  onClick={() => router.push(`/vehiculos/${v.id}`)} 
+                  className={cn("p-4 flex flex-col gap-3 cursor-pointer hover:bg-slate-50/50 transition-colors relative", isDup ? "bg-purple-50/30" : "bg-white/40")}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-col min-w-0">
+                      <span className={cn("font-mono font-black text-lg tracking-widest", isDup ? "text-purple-700" : "text-slate-800")}>
+                         {v.licensePlate || <span className="text-sm text-slate-400 italic">Sin placa</span>}
+                      </span>
+                      <span className="font-bold text-slate-900 text-[15px] leading-tight truncate">
+                         {[v.make, v.model, v.year && !isNaN(Number(v.year)) ? String(v.year) : null]
+                             .filter(Boolean).join(' · ') || <span className="text-slate-400 italic font-normal text-sm">Sin datos</span>}
+                      </span>
+                      {isIncomplete && (
+                         <span className="text-[10px] sm:hidden text-orange-600 font-bold uppercase flex items-center gap-1 mt-0.5">
+                           <AlertTriangle className="h-2.5 w-2.5" /> Faltan datos
+                         </span>
+                      )}
+                    </div>
+                    {/* Menu actions inside mobile card */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-8 w-8 shrink-0 text-slate-400"
+                        >
+                          <MoreHorizontal className="h-5 w-5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48 bg-white/95">
+                        <DropdownMenuItem onClick={() => router.push(`/vehiculos/${v.id}`)}>
+                          <Eye className="h-4 w-4 mr-2" /> Ver Vehículo
+                        </DropdownMenuItem>
+                        {onEdit && permissions.has('vehicles:manage') && (
+                          <DropdownMenuItem onClick={() => onEdit(v)} className="text-blue-600">
+                            <Pencil className="h-4 w-4 mr-2" /> Editar
+                          </DropdownMenuItem>
+                        )}
+                        {permissions.has('vehicles:delete') && (
+                           <>
+                              <DropdownMenuSeparator />
+                              <ConfirmDialog
+                                triggerButton={
+                                  <DropdownMenuItem onSelect={e => e.preventDefault()} className="text-red-600 focus:text-red-700">
+                                    <Trash2 className="h-4 w-4 mr-2" /> Eliminar
+                                  </DropdownMenuItem>
+                                }
+                                title={`¿Eliminar vehículo ${v.licensePlate || v.id.slice(-6)}?`}
+                                description="Esta acción es permanente."
+                                onConfirm={() => onDelete(v.id)}
+                              />
+                           </>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  
+                  <div className="flex items-end justify-between border-t border-slate-100 pt-3 mt-1">
+                     <div className="flex flex-col min-w-0 pr-2">
+                        <span className="font-semibold text-slate-800 text-[13px] truncate">
+                          {v.ownerName || <span className="text-slate-400 italic font-normal">Sin propietario</span>}
+                        </span>
+                        {v.ownerPhone ? (
+                          <span className="text-slate-500 text-[11px] flex items-center gap-1 font-mono">
+                            <Phone className="h-3 w-3 shrink-0" /> {v.ownerPhone}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-amber-600 font-semibold">Sin teléfono</span>
+                        )}
+                     </div>
+                     <div className={cn("flex flex-col items-end shrink-0", getServiceColor(days))}>
+                          <span className="text-xs font-bold">{getServiceLabel(v)}</span>
+                          {days !== null && (
+                            <span className="text-[9px] font-black opacity-80 uppercase tracking-widest">
+                              {days === 0 ? 'hoy' : `hace ${days}d`}
+                            </span>
+                          )}
+                     </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+             <div className="flex flex-col items-center justify-center p-12 text-slate-400 text-center">
+                 <div className="bg-slate-100 p-4 rounded-full mb-3">
+                   <Car className="h-8 w-8 text-slate-300" />
+                 </div>
+                 <p className="font-semibold text-slate-600">No se encontraron vehículos</p>
+             </div>
+          )}
         </div>
 
         {/* Pagination Footer */}

@@ -10,8 +10,8 @@ import { PlusCircle, Trash2, Minus, Plus } from 'lucide-react';
 import type { InventoryItem, InventoryCategory, Supplier } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { InventorySearchDialog } from '@/components/shared/InventorySearchDialog';
-import { InventoryItemDialog } from '../../inventario/components/inventory-item-dialog';
-import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
+import { ItemDialog as InventoryItemDialog } from '../../punto-de-venta/components/dialogs/item-dialog';
+import type { ItemFormValues as InventoryItemFormValues } from "../../punto-de-venta/components/dialogs/item-dialog";
 import { formatCurrency, cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -171,9 +171,8 @@ export function ServiceSuppliesArray({
         open={isNewItemDialogOpen}
         onOpenChange={setIsNewItemDialogOpen}
         onSave={handleNewItemSaved}
-        item={{ name: newItemSearchTerm }}
-        categories={categories}
-        suppliers={suppliers}
+        item={{ name: newItemSearchTerm } as any}
+        categories={categories as any}
       />
     </div>
   );

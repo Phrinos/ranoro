@@ -24,8 +24,11 @@ export default function PublicPageLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-muted/30">
-        <main className="flex-1">
+    <div className="flex min-h-screen flex-col bg-slate-50 relative selection:bg-red-500/20">
+        {/* Subtle top decoration glow for Ranoro */}
+        <div className="absolute top-0 inset-x-0 h-40 bg-gradient-to-b from-slate-200/50 to-transparent pointer-events-none" />
+        
+        <main className="flex-1 relative z-10 p-4 sm:px-6 md:px-8 py-8 md:py-12 max-w-5xl mx-auto w-full">
             {children}
         </main>
     </div>

@@ -152,6 +152,7 @@ export function VehicleInfoCard({
         onNewVehicle={(plate) => {
           // Caller handles new vehicle dialog since we need full vehicle creation flow
           setDialogOpen(false);
+          if (onEditVehicle) onEditVehicle({ licensePlate: plate } as any);
         }}
       />
     </>

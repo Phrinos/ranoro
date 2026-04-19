@@ -9,6 +9,10 @@ type ActionResult = { success: boolean; error?: string };
 
 const db = getAdminDb();
 
+function serializeData(obj: any): any {
+  return JSON.parse(JSON.stringify(obj));
+}
+
 export async function getPublicServiceData(publicId: string): Promise<DataResult<ServiceRecord>> {
   const asText = (v: any) => (v == null ? null : String(v).trim() || null);
 
@@ -26,7 +30,7 @@ export async function getPublicServiceData(publicId: string): Promise<DataResult
 
     // fast path: ya está completo
     if (hasPhone && hasAdvisorSig) {
-      return { data: { ...pub, id: publicSnap.id } as ServiceRecord, error: null };
+      return serializeData({ data: { ...pub, id: publicSnap.id }, error: null });
     }
 
     const serviceId = asText(pub.serviceId) ?? publicId;
@@ -63,12 +67,12 @@ export async function getPublicServiceData(publicId: string): Promise<DataResult
     if (advisorSig) patch.serviceAdvisorSignatureDataUrl = advisorSig;
 
     if (Object.keys(patch).length) {
-      patch.updatedAt = serverTimestamp();
+      patch.updatedAt = new Date().toISOString(); // avoid serverTimestamp() for read-and-return to client
       await publicRef.set(patch, { merge: true });
-      return { data: { ...pub, ...patch, id: publicSnap.id } as ServiceRecord, error: null };
+      return serializeData({ data: { ...pub, ...patch, id: publicSnap.id }, error: null });
     }
 
-    return { data: { ...pub, id: publicSnap.id } as ServiceRecord, error: null };
+    return serializeData({ data: { ...pub, id: publicSnap.id }, error: null });
   } catch (e: any) {
     console.error("getPublicServiceData error:", e);
     return { data: null, error: "Ocurrió un error al cargar la información del servicio." };

@@ -102,30 +102,31 @@ const SheetHeader = React.memo(
       : "N/A";
 
     return (
-      <Card>
-        <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-          <div className="relative w-[150px] h-[50px] mb-4 sm:mb-0">
-            {workshopInfo?.logoUrl && (
-              <Image
-                src={workshopInfo.logoUrl}
-                alt={`${workshopInfo.name} Logo`}
-                fill
-                style={{ objectFit: "contain" }}
-                data-ai-hint="workshop logo"
-                sizes="150px"
-              />
-            )}
-          </div>
-          <div className="text-left sm:text-right">
-            <p className="font-bold text-lg">
-              Folio: {service.folio || service.id}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {formattedCreationDate}
-            </p>
-          </div>
-        </CardHeader>
-      </Card>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+        <div className="relative w-[180px] h-[60px]">
+          {workshopInfo?.logoUrl ? (
+            <Image
+              src={workshopInfo.logoUrl}
+              alt={`${workshopInfo.name} Logo`}
+              fill
+              style={{ objectFit: "contain", objectPosition: "left" }}
+              sizes="180px"
+              priority
+            />
+          ) : (
+            <div className="text-2xl font-black text-slate-800 tracking-tighter">RANORO</div>
+          )}
+        </div>
+        <div className="text-left sm:text-right bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100 flex flex-col items-start sm:items-end">
+          <p className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-0.5">Orden de Servicio</p>
+          <p className="font-black text-xl text-slate-800 leading-none">
+            {service.folio || service.id?.slice(-8).toUpperCase()}
+          </p>
+          <p className="text-xs text-slate-500 mt-1.5 font-medium">
+            {formattedCreationDate}
+          </p>
+        </div>
+      </div>
     );
   }
 );
@@ -177,36 +178,40 @@ const ClientInfo = React.memo(
     const mileageOk = typeof service.mileage === "number" && isFinite(service.mileage);
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-4 p-4">
-            <User className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
-            <CardTitle className="text-base">Cliente</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <p className="font-semibold">{customerName || "Cliente"}</p>
-            <p className="text-sm text-muted-foreground">
-              {customerPhone !== "Teléfono no disponible"
-                ? <a className="hover:underline" href={`tel:${customerPhone.replace(/\D/g, "")}`}>{customerPhone}</a>
-                : customerPhone}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-start gap-4 transition-all hover:shadow-md">
+          <div className="bg-slate-50 p-3 rounded-full text-slate-400 shrink-0 border border-slate-100">
+            <User className="w-6 h-6" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-0.5">Cliente</p>
+            <p className="font-bold text-slate-800 text-lg leading-tight">{customerName || "Cliente"}</p>
+            <p className="text-sm text-slate-500 mt-1">
+              {customerPhone !== "Teléfono no disponible" ? (
+                <a className="hover:text-red-600 transition-colors" href={`tel:${customerPhone.replace(/\D/g, "")}`}>
+                  {customerPhone}
+                </a>
+              ) : (
+                customerPhone
+              )}
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center gap-4 p-4">
-            <CarIcon className="w-8 h-8 text-muted-foreground flex-shrink-0"/>
-            <CardTitle className="text-base">Vehículo</CardTitle>
-          </CardHeader>
-          <CardContent className="p-4 pt-0">
-            <p className="font-semibold">{vehicleTitle}</p>
-            <p className="text-muted-foreground">
-              {vehicleLicensePlate !== "N/A" ? `Placas: ${vehicleLicensePlate}` : "Placas: N/A"}
-            </p>
-            {(vehicle as any)?.color && <p className="text-xs text-muted-foreground">Color: {(vehicle as any).color}</p>}
-            {mileageOk && <p className="text-xs text-muted-foreground">KM: {formatNumber(service.mileage!)}</p>}
-          </CardContent>
-        </Card>
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-start gap-4 transition-all hover:shadow-md">
+          <div className="bg-slate-50 p-3 rounded-full text-slate-400 shrink-0 border border-slate-100">
+            <CarIcon className="w-6 h-6" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-0.5">Vehículo</p>
+            <p className="font-bold text-slate-800 text-lg leading-tight">{vehicleTitle}</p>
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+               <Badge variant="outline" className="text-xs font-semibold bg-slate-50 text-slate-600">{vehicleLicensePlate !== "N/A" ? vehicleLicensePlate : "Sin Placas"}</Badge>
+               {(vehicle as any)?.color && <span className="text-xs text-slate-500">• {(vehicle as any).color}</span>}
+               {mileageOk && <span className="text-xs font-medium text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-md">{formatNumber(service.mileage!)} km</span>}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -350,27 +355,28 @@ const StatusCard = React.memo(
 
     return (
       <>
-        <Card className={cn("text-center", statusInfo.cardClass)}>
-          <CardHeader className="p-4">
-            <CardTitle
-              className={cn("text-lg font-bold tracking-wider", statusInfo.titleClass)}
-            >
-              {statusInfo.title}
-            </CardTitle>
-            {statusInfo.description && (
-              <p className={cn("font-semibold", statusInfo.descClass)}>
-                {statusInfo.description}
-              </p>
-            )}
-            {statusInfo.badge && (
-              <div className="mt-2">
-                <Badge variant={statusInfo.badge.variant as any}>
-                  {statusInfo.badge.text}
-                </Badge>
-              </div>
-            )}
-          </CardHeader>
-        </Card>
+        <div className={cn("rounded-2xl p-6 md:p-8 text-center shadow-sm border overflow-hidden relative", statusInfo.cardClass)}>
+          {/* Subtle gradient styling */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-20" />
+          
+          <div className="relative z-10">
+             <h2 className={cn("text-sm md:text-base font-black tracking-widest uppercase mb-1", statusInfo.titleClass)}>
+               {statusInfo.title}
+             </h2>
+             {statusInfo.description && (
+               <p className={cn("font-medium text-sm md:text-base", statusInfo.descClass)}>
+                 {statusInfo.description}
+               </p>
+             )}
+             {statusInfo.badge && (
+               <div className="mt-4 inline-block">
+                 <Badge variant={statusInfo.badge.variant as any} className="text-sm px-4 py-1.5 shadow-sm">
+                   {statusInfo.badge.text}
+                 </Badge>
+               </div>
+             )}
+          </div>
+        </div>
         {isAppointmentPending && onConfirmClick && (
           <div className="flex justify-center items-center gap-4 flex-wrap mt-6">
             <ConfirmDialog
@@ -401,23 +407,22 @@ const StatusCard = React.memo(
           </div>
         )}
         {shouldShowNextService && (
-          <Card className="mt-4 border-red-500 bg-red-50 text-red-800">
-            <CardHeader className="text-center p-3">
-              <CardTitle className="text-base font-bold flex items-center gap-2 justify-center">
-                <CalendarCheck className="h-4 w-4" />
-                PRÓXIMO SERVICIO
-              </CardTitle>
-              <CardDescription className="text-red-700 font-semibold">
-                Fecha:{" "}
+          <div className="mt-4 bg-gradient-to-r from-red-50 to-white border border-red-100 rounded-2xl p-5 text-center shadow-sm relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-1 bg-red-500 h-full" />
+             <div className="flex items-center justify-center gap-2 text-red-600 mb-1">
+               <CalendarCheck className="h-5 w-5" />
+               <h3 className="font-bold tracking-widest text-sm md:text-base uppercase">Próximo Servicio</h3>
+             </div>
+             <p className="text-slate-700 font-semibold mt-1">
+                Fecha Sugerida:{" "}
                 {format(parseDate(service.nextServiceInfo!.date)!, "dd 'de' MMMM 'de' yyyy", {
                   locale: es,
                 })}
                 {service.nextServiceInfo!.mileage && typeof service.nextServiceInfo!.mileage === "number" && isFinite(service.nextServiceInfo!.mileage) && (
-                  <> / KM: {formatNumber(service.nextServiceInfo!.mileage)}</>
+                  <span className="text-slate-500 ml-1">/ a los {formatNumber(service.nextServiceInfo!.mileage)} km</span>
                 )}
-              </CardDescription>
-            </CardHeader>
-          </Card>
+             </p>
+          </div>
         )}
       </>
     );
@@ -436,8 +441,8 @@ const SheetFooter = React.memo(
     advisorSignature?: string | null;
   }) => (
     <div className="space-y-4">
-      <Card>
-        <CardContent className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-100">
+        <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div className="flex flex-col items-center text-center">
             <div className="relative w-40 h-16 flex-shrink-0">
               {advisorSignature && (
@@ -472,19 +477,19 @@ const SheetFooter = React.memo(
                 rel="noopener noreferrer"
               >
                 <Button
-                  variant="link"
-                  className="text-base px-0 h-auto py-1 mt-1 bg-green-100 text-green-700 hover:bg-green-200"
+                  variant="outline"
+                  className="mt-3 bg-white text-slate-700 hover:bg-slate-50 border-slate-200 rounded-full shadow-sm"
                 >
-                  <Icon icon="logos:whatsapp-icon" className="h-5 w-5 mr-2" />{" "}
-                  {workshopInfo.phone}
+                  <Icon icon="logos:whatsapp-icon" className="h-5 w-5 mr-2" />
+                  Contactar Asesor
                 </Button>
               </a>
             )}
           </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardContent className="p-4 flex justify-between items-center">
+        </div>
+      </div>
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-100">
+        <div className="p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <a
               href={workshopInfo.googleMapsUrl || "https://share.google/7ow83ayhfb2iIOKUX"}
@@ -522,42 +527,39 @@ const SheetFooter = React.memo(
             </a>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            <Link
-              href="/legal/terminos"
-              target="_blank"
-              className="hover:underline text-muted-foreground"
-            >
+            <Link href="/legal/terminos" target="_blank" className="font-medium text-slate-500 hover:text-slate-800 transition-colors">
               Términos
             </Link>
-            <span className="text-muted-foreground">|</span>
-            <Link
-              href="/legal/privacidad"
-              target="_blank"
-              className="hover:underline text-muted-foreground"
-            >
+            <span className="text-slate-300">•</span>
+            <Link href="/legal/privacidad" target="_blank" className="font-medium text-slate-500 hover:text-slate-800 transition-colors">
               Privacidad
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 );
 SheetFooter.displayName = "SheetFooter";
 
 const SignatureActionCard = ({ onSignClick }: { onSignClick: () => void }) => (
-  <Card className="bg-blue-50 border-blue-200">
-    <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <p className="text-sm text-blue-800 font-medium text-center sm:text-left">
-        Tu vehículo ya está en el taller. Por favor, autoriza los trabajos
-        firmando la orden de servicio.
-      </p>
-      <Button onClick={onSignClick} className="w-full sm:w-auto flex-shrink-0">
-        <Signature className="mr-2 h-4 w-4" />
-        Firmar para Autorizar
+  <div className="bg-gradient-to-r from-red-600 to-red-500 rounded-2xl shadow-md border-0 overflow-hidden mb-8 relative">
+     <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+        <Signature className="w-32 h-32 text-white transform rotate-12" />
+     </div>
+    <div className="p-6 md:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+      <div>
+         <h4 className="text-white font-black text-lg mb-1">Autorización Pendiente</h4>
+         <p className="text-red-50 font-medium text-sm sm:text-base leading-snug max-w-md">
+           Tu vehículo ya está en taller. Por favor autoriza la orden de trabajo para que nuestros mecánicos puedan comenzar de inmediato.
+         </p>
+      </div>
+      <Button onClick={onSignClick} variant="secondary" size="lg" className="w-full sm:w-auto flex-shrink-0 bg-white text-red-600 hover:bg-slate-50 rounded-xl font-bold shadow-sm">
+        <Signature className="mr-2 h-5 w-5" />
+        Firmar y Autorizar
       </Button>
-    </CardContent>
-  </Card>
+    </div>
+  </div>
 );
 
 interface ServiceSheetContentProps {
@@ -698,25 +700,27 @@ export const ServiceSheetContent = React.forwardRef<
           onCancelAppointment={handleCancelAppointment}
         />
         {status === "cotizacion" && onScheduleClick && (
-          <div className="text-center">
-            <Button onClick={onScheduleClick} size="lg">
+          <div className="text-center mt-6">
+            <Button onClick={onScheduleClick} size="lg" className="bg-red-600 hover:bg-red-700 text-white rounded-full px-8 shadow-md">
               <CalendarDays className="mr-2 h-5 w-5" />
-              Agendar Cita
+              Agendar Cita Ahora
             </Button>
           </div>
         )}
 
-        <div className="overflow-x-auto scrollbar-hide">
+        <div className="mt-10 overflow-visible">
           <Tabs value={currentActiveTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="relative w-max">
-              {tabs.map((tab) => (
-                <TabsTrigger key={tab.value} value={tab.value}>
-                  {tab.label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <div className="flex justify-center mb-8">
+               <TabsList className="bg-slate-200/50 p-1.5 rounded-full inline-flex max-w-full overflow-x-auto scrollbar-hide shadow-inner border border-slate-200/50">
+                 {tabs.map((tab) => (
+                   <TabsTrigger key={tab.value} value={tab.value} className="rounded-full px-5 py-2 text-sm font-semibold text-slate-500 data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm transition-all whitespace-nowrap">
+                     {tab.label}
+                   </TabsTrigger>
+                 ))}
+               </TabsList>
+            </div>
             {tabs.map((tab) => (
-              <TabsContent key={tab.value} value={tab.value} className="mt-6">
+              <TabsContent key={tab.value} value={tab.value} className="mt-0 outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {tab.content}
               </TabsContent>
             ))}
@@ -769,75 +773,82 @@ function ServiceOrderTab({
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Trabajos a Realizar y Costos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+        <div className="bg-slate-50 border-b border-slate-100 px-6 py-5 flex items-center justify-between">
+           <h3 className="font-bold text-slate-800 flex items-center gap-2">
+             <Receipt className="w-5 h-5 text-slate-400" />
+             Desglose de Trabajos
+           </h3>
+           <Badge variant="outline" className="bg-white font-medium text-slate-500">{items.length} {items.length === 1 ? 'Trabajo' : 'Trabajos'}</Badge>
+        </div>
+        <div className="p-0">
             {items.length > 0 ? (
-              items.map((item: any, index: number) => (
-                <div key={item.id || index} className="p-4 rounded-lg bg-background">
-                  <div className="flex justify-between items-start">
+              <div className="divide-y divide-slate-100">
+                {items.map((item: any, index: number) => (
+                  <div key={item.id || index} className="p-6 transition-colors hover:bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start gap-4">
                     <div className="flex-1">
-                      <p className="font-semibold">{item.name}</p>
+                      <p className="font-bold text-slate-800">{item.name}</p>
                       {item.suppliesUsed && item.suppliesUsed.length > 0 && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Insumos:{" "}
-                          {item.suppliesUsed
-                            .map((s: any) => `${s.quantity}x ${s.supplyName}`)
-                            .join(", ")}
-                        </p>
+                        <div className="mt-2 text-sm text-slate-500 space-y-1">
+                          <p className="font-medium text-slate-400 text-xs uppercase tracking-wider">Insumos y Refacciones:</p>
+                          <ul className="list-disc list-inside">
+                            {item.suppliesUsed.map((s: any, idx: number) => (
+                               <li key={idx} className="marker:text-slate-300">{s.quantity}x {s.supplyName}</li>
+                            ))}
+                          </ul>
+                        </div>
                       )}
                     </div>
-                    <p className="font-bold text-lg">
-                      {formatCurrency(item.sellingPrice ?? 0)}
-                    </p>
+                    <div className="text-right whitespace-nowrap">
+                       <p className="font-black text-xl text-slate-800">{formatCurrency(item.price ?? 0)}</p>
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             ) : (
-              <p className="text-center text-muted-foreground py-4">
-                No hay trabajos detallados.
-              </p>
+              <div className="text-center py-12 px-6">
+                 <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                    <FileJson className="w-8 h-8 text-slate-300" />
+                 </div>
+                 <p className="text-slate-500 font-medium">Aún no hay trabajos detallados.</p>
+              </div>
             )}
           </div>
-          <div className="mt-4 pt-4 border-t space-y-2 text-sm">
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">Subtotal:</span>
-              <span className="font-medium">{formatCurrency(subTotal)}</span>
+          <div className="bg-slate-50 px-6 py-5 border-t border-slate-100 flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
+            <div className="flex-1 w-full md:w-auto">
+              <div className="space-y-1.5 text-sm w-full md:max-w-xs ml-auto md:ml-0">
+                <div className="flex justify-between items-center text-slate-500">
+                  <span>Subtotal:</span>
+                  <span className="font-semibold text-slate-700">{formatCurrency(subTotal)}</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-500">
+                  <span>IVA (16%):</span>
+                  <span className="font-semibold text-slate-700">{formatCurrency(taxAmount)}</span>
+                </div>
+              </div>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground">IVA (16%):</span>
-              <span className="font-medium">{formatCurrency(taxAmount)}</span>
-            </div>
-            <Separator className="my-2" />
-            <div className="flex justify-between items-center font-bold text-base">
-              <span>Total a Pagar:</span>
-              <span className="text-primary">{formatCurrency(totalCost)}</span>
+            <div className="text-right border-t border-slate-200 md:border-t-0 md:border-l md:pl-6 pt-4 md:pt-0 w-full md:w-auto flex flex-col items-end">
+               <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total a Pagar</span>
+               <span className="font-black text-3xl text-red-600 leading-none">{formatCurrency(totalCost)}</span>
             </div>
           </div>
-        </CardContent>
         {service.status === "Entregado" && (
-          <CardFooter className="justify-end gap-2">
+          <div className="bg-white border-t border-slate-100 px-6 py-4 flex flex-col sm:flex-row justify-end items-center gap-3">
             {onShowTicketClick && (
-              <Button onClick={onShowTicketClick}>
-                <Receipt className="mr-2 h-4 w-4" />
-                Ver Ticket de Servicio
+              <Button onClick={onShowTicketClick} variant="outline" className="w-full sm:w-auto rounded-xl shadow-sm border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold">
+                <Receipt className="mr-2 h-4 w-4 text-slate-400" />
+                Ticket de Servicio
               </Button>
             )}
-            <Button asChild variant="outline">
-              <Link
-                href={`/facturar?folio=${service.folio || service.id}&total=${totalCost}`}
-                target="_blank"
-              >
+            <Button asChild className="w-full sm:w-auto rounded-xl shadow-sm bg-slate-800 hover:bg-slate-900 text-white font-semibold">
+              <Link href={`/facturar?folio=${service.folio || service.id}&total=${totalCost}`} target="_blank">
                 <FileJson className="mr-2 h-4 w-4" />
-                Facturar
+                Solicitar Factura
               </Link>
             </Button>
-          </CardFooter>
+          </div>
         )}
-      </Card>
+      </div>
 
       <div
         className={cn(
@@ -846,55 +857,52 @@ function ServiceOrderTab({
         )}
       >
         {showReceptionCard && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Ingreso del Vehiculo al Taller</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col">
+            <h3 className="font-bold text-slate-800 text-lg mb-4">Ingreso del Vehículo al Taller</h3>
+            <div className="space-y-6 flex-1">
               <ReceptionDetails service={service} />
-              <div className="border-t pt-4">
-                <p className="text-xs text-muted-foreground whitespace-pre-line mt-2">
+              <div className="border-t border-slate-100 pt-6">
+                <h4 className="font-semibold text-slate-700 mb-2">Condiciones de Ingreso</h4>
+                <p className="text-xs text-slate-500 whitespace-pre-line leading-relaxed">
                   {INGRESO_CONDICIONES_TEXT}
                 </p>
-                <h4 className="font-semibold mb-2 mt-4">Firma de Autorización</h4>
-                <div className="text-center">
-                    <p className="text-xs font-semibold">CLIENTE (RECEPCIÓN)</p>
-                    <div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">
+                <div className="mt-8 text-center bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Firma de Autorización (Recepción)</p>
+                    <div className="flex items-center justify-center min-h-[80px]">
                       {service.customerSignatureReception ? (
-                        <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" width={150} height={75} style={{objectFit:"contain"}} unoptimized />
+                        <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" width={180} height={90} style={{objectFit:"contain"}} unoptimized />
                       ) : onSignClick ? (
-                        <Button size="sm" onClick={() => onSignClick('reception')} disabled={isSigning}>{isSigning ? 'Cargando...' : 'Firmar'}</Button>
-                      ) : (<p className="text-xs text-muted-foreground">Pendiente</p>)}
+                        <Button onClick={() => onSignClick('reception')} disabled={isSigning} className="bg-slate-800 hover:bg-slate-900 text-white shadow-sm rounded-xl font-medium px-8">{isSigning ? 'Cargando...' : 'Firmar Recepción'}</Button>
+                      ) : (<p className="text-sm font-medium text-slate-400">Firma Pendiente</p>)}
                     </div>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
         
         {service.status === 'Entregado' && (
-          <Card>
-            <CardHeader><CardTitle>Salida del Vehículo del Taller</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <div className="border-t pt-4">
-                <h4 className="font-semibold mb-2">Garantía</h4>
-                <p className="text-xs text-muted-foreground whitespace-pre-line">
+          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col">
+            <h3 className="font-bold text-slate-800 text-lg mb-4">Salida y Conformidad</h3>
+            <div className="space-y-6 flex-1 flex flex-col justify-between">
+              <div>
+                <h4 className="font-semibold text-slate-700 mb-2">Garantía</h4>
+                <p className="text-xs text-slate-500 whitespace-pre-line leading-relaxed">
                   {GARANTIA_CONDICIONES_TEXT}
                 </p>
               </div>
-              <h4 className="font-semibold mb-2">Firma de Conformidad</h4>
-              <div className="text-center">
-                  <p className="text-xs font-semibold">CLIENTE (ENTREGA)</p>
-                  <div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">
+              <div className="mt-8 text-center bg-slate-50 rounded-2xl p-6 border border-slate-100 mt-auto">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Firma de Conformidad (Entrega)</p>
+                  <div className="flex items-center justify-center min-h-[80px]">
                     {service.customerSignatureDelivery ? (
-                      <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de entrega" width={150} height={75} style={{objectFit:"contain"}} unoptimized />
+                      <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de entrega" width={180} height={90} style={{objectFit:"contain"}} unoptimized />
                     ) : onSignClick ? (
-                      <Button size="sm" onClick={() => onSignClick('delivery')} disabled={isSigning}>{isSigning ? 'Cargando...' : 'Firmar'}</Button>
-                    ) : (<p className="text-xs text-muted-foreground">Pendiente</p>)}
+                      <Button onClick={() => onSignClick('delivery')} disabled={isSigning} className="bg-slate-800 hover:bg-slate-900 text-white shadow-sm rounded-xl font-medium px-8">{isSigning ? 'Cargando...' : 'Firmar Conformidad'}</Button>
+                    ) : (<p className="text-sm font-medium text-slate-400">Firma Pendiente</p>)}
                   </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
       </div>
     </div>
@@ -1075,11 +1083,14 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection[]
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Revisión de Puntos de Seguridad</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-slate-50 border-b border-slate-100 px-6 py-5">
+         <h3 className="font-bold text-slate-800 flex items-center gap-2">
+           <CheckCircle className="w-5 h-5 text-slate-400" />
+           Revisión de Puntos de Seguridad
+         </h3>
+      </div>
+      <div className="p-6 md:p-8 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
           {inspectionGroups.map((group) => (
             <div key={group.title}>
@@ -1139,18 +1150,21 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection[]
             )}
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 function PhotoReportContent({ photoReports }: { photoReports: any[] }) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Reporte Fotográfico</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-slate-50 border-b border-slate-100 px-6 py-5">
+         <h3 className="font-bold text-slate-800 flex items-center gap-2">
+           <CheckCircle className="w-5 h-5 text-slate-400" />
+           Reporte Fotográfico
+         </h3>
+      </div>
+      <div className="p-6 md:p-8 space-y-4">
         {photoReports.map((report) => (
           <div key={report.id}>
             <p className="font-semibold">{report.description}</p>
@@ -1163,33 +1177,32 @@ function PhotoReportContent({ photoReports }: { photoReports: any[] }) {
             </div>
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
 function OriginalQuoteContent({ items }: { items: any[] }) {
   const total = items.reduce((acc, it) => acc + (Number(it.price) || 0), 0);
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Conceptos de la Cotización Original</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
+    <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+       <div className="bg-slate-50 border-b border-slate-100 px-6 py-5">
+          <h3 className="font-bold text-slate-800">Conceptos de la Cotización Original</h3>
+       </div>
+      <div className="p-0">
+        <div className="p-6 md:p-8 space-y-3">
           {items.map((item, index) => (
-            <div key={index} className="flex justify-between items-center text-sm p-2 bg-background rounded">
-              <span>{item.name}</span>
-              <span className="font-semibold">{formatCurrency(item.price)}</span>
+            <div key={index} className="flex justify-between items-center text-sm p-4 bg-slate-50 border border-slate-100 rounded-xl transition-all">
+              <span className="font-semibold text-slate-700">{item.name}</span>
+              <span className="font-bold text-slate-800">{formatCurrency(item.price)}</span>
             </div>
           ))}
         </div>
-        <Separator className="my-4" />
-        <div className="flex justify-between items-center font-bold text-lg">
-          <span>Total Original:</span>
-          <span className="text-primary">{formatCurrency(total)}</span>
+        <div className="bg-slate-50 border-t border-slate-100 px-6 md:px-8 py-5 flex justify-between items-center">
+          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Original:</span>
+          <span className="font-black text-2xl text-slate-800">{formatCurrency(total)}</span>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

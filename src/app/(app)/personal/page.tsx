@@ -1,85 +1,103 @@
-
 // src/app/(app)/personal/page.tsx
-
 "use client";
-import { withSuspense } from "@/lib/withSuspense";
+
+/**
+ * /personal — HR module
+ * 
+ * Wraps existing personal-old tabs (comisiones, rendimiento, sueldos)
+ * using the new URL-synced pill navigation pattern.
+ * Staff directory and individual profiles are at /personal/[id].
+ */
+
+import React, { useState, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import React, { useState, useMemo, useEffect, useCallback, Suspense, lazy } from 'react';
-import type { User, ServiceRecord, SaleReceipt, MonthlyFixedExpense, AppRole } from '@/types';
-import { useToast } from "@/hooks/use-toast";
-import { Loader2, Users, Shield, TrendingUp, BookOpen, DatabaseZap, UserCircle } from 'lucide-react';
-import { adminService, serviceService } from '@/lib/services';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
-import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useStaffData } from "./hooks/use-staff-data";
+import { StaffListTab } from "./components/staff-list-tab";
+import dynamic from "next/dynamic";
 
-const RendimientoPersonalContent = lazy(() => import('./components/rendimiento-content').then(m => ({ default: m.RendimientoPersonalContent })));
-const ComisionesContent = lazy(() => import('./components/comisiones-content'));
-const UsuariosPageContent = lazy(() => import('./components/usuarios-content').then(m => ({ default: m.UsuariosPageContent })));
-const RolesPageContent = lazy(() => import('./components/roles-content').then(m => ({ default: m.RolesPageContent })));
-const PerfilPageContent = lazy(() => import('@/app/(app)/opciones/components/perfil-content').then(m => ({ default: m.PerfilPageContent })));
+const ComisionesContent = dynamic(
+  () => import("@/app/(app)/personal/components/comisiones-content"),
+  { ssr: false, loading: () => <div className="flex h-32 items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div> }
+);
 
-function PageInner() {
+const TABS = [
+  { value: "directorio", label: "Directorio" },
+  { value: "comisiones", label: "Comisiones" },
+] as const;
+
+type TabValue = (typeof TABS)[number]["value"];
+
+function PersonalPageInner() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const tab = searchParams.get('tab');
-    
-  const { toast } = useToast();
-  const defaultTab = tab || 'perfil';
-  const [activeTab, setActiveTab] = useState(defaultTab);
-    
-  const [allUsers, setAllUsers] = useState<User[]>([]);
-  const [allServices, setAllServices] = useState<ServiceRecord[]>([]);
-  const [allRoles, setAllRoles] = useState<AppRole[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const initialTab = (searchParams.get("tab") as TabValue) || "directorio";
+  const [activeTab, setActiveTab] = useState<TabValue>(initialTab);
 
-  useEffect(() => {
-    setIsLoading(true);
-    const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-    if (authUserString) {
-      try {
-        setCurrentUser(JSON.parse(authUserString));
-      } catch (e) {
-        console.error("Error parsing auth user from localStorage", e);
-      }
-    }
+  const { staff, archivedStaff, services, isLoading } = useStaffData();
 
-    const unsubs: (() => void)[] = [
-      adminService.onUsersUpdate(setAllUsers),
-      serviceService.onServicesUpdate(setAllServices),
-      adminService.onRolesUpdate((roles) => {
-        setAllRoles(roles);
-        setIsLoading(false);
-      }),
-    ];
-    return () => unsubs.forEach(unsub => unsub());
-  }, []);
+  const handleTabChange = (tab: TabValue) => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("tab", tab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
-  const handleTabChange = (newTab: string) => {
-    setActiveTab(newTab);
-    router.push(`${pathname}?tab=${newTab}`);
+  if (isLoading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
-  if (isLoading) { return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>; }
-    
-  const tabs = [
-    { value: "perfil", label: "Mi Perfil", content: <Suspense fallback={<Loader2 className="animate-spin" />}><PerfilPageContent /></Suspense> },
-    { value: "usuarios", label: "Personal", content: <Suspense fallback={<Loader2 className="animate-spin" />}><UsuariosPageContent currentUser={currentUser} initialUsers={allUsers} initialRoles={allRoles} /></Suspense> },
-    { value: "roles", label: "Roles y Permisos", content: <Suspense fallback={<Loader2 className="animate-spin" />}><RolesPageContent currentUser={currentUser} initialRoles={allRoles} /></Suspense> },
-    { value: "rendimiento", label: "Rendimiento", content: <Suspense fallback={<Loader2 className="animate-spin" />}><RendimientoPersonalContent /></Suspense> },
-    { value: "comisiones", label: "Comisiones", content: <Suspense fallback={<Loader2 className="animate-spin" />}><ComisionesContent allServices={allServices} allUsers={allUsers} /></Suspense> },
-  ];
-
   return (
-    <TabbedPageLayout
-      title="Gestión de Personal"
-      description="Administra tu equipo, sus roles, permisos y analiza su rendimiento."
-      activeTab={activeTab}
-      onTabChange={handleTabChange}
-      tabs={tabs}
-    />
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-black text-white rounded-2xl p-6">
+        <h1 className="text-2xl font-black tracking-tight">Personal</h1>
+        <p className="text-white/60 text-sm mt-0.5">
+          Directorio del equipo, comisiones y rendimiento laboral.
+        </p>
+      </div>
+
+      {/* Tab Pills */}
+      <div className="flex gap-1 p-1.5 bg-muted/70 backdrop-blur-sm rounded-xl overflow-x-auto ring-1 ring-muted mb-4">
+        {TABS.map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => handleTabChange(tab.value)}
+            className={cn(
+              "flex-shrink-0 flex-1 min-w-[100px] px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap",
+              activeTab === tab.value
+                ? "bg-white text-black shadow-md ring-1 ring-black/10 dark:bg-slate-800 dark:text-white dark:ring-white/10 scale-[1.02]"
+                : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+            )}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+        {activeTab === "directorio" && (
+          <StaffListTab staff={staff} archivedStaff={archivedStaff} />
+        )}
+        {activeTab === "comisiones" && (
+          <ComisionesContent allServices={services} allUsers={staff} />
+        )}
+      </div>
+    </div>
   );
 }
 
-export default withSuspense(PageInner, null);
+export default function PersonalPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <PersonalPageInner />
+    </Suspense>
+  );
+}

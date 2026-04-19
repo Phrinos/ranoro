@@ -172,15 +172,19 @@ export function ConfigTallerPageContent() {
     <>
       <FormProvider {...methods}>
         <Form {...methods}>
-          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              <InfoGeneralCard
-                watchedLogoUrl={watchedLogoUrl}
-                fileInputRef={fileInputRef}
-                isUploading={isUploading}
-                onFileChange={onFileChange}
-              />
-              <ContactoAdicionalCard />
+          <form onSubmit={methods.handleSubmit(onSubmit)} className="space-y-6 max-w-5xl">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-start">
+              <div className="md:col-span-3">
+                <InfoGeneralCard
+                  watchedLogoUrl={watchedLogoUrl}
+                  fileInputRef={fileInputRef}
+                  isUploading={isUploading}
+                  onFileChange={onFileChange}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <ContactoAdicionalCard />
+              </div>
             </div>
             <div className="flex justify-end pt-4">
               <Button type="submit" disabled={methods.formState.isSubmitting || isUploading}>

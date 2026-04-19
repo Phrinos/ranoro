@@ -10,6 +10,15 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function generateTicketId(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = 'RNR-';
+  for (let i = 0; i < 4; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 export function normalizeDataUrl(dataUrl: string): string {
   if (!dataUrl) return '';
   if (dataUrl.startsWith('data:') || dataUrl.startsWith('http')) {

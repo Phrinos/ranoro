@@ -16,7 +16,7 @@ import { isValid, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { formatCurrency, cn } from '@/lib/utils';
 import Link from 'next/link';
 import { toZonedTime } from 'date-fns-tz';
-import { GlobalTransactionDialog, GlobalTransactionFormValues } from '../flotillav2/components/GlobalTransactionDialog';
+import { PaymentDialog, type PaymentFormValues } from '../flotilla/components/dialogs/payment-dialog';
 import { DashboardCharts } from './components/DashboardCharts';
 
 const TZ = "America/Mexico_City";
@@ -118,13 +118,13 @@ export default function DashboardPage() {
     }
   }, []);
 
-  const handleSaveTransaction = async (values: GlobalTransactionFormValues) => {
+  const handleSaveTransaction = async (values: PaymentFormValues) => {
     try {
         const driver = drivers.find(d => d.id === values.driverId);
         if (!driver) throw new Error("Driver not found.");
         const vehicle = vehicles.find(v => v.id === driver.assignedVehicleId);
         if (!vehicle) throw new Error("Vehicle not found for payment.");
-        await rentalService.addRentalPayment(driver, vehicle, values.amount, values.note, values.date, values.paymentMethod as PaymentMethod);
+        await rentalService.addRentalPayment(driver, vehicle, values.amount, values.note, values.paymentDate, values.paymentMethod as PaymentMethod);
         toast({ title: "Pago Registrado" });
         setIsTransactionDialogOpen(false);
     } catch (error) {
@@ -169,7 +169,7 @@ export default function DashboardPage() {
                 </Link>
               </Button>
               <Button asChild size="lg" className="bg-white/10 text-white hover:bg-white/20 font-semibold backdrop-blur-md border border-white/10 transition-all hover:-translate-y-0.5">
-                <Link href="/pos/nuevo">
+                <Link href="/punto-de-venta/nueva-venta">
                   <Receipt className="mr-2 h-4 w-4" />
                   Punto de Venta
                 </Link>
@@ -298,11 +298,10 @@ export default function DashboardPage() {
 
       </div>
 
-      <GlobalTransactionDialog
+      <PaymentDialog
         open={isTransactionDialogOpen}
         onOpenChange={setIsTransactionDialogOpen}
         onSave={handleSaveTransaction}
-        transactionType="payment"
         drivers={drivers.filter(d => !d.isArchived)}
       />
     </>

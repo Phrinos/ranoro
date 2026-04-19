@@ -13,9 +13,10 @@ import { HistoryList } from "./components/lists/history-list";
 import { useServicesData } from "./components/hooks/use-services-data";
 import { TicketPreviewModal } from "@/app/(app)/ticket/components";
 import { PaymentDetailsDialog } from "@/components/shared/PaymentDetailsDialog";
+import { TiposDeServicioPageContent } from "./components/service-types-content";
 import type { ServiceRecord } from "@/types";
 
-type Tab = "activos" | "cotizaciones" | "historial";
+type Tab = "activos" | "cotizaciones" | "historial" | "categorias";
 
 function PageInner() {
   const {
@@ -30,6 +31,7 @@ function PageInner() {
     setPaymentDialogOpen,
     confirmCompletion,
     deleteService,
+    serviceTypes,
   } = useServicesData();
 
   const [activeTab, setActiveTab] = useState<Tab>("activos");
@@ -67,6 +69,10 @@ function PageInner() {
               <Clock className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Historial</span>
             </TabsTrigger>
+            <TabsTrigger value="categorias" className="flex items-center gap-1.5 text-sm">
+              <Wrench className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Categorías</span>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="activos" className="pt-4">
@@ -99,6 +105,10 @@ function PageInner() {
               onShowTicket={openShareDialog}
               onDelete={deleteService}
             />
+          </TabsContent>
+
+          <TabsContent value="categorias" className="pt-4">
+            <TiposDeServicioPageContent serviceTypes={serviceTypes} />
           </TabsContent>
         </Tabs>
       </div>

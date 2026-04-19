@@ -159,7 +159,10 @@ const addRentalPayment = async (
         driverId: String(driver.id),
         driverName: driver.name,
         vehicleLicensePlate: vehicle.licensePlate,
+        vehicleId: vehicle.id,
+        dailyRate,
         paymentDate: paymentDateIso,
+        registeredAt: new Date().toISOString(), // always the real moment of registration
         amount: Number(amount) || 0,
         daysCovered: dailyRate > 0 ? (Number(amount) || 0) / dailyRate : 0,
         note: note || "Abono de Renta",

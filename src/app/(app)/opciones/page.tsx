@@ -11,8 +11,6 @@ import { inventoryService } from '@/lib/services';
 import { useRoles } from '@/lib/contexts/roles-context';
 const ConfigTallerPageContent = lazy(() => import('./components/config-taller-content').then(module => ({ default: module.ConfigTallerPageContent })));
 const ConfiguracionTicketPageContent = lazy(() => import('./components/config-ticket-content').then(module => ({ default: module.ConfiguracionTicketPageContent })));
-const ConfigFacturacionPageContent = lazy(() => import('./components/config-facturacion-content').then(module => ({ default: module.ConfigFacturacionPageContent })));
-const TiposDeServicioPageContent = lazy(() => import('./components/service-types-content').then(module => ({ default: module.TiposDeServicioPageContent })));
 const ConfigMantenimientoPageContent = lazy(() => import('./components/config-mantenimiento-content').then(module => ({ default: module.ConfigMantenimientoPageContent })));
 
 function PageInner() {
@@ -20,7 +18,7 @@ function PageInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeTabQuery = searchParams.get('tab');
-  const [activeTab, setActiveTab] = useState(activeTabQuery || 'usuarios');
+  const [activeTab, setActiveTab] = useState(activeTabQuery || 'taller');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const roles = useRoles(); // Usa el contexto centralizado — sin listener propio
   const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
@@ -56,11 +54,9 @@ function PageInner() {
 
   const tabs = useMemo(() => [
     { value: "taller", label: "Mi Taller", icon: Building, component: <ConfigTallerPageContent />, requiredPermission: 'admin:settings' },
-    { value: "facturacion", label: "Facturación", icon: FileJson, component: <ConfigFacturacionPageContent />, requiredPermission: 'admin:settings' },
     { value: "ticket", label: "Ticket", icon: Settings, component: <ConfiguracionTicketPageContent />, requiredPermission: 'admin:settings' },
-    { value: "service_types", label: "Tipos de Servicio", icon: Shapes, component: <TiposDeServicioPageContent serviceTypes={serviceTypes} />, requiredPermission: 'admin:settings' },
     { value: "mantenimiento", label: "Mantenimiento", icon: Wrench, component: <ConfigMantenimientoPageContent />, requiredPermission: 'admin:settings' },
-  ], [serviceTypes]);
+  ], []);
 
   const availableTabs = useMemo(() => tabs.filter(tab => tab.requiredPermission && userPermissions.has(tab.requiredPermission)), [tabs, userPermissions]);
 

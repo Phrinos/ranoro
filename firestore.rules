@@ -99,6 +99,12 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    match /inventoryItems/{id} {
+      allow read: if isSignedIn();
+      allow create, update: if isStaff();
+      allow delete: if isSuperAdmin();
+    }
+
     match /inventoryCategories/{id} {
       allow read: if isSignedIn();
       allow write: if isStaff();
@@ -198,6 +204,16 @@ service cloud.firestore {
       allow write: if isStaff();
     }
 
+    match /dailyCuts/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
+    match /fixedExpenses/{id} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
+    }
+
     match /fixedMonthlyExpenses/{id} {
       allow read: if isSignedIn();
       allow write: if isSuperAdmin();
@@ -207,6 +223,11 @@ service cloud.firestore {
     match /workshopConfig/{id} {
       allow read: if true;  // Público (logo, nombre del taller, etc.)
       allow write: if isSuperAdmin();
+    }
+
+    match /settings/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
     }
 
     // ─── Auditoría ────────────────────────────────────────────────────

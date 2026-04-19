@@ -26,7 +26,7 @@ import { differenceInMonths, isValid } from 'date-fns';
 import { parseDate } from '@/lib/forms';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { PurchaseFormValues } from '@/app/(app)/inventario/compras/components/register-purchase-dialog';
+import type { PurchaseFormValues } from '@/app/(app)/punto-de-venta/components/register-purchase-dialog';
 
 const DashboardCards: React.FC<any> = () => null;
 const ProductosContent: React.FC<any> = () => null;

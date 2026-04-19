@@ -23,6 +23,7 @@ import { inventoryService } from './inventory.service';
 import { adminService } from './admin.service';
 import { nanoid } from 'nanoid';
 import { getCardCommissionRate } from '../money-helpers';
+import { generateTicketId } from '../utils';
 
 const toNumber = (v: any): number =>
   typeof v === 'number'
@@ -221,7 +222,7 @@ const saveService = async (data: ServiceRecord): Promise<ServiceRecord> => {
   if (!db) throw new Error('Database not initialized.');
 
   const isNew = !data.id;
-  const serviceId = isNew ? doc(collection(db, 'serviceRecords')).id : (data.id as string);
+  const serviceId = isNew ? generateTicketId() : (data.id as string);
 
   const serviceData: any = {
     ...data,

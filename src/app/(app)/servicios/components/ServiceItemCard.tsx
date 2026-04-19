@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Trash2, Wrench } from "lucide-react";
 import { capitalizeWords, formatCurrency, cn } from "@/lib/utils";
-import type { InventoryItemFormValues } from "../../inventario/components/inventory-item-form";
+import type { ItemFormValues as InventoryItemFormValues } from "../../punto-de-venta/components/dialogs/item-dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ServiceSuppliesArray } from "./ServiceSuppliesArray";
