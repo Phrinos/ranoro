@@ -170,7 +170,7 @@ export function ServiceSuppliesArray({
             className="bg-card text-muted-foreground"
             onClick={() => setIsInventorySearchDialogOpen(true)}
           >
-            <PlusCircle className="mr-1.5 h-3.5 w-3.5" /> Del Catálogo
+            <PlusCircle className="mr-1.5 h-3.5 w-3.5" /> Del Inventario
           </Button>
           <Button
             type="button"

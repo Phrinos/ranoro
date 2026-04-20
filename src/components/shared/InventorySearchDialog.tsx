@@ -35,11 +35,12 @@ export function InventorySearchDialog({
   const [autoLoaded, setAutoLoaded] = useState<InventoryItem[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Si no recibimos inventoryItems, cargamos de Firestore
+  // Siempre carga desde Firestore cuando el diálogo está abierto,
+  // independientemente de si recibimos inventoryItems como prop.
+  // Esto garantiza que los productos recién agregados siempre aparezcan.
   useEffect(() => {
-    if (inventoryItems && inventoryItems.length > 0) {
+    if (!open) {
       setAutoLoaded(null);
-      setIsLoading(false);
       return;
     }
 
@@ -58,9 +59,11 @@ export function InventorySearchDialog({
       }
     );
     return () => unsub();
-  }, [open, inventoryItems, includeServices]);
+  }, [open, includeServices]);
 
-  const source = useMemo(() => inventoryItems ?? autoLoaded ?? [], [inventoryItems, autoLoaded]);
+  // La fuente siempre es el snapshot reactivo de Firestore cuando está disponible.
+  // inventoryItems prop solo se usa si aún no hemos recibido datos de Firestore.
+  const source = useMemo(() => autoLoaded ?? inventoryItems ?? [], [autoLoaded, inventoryItems]);
 
   const score = (it: any) =>
     (it.timesSold || it.salesCount || 0) * 3 +
