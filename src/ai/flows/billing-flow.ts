@@ -66,7 +66,7 @@ export async function createInvoice(
 
     // STEP 2: Prepare invoice line items
     const IVA_RATE = 0.16;
-    let ticketItems;
+    let ticketItems: any[];
 
     if ('items' in ticket && Array.isArray(ticket.items)) { // SaleReceipt
         ticketItems = ticket.items.map((item: any) => ({
