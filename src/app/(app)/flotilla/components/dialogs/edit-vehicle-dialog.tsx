@@ -43,7 +43,7 @@ interface EditVehicleDialogProps {
 }
 
 export function EditVehicleDialog({ open, onOpenChange, vehicle, onSave, defaultTab = "info" }: EditVehicleDialogProps) {
-  const form = useForm<EditVehicleFormValues, any, EditVehicleFormValues>({ resolver: zodResolver(schema) });
+  const form = useForm<EditVehicleFormValues>({ resolver: zodResolver(schema) as any });
 
   useEffect(() => {
     if (open && vehicle) {

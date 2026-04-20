@@ -33,8 +33,8 @@ interface ChargeDialogProps {
 }
 
 export function ChargeDialog({ open, onOpenChange, onSave, drivers, preselectedDriverId, debtToEdit }: ChargeDialogProps) {
-  const form = useForm<ChargeFormValues, any, ChargeFormValues>({
-    resolver: zodResolver(schema),
+  const form = useForm<ChargeFormValues>({
+    resolver: zodResolver(schema) as any,
     defaultValues: {
       driverId: preselectedDriverId ?? "",
       amount: 0,

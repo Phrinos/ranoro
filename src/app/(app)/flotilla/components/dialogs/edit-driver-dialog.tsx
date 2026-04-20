@@ -33,7 +33,7 @@ interface EditDriverDialogProps {
 }
 
 export function EditDriverDialog({ open, onOpenChange, driver, onSave }: EditDriverDialogProps) {
-  const form = useForm<EditDriverFormValues, any, EditDriverFormValues>({ resolver: zodResolver(schema) });
+  const form = useForm<EditDriverFormValues>({ resolver: zodResolver(schema) as any });
 
   useEffect(() => {
     if (open && driver) {

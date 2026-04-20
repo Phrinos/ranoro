@@ -118,7 +118,7 @@ export function UsuariosPageContent({ currentUser, initialUsers, initialRoles }:
         title={archiveConfirm?.archive ? 'Archivar Usuario' : 'Restaurar Usuario'}
         description={`¿${archiveConfirm?.archive ? 'Archivar' : 'Restaurar'} a ${archiveConfirm?.user.name}?`}
         onConfirm={handleArchive}
-        confirmLabel={archiveConfirm?.archive ? 'Archivar' : 'Restaurar'}
+        confirmText={archiveConfirm?.archive ? 'Archivar' : 'Restaurar'}
         variant={archiveConfirm?.archive ? 'destructive' : 'default'}
       />
     </div>

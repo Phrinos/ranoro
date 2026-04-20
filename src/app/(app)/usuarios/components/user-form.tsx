@@ -21,7 +21,7 @@ interface UserFormProps {
 
 export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
   const form = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
+    resolver: zodResolver(userFormSchema) as any,
     defaultValues: {
       name: initialData?.name ?? '',
       email: initialData?.email ?? '',
@@ -115,7 +115,6 @@ export function UserForm({ id, initialData, roles, onSubmit }: UserFormProps) {
                   <DatePicker
                     date={field.value}
                     onDateChange={field.onChange}
-                    placeholder="Seleccionar fecha..."
                   />
                 </FormControl>
                 <FormMessage />

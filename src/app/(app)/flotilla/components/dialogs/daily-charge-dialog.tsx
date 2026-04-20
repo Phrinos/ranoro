@@ -29,8 +29,8 @@ interface DailyChargeDialogProps {
 }
 
 export function DailyChargeDialog({ open, onOpenChange, charge, onSave }: DailyChargeDialogProps) {
-  const form = useForm<DailyChargeFormValues, any, DailyChargeFormValues>({
-    resolver: zodResolver(schema),
+  const form = useForm<DailyChargeFormValues>({
+    resolver: zodResolver(schema) as any,
     defaultValues: { amount: 0, date: format(new Date(), "yyyy-MM-dd"), note: "" },
   });
 

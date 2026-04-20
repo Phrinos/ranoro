@@ -116,7 +116,7 @@ export async function createInvoice(
     return {
       success: true,
       invoiceId: invoice.id,
-      invoiceUrl: invoice.verification_url, // Facturapi provides verification_url
+      invoiceUrl: invoice.verification_url || undefined, // Facturapi provides verification_url
       status: invoice.status,
     };
   } catch (e: any) {
@@ -153,7 +153,7 @@ export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: bo
 
     // Alternatively, Facturapi allows downloading PDF directly via facturapi.invoices.downloadPdf(invoiceId)
     // For rendering in a browser, returning the verification_url is cleaner
-    return { success: true, url: invoice.verification_url };
+    return { success: true, url: invoice.verification_url || undefined };
   } catch (e: any) {
      console.error('Get PDF URL error:', e.message);
      return { success: false, error: e?.data?.message || e.message || 'Error desconocido al obtener PDF' };

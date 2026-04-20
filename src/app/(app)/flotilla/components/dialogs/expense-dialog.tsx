@@ -32,7 +32,7 @@ interface ExpenseDialogProps {
 
 export function ExpenseDialog({ open, onOpenChange, onSave, vehicles, preselectedVehicleId }: ExpenseDialogProps) {
   const form = useForm<ExpenseFormValues, any, ExpenseFormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(schema) as any,
     defaultValues: { vehicleId: preselectedVehicleId ?? "", description: "", amount: 0, note: "" },
   });
 

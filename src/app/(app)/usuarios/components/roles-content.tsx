@@ -39,7 +39,8 @@ const PERM_GROUPS_LIST: PermGroup[] = Object.entries(PERMISSION_GROUPS).map(([gr
 
 export function RolesPageContent({ currentUser, initialRoles }: RolesPageContentProps) {
   const { toast } = useToast();
-  const { hasPermission } = usePermissions();
+  const permissions = usePermissions();
+  const hasPermission = (id: string) => permissions.has(id);
   const isSuperAdmin = currentUser?.role === 'Superadministrador';
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -170,7 +171,7 @@ export function RolesPageContent({ currentUser, initialRoles }: RolesPageContent
                   <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">{group}</p>
                   <div className="grid grid-cols-1 gap-2">
                     {permissions.map(p => (
-                      <label key={p.id} className={cn("flex items-start gap-2 cursor-pointer p-1.5 rounded hover:bg-muted/50 transition-colors", p.restricted && "border border-destructive/30 bg-destructive/5")}>
+                      <label key={p.id} className={cn("flex items-start gap-2 cursor-pointer p-1.5 rounded hover:bg-muted/50 transition-colors", (p as any).restricted && "border border-destructive/30 bg-destructive/5")}>
                         <Checkbox
                           checked={selectedPerms.has(p.id)}
                           onCheckedChange={() => togglePerm(p.id)}
@@ -179,7 +180,7 @@ export function RolesPageContent({ currentUser, initialRoles }: RolesPageContent
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5">
                             <span className="text-sm font-medium">{p.label}</span>
-                            {p.restricted && <Lock className="h-3 w-3 text-destructive shrink-0" />}
+                            {(p as any).restricted && <Lock className="h-3 w-3 text-destructive shrink-0" />}
                           </div>
                           <span className="text-[10px] font-mono text-muted-foreground">{p.id}</span>
                         </div>
@@ -203,7 +204,7 @@ export function RolesPageContent({ currentUser, initialRoles }: RolesPageContent
         title="Eliminar Rol"
         description={`¿Estás seguro de eliminar el rol "${deleteConfirm?.name}"? Los usuarios con este rol podrían perder acceso.`}
         onConfirm={handleDelete}
-        confirmLabel="Eliminar"
+        confirmText="Eliminar"
         variant="destructive"
       />
     </div>

@@ -81,7 +81,7 @@ function VehicleProfilePage() {
       toast({ title: "Conductor asignado" });
     } else {
       // Unassign
-      await inventoryService.saveVehicle({ assignedDriverId: null, assignedDriverName: null }, vehicle.id);
+      await inventoryService.saveVehicle({ assignedDriverId: undefined, assignedDriverName: undefined } as any, vehicle.id);
       if (vehicle.assignedDriverId) {
         await personnelService.saveDriver({ assignedVehicleId: undefined, assignedVehicleLicensePlate: undefined }, vehicle.assignedDriverId);
       }

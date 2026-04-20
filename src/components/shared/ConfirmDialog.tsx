@@ -18,7 +18,9 @@ import { Button } from '../ui/button';
 import { Loader2 } from 'lucide-react';
 
 interface ConfirmDialogProps {
-  triggerButton: React.ReactNode;
+  triggerButton?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   title: string;
   description: string;
   onConfirm: () => void | Promise<void>;
@@ -31,6 +33,8 @@ interface ConfirmDialogProps {
 
 export function ConfirmDialog({
   triggerButton,
+  open,
+  onOpenChange,
   title,
   description,
   onConfirm,
@@ -40,7 +44,11 @@ export function ConfirmDialog({
   isLoading: propIsLoading,
   children,
 }: ConfirmDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = open !== undefined;
+  const dialogOpen = isControlled ? open : internalOpen;
+  const setDialogOpen = isControlled && onOpenChange ? onOpenChange : setInternalOpen;
+  
   const [internalLoading, setInternalLoading] = useState(false);
   const isLoading = propIsLoading !== undefined ? propIsLoading : internalLoading;
 
@@ -52,15 +60,17 @@ export function ConfirmDialog({
         }
     } finally {
         setInternalLoading(false);
-        setIsOpen(false); // Ensure dialog closes after action
+        setDialogOpen(false); // Ensure dialog closes after action
     }
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogTrigger asChild>
-        {triggerButton}
-      </AlertDialogTrigger>
+    <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {triggerButton && (
+        <AlertDialogTrigger asChild>
+          {triggerButton}
+        </AlertDialogTrigger>
+      )}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
@@ -68,7 +78,7 @@ export function ConfirmDialog({
         </AlertDialogHeader>
         {children && <div className="py-4">{children}</div>}
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => setIsOpen(false)} disabled={isLoading}>{cancelText}</AlertDialogCancel>
+          <AlertDialogCancel onClick={() => setDialogOpen(false)} disabled={isLoading}>{cancelText}</AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
             className={variant === 'destructive' ? "bg-destructive hover:bg-destructive/90" : ""}

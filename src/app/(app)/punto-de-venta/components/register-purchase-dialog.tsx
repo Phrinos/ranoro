@@ -15,7 +15,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Trash2, PlusCircle } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
-import { Combobox } from '@/components/shared/Combobox';
+// (Combobox removed)
 
 // Re-export the type so that other files can import it from this location
 export type { RegisterPurchaseFormValues as PurchaseFormValues };
@@ -42,7 +42,7 @@ export function RegisterPurchaseDialog({
   const [isSaving, setIsSaving] = useState(false);
 
   const form = useForm<RegisterPurchaseFormValues>({
-    resolver: zodResolver(registerPurchaseSchema),
+    resolver: zodResolver(registerPurchaseSchema) as any,
     defaultValues: {
       supplierId: '',
       invoiceId: '',
