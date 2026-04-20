@@ -65,12 +65,14 @@ export function useAuth() {
           if (savedLoginDate && savedLoginDate !== todayStr) {
             console.warn("[AUTH-AUDIT] Session expired (past midnight). Forcing sign out.");
             localStorage.removeItem("ranoro_login_date");
+            localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
+            setCurrentUser(null);
+            setIsLoading(false);
             if (auth) await signOut(auth);
             return;
           }
-          if (!savedLoginDate) {
-            localStorage.setItem("ranoro_login_date", todayStr);
-          }
+          // Stamp the login date on every fresh session (or if missing)
+          localStorage.setItem("ranoro_login_date", todayStr);
         }
         // ---------------------------------
 
