@@ -45,13 +45,13 @@ export function TabbedPageLayout({
         </div>
 
         {/* Pill-style tab navigation */}
-        <div className="flex gap-1 p-1.5 h-auto w-full md:w-fit bg-muted/70 backdrop-blur-sm rounded-xl overflow-x-auto ring-1 ring-muted justify-start scrollbar-hide">
+        <div className="flex gap-1 p-1.5 h-auto w-full md:w-fit bg-muted/70 backdrop-blur-xs rounded-xl overflow-x-auto ring-1 ring-muted justify-start scrollbar-hide">
           {tabs.map(tab => (
             <button
               key={tab.value}
               onClick={() => onTabChange(tab.value)}
               className={cn(
-                'flex-shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center gap-2',
+                'shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center gap-2',
                 activeTab === tab.value
                   ? 'bg-white text-black shadow-md scale-[1.02] dark:bg-slate-800 dark:text-white dark:ring-1 dark:ring-white/10'
                   : 'text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5'

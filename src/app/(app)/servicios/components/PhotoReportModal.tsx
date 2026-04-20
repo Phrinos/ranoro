@@ -22,7 +22,7 @@ export function PhotoReportModal({ open, onOpenChange }: PhotoReportModalProps) 
             Añade, describe y elimina fotos del servicio.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-grow">
+        <ScrollArea className="grow">
             <div className="p-4">
                 <PhotoReportTab />
             </div>

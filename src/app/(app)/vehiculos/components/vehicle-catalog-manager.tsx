@@ -198,7 +198,7 @@ export function VehicleCatalogManager() {
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-full">
       
       {/* LEFT COLUMN: MAKES */}
-      <Card className="lg:col-span-1 shadow-sm border-border/50 flex flex-col h-[70vh]">
+      <Card className="lg:col-span-1 shadow-xs border-border/50 flex flex-col h-[70vh]">
         <CardHeader className="pb-4 border-b bg-muted/20">
           <CardTitle className="text-lg flex items-center gap-2">
             <Car className="w-5 h-5 text-primary" /> Marcas
@@ -249,7 +249,7 @@ export function VehicleCatalogManager() {
       </Card>
 
       {/* RIGHT COLUMN: MODELS */}
-      <Card className="lg:col-span-3 shadow-sm border-border/50 flex flex-col h-[70vh]">
+      <Card className="lg:col-span-3 shadow-xs border-border/50 flex flex-col h-[70vh]">
         {!selectedMake ? (
            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-6">
               <Settings2 className="w-16 h-16 opacity-20 mb-4" />
@@ -287,7 +287,7 @@ export function VehicleCatalogManager() {
                  <div className="flex-1 overflow-y-auto p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
                        {selectedMake.models.map((model, index) => (
-                          <div key={`${model}-${index}`} className="flex items-center justify-between p-3 border rounded-xl hover:border-slate-300 transition-colors bg-white shadow-sm">
+                          <div key={`${model}-${index}`} className="flex items-center justify-between p-3 border rounded-xl hover:border-slate-300 transition-colors bg-white shadow-xs">
                              {editingModel === model ? (
                                <div className="flex items-center gap-2 w-full">
                                   <Input 

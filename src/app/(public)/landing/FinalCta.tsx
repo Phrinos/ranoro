@@ -34,7 +34,7 @@ function FinalCta() {
     >
       <div className="pointer-events-auto bg-black/80 backdrop-blur-2xl border border-white/20 shadow-2xl rounded-full p-2 pl-6 md:pl-8 flex items-center justify-between gap-4 relative overflow-hidden">
         {/* Subtle highlight gradient inside banner */}
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-r from-primary/10 to-transparent pointer-events-none" />
 
         <div className="hidden sm:flex items-center gap-4 w-full relative z-10">
           <span className="relative flex h-3 w-3">
@@ -53,7 +53,7 @@ function FinalCta() {
         >
           <Link href="https://wa.me/524491425323?text=Hola%2C%20quisiera%20agendar%20una%20cita." target="_blank" rel="noopener noreferrer">
             <Icon icon="logos:whatsapp-icon" className="mr-3 w-6 h-6 group-hover:scale-110 transition-transform"/>
-            <span className="text-white text-base drop-shadow-sm">Agendar Ahora</span>
+            <span className="text-white text-base drop-shadow-xs">Agendar Ahora</span>
           </Link>
         </Button>
       </div>

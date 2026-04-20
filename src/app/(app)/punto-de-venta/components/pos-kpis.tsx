@@ -68,7 +68,7 @@ export function PosKpis({ kpis }: PosKpisProps) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
       {kpiConfig.map(({ key, label, icon: Icon, color, bg, iconBg, format }) => (
-        <Card key={key} className={`border ${bg} shadow-sm overflow-hidden transition-transform hover:scale-[1.02]`}>
+        <Card key={key} className={`border ${bg} shadow-xs overflow-hidden transition-transform hover:scale-[1.02]`}>
           <CardContent className="p-4">
             <div className="flex items-start justify-between mb-2">
               <div className={`${iconBg} p-1.5 rounded-lg`}>

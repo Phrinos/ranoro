@@ -73,7 +73,7 @@ export function TableToolbar({
       <div className="flex flex-col sm:flex-row items-center gap-2">
         {/* Search Input */}
         {onSearchTermChange && (
-          <div className="relative w-full flex-grow">
+          <div className="relative w-full grow">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={searchPlaceholder}
@@ -84,7 +84,7 @@ export function TableToolbar({
           </div>
         )}
         {actions && (
-          <div className="w-full sm:w-auto flex-shrink-0">
+          <div className="w-full sm:w-auto shrink-0">
             {actions}
           </div>
         )}

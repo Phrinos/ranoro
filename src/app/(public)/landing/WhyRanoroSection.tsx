@@ -30,7 +30,7 @@ const benefits = [
 export function WhyRanoroSection() {
     return (
         <section id="why-ranoro" className="relative py-24 md:py-32 bg-white overflow-hidden">
-            <div className="absolute inset-0 bg-grid-slate-100/[0.04] bg-[bottom_1px_center] opacity-20" />
+            <div className="absolute inset-0 bg-grid-slate-100/[0.04] bg-position-[bottom_1px_center] opacity-20" />
             
             <div className="container relative mx-auto px-4 sm:px-6 lg:px-8">
                 <AnimatedDiv className="text-center max-w-3xl mx-auto mb-20">
@@ -48,9 +48,9 @@ export function WhyRanoroSection() {
                             <motion.div 
                               whileHover={{ y: -8 }}
                               transition={{ type: "spring", stiffness: 300 }}
-                              className="group h-full bg-slate-50 hover:bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 text-center flex flex-col items-center"
+                              className="group h-full bg-slate-50 hover:bg-white p-8 rounded-4xl border border-slate-100 shadow-xs hover:shadow-xl transition-all duration-300 text-center flex flex-col items-center"
                             >
-                                <div className="mb-6 h-20 w-20 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
+                                <div className="mb-6 h-20 w-20 rounded-2xl bg-white shadow-xs border border-slate-100 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
                                     <Icon icon={benefit.icon} className="h-10 w-10"/>
                                 </div>
                                 <h4 className="font-bold text-xl text-slate-900 mb-3">{benefit.title}</h4>

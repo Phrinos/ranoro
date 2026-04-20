@@ -57,7 +57,7 @@ export function FacturapiConfigTab() {
   };
 
   return (
-    <Card className="shadow-sm max-w-2xl">
+    <Card className="shadow-xs max-w-2xl">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <KeyRound className="h-5 w-5 text-primary" />

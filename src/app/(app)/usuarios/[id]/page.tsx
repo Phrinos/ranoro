@@ -133,7 +133,7 @@ export default function UsuarioDetailPage() {
       {/* Archive actions */}
       {!isNew && targetUser && (
         <div className="flex justify-between items-center">
-          <Button variant={targetUser.isArchived ? "secondary" : "outline"} onClick={() => handleArchive(!targetUser.isArchived)}>
+          <Button variant={targetUser.isArchived ? "secondary" : "outline-solid"} onClick={() => handleArchive(!targetUser.isArchived)}>
             {targetUser.isArchived ? <><ArchiveRestore className="mr-2 h-4 w-4" />Restaurar</> : <><Archive className="mr-2 h-4 w-4" />Archivar</>}
           </Button>
           <Button type="submit" form="user-detail-form">Guardar Cambios</Button>
@@ -146,7 +146,7 @@ export default function UsuarioDetailPage() {
       )}
 
       {/* Form */}
-      <div className="bg-card border rounded-2xl shadow-sm p-6 md:p-8">
+      <div className="bg-card border rounded-2xl shadow-xs p-6 md:p-8">
         <UserForm
           id="user-detail-form"
           initialData={targetUser}

@@ -91,7 +91,7 @@ function ActionRow({ icon: Icon, title, description, actionId, accentColor, load
   return (
     <div className={cn(
       "rounded-xl border bg-white/60 transition-all duration-200",
-      isRunning ? "shadow-md ring-1 ring-inset ring-current/10" : "shadow-sm",
+      isRunning ? "shadow-md ring-1 ring-inset ring-current/10" : "shadow-xs",
     )}>
       {/* Main row */}
       <div className="flex items-center gap-3 px-4 py-3">
@@ -399,7 +399,7 @@ export function ConfigMantenimientoPageContent() {
     <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500 py-2">
 
       {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 px-6 py-5 shadow-xl">
+      <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 px-6 py-5 shadow-xl">
         {/* Decorative circles */}
         <div className="absolute -top-8 -right-8 h-32 w-32 rounded-full bg-white/5" />
         <div className="absolute -bottom-4 -right-4 h-20 w-20 rounded-full bg-white/5" />
@@ -455,7 +455,7 @@ export function ConfigMantenimientoPageContent() {
           title="Fechas y Cronología"
           accentColor="blue"
           borderColor="ring-blue-100"
-          headerGradient="bg-gradient-to-r from-blue-600 to-blue-500"
+          headerGradient="bg-linear-to-r from-blue-600 to-blue-500"
           count={2}
         >
           <ActionRow
@@ -486,7 +486,7 @@ export function ConfigMantenimientoPageContent() {
           title="Integridad Flotilla"
           accentColor="orange"
           borderColor="ring-orange-100"
-          headerGradient="bg-gradient-to-r from-orange-500 to-amber-500"
+          headerGradient="bg-linear-to-r from-orange-500 to-amber-500"
           count={2}
         >
           <ActionRow
@@ -517,7 +517,7 @@ export function ConfigMantenimientoPageContent() {
           title="Inventario y Finanzas"
           accentColor="emerald"
           borderColor="ring-emerald-100"
-          headerGradient="bg-gradient-to-r from-emerald-600 to-teal-500"
+          headerGradient="bg-linear-to-r from-emerald-600 to-teal-500"
           count={2}
         >
           <ActionRow
@@ -548,7 +548,7 @@ export function ConfigMantenimientoPageContent() {
           title="Validaciones Fiscales"
           accentColor="purple"
           borderColor="ring-purple-100"
-          headerGradient="bg-gradient-to-r from-purple-600 to-violet-500"
+          headerGradient="bg-linear-to-r from-purple-600 to-violet-500"
           count={1}
         >
           <ActionRow

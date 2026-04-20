@@ -77,7 +77,7 @@ export function AppointmentCard({
   return (
     <Card
       className={cn(
-        "overflow-hidden border shadow-sm transition-all hover:shadow-md",
+        "overflow-hidden border shadow-xs transition-all hover:shadow-md",
         isCancelled && "opacity-60"
       )}
     >
@@ -109,7 +109,7 @@ export function AppointmentCard({
           </div>
 
           {/* ── Col 2: Vehículo / Propietario ── */}
-          <div className="p-4 flex flex-col justify-center flex-[2] min-w-0 space-y-1.5">
+          <div className="p-4 flex flex-col justify-center flex-2 min-w-0 space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
               <Car className="h-4 w-4 text-primary shrink-0" />
               <span className="font-mono font-bold text-base text-foreground">

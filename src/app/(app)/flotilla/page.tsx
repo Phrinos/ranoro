@@ -137,7 +137,7 @@ function FlotillaPage() {
     <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
       {activeTab === "balance" && (
         <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-[160px] h-9 bg-white shadow-sm border-slate-200 text-sm font-medium">
+          <SelectTrigger className="w-[160px] h-9 bg-white shadow-xs border-slate-200 text-sm font-medium">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -148,7 +148,7 @@ function FlotillaPage() {
       {canManageRentals && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="sm" className="bg-zinc-900 hover:bg-zinc-800 text-white font-semibold shadow-sm gap-2 border border-zinc-700 h-9">
+            <Button size="sm" className="bg-zinc-900 hover:bg-zinc-800 text-white font-semibold shadow-xs gap-2 border border-zinc-700 h-9">
               Acciones Rápidas <ChevronDown className="h-3.5 w-3.5 opacity-70" />
             </Button>
           </DropdownMenuTrigger>

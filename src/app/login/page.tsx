@@ -52,9 +52,9 @@ function LoginPageContent() {
     <div className="flex min-h-screen bg-slate-50 w-full overflow-hidden">
       
       {/* Lado Izquierdo - Imagen Decorativa */}
-      <div className="relative hidden w-1/2 lg:block flex-shrink-0">
+      <div className="relative hidden w-1/2 lg:block shrink-0">
         <div className="absolute inset-0 bg-black/10 z-10" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent z-10" />
         <Image
           src="/ranoro1.jpg"
           alt="Taller Mecánico y Flotilla"
@@ -107,7 +107,7 @@ function LoginPageContent() {
               variant="outline" 
               onClick={handleGoogleLogin} 
               disabled={isLoading}
-              className="w-full h-14 bg-white border border-slate-200 shadow-sm hover:shadow-md hover:bg-slate-50 text-slate-700 font-semibold gap-3 text-base transition-all duration-300"
+              className="w-full h-14 bg-white border border-slate-200 shadow-xs hover:shadow-md hover:bg-slate-50 text-slate-700 font-semibold gap-3 text-base transition-all duration-300"
             >
               {isLoading ? (
                 <Loader2 className="w-5 h-5 animate-spin text-slate-400" />

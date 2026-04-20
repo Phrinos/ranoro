@@ -43,11 +43,11 @@ const matchByIdOrName = (user: User, id?: string | null, name?: string | null) =
   return false;
 };
 
-const getRoleBadgeVariant = (role: string): "default" | "secondary" | "outline" => {
+const getRoleBadgeVariant = (role: string): "default" | "secondary" | "outline-solid" => {
   const lowerCaseRole = (role || '').toLowerCase();
   if (lowerCaseRole.includes('asesor')) return 'default';
   if (lowerCaseRole.includes('tecnico') || lowerCaseRole.includes('técnico')) return 'secondary';
-  return 'outline';
+  return 'outline-solid';
 };
 
 const generateMonthOptions = () => {
@@ -153,7 +153,7 @@ export default function ComisionesContent({ allServices, allUsers }: ComisionesC
         </CardHeader>
         <CardContent className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {performanceData.length > 0 ? performanceData.map(person => (
-            <Card key={person.id} className="shadow-sm overflow-hidden border-border/50">
+            <Card key={person.id} className="shadow-xs overflow-hidden border-border/50">
               <CardHeader className="pb-3 border-b border-border/50 bg-muted/20">
                 <div className="flex justify-between items-start gap-2">
                   <CardTitle className="text-lg flex items-center gap-2">

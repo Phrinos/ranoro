@@ -107,7 +107,7 @@ export function AppointmentScheduler({ open, onOpenChange, onConfirm }: Appointm
                         {availableTimes.map((time, index) => (
                              <Button
                                 key={index}
-                                variant={selectedTime?.hours === time.hours ? "default" : "outline"}
+                                variant={selectedTime?.hours === time.hours ? "default" : "outline-solid"}
                                 onClick={() => setSelectedTime(time)}
                                 className="w-full"
                             >

@@ -40,7 +40,7 @@ const PopoverContent = React.forwardRef<
         }}
         className={cn(
           // z alto para estar arriba de Dialog overlay y otras capas
-          "z-[80] min-w-[12rem] rounded-2xl border bg-popover/95 text-popover-foreground shadow-xl backdrop-blur-md outline-none",
+          "z-80 min-w-48 rounded-2xl border bg-popover/95 text-popover-foreground shadow-xl backdrop-blur-md outline-hidden",
           "p-1",
           "data-[state=open]:animate-in data-[state=closed]:animate-out",
           "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",

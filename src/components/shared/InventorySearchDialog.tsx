@@ -119,9 +119,9 @@ export function InventorySearchDialog({
           <Command
             shouldFilter={false}
             className={cn(
-              "rounded-lg border bg-white shadow-sm overflow-hidden",
-              "[&_[cmdk-input-wrapper]]:px-3 [&_[cmdk-input-wrapper]]:h-12",
-              "[&_[cmdk-input]]:text-sm [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-3"
+              "rounded-lg border bg-white shadow-xs overflow-hidden",
+              "**:[[cmdk-input-wrapper]]:px-3 **:[[cmdk-input-wrapper]]:h-12",
+              "**:[[cmdk-input]]:text-sm **:[[cmdk-item]]:px-3 **:[[cmdk-item]]:py-3"
             )}
           >
             <div className="flex items-center border-b px-3" cmdk-input-wrapper="">
@@ -130,7 +130,7 @@ export function InventorySearchDialog({
                 placeholder="Escribe al menos 3 caracteres (nombre, SKU, categoría...)"
                 value={searchTerm}
                 onValueChange={setSearchTerm}
-                className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
 
@@ -181,7 +181,7 @@ export function InventorySearchDialog({
                         key={item.id}
                         value={valueForCmdk}
                         onSelect={() => handleSelect(item)}
-                        className="flex flex-col items-start gap-1.5 cursor-pointer border-b last:border-0 hover:bg-muted/50 data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto p-3"
+                        className="flex flex-col items-start gap-1.5 cursor-pointer border-b last:border-0 hover:bg-muted/50 data-disabled:opacity-100 data-disabled:pointer-events-auto p-3"
                       >
                         <div className="flex items-center justify-between w-full gap-4">
                           <div className="flex items-center gap-3 min-w-0">

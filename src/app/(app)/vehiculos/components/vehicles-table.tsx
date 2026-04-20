@@ -240,11 +240,11 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
         ].map(({ label, value, icon: Icon, cls, onClick }) => (
           <Card
             key={label}
-            className={cn("cursor-pointer transition-all hover:scale-[1.02] shadow-sm border", cls)}
+            className={cn("cursor-pointer transition-all hover:scale-[1.02] shadow-xs border", cls)}
             onClick={onClick}
           >
             <CardContent className="p-4 flex items-center gap-3">
-              <div className="shrink-0 rounded-xl bg-white/60 p-2 shadow-sm">
+              <div className="shrink-0 rounded-xl bg-white/60 p-2 shadow-xs">
                 <Icon className="h-5 w-5 opacity-80" />
               </div>
               <div className="min-w-0">
@@ -263,7 +263,7 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
 
           {/* Make selector */}
           <Select value={filterMake} onValueChange={v => { setFilterMake(v); setFilterModel('all'); }}>
-            <SelectTrigger className="h-10 w-full sm:w-44 bg-white shadow-sm border-slate-200 rounded-xl text-sm shrink-0">
+            <SelectTrigger className="h-10 w-full sm:w-44 bg-white shadow-xs border-slate-200 rounded-xl text-sm shrink-0">
               <SelectValue placeholder="Todas las Marcas" />
             </SelectTrigger>
             <SelectContent>
@@ -274,7 +274,7 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
 
           {/* Model selector */}
           <Select value={filterModel} onValueChange={setFilterModel} disabled={filterMake === 'all'}>
-            <SelectTrigger className="h-10 w-full sm:w-44 bg-white shadow-sm border-slate-200 rounded-xl text-sm shrink-0">
+            <SelectTrigger className="h-10 w-full sm:w-44 bg-white shadow-xs border-slate-200 rounded-xl text-sm shrink-0">
               <SelectValue placeholder="Todos los Modelos" />
             </SelectTrigger>
             <SelectContent>
@@ -290,7 +290,7 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
               placeholder="Buscar por placa, nombre, modelo…"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="h-10 pl-10 pr-9 bg-white shadow-sm border-slate-200 rounded-xl focus-visible:ring-primary/20"
+              className="h-10 pl-10 pr-9 bg-white shadow-xs border-slate-200 rounded-xl focus-visible:ring-primary/20"
             />
             {searchTerm && (
               <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors">
@@ -301,7 +301,7 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
 
           {/* New Vehicle button */}
           {permissions.has('vehicles:manage') && (
-            <Button onClick={onAdd} className="h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-sm gap-2 font-bold shrink-0">
+            <Button onClick={onAdd} className="h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-xs gap-2 font-bold shrink-0">
               <PlusCircle className="h-4 w-4" /> Nuevo Vehículo
             </Button>
           )}
@@ -317,7 +317,7 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
               className={cn(
                 "h-7 px-3.5 rounded-full text-[11px] font-bold transition-all whitespace-nowrap border uppercase tracking-wider",
                 quickFilter === id
-                  ? "bg-slate-800 text-white border-slate-800 shadow-sm"
+                  ? "bg-slate-800 text-white border-slate-800 shadow-xs"
                   : "bg-white text-slate-500 border-slate-200 hover:bg-slate-100 hover:text-slate-800"
               )}
             >
@@ -339,7 +339,7 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
       </div>
 
       {/* ── Table & Cards ────────────────────────────────────────── */}
-      <div className="rounded-xl md:rounded-2xl overflow-hidden shadow-sm md:shadow-xl bg-white/50 backdrop-blur-xl border border-white/60">
+      <div className="rounded-xl md:rounded-2xl overflow-hidden shadow-xs md:shadow-xl bg-white/50 backdrop-blur-xl border border-white/60">
         
         {/* Desktop Table View */}
         <div className="hidden md:block overflow-x-auto">
@@ -428,7 +428,7 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-slate-600 hover:text-slate-900 bg-white border border-slate-200 shadow-sm hover:bg-slate-50 transition-all rounded-full"
+                              className="h-8 w-8 text-slate-600 hover:text-slate-900 bg-white border border-slate-200 shadow-xs hover:bg-slate-50 transition-all rounded-full"
                             >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>

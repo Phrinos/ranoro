@@ -95,11 +95,11 @@ function DriverProfilePage() {
   return (
     <div className="space-y-6">
       {/* ── Hero Header */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-5 sm:p-6 shadow-xl">
+      <div className="relative rounded-2xl overflow-hidden bg-linear-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-5 sm:p-6 shadow-xl">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "20px 20px" }} />
         <div className="relative flex flex-col sm:flex-row sm:items-start gap-4">
           <div className={cn("h-16 w-16 rounded-2xl flex items-center justify-center text-2xl font-black text-white shadow-lg shrink-0",
-            isInactive ? "bg-zinc-600" : "bg-gradient-to-br from-indigo-500 to-purple-600"
+            isInactive ? "bg-zinc-600" : "bg-linear-to-br from-indigo-500 to-purple-600"
           )}>
             {driver.name.charAt(0).toUpperCase()}
           </div>
@@ -170,8 +170,8 @@ function DriverProfilePage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <div className="lg:col-span-2 space-y-5">
               {/* Contact info */}
-              <div className="relative rounded-2xl overflow-hidden border border-zinc-200/80 bg-white shadow-sm">
-                <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/40 to-purple-50/20 pointer-events-none" />
+              <div className="relative rounded-2xl overflow-hidden border border-zinc-200/80 bg-white shadow-xs">
+                <div className="absolute inset-0 bg-linear-to-br from-indigo-50/40 to-purple-50/20 pointer-events-none" />
                 <div className="relative p-5">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
@@ -207,8 +207,8 @@ function DriverProfilePage() {
               </div>
 
               {/* Financial info */}
-              <div className="relative rounded-2xl overflow-hidden border border-zinc-200/80 bg-white shadow-sm">
-                <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/40 to-teal-50/20 pointer-events-none" />
+              <div className="relative rounded-2xl overflow-hidden border border-zinc-200/80 bg-white shadow-xs">
+                <div className="absolute inset-0 bg-linear-to-br from-emerald-50/40 to-teal-50/20 pointer-events-none" />
                 <div className="relative p-5">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
@@ -246,8 +246,8 @@ function DriverProfilePage() {
             {/* Right: vehicle + contract */}
             <div className="space-y-5">
               {/* Vehicle card */}
-              <div className={cn("relative rounded-2xl overflow-hidden border shadow-sm",
-                vehicle ? "border-indigo-200/60 bg-gradient-to-br from-indigo-900 via-purple-900 to-indigo-900" : "border-zinc-200 bg-zinc-50"
+              <div className={cn("relative rounded-2xl overflow-hidden border shadow-xs",
+                vehicle ? "border-indigo-200/60 bg-linear-to-br from-indigo-900 via-purple-900 to-indigo-900" : "border-zinc-200 bg-zinc-50"
               )}>
                 {vehicle && <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "24px 24px" }} />}
                 <div className="relative p-5">

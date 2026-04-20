@@ -150,10 +150,10 @@ export default function DashboardPage() {
       <div className="container mx-auto py-6 sm:py-8 flex flex-col space-y-8 animate-in fade-in duration-500">
         
         {/* HERO SECTION */}
-        <div className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 sm:p-10 text-white shadow-xl">
+        <div className="relative overflow-hidden rounded-4xl bg-linear-to-br from-slate-900 via-slate-800 to-slate-900 p-8 sm:p-10 text-white shadow-xl">
           <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
             <div className="space-y-3">
-              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+              <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl bg-clip-text text-transparent bg-linear-to-r from-white to-white/70">
                 {userName ? `¡Hola, ${userName.split(' ')[0]}!` : 'Panel Principal'}
               </h1>
               <p className="text-slate-300 max-w-lg text-sm sm:text-base leading-relaxed">
@@ -282,7 +282,7 @@ export default function DashboardPage() {
         </div>
         
         {/* CHARTS CONTAINER */}
-        <div className="rounded-2xl border bg-card text-card-foreground shadow-sm">
+        <div className="rounded-2xl border bg-card text-card-foreground shadow-xs">
           {isLoading ? (
             <div className="flex h-[400px] w-full flex-col items-center justify-center space-y-4 text-muted-foreground">
               <Loader2 className="h-10 w-10 animate-spin text-primary/50" />

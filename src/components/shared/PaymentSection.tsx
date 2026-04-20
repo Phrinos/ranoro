@@ -98,7 +98,7 @@ export function PaymentSection({
                                 control={control}
                                 name={`payments.${index}.amount`}
                                 render={({ field: formField }) => (
-                                <FormItem className="flex-grow">
+                                <FormItem className="grow">
                                     <div className="relative">
                                     <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                     <FormControl>
@@ -204,7 +204,7 @@ export function PaymentSection({
                                 control={control}
                                 name={`payments.${index}.folio`}
                                 render={({ field: formField }) => (
-                                    <FormItem className="flex-grow">
+                                    <FormItem className="grow">
                                     <FormControl>
                                         <div className="relative">
                                         <Input

@@ -134,7 +134,7 @@ export function SalesTab({ sales }: Props) {
             { label: "Total del período", value: formatCurrency(kpis.total), color: "text-emerald-600" },
             { label: "Ticket promedio", value: formatCurrency(kpis.avg) },
           ].map(({ label, value, color }) => (
-            <Card key={label} className="shadow-sm">
+            <Card key={label} className="shadow-xs">
               <CardContent className="p-4">
                 <p className={cn("text-xl font-black", color)}>{value}</p>
                 <p className="text-[11px] text-muted-foreground uppercase tracking-wide mt-0.5">{label}</p>

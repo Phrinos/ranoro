@@ -185,7 +185,7 @@ export function CorteDiarioTab({ cashTransactions, dailyCuts }: Props) {
             { label: "Egresos", value: breakdown.expenses, color: "text-red-600", icon: TrendingDown, bg: "bg-red-50 border-red-200" },
             { label: "Neto del Día", value: breakdown.net, color: breakdown.net >= 0 ? "text-emerald-600" : "text-red-600", icon: Minus, bg: breakdown.net >= 0 ? "bg-emerald-50 border-emerald-200" : "bg-red-50 border-red-200" },
           ].map(({ label, value, color, icon: Icon, bg }) => (
-            <Card key={label} className={`border ${bg} shadow-sm`}>
+            <Card key={label} className={`border ${bg} shadow-xs`}>
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
                   <p className={cn("text-2xl font-black", color)}>{formatCurrency(value)}</p>

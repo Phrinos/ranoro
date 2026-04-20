@@ -94,7 +94,7 @@ function VehicleProfilePage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-indigo-950 via-indigo-900 to-purple-900 p-5 sm:p-6 shadow-xl">
+      <div className="relative rounded-2xl overflow-hidden bg-linear-to-br from-indigo-950 via-indigo-900 to-purple-900 p-5 sm:p-6 shadow-xl">
         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "20px 20px" }} />
         <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="h-16 w-16 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
@@ -199,7 +199,7 @@ function VehicleProfilePage() {
                 {assignedDriver ? (
                   <div className="space-y-3">
                     <div className="flex items-center gap-3 bg-muted/50 rounded-lg p-3">
-                      <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-sm">
+                      <div className="h-9 w-9 rounded-full bg-linear-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-sm">
                         {assignedDriver.name.charAt(0)}
                       </div>
                       <div>

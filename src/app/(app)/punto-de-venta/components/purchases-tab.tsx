@@ -116,7 +116,7 @@ export function PurchasesTab({ purchases, payables, suppliers, items, categories
             { label: "Total comprado", value: formatCurrency(kpis.total), color: "text-red-600" },
             { label: "Crédito pendiente", value: formatCurrency(kpis.pendingDebt), color: kpis.pendingDebt > 0 ? "text-amber-600" : "text-emerald-600" },
           ].map(({ label, value, color }) => (
-            <Card key={label} className="shadow-sm">
+            <Card key={label} className="shadow-xs">
               <CardContent className="p-4">
                 <p className={`text-xl font-black ${color}`}>{value}</p>
                 <p className="text-[11px] text-muted-foreground uppercase tracking-wide mt-0.5">{label}</p>
@@ -185,7 +185,7 @@ export function PurchasesTab({ purchases, payables, suppliers, items, categories
                         <TableCell className="font-medium text-sm">{p.supplierName}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{p.items?.length ?? 0} artículos</TableCell>
                         <TableCell>
-                          <Badge variant={isCredit ? "outline" : "secondary"} className={cn("text-[11px]", isCredit && "border-amber-400 text-amber-700")}>
+                          <Badge variant={isCredit ? "outline-solid" : "secondary"} className={cn("text-[11px]", isCredit && "border-amber-400 text-amber-700")}>
                             {p.paymentMethod}
                           </Badge>
                         </TableCell>

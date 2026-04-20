@@ -176,7 +176,7 @@ export function ReceiptModal({
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Compartir</label>
                 <Button
                   onClick={handleWhatsApp}
-                  className="w-full h-11 bg-[#25D366] hover:bg-[#1ebe57] text-white gap-2 shadow-sm"
+                  className="w-full h-11 bg-[#25D366] hover:bg-[#1ebe57] text-white gap-2 shadow-xs"
                 >
                   <Icon icon="logos:whatsapp-icon" className="h-5 w-5" />
                   {isMobile ? "Enviar por WhatsApp" : "Enviar al Conductor"}

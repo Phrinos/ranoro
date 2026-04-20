@@ -24,8 +24,8 @@ export const InfoGeneralCard: React.FC<InfoGeneralCardProps> = ({
   const { control } = useFormContext();
 
   return (
-    <Card className="overflow-hidden border-border/50 shadow-sm transition-all hover:shadow-md">
-      <CardHeader className="bg-gradient-to-r from-muted/50 to-muted/10 border-b border-border/50 pb-6">
+    <Card className="overflow-hidden border-border/50 shadow-xs transition-all hover:shadow-md">
+      <CardHeader className="bg-linear-to-r from-muted/50 to-muted/10 border-b border-border/50 pb-6">
         <CardTitle className="text-xl flex items-center gap-2">
           <Building2 className="h-5 w-5 text-primary" />
           Perfil del Taller
@@ -36,7 +36,7 @@ export const InfoGeneralCard: React.FC<InfoGeneralCardProps> = ({
       <CardContent className="space-y-6 pt-6">
         {/* LOGO SECTION */}
         <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start p-4 rounded-xl border border-dashed border-border/60 bg-muted/20">
-          <div className="w-32 h-32 flex-shrink-0 bg-white dark:bg-black rounded-2xl flex items-center justify-center border shadow-sm relative overflow-hidden group">
+          <div className="w-32 h-32 shrink-0 bg-white dark:bg-black rounded-2xl flex items-center justify-center border shadow-xs relative overflow-hidden group">
             {watchedLogoUrl ? (
               <Image src={watchedLogoUrl} alt="Logo del Taller" fill style={{ objectFit: 'contain', padding: '8px' }} sizes="128px" className="transition-transform group-hover:scale-105 duration-300" />
             ) : (

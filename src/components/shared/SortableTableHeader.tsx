@@ -42,7 +42,7 @@ export const SortableTableHeader: React.FC<SortableTableHeaderProps> = ({
         type="button"
         onClick={() => onSort(sortKey)}
         className={cn(
-          "inline-flex items-center gap-1.5 outline-none",
+          "inline-flex items-center gap-1.5 outline-hidden",
           "no-underline [text-decoration:none]",
           "rounded hover:opacity-80 focus-visible:ring-2 focus-visible:ring-primary/40",
           "transition-opacity"

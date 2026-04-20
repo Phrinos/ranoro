@@ -45,7 +45,7 @@ export function UnifiedPreviewDialog({
           </DialogDescription>
         </DialogHeader>
         <div className={cn(
-          "printable-content flex-grow overflow-y-auto px-6 bg-muted/30 pb-6 print:bg-white print:p-0",
+          "printable-content grow overflow-y-auto px-6 bg-muted/30 pb-6 print:bg-white print:p-0",
           isTicket && "flex justify-center" // Center the ticket within the scroll area
         )}>
           <div className={cn(
@@ -56,7 +56,7 @@ export function UnifiedPreviewDialog({
           </div>
         </div>
         {footerContent && (
-            <DialogFooter className="p-4 border-t flex-shrink-0 bg-background sm:justify-end no-print">
+            <DialogFooter className="p-4 border-t shrink-0 bg-background sm:justify-end no-print">
                 {footerContent}
             </DialogFooter>
         )}

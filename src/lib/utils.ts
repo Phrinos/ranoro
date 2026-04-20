@@ -101,7 +101,7 @@ export function getStatusInfo(status: string, subStatus?: ServiceSubStatus) {
         case 'Cancelado':
             return { color: 'destructive', icon: XCircle, label: 'Cancelado' };
         case 'Cotizacion':
-            return { color: 'outline', icon: AlertCircle, label: 'Cotización' };
+            return { color: 'outline-solid', icon: AlertCircle, label: 'Cotización' };
         default:
             return { color: 'secondary', icon: AlertCircle, label: 'Desconocido' };
     }

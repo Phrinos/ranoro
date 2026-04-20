@@ -66,7 +66,7 @@ export function VehiclesList({ fleetData, canManage }: VehiclesListProps) {
               <div className="group relative rounded-xl border bg-card p-4 hover:shadow-md hover:border-primary/40 transition-all cursor-pointer">
                 {/* Plate + make */}
                 <div className="flex items-start gap-3 mb-3">
-                  <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-indigo-900 to-purple-900 flex items-center justify-center shrink-0">
+                  <div className="h-10 w-10 rounded-lg bg-linear-to-br from-indigo-900 to-purple-900 flex items-center justify-center shrink-0">
                     <Car className="h-5 w-5 text-white" />
                   </div>
                   <div>

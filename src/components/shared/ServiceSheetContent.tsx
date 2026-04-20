@@ -117,7 +117,7 @@ const SheetHeader = React.memo(
             <div className="text-2xl font-black text-slate-800 tracking-tighter">RANORO</div>
           )}
         </div>
-        <div className="text-left sm:text-right bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100 flex flex-col items-start sm:items-end">
+        <div className="text-left sm:text-right bg-white px-4 py-2 rounded-xl shadow-xs border border-slate-100 flex flex-col items-start sm:items-end">
           <p className="text-xs uppercase tracking-widest text-slate-400 font-bold mb-0.5">Orden de Servicio</p>
           <p className="font-black text-xl text-slate-800 leading-none">
             {service.folio || service.id?.slice(-8).toUpperCase()}
@@ -179,7 +179,7 @@ const ClientInfo = React.memo(
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-start gap-4 transition-all hover:shadow-md">
+        <div className="bg-white rounded-2xl p-5 shadow-xs border border-slate-100 flex items-start gap-4 transition-all hover:shadow-md">
           <div className="bg-slate-50 p-3 rounded-full text-slate-400 shrink-0 border border-slate-100">
             <User className="w-6 h-6" />
           </div>
@@ -198,7 +198,7 @@ const ClientInfo = React.memo(
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex items-start gap-4 transition-all hover:shadow-md">
+        <div className="bg-white rounded-2xl p-5 shadow-xs border border-slate-100 flex items-start gap-4 transition-all hover:shadow-md">
           <div className="bg-slate-50 p-3 rounded-full text-slate-400 shrink-0 border border-slate-100">
             <CarIcon className="w-6 h-6" />
           </div>
@@ -355,9 +355,9 @@ const StatusCard = React.memo(
 
     return (
       <>
-        <div className={cn("rounded-2xl p-6 md:p-8 text-center shadow-sm border overflow-hidden relative", statusInfo.cardClass)}>
+        <div className={cn("rounded-2xl p-6 md:p-8 text-center shadow-xs border overflow-hidden relative", statusInfo.cardClass)}>
           {/* Subtle gradient styling */}
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-current to-transparent opacity-20" />
+          <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-current to-transparent opacity-20" />
           
           <div className="relative z-10">
              <h2 className={cn("text-sm md:text-base font-black tracking-widest uppercase mb-1", statusInfo.titleClass)}>
@@ -370,7 +370,7 @@ const StatusCard = React.memo(
              )}
              {statusInfo.badge && (
                <div className="mt-4 inline-block">
-                 <Badge variant={statusInfo.badge.variant as any} className="text-sm px-4 py-1.5 shadow-sm">
+                 <Badge variant={statusInfo.badge.variant as any} className="text-sm px-4 py-1.5 shadow-xs">
                    {statusInfo.badge.text}
                  </Badge>
                </div>
@@ -407,7 +407,7 @@ const StatusCard = React.memo(
           </div>
         )}
         {shouldShowNextService && (
-          <div className="mt-4 bg-gradient-to-r from-red-50 to-white border border-red-100 rounded-2xl p-5 text-center shadow-sm relative overflow-hidden">
+          <div className="mt-4 bg-linear-to-r from-red-50 to-white border border-red-100 rounded-2xl p-5 text-center shadow-xs relative overflow-hidden">
              <div className="absolute top-0 left-0 w-1 bg-red-500 h-full" />
              <div className="flex items-center justify-center gap-2 text-red-600 mb-1">
                <CalendarCheck className="h-5 w-5" />
@@ -441,10 +441,10 @@ const SheetFooter = React.memo(
     advisorSignature?: string | null;
   }) => (
     <div className="space-y-4">
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-100">
+      <div className="bg-white rounded-3xl shadow-xs border border-slate-100">
         <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div className="flex flex-col items-center text-center">
-            <div className="relative w-40 h-16 flex-shrink-0">
+            <div className="relative w-40 h-16 shrink-0">
               {advisorSignature && (
                 <Image
                   src={normalizeDataUrl(advisorSignature)}
@@ -478,7 +478,7 @@ const SheetFooter = React.memo(
               >
                 <Button
                   variant="outline"
-                  className="mt-3 bg-white text-slate-700 hover:bg-slate-50 border-slate-200 rounded-full shadow-sm"
+                  className="mt-3 bg-white text-slate-700 hover:bg-slate-50 border-slate-200 rounded-full shadow-xs"
                 >
                   <Icon icon="logos:whatsapp-icon" className="h-5 w-5 mr-2" />
                   Contactar Asesor
@@ -488,7 +488,7 @@ const SheetFooter = React.memo(
           </div>
         </div>
       </div>
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-100">
+      <div className="bg-white rounded-3xl shadow-xs border border-slate-100">
         <div className="p-6 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <a
@@ -543,7 +543,7 @@ const SheetFooter = React.memo(
 SheetFooter.displayName = "SheetFooter";
 
 const SignatureActionCard = ({ onSignClick }: { onSignClick: () => void }) => (
-  <div className="bg-gradient-to-r from-red-600 to-red-500 rounded-2xl shadow-md border-0 overflow-hidden mb-8 relative">
+  <div className="bg-linear-to-r from-red-600 to-red-500 rounded-2xl shadow-md border-0 overflow-hidden mb-8 relative">
      <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
         <Signature className="w-32 h-32 text-white transform rotate-12" />
      </div>
@@ -554,7 +554,7 @@ const SignatureActionCard = ({ onSignClick }: { onSignClick: () => void }) => (
            Tu vehículo ya está en taller. Por favor autoriza la orden de trabajo para que nuestros mecánicos puedan comenzar de inmediato.
          </p>
       </div>
-      <Button onClick={onSignClick} variant="secondary" size="lg" className="w-full sm:w-auto flex-shrink-0 bg-white text-red-600 hover:bg-slate-50 rounded-xl font-bold shadow-sm">
+      <Button onClick={onSignClick} variant="secondary" size="lg" className="w-full sm:w-auto shrink-0 bg-white text-red-600 hover:bg-slate-50 rounded-xl font-bold shadow-xs">
         <Signature className="mr-2 h-5 w-5" />
         Firmar y Autorizar
       </Button>
@@ -713,14 +713,14 @@ export const ServiceSheetContent = React.forwardRef<
             <div className="flex justify-center mb-8">
                <TabsList className="bg-slate-200/50 p-1.5 rounded-full inline-flex max-w-full overflow-x-auto scrollbar-hide shadow-inner border border-slate-200/50">
                  {tabs.map((tab) => (
-                   <TabsTrigger key={tab.value} value={tab.value} className="rounded-full px-5 py-2 text-sm font-semibold text-slate-500 data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-sm transition-all whitespace-nowrap">
+                   <TabsTrigger key={tab.value} value={tab.value} className="rounded-full px-5 py-2 text-sm font-semibold text-slate-500 data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-xs transition-all whitespace-nowrap">
                      {tab.label}
                    </TabsTrigger>
                  ))}
                </TabsList>
             </div>
             {tabs.map((tab) => (
-              <TabsContent key={tab.value} value={tab.value} className="mt-0 outline-none animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <TabsContent key={tab.value} value={tab.value} className="mt-0 outline-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
                 {tab.content}
               </TabsContent>
             ))}
@@ -773,7 +773,7 @@ function ServiceOrderTab({
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-xs border border-slate-100 overflow-hidden">
         <div className="bg-slate-50 border-b border-slate-100 px-6 py-5 flex items-center justify-between">
            <h3 className="font-bold text-slate-800 flex items-center gap-2">
              <Receipt className="w-5 h-5 text-slate-400" />
@@ -835,12 +835,12 @@ function ServiceOrderTab({
         {service.status === "Entregado" && (
           <div className="bg-white border-t border-slate-100 px-6 py-4 flex flex-col sm:flex-row justify-end items-center gap-3">
             {onShowTicketClick && (
-              <Button onClick={onShowTicketClick} variant="outline" className="w-full sm:w-auto rounded-xl shadow-sm border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold">
+              <Button onClick={onShowTicketClick} variant="outline" className="w-full sm:w-auto rounded-xl shadow-xs border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold">
                 <Receipt className="mr-2 h-4 w-4 text-slate-400" />
                 Ticket de Servicio
               </Button>
             )}
-            <Button asChild className="w-full sm:w-auto rounded-xl shadow-sm bg-slate-800 hover:bg-slate-900 text-white font-semibold">
+            <Button asChild className="w-full sm:w-auto rounded-xl shadow-xs bg-slate-800 hover:bg-slate-900 text-white font-semibold">
               <Link href={`/facturar?folio=${service.folio || service.id}&total=${totalCost}`} target="_blank">
                 <FileJson className="mr-2 h-4 w-4" />
                 Solicitar Factura
@@ -857,7 +857,7 @@ function ServiceOrderTab({
         )}
       >
         {showReceptionCard && (
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col">
+          <div className="bg-white rounded-3xl shadow-xs border border-slate-100 p-6 md:p-8 flex flex-col">
             <h3 className="font-bold text-slate-800 text-lg mb-4">Ingreso del Vehículo al Taller</h3>
             <div className="space-y-6 flex-1">
               <ReceptionDetails service={service} />
@@ -872,7 +872,7 @@ function ServiceOrderTab({
                       {service.customerSignatureReception ? (
                         <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" width={180} height={90} style={{objectFit:"contain"}} unoptimized />
                       ) : onSignClick ? (
-                        <Button onClick={() => onSignClick('reception')} disabled={isSigning} className="bg-slate-800 hover:bg-slate-900 text-white shadow-sm rounded-xl font-medium px-8">{isSigning ? 'Cargando...' : 'Firmar Recepción'}</Button>
+                        <Button onClick={() => onSignClick('reception')} disabled={isSigning} className="bg-slate-800 hover:bg-slate-900 text-white shadow-xs rounded-xl font-medium px-8">{isSigning ? 'Cargando...' : 'Firmar Recepción'}</Button>
                       ) : (<p className="text-sm font-medium text-slate-400">Firma Pendiente</p>)}
                     </div>
                 </div>
@@ -882,7 +882,7 @@ function ServiceOrderTab({
         )}
         
         {service.status === 'Entregado' && (
-          <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col">
+          <div className="bg-white rounded-3xl shadow-xs border border-slate-100 p-6 md:p-8 flex flex-col">
             <h3 className="font-bold text-slate-800 text-lg mb-4">Salida y Conformidad</h3>
             <div className="space-y-6 flex-1 flex flex-col justify-between">
               <div>
@@ -897,7 +897,7 @@ function ServiceOrderTab({
                     {service.customerSignatureDelivery ? (
                       <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de entrega" width={180} height={90} style={{objectFit:"contain"}} unoptimized />
                     ) : onSignClick ? (
-                      <Button onClick={() => onSignClick('delivery')} disabled={isSigning} className="bg-slate-800 hover:bg-slate-900 text-white shadow-sm rounded-xl font-medium px-8">{isSigning ? 'Cargando...' : 'Firmar Conformidad'}</Button>
+                      <Button onClick={() => onSignClick('delivery')} disabled={isSigning} className="bg-slate-800 hover:bg-slate-900 text-white shadow-xs rounded-xl font-medium px-8">{isSigning ? 'Cargando...' : 'Firmar Conformidad'}</Button>
                     ) : (<p className="text-sm font-medium text-slate-400">Firma Pendiente</p>)}
                   </div>
               </div>
@@ -1083,7 +1083,7 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection[]
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+    <div className="bg-white rounded-3xl shadow-xs border border-slate-100 overflow-hidden">
       <div className="bg-slate-50 border-b border-slate-100 px-6 py-5">
          <h3 className="font-bold text-slate-800 flex items-center gap-2">
            <CheckCircle className="w-5 h-5 text-slate-400" />
@@ -1157,7 +1157,7 @@ function SafetyChecklistDisplay({ inspection }: { inspection: SafetyInspection[]
 
 function PhotoReportContent({ photoReports }: { photoReports: any[] }) {
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+    <div className="bg-white rounded-3xl shadow-xs border border-slate-100 overflow-hidden">
       <div className="bg-slate-50 border-b border-slate-100 px-6 py-5">
          <h3 className="font-bold text-slate-800 flex items-center gap-2">
            <CheckCircle className="w-5 h-5 text-slate-400" />
@@ -1185,7 +1185,7 @@ function PhotoReportContent({ photoReports }: { photoReports: any[] }) {
 function OriginalQuoteContent({ items }: { items: any[] }) {
   const total = items.reduce((acc, it) => acc + (Number(it.price) || 0), 0);
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+    <div className="bg-white rounded-3xl shadow-xs border border-slate-100 overflow-hidden">
        <div className="bg-slate-50 border-b border-slate-100 px-6 py-5">
           <h3 className="font-bold text-slate-800">Conceptos de la Cotización Original</h3>
        </div>

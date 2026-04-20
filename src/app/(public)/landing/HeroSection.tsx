@@ -13,7 +13,7 @@ const whatsappLink = "https://wa.me/524491425323?text=Hola%2C%20quisiera%20agend
 
 export function HeroSection() {
   return (
-    <section className="relative w-full min-h-[100svh] flex items-center justify-center md:justify-start overflow-hidden">
+    <section className="relative w-full min-h-svh flex items-center justify-center md:justify-start overflow-hidden">
       <motion.div
         initial={{ scale: 1.05 }}
         animate={{ scale: 1 }}
@@ -30,15 +30,15 @@ export function HeroSection() {
           priority
         />
         {/* Premium elegant gradient for left side text contrast focusing only on the left text area */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent z-10 pointer-events-none"></div>
+        <div className="absolute inset-0 bg-linear-to-r from-black/80 via-black/40 to-transparent z-10 pointer-events-none"></div>
       </motion.div>
 
       <div className="relative z-20 container mx-auto px-4 sm:px-6 lg:px-8 mt-16 md:mt-24">
         <div className="flex justify-center md:justify-start">
           <StaggerContainer className="w-full max-w-xl" staggerDelay={0.15}>
-            <Card className="bg-black/30 backdrop-blur-2xl border border-white/10 shadow-2xl overflow-hidden rounded-[2rem] text-white">
+            <Card className="bg-black/30 backdrop-blur-2xl border border-white/10 shadow-2xl overflow-hidden rounded-4xl text-white">
               {/* Subtle inner glow */}
-              <div className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent pointer-events-none"></div>
+              <div className="absolute inset-0 bg-linear-to-b from-white/10 to-transparent pointer-events-none"></div>
 
               <CardContent className="p-8 sm:p-10 relative z-10">
                 <StaggerItem>
@@ -49,7 +49,7 @@ export function HeroSection() {
                 </StaggerItem>
 
                 <StaggerItem>
-                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-400">
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-linear-to-r from-white via-gray-200 to-gray-400">
                     Servicio Profesional<br />Certificado
                   </h1>
                 </StaggerItem>

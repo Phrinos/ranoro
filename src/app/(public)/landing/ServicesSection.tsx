@@ -53,7 +53,7 @@ function ServicesSection() {
         <section id="services" className="relative py-24 md:py-32 bg-[#09090b] text-white overflow-hidden">
             {/* Dark premium background effects */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[600px] bg-primary/10 blur-[150px] rounded-[100%] pointer-events-none" />
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-size-[40px_40px] pointer-events-none" />
 
             <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
                 <AnimatedDiv className="text-center max-w-3xl mx-auto mb-16">
@@ -74,7 +74,7 @@ function ServicesSection() {
                               className="group h-full"
                             >
                                 <Card className="text-center bg-white/5 backdrop-blur-md border-white/10 hover:border-primary/50 hover:bg-white/10 transition-all duration-300 h-full flex flex-col justify-center rounded-3xl overflow-hidden relative">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                                    <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                                     
                                     <CardHeader className="pb-2">
                                         <div className="mx-auto h-20 w-20 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center group-hover:bg-primary/20 group-hover:border-primary/30 transition-all duration-500 group-hover:scale-110 group-hover:-rotate-6">

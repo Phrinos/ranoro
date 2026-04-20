@@ -40,7 +40,7 @@ export function TabConexion({
     <div className="space-y-6">
 
       {/* Webhook & Security */}
-      <Card className="bg-white rounded-2xl shadow-sm border border-slate-200">
+      <Card className="bg-white rounded-2xl shadow-xs border border-slate-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5 text-blue-500" /> Webhook & Seguridad</CardTitle>
           <CardDescription>Configura la URL del webhook y la clave de acceso compartida con el servidor Baileys.</CardDescription>
@@ -72,7 +72,7 @@ export function TabConexion({
       </Card>
 
       {/* Baileys Server Config */}
-      <Card className="bg-white rounded-2xl shadow-sm border border-slate-200">
+      <Card className="bg-white rounded-2xl shadow-xs border border-slate-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Server className="h-5 w-5 text-purple-500" /> Servidor Baileys</CardTitle>
           <CardDescription>Datos de conexión al servidor de WhatsApp (VPS).</CardDescription>
@@ -113,7 +113,7 @@ export function TabConexion({
       </Card>
 
       {/* Recent Conversations */}
-      <Card className="bg-white rounded-2xl shadow-sm border border-slate-200">
+      <Card className="bg-white rounded-2xl shadow-xs border border-slate-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><MessageCircle className="h-5 w-5 text-green-500" /> Conversaciones Recientes</CardTitle>
           <CardDescription>Últimas conversaciones del agente en tiempo real.</CardDescription>

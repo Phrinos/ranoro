@@ -87,7 +87,7 @@ export function VehicleAuditManager({ vehicles, permissions, onEdit, onDelete }:
       label: 'Placas Duplicadas',
       icon: CopyMinus,
       count: duplicateGroups.length,
-      activeClass: 'bg-white text-purple-700 shadow-sm border border-purple-200',
+      activeClass: 'bg-white text-purple-700 shadow-xs border border-purple-200',
       countClass: 'bg-purple-100 text-purple-700',
     },
     {
@@ -95,7 +95,7 @@ export function VehicleAuditManager({ vehicles, permissions, onEdit, onDelete }:
       label: 'Datos Faltantes',
       icon: SearchX,
       count: incompleteVehicles.length,
-      activeClass: 'bg-white text-amber-700 shadow-sm border border-amber-200',
+      activeClass: 'bg-white text-amber-700 shadow-xs border border-amber-200',
       countClass: 'bg-amber-100 text-amber-700',
     },
     {
@@ -103,7 +103,7 @@ export function VehicleAuditManager({ vehicles, permissions, onEdit, onDelete }:
       label: 'Sin Servicios',
       icon: CalendarX,
       count: abandonedVehicles.length,
-      activeClass: 'bg-white text-slate-700 shadow-sm border border-slate-200',
+      activeClass: 'bg-white text-slate-700 shadow-xs border border-slate-200',
       countClass: 'bg-slate-200 text-slate-700',
     },
   ];
@@ -112,7 +112,7 @@ export function VehicleAuditManager({ vehicles, permissions, onEdit, onDelete }:
     <div className="space-y-6 animate-in fade-in duration-500">
 
       {/* Banner */}
-      <Card className="bg-gradient-to-r from-slate-900 to-slate-800 text-white border-none shadow-md overflow-hidden relative">
+      <Card className="bg-linear-to-r from-slate-900 to-slate-800 text-white border-none shadow-md overflow-hidden relative">
         <div className="absolute right-0 top-0 w-64 h-64 bg-primary/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2" />
         <CardContent className="p-6 md:p-8 relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-1">
@@ -183,10 +183,10 @@ export function VehicleAuditManager({ vehicles, permissions, onEdit, onDelete }:
           ) : (
             <div className="grid grid-cols-1 gap-6">
               {duplicateGroups.map(group => (
-                <Card key={group.plate} className="border-purple-100 shadow-sm overflow-hidden border-2">
+                <Card key={group.plate} className="border-purple-100 shadow-xs overflow-hidden border-2">
                   <div className="bg-purple-50 border-b border-purple-100 p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-sm border border-purple-200">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white shadow-xs border border-purple-200">
                         <CopyMinus className="h-5 w-5 text-purple-600" />
                       </span>
                       <div>
@@ -203,9 +203,9 @@ export function VehicleAuditManager({ vehicles, permissions, onEdit, onDelete }:
                       {group.vehicles.map((v, idx) => {
                         const sd = getServiceData(v);
                         return (
-                          <div key={v.id} className={cn("bg-white border rounded-xl p-4 shadow-sm flex flex-col relative", idx === 0 && "border-purple-300 ring-1 ring-purple-50")}>
+                          <div key={v.id} className={cn("bg-white border rounded-xl p-4 shadow-xs flex flex-col relative", idx === 0 && "border-purple-300 ring-1 ring-purple-50")}>
                             {idx === 0 && (
-                              <span className="absolute -top-3 -right-2 bg-purple-600 text-white text-[10px] uppercase font-bold py-0.5 px-2 rounded-full shadow border-2 border-white pointer-events-none">
+                              <span className="absolute -top-3 -right-2 bg-purple-600 text-white text-[10px] uppercase font-bold py-0.5 px-2 rounded-full shadow-sm border-2 border-white pointer-events-none">
                                 Perfil Más Activo
                               </span>
                             )}
@@ -274,7 +274,7 @@ export function VehicleAuditManager({ vehicles, permissions, onEdit, onDelete }:
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {incompleteVehicles.map(({ vehicle: v, issues }) => (
-                <Card key={v.id} className="border-amber-100 shadow-sm hover:shadow transition-shadow flex flex-col">
+                <Card key={v.id} className="border-amber-100 shadow-xs hover:shadow-sm transition-shadow flex flex-col">
                   <CardHeader className="p-4 pb-2 border-b bg-amber-50/50 flex flex-row items-center justify-between space-y-0 relative">
                     <div>
                       <CardTitle className="text-base flex items-center gap-2 text-slate-800">
@@ -333,7 +333,7 @@ export function VehicleAuditManager({ vehicles, permissions, onEdit, onDelete }:
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {abandonedVehicles.map(v => (
-                <Card key={v.id} className="border-slate-200 shadow-sm hover:shadow transition-shadow flex flex-col">
+                <Card key={v.id} className="border-slate-200 shadow-xs hover:shadow-sm transition-shadow flex flex-col">
                   <CardHeader className="p-4 pb-2 border-b bg-slate-50 flex flex-row items-center justify-between space-y-0 relative">
                     <div>
                       <CardTitle className="text-base flex items-center gap-2 text-slate-800">

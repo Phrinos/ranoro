@@ -23,7 +23,7 @@ interface TabInspectionProps {
 export function TabInspection({ isWizardOpen, setIsWizardOpen }: TabInspectionProps) {
   return (
     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-      <div className="xl:col-span-6 bg-card border border-border rounded-xl shadow-sm">
+      <div className="xl:col-span-6 bg-card border border-border rounded-xl shadow-xs">
         <React.Suspense fallback={<div className="animate-pulse h-64 bg-muted rounded-xl" />}>
           <SafetyChecklist isWizardOpen={isWizardOpen} setIsWizardOpen={setIsWizardOpen} />
         </React.Suspense>

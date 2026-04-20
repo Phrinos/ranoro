@@ -74,7 +74,7 @@ export function DriversList({ fleetData, canManage }: DriversListProps) {
           />
         </div>
         <Button
-          variant={showArchived ? "secondary" : "outline"}
+          variant={showArchived ? "secondary" : "outline-solid"}
           size="sm"
           className="h-10"
           onClick={() => setShowArchived(x => !x)}
@@ -106,7 +106,7 @@ export function DriversList({ fleetData, canManage }: DriversListProps) {
                 <div className="flex items-start gap-3">
                   <div className={cn(
                     "h-10 w-10 rounded-full flex items-center justify-center text-base font-black text-white shrink-0",
-                    driver.isArchived ? "bg-zinc-400" : vehicle ? "bg-gradient-to-br from-indigo-500 to-purple-600" : "bg-amber-500"
+                    driver.isArchived ? "bg-zinc-400" : vehicle ? "bg-linear-to-br from-indigo-500 to-purple-600" : "bg-amber-500"
                   )}>
                     {driver.name.charAt(0).toUpperCase()}
                   </div>

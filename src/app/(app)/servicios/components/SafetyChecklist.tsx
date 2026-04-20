@@ -127,7 +127,7 @@ const SafetyChecklistReport = ({ inspection, signatureDataUrl, technicianName }:
             <Label className="text-base font-semibold">Firma del Técnico</Label>
             <div className="mt-2 p-2 min-h-[100px] border rounded-md bg-muted/50 flex flex-col items-center justify-center">
                 {signatureDataUrl ? (
-                    <div className="relative w-full max-w-[200px] aspect-[2/1]">
+                    <div className="relative w-full max-w-[200px] aspect-2/1">
                         <Image src={signatureDataUrl} alt="Firma del técnico" fill style={{objectFit:"contain"}} sizes="200px" crossOrigin="anonymous"/>
                     </div>
                 ) : (

@@ -64,7 +64,7 @@ export function CategoryDialog({ open, onOpenChange, category, onSave }: Props) 
                       onClick={() => field.onChange(val)}
                       className={cn(
                         "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all",
-                        type === val ? "bg-background shadow text-foreground" : "text-muted-foreground"
+                        type === val ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
                       )}
                     >
                       <Icon className="h-4 w-4" /> {label}

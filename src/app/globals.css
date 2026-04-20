@@ -1,7 +1,221 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
 
+@custom-variant dark (&:is(.dark *));
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (width >= --theme(--breakpoint-sm)) {
+    max-width: none;
+  }
+  @media (width >= 1400px) {
+    max-width: 1400px;
+  }
+}
+
+@theme {
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-sidebar: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  --font-headline: 'Inter Tight', sans-serif;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility text-shadow {
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+@utility animate-fade-in-up {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+@utility animate-scroll {
+  animation: scroll 30s linear infinite;
+}
+
+@utility animate-marquee-left {
+  /* Marquee infinito para testimonios */
+  animation: marquee-left var(--marquee-speed, 60s) linear infinite;
+}
+
+@utility animate-marquee-right {
+  animation: marquee-right var(--marquee-speed, 60s) linear infinite;
+}
+
+@utility printable-content {
+  @media print {
+    visibility: visible;
+    & * {
+      visibility: visible;
+    }
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
+
+@utility no-print {
+  @media print {
+    display: none;
+  }
+}
+
+@utility print-format-letter {
+  @media print {
+    @page {
+      size: letter portrait;
+      margin: 0;
+    }
+  }
+}
+
+@utility print-format-receipt {
+  @media print {
+    @page {
+      size: 80mm auto;
+      margin: 0;
+    }
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    background-color: white !important;
+    color: black !important;
+    font-size: 9pt !important;
+    line-height: 1.2 !important;
+    & * {
+      background-color: transparent !important;
+      color: black !important;
+      box-shadow: none !important;
+      text-shadow: none !important;
+    }
+  }
+}
+
+@utility scrollbar-hide {
+  /* ======= Impresión simple ======= */
+
+  /* Carta */
+
+  /* Ticket 80mm */
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@utility react-calendar {
+  /* react-calendar */
+  @apply border-none bg-popover text-popover-foreground;
+}
+
+@utility react-calendar__navigation {
+  & button {
+    @apply font-bold hover:bg-accent;
+  }
+}
+
+@utility react-calendar__month-view__weekdays__weekday {
+  @apply text-muted-foreground;
+}
+
+@utility react-calendar__tile {
+  @apply rounded-md hover:bg-accent;
+}
+
+@utility react-calendar__tile--now {
+  @apply bg-accent text-accent-foreground;
+}
+
+@utility react-calendar__tile--active {
+  @apply bg-primary text-primary-foreground;
+}
+
+@utility react-calendar__tile--rangeStart {
+  @apply bg-primary text-primary-foreground;
+}
+
+@utility react-calendar__tile--rangeEnd {
+  @apply bg-primary text-primary-foreground;
+}
 
 @layer base {
   :root {
@@ -100,24 +314,13 @@
 }
 
 @layer utilities {
-  .text-shadow { text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.4); }
-  .animate-fade-in-up { animation: fadeInUp 0.8s ease-out forwards; }
   @keyframes fadeInUp {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  .animate-scroll { animation: scroll 30s linear infinite; }
   @keyframes scroll {
     0% { transform: translateX(0); }
     100% { transform: translateX(-50%); }
-  }
-
-  /* Marquee infinito para testimonios */
-  .animate-marquee-left {
-    animation: marquee-left var(--marquee-speed, 60s) linear infinite;
-  }
-  .animate-marquee-right {
-    animation: marquee-right var(--marquee-speed, 60s) linear infinite;
   }
   @keyframes marquee-left {
     0% { transform: translateX(0); }
@@ -127,47 +330,9 @@
     0% { transform: translateX(-50%); }
     100% { transform: translateX(0); }
   }
-
-  /* ======= Impresión simple ======= */
   @media print {
     body * { visibility: hidden; }
-    .printable-content, .printable-content * { visibility: visible; }
-    .printable-content { position: absolute; left: 0; top: 0; width: 100%; }
-    .no-print { display: none; }
   }
-
-  /* Carta */
-  @media print {
-    .print-format-letter { @page { size: letter portrait; margin: 0; } }
-  }
-
-  /* Ticket 80mm */
-  @media print {
-    .print-format-receipt {
-      @page { size: 80mm auto; margin: 0; }
-      width: 100%!important; max-width: none!important;
-      margin: 0!important; padding: 0!important;
-      box-shadow: none!important; background-color: white!important;
-      color: black!important; font-size: 9pt!important; line-height: 1.2!important;
-    }
-    .print-format-receipt * {
-      background-color: transparent!important; color: black!important;
-      box-shadow: none!important; text-shadow: none!important;
-    }
-  }
-
-  .scrollbar-hide::-webkit-scrollbar { display: none; }
-  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
-  /* react-calendar */
-  .react-calendar { @apply border-none bg-popover text-popover-foreground; }
-  .react-calendar__navigation button { @apply font-bold hover:bg-accent; }
-  .react-calendar__month-view__weekdays__weekday { @apply text-muted-foreground; }
-  .react-calendar__tile { @apply rounded-md hover:bg-accent; }
-  .react-calendar__tile--now { @apply bg-accent text-accent-foreground; }
-  .react-calendar__tile--active,
-  .react-calendar__tile--rangeStart,
-  .react-calendar__tile--rangeEnd { @apply bg-primary text-primary-foreground; }
 }
 
 /* Hide number input arrows */

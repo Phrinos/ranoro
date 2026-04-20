@@ -37,7 +37,7 @@ export function PromotionsSection() {
                     {/* Promo Card 1 */}
                     <StaggerItem>
                         <div className="h-full group transition-all duration-500 ease-out hover:-translate-y-2">
-                          <Card className="relative bg-card dark:bg-slate-900 border-border/40 shadow-2xl h-full flex flex-col rounded-[2rem] overflow-hidden transition-shadow duration-500 group-hover:shadow-primary/20 group-hover:shadow-2xl">
+                          <Card className="relative bg-card dark:bg-slate-900 border-border/40 shadow-2xl h-full flex flex-col rounded-4xl overflow-hidden transition-shadow duration-500 group-hover:shadow-primary/20 group-hover:shadow-2xl">
                               <CardHeader className="bg-primary/5 pb-6">
                                   <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/20 text-primary">
                                     <Icon icon="lucide:droplets" className="h-6 w-6" />
@@ -47,7 +47,7 @@ export function PromotionsSection() {
                                       Lubricación premium sintética y revisión completa de seguridad de regalo.
                                   </CardDescription>
                               </CardHeader>
-                              <CardContent className="flex-grow space-y-6 pt-6">
+                              <CardContent className="grow space-y-6 pt-6">
                                  <div className="grid grid-cols-2 gap-4">
                                       <div className="p-4 bg-background/50 border border-border/50 rounded-2xl text-center group-hover:border-primary/50 transition-colors">
                                           <Icon icon="twemoji:automobile" className="mx-auto h-8 w-8 mb-2"/>
@@ -99,12 +99,12 @@ export function PromotionsSection() {
                     {/* Promo Card 2 */}
                     <StaggerItem>
                         <div className="h-full group transition-all duration-500 ease-out hover:-translate-y-2">
-                          <Card className="relative bg-card dark:bg-slate-900 border-border/40 shadow-2xl h-full flex flex-col rounded-[2rem] overflow-hidden transition-shadow duration-500 group-hover:shadow-primary/20 group-hover:shadow-2xl">
+                          <Card className="relative bg-card dark:bg-slate-900 border-border/40 shadow-2xl h-full flex flex-col rounded-4xl overflow-hidden transition-shadow duration-500 group-hover:shadow-primary/20 group-hover:shadow-2xl">
                               <CardHeader className="bg-primary pb-6 text-primary-foreground relative overflow-hidden">
                                   {/* Decorative background for the header */}
                                   <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
                                   
-                                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-white backdrop-blur-sm relative z-10">
+                                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 text-white backdrop-blur-xs relative z-10">
                                     <Icon icon="lucide:settings" className="h-6 w-6" />
                                   </div>
                                   <CardTitle className="text-2xl font-bold relative z-10">Afinación Mayor</CardTitle>
@@ -112,7 +112,7 @@ export function PromotionsSection() {
                                       Restaura el consumo y potencia al 100%. Desde <strong className="text-white text-xl ml-1">$1,999</strong>
                                   </CardDescription>
                               </CardHeader>
-                              <CardContent className="flex-grow space-y-6 pt-6">
+                              <CardContent className="grow space-y-6 pt-6">
                                   <div className="space-y-4">
                                       <h4 className="font-semibold text-foreground tracking-wider text-xs uppercase text-primary">Proceso Integral de 6 Pasos:</h4>
                                       <ul className="space-y-3">

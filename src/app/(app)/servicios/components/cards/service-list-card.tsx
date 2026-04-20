@@ -111,7 +111,7 @@ export function ServiceListCard({
   return (
     <Card
       className={cn(
-        "shadow-sm overflow-hidden border transition-shadow hover:shadow-md",
+        "shadow-xs overflow-hidden border transition-shadow hover:shadow-md",
         service.status === "Cancelado" ? "bg-muted/60 opacity-80" : "bg-card"
       )}
     >
@@ -119,7 +119,7 @@ export function ServiceListCard({
         <div className="flex flex-col md:flex-row text-sm divide-y md:divide-y-0 md:divide-x divide-border">
 
           {/* ── BLOQUE 1: Fecha / Hora / Folio ─────────────────────── */}
-          <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-[7.5rem] flex-shrink-0 bg-muted/20">
+          <div className="p-4 flex flex-col justify-center items-center text-center w-full md:w-30 shrink-0 bg-muted/20">
             <p className="text-muted-foreground text-[11px] font-medium uppercase tracking-wider">
               {parsedDate && isValid(parsedDate)
                 ? format(parsedDate, "HH:mm 'hrs'", { locale: es })
@@ -137,7 +137,7 @@ export function ServiceListCard({
           </div>
 
           {/* ── BLOQUE 2: Vehículo / Propietario ─────────────────── */}
-          <div className="p-4 flex flex-col justify-center flex-[2] min-w-0 space-y-1">
+          <div className="p-4 flex flex-col justify-center flex-2 min-w-0 space-y-1">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-semibold text-base text-foreground leading-tight truncate">
                 {vehicle?.ownerName || service.customerName || "Cliente no registrado"}
@@ -160,7 +160,7 @@ export function ServiceListCard({
           </div>
 
           {/* ── BLOQUE 3: Trabajos + Asesor ───────────────────────── */}
-          <div className="p-4 flex flex-col justify-center flex-[2] min-w-0 space-y-2">
+          <div className="p-4 flex flex-col justify-center flex-2 min-w-0 space-y-2">
             <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
               Trabajos
             </span>
@@ -240,7 +240,7 @@ export function ServiceListCard({
           </div>
 
           {/* ── BLOQUE 5: Total / Ganancia / Método pago ─────────── */}
-          <div className="p-4 flex flex-col justify-center items-end text-right w-full md:w-36 flex-shrink-0 space-y-1.5">
+          <div className="p-4 flex flex-col justify-center items-end text-right w-full md:w-36 shrink-0 space-y-1.5">
             <div>
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total</p>
               <p className="font-bold text-xl md:text-2xl text-primary leading-tight">
@@ -265,7 +265,7 @@ export function ServiceListCard({
           </div>
 
           {/* ── BLOQUE 6: Acciones ───────────────────────────────── */}
-          <div className="p-3 flex flex-row md:flex-col justify-center items-center gap-1 w-full md:w-14 flex-shrink-0 bg-muted/10">
+          <div className="p-3 flex flex-row md:flex-col justify-center items-center gap-1 w-full md:w-14 shrink-0 bg-muted/10">
             <Button
               variant="ghost"
               size="icon"

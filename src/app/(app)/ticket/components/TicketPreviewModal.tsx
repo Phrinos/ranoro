@@ -317,7 +317,7 @@ export function TicketPreviewModal({
                 </label>
                 <Button
                   onClick={() => setWhatsappOpen(true)}
-                  className="w-full h-11 bg-[#25D366] hover:bg-[#1ebe57] text-white gap-2 shadow-sm"
+                  className="w-full h-11 bg-[#25D366] hover:bg-[#1ebe57] text-white gap-2 shadow-xs"
                 >
                   <Icon icon="logos:whatsapp-icon" className="h-5 w-5" />
                   Enviar Ticket

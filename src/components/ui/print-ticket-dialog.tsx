@@ -182,9 +182,9 @@ function PrintTicketDialogInner(props: any) {
                     onClick={() => setActiveTab(tabInfo.value)}
                     className={cn(
                         'flex-1 min-w-[30%] sm:min-w-0 text-center px-3 py-2 rounded-md transition-colors duration-200 text-sm sm:text-base',
-                        'break-words whitespace-normal leading-snug',
+                        'wrap-break-word whitespace-normal leading-snug',
                         activeTab === tabInfo.value
-                        ? 'bg-primary text-primary-foreground shadow'
+                        ? 'bg-primary text-primary-foreground shadow-sm'
                         : 'bg-muted text-muted-foreground hover:bg-muted/80'
                     )}
                     >

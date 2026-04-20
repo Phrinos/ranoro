@@ -102,8 +102,8 @@ export function ServiceItemsEditor({
         <CardDescription>Añade trabajos, servicios e insumos utilizados.</CardDescription>
       </CardHeader>
 
-      <CardContent className="flex flex-col flex-grow space-y-4 pt-0">
-        <div className="flex-grow space-y-4">
+      <CardContent className="flex flex-col grow space-y-4 pt-0">
+        <div className="grow space-y-4">
           {fields.length > 0 ? (
             <React.Suspense fallback={<div className="animate-pulse h-32 bg-muted rounded-lg" />}>
               {fields.map((field, index) => (

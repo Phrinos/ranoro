@@ -398,7 +398,7 @@ export function HistoryList({
       {/* List */}
       <div className="relative min-h-[400px]">
         {isLoadingHistory && (
-          <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 flex flex-col items-center justify-center rounded-lg border">
+          <div className="absolute inset-0 bg-background/60 backdrop-blur-xs z-10 flex flex-col items-center justify-center rounded-lg border">
             <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
             <span className="text-muted-foreground font-medium">Cargando historial...</span>
           </div>

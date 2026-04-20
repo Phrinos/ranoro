@@ -49,14 +49,14 @@ export function FormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent className={cn("sm:max-w-lg max-h-[90vh] flex flex-col p-0", dialogContentClassName)}>
-        <DialogHeader className="p-6 pb-4 flex-shrink-0 border-b bg-white">
+        <DialogHeader className="p-6 pb-4 shrink-0 border-b bg-white">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <div className="flex-grow overflow-y-auto px-6 py-4">
+        <div className="grow overflow-y-auto px-6 py-4">
           {children}
         </div>
-        <DialogFooter className="p-6 pt-4 border-t bg-white flex-shrink-0 flex justify-between items-center w-full">
+        <DialogFooter className="p-6 pt-4 border-t bg-white shrink-0 flex justify-between items-center w-full">
           <div>
             {customFooterContent}
           </div>

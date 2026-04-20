@@ -65,7 +65,7 @@ export function GuidedInspectionWizard({ inspectionItems, onClose, serviceId, on
                 <h3 className="text-lg font-semibold">{currentItem.label}</h3>
             </div>
 
-            <div className="flex-grow space-y-4" key={currentItem.name}>
+            <div className="grow space-y-4" key={currentItem.name}>
                 <Controller
                     name={currentItem.name as any}
                     control={control}

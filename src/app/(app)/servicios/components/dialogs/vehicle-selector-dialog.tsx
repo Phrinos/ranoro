@@ -89,8 +89,8 @@ export function VehicleSelectorDialog({
             shouldFilter={false}
             className={cn(
               "rounded-lg border bg-card",
-              "[&_[cmdk-input-wrapper]]:px-3 [&_[cmdk-input-wrapper]]:h-12",
-              "[&_[cmdk-input]]:text-sm [&_[cmdk-item]]:px-3 [&_[cmdk-item]]:py-3"
+              "**:[[cmdk-input-wrapper]]:px-3 **:[[cmdk-input-wrapper]]:h-12",
+              "**:[[cmdk-input]]:text-sm **:[[cmdk-item]]:px-3 **:[[cmdk-item]]:py-3"
             )}
           >
             <div className="sticky top-0 z-10 border-b bg-card">
@@ -138,7 +138,7 @@ export function VehicleSelectorDialog({
                     onSelect={() => handleSelect(v.id)}
                     className={cn(
                       "flex items-center gap-3 cursor-pointer select-none",
-                      "[&[data-disabled=true]]:pointer-events-auto [&[data-disabled=true]]:opacity-100"
+                      "data-[disabled=true]:pointer-events-auto data-[disabled=true]:opacity-100"
                     )}
                   >
                     <Car className="h-5 w-5 text-muted-foreground shrink-0" />

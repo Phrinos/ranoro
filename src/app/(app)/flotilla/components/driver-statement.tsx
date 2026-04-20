@@ -204,7 +204,7 @@ export function DriverStatement({ driver, vehicle, fleetData, canManage }: Drive
           ))}
         </div>
 
-        <div className="hidden md:block overflow-hidden rounded-xl border border-border/60 shadow-sm">
+        <div className="hidden md:block overflow-hidden rounded-xl border border-border/60 shadow-xs">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-zinc-900 text-zinc-300">

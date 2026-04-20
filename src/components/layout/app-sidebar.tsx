@@ -211,7 +211,7 @@ function AppTopNavInner({
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black text-white backdrop-blur-md shadow-sm print:hidden">
+      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black text-white backdrop-blur-md shadow-xs print:hidden">
         <div className="flex h-14 items-center px-4 md:px-6 gap-4">
 
         {/* Logo */}
@@ -223,7 +223,7 @@ function AppTopNavInner({
               fill
               style={{ objectFit: 'contain' }}
               sizes="100px"
-              className="drop-shadow-sm" 
+              className="drop-shadow-xs" 
             />
           </Link>
         </div>
@@ -279,7 +279,7 @@ function AppTopNavInner({
 
           {/* Mobile hamburger (Sheet trigger) - Note: Trigger is now in the Bottom Nav */}
           <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-            <SheetContent side="right" className="w-[80vw] sm:w-[350px] p-0 flex flex-col bg-black text-white border-white/10 [&>button]:text-white focus:[&>button]:ring-white">
+            <SheetContent side="right" className="w-[80vw] sm:w-[350px] p-0 flex flex-col bg-black text-white border-white/10 [&>button]:text-white [&>button]:focus:ring-white">
               <SheetHeader className="p-4 border-b border-white/10 text-left pt-6">
                 <SheetTitle className="text-lg font-bold text-left flex items-start">
                   <div className="relative w-[100px] h-[26px]">
@@ -289,7 +289,7 @@ function AppTopNavInner({
                       fill
                       style={{ objectFit: 'contain' }}
                       sizes="100px"
-                      className="drop-shadow-sm" 
+                      className="drop-shadow-xs" 
                     />
                   </div>
                 </SheetTitle>
@@ -389,7 +389,7 @@ function AppTopNavInner({
                   <DropdownMenuTrigger asChild>
                     <button
                       className={cn(
-                        "flex flex-col items-center justify-center w-[60px] h-[52px] space-y-1 transition-all outline-none focus:outline-none rounded-xl",
+                        "flex flex-col items-center justify-center w-[60px] h-[52px] space-y-1 transition-all outline-hidden focus:outline-hidden rounded-xl",
                         isActive ? "bg-red-600 text-white shadow-lg shadow-red-900/20" : "text-white/70 hover:text-white hover:bg-white/5"
                       )}
                     >
@@ -429,7 +429,7 @@ function AppTopNavInner({
                 <button
                   onClick={() => setMobileOpen(true)}
                   className={cn(
-                    "flex flex-col items-center justify-center w-[60px] h-[52px] space-y-1 transition-all outline-none focus:outline-none rounded-xl",
+                    "flex flex-col items-center justify-center w-[60px] h-[52px] space-y-1 transition-all outline-hidden focus:outline-hidden rounded-xl",
                     mobileOpen ? "bg-red-600 text-white shadow-lg shadow-red-900/20" : "text-white/70 hover:text-white hover:bg-white/5"
                   )}
                 >

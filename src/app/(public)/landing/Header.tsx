@@ -36,9 +36,9 @@ export function Header() {
           "mx-auto flex items-center justify-between px-5 transition-all duration-500",
           scrolled 
             ? "container max-w-6xl rounded-full bg-white text-slate-950 shadow-xl h-16" 
-            : "container max-w-7xl rounded-[2rem] bg-black/40 backdrop-blur-md border border-white/10 shadow-lg h-20 text-white"
+            : "container max-w-7xl rounded-4xl bg-black/40 backdrop-blur-md border border-white/10 shadow-lg h-20 text-white"
         )}>
-          <Link href="/" className="relative w-[130px] h-[38px] flex-shrink-0 transition-transform hover:scale-105">
+          <Link href="/" className="relative w-[130px] h-[38px] shrink-0 transition-transform hover:scale-105">
             <Image
               src="/ranoro-logo.png"
               alt="Ranoro Logo"
@@ -62,14 +62,14 @@ export function Header() {
              <Button 
                 onClick={() => setContactModalOpen(true)} 
                 variant={scrolled ? "default" : "secondary"}
-                className={cn("hidden sm:inline-flex rounded-full transition-all hover:scale-105 shadow-sm font-bold", !scrolled && "bg-white/10 text-white hover:bg-white/20 border-white/20 border backdrop-blur-md")}
+                className={cn("hidden sm:inline-flex rounded-full transition-all hover:scale-105 shadow-xs font-bold", !scrolled && "bg-white/10 text-white hover:bg-white/20 border-white/20 border backdrop-blur-md")}
              >
                 Contáctanos
              </Button>
             <Button 
                 asChild
-                variant={scrolled ? "outline" : "default"}
-                className={cn("rounded-full transition-all hover:scale-105 shadow-sm font-bold", !scrolled && "bg-white text-slate-900 hover:bg-white/90")}
+                variant={scrolled ? "outline-solid" : "default"}
+                className={cn("rounded-full transition-all hover:scale-105 shadow-xs font-bold", !scrolled && "bg-white text-slate-900 hover:bg-white/90")}
             >
                 <Link href="/login">Ingresar</Link>
             </Button>

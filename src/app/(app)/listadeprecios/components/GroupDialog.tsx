@@ -113,7 +113,7 @@ export function GroupDialog({ open, onOpenChange, group, onSave, priceLists }: G
           <DialogDescription>Define qué modelos comparten las mismas refacciones y fluidos.</DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-grow p-6 space-y-6">
+        <ScrollArea className="grow p-6 space-y-6">
           <div className="space-y-6 pb-8">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">

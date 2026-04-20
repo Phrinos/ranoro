@@ -263,7 +263,7 @@ export function AppointmentDialog({
 
             {/* Results Grid */}
             {searchResults.length > 0 && !selectedVehicle && (
-              <div className="border rounded-lg bg-card shadow-sm divide-y max-h-48 overflow-y-auto mt-2">
+              <div className="border rounded-lg bg-card shadow-xs divide-y max-h-48 overflow-y-auto mt-2">
                 {searchResults.map((v) => (
                   <button
                     key={v.id}
@@ -397,7 +397,7 @@ export function AppointmentDialog({
                       className={cn(
                         "text-xs px-3.5 py-1.5 rounded-full border transition-all font-medium select-none",
                         isSelected
-                          ? "bg-primary text-primary-foreground border-primary shadow-sm ring-2 ring-primary/20 ring-offset-1"
+                          ? "bg-primary text-primary-foreground border-primary shadow-xs ring-2 ring-primary/20 ring-offset-1"
                           : "bg-background border-border hover:bg-muted text-muted-foreground"
                       )}
                     >
@@ -416,7 +416,7 @@ export function AppointmentDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)} className="hover:bg-muted">
             Cancelar
           </Button>
-          <Button onClick={handleSave} disabled={isSaving} className="min-w-[140px] shadow-sm">
+          <Button onClick={handleSave} disabled={isSaving} className="min-w-[140px] shadow-xs">
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
             {isEdit ? "Guardar Cambios" : "Agendar Cita"}
           </Button>

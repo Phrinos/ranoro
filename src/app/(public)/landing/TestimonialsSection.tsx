@@ -25,16 +25,16 @@ const testimonials = [
 ];
 
 const TestimonialCard = ({ quote, author, rating }: { quote: string; author: string; rating: number }) => (
-  <Card className="w-[340px] md:w-[420px] shrink-0 mx-4 bg-white/50 backdrop-blur-xl border-slate-200/50 shadow-sm rounded-3xl overflow-hidden hover:shadow-xl transition-shadow duration-300">
+  <Card className="w-[340px] md:w-[420px] shrink-0 mx-4 bg-white/50 backdrop-blur-xl border-slate-200/50 shadow-xs rounded-3xl overflow-hidden hover:shadow-xl transition-shadow duration-300">
       <CardContent className="p-8">
-          <div className="flex gap-1 text-amber-400 mb-6 drop-shadow-sm">
+          <div className="flex gap-1 text-amber-400 mb-6 drop-shadow-xs">
               {Array.from({ length: 5 }, (_, i) => (
                   <Icon key={i} icon={i < rating ? "solar:star-bold" : "solar:star-linear"} className="h-6 w-6"/>
               ))}
           </div>
           <blockquote className="text-xl md:text-2xl font-light text-slate-700 mb-6 leading-relaxed">"{quote}"</blockquote>
           <div className="flex items-center mt-auto">
-             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/50 flex items-center justify-center text-primary font-bold mr-3 border border-primary/20">
+             <div className="h-10 w-10 rounded-full bg-linear-to-br from-primary/20 to-primary/50 flex items-center justify-center text-primary font-bold mr-3 border border-primary/20">
                {author.charAt(0)}
              </div>
              <p className="font-semibold text-slate-900">{author}</p>
@@ -63,8 +63,8 @@ const MarqueeRow = ({
   return (
     <div className="relative flex overflow-hidden w-full">
       {/* fade masks */}
-      <div className="absolute left-0 top-0 bottom-0 w-32 z-10 pointer-events-none bg-gradient-to-r from-slate-50 to-transparent" />
-      <div className="absolute right-0 top-0 bottom-0 w-32 z-10 pointer-events-none bg-gradient-to-l from-slate-50 to-transparent" />
+      <div className="absolute left-0 top-0 bottom-0 w-32 z-10 pointer-events-none bg-linear-to-r from-slate-50 to-transparent" />
+      <div className="absolute right-0 top-0 bottom-0 w-32 z-10 pointer-events-none bg-linear-to-l from-slate-50 to-transparent" />
 
       <div
         className={`flex items-center will-change-transform ${animClass}`}

@@ -35,7 +35,7 @@ type SearchFormInput = z.input<typeof searchSchema>;
 type SearchFormValues = z.output<typeof searchSchema>;
 
 const LoadingOverlay = ({ message }: { message: string }) => (
-    <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center z-20 transition-opacity duration-300 rounded-xl">
+    <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex flex-col items-center justify-center z-20 transition-opacity duration-300 rounded-xl">
         <div className="text-center p-8 space-y-4">
             <Loader2 className="mx-auto h-12 w-12 text-primary animate-spin" />
             <h3 className="text-xl font-semibold tracking-tight">Procesando Solicitud</h3>
@@ -135,7 +135,7 @@ function PageInner() {
   
   if (submissionSuccess) {
     return (
-        <div className="min-h-screen flex flex-col bg-gradient-to-br from-black via-zinc-900 to-black text-white">
+        <div className="min-h-screen flex flex-col bg-linear-to-br from-black via-zinc-900 to-black text-white">
             <header className="w-full p-6 flex justify-center">
               <Image src="/ranoro-logo.png" alt="Ranoro" width={140} height={40} className="invert object-contain" />
             </header>
@@ -167,7 +167,7 @@ function PageInner() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-black via-zinc-900 to-black text-white">
+    <div className="min-h-screen flex flex-col bg-linear-to-br from-black via-zinc-900 to-black text-white">
        <header className="w-full p-6 flex justify-center border-b border-white/10 bg-black/40 backdrop-blur-md sticky top-0 z-40">
            <Link href="/">
              <Image src="/ranoro-logo.png" alt="Ranoro Logo" width={140} height={40} className="invert object-contain transition-opacity hover:opacity-80" />

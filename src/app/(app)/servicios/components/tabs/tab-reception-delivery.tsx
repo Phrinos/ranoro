@@ -34,7 +34,7 @@ export function TabReceptionDelivery({
   return (
     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
       {/* ── COLUMNA RECEPCIÓN ── */}
-      <div className="space-y-6 bg-card border border-border shadow-sm rounded-xl p-6">
+      <div className="space-y-6 bg-card border border-border shadow-xs rounded-xl p-6">
         <div className="border-b border-border/50 pb-2 mb-4">
           <h3 className="text-lg font-semibold text-primary uppercase flex items-center gap-2">
             📋 Recepción del Vehículo
@@ -149,7 +149,7 @@ export function TabReceptionDelivery({
       </div>
 
       {/* ── COLUMNA ENTREGA ── */}
-      <div className="space-y-6 bg-card border border-border shadow-sm rounded-xl p-6">
+      <div className="space-y-6 bg-card border border-border shadow-xs rounded-xl p-6">
         <div className="border-b border-border/50 pb-2 mb-4">
           <h3 className="text-lg font-semibold text-primary uppercase flex items-center gap-2">
             ✅ Entrega del Vehículo

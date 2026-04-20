@@ -96,7 +96,7 @@ export function TabMensajes({ templates, setTemplates, config, setConfig, onSave
           Recordatorios Automáticos
         </h3>
 
-        <Card className="bg-white rounded-2xl shadow-sm border border-slate-200">
+        <Card className="bg-white rounded-2xl shadow-xs border border-slate-200">
           <CardContent className="pt-6 space-y-6">
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
@@ -195,7 +195,7 @@ export function TabMensajes({ templates, setTemplates, config, setConfig, onSave
             const colors = COLOR_MAP[tpl.color] || COLOR_MAP.blue;
 
             return (
-              <Card key={tpl.key} className={cn("bg-white rounded-2xl shadow-sm", colors.border)}>
+              <Card key={tpl.key} className={cn("bg-white rounded-2xl shadow-xs", colors.border)}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base flex items-center gap-2">
@@ -218,7 +218,7 @@ export function TabMensajes({ templates, setTemplates, config, setConfig, onSave
                   {isPreview ? (
                     <div className="rounded-xl bg-[#e5ddd5] p-4 space-y-1">
                       <div className="max-w-[85%] ml-auto">
-                        <div className="rounded-lg bg-[#dcf8c6] px-3 py-2 shadow-sm">
+                        <div className="rounded-lg bg-[#dcf8c6] px-3 py-2 shadow-xs">
                           <p className="text-sm whitespace-pre-wrap leading-relaxed text-gray-800">
                             {renderPreview(templates[tpl.key])}
                           </p>
@@ -249,7 +249,7 @@ export function TabMensajes({ templates, setTemplates, config, setConfig, onSave
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-white rounded-2xl shadow-sm border-indigo-200">
+          <Card className="bg-white rounded-2xl shadow-xs border-indigo-200">
             <CardHeader className="pb-3 bg-indigo-50/30">
               <CardTitle className="text-base flex items-center gap-2">
                 <MessageSquare className="h-4 w-4 text-indigo-500" />
@@ -268,7 +268,7 @@ export function TabMensajes({ templates, setTemplates, config, setConfig, onSave
             </CardContent>
           </Card>
 
-          <Card className="bg-white rounded-2xl shadow-sm border-red-200">
+          <Card className="bg-white rounded-2xl shadow-xs border-red-200">
             <CardHeader className="pb-3 bg-red-50/30">
               <CardTitle className="text-base flex items-center gap-2">
                 <XCircle className="h-4 w-4 text-red-500" />

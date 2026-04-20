@@ -137,7 +137,7 @@ export function VehicleInfoCard({
           onClick={() => setDialogOpen(true)}
         >
           <Car className="h-8 w-8 text-muted-foreground/40" />
-          <Button type="button" variant="default" size="sm" className="shadow-sm">
+          <Button type="button" variant="default" size="sm" className="shadow-xs">
             <Car className="mr-2 h-4 w-4" /> Seleccionar Vehículo
           </Button>
           <p className="text-xs text-muted-foreground">Haz clic para buscar un vehículo</p>

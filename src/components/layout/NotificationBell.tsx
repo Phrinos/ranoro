@@ -360,13 +360,13 @@ export function NotificationBell() {
                       {n.type === 'whatsapp-attention' && (
                         <Button
                           size="sm"
-                          variant={n.humanTakeover ? 'default' : 'outline'}
+                          variant={n.humanTakeover ? 'default' : 'outline-solid'}
                           disabled={isToggling}
                           onClick={() => handleToggleBot(n)}
                           className={cn(
                             'mt-2 h-7 text-[10px] font-semibold rounded-lg gap-1.5 px-3',
                             n.humanTakeover
-                              ? 'bg-green-600 hover:bg-green-700 text-white shadow-sm'
+                              ? 'bg-green-600 hover:bg-green-700 text-white shadow-xs'
                               : 'border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700'
                           )}
                         >

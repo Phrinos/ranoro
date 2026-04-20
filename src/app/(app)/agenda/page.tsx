@@ -192,7 +192,7 @@ function PageInner() {
       <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] xl:grid-cols-[400px_1fr] gap-6 items-start">
         {/* Left Column: Calendar */}
         <div className="space-y-4 lg:sticky lg:top-24">
-          <Card className="flex flex-col items-center justify-center p-3 sm:p-5 overflow-hidden border shadow-sm">
+          <Card className="flex flex-col items-center justify-center p-3 sm:p-5 overflow-hidden border shadow-xs">
             <style>{`
               /* Estilos mejorados para el calendario */
               .react-calendar {

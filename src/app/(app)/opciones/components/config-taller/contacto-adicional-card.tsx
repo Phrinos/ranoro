@@ -9,8 +9,8 @@ export const ContactoAdicionalCard: React.FC = () => {
   const { control } = useFormContext();
 
   return (
-    <Card className="overflow-hidden border-border/50 shadow-sm transition-all hover:shadow-md h-full">
-      <CardHeader className="bg-gradient-to-r from-muted/50 to-muted/10 border-b border-border/50 pb-6">
+    <Card className="overflow-hidden border-border/50 shadow-xs transition-all hover:shadow-md h-full">
+      <CardHeader className="bg-linear-to-r from-muted/50 to-muted/10 border-b border-border/50 pb-6">
         <CardTitle className="text-xl flex items-center gap-2">
           <UserCircle className="h-5 w-5 text-primary" />
           Contacto Adicional

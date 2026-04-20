@@ -254,13 +254,13 @@ export default function WhatsAppPage() {
                   key={tab.value}
                   onClick={() => setActiveTab(tab.value)}
                   className={cn(
-                    'flex h-[3.75rem] min-w-[120px] flex-col justify-center items-center gap-1.5 rounded-2xl border transition-all shadow-none px-4 overflow-hidden group',
+                    'flex h-15 min-w-[120px] flex-col justify-center items-center gap-1.5 rounded-2xl border transition-all shadow-none px-4 overflow-hidden group',
                     isActive
-                      ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                      ? 'bg-primary text-primary-foreground border-primary shadow-xs'
                       : 'bg-white text-slate-500 border-slate-200 hover:bg-primary/5 hover:text-primary hover:border-primary/40'
                   )}
                 >
-                  <Icon className={cn("h-5 w-5 shrink-0 transition-transform duration-300 group-hover:scale-110", isActive && "fill-white/10 drop-shadow-sm")} />
+                  <Icon className={cn("h-5 w-5 shrink-0 transition-transform duration-300 group-hover:scale-110", isActive && "fill-white/10 drop-shadow-xs")} />
                   <span className="text-[10px] sm:text-xs font-bold leading-none tracking-tight">{tab.label}</span>
                 </button>
               );
@@ -277,7 +277,7 @@ export default function WhatsAppPage() {
               }
             }}
             disabled={isSaving}
-            className="w-full sm:w-auto gap-2 rounded-full px-6 shadow-sm shrink-0 mb-2 sm:mb-0"
+            className="w-full sm:w-auto gap-2 rounded-full px-6 shadow-xs shrink-0 mb-2 sm:mb-0"
           >
             {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {isSaving ? 'Guardando...' : 'Guardar Cambios'}

@@ -154,11 +154,11 @@ export function ServiceEditor({
           className={cn(
             "sticky top-14 z-40 py-4 mb-6",
             "flex flex-col xl:flex-row gap-4 items-stretch",
-            "bg-background/95 backdrop-blur-md border-b shadow-sm sm:-mx-6 sm:px-6"
+            "bg-background/95 backdrop-blur-md border-b shadow-xs sm:-mx-6 sm:px-6"
           )}
         >
           {/* Card 1: Vehicle + Mileage */}
-          <Card className="flex-1 shadow-sm border border-border/50 bg-card overflow-hidden">
+          <Card className="flex-1 shadow-xs border border-border/50 bg-card overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border/30 h-full">
               {/* Left: vehicle info */}
               <div className="p-4 bg-card flex items-center">
@@ -190,7 +190,7 @@ export function ServiceEditor({
           </Card>
 
           {/* Card 2: Status + Advisor/Technician compact row */}
-          <Card className="w-full xl:w-[420px] shrink-0 shadow-sm border border-border/50 bg-card p-4">
+          <Card className="w-full xl:w-[420px] shrink-0 shadow-xs border border-border/50 bg-card p-4">
             <StatusControlsCard
               onSave={() => handleSubmit(onSave, onValidationErrors)()}
               onCancel={onCancel}
@@ -207,24 +207,24 @@ export function ServiceEditor({
             onValueChange={onTabChange}
             className="w-full"
           >
-            <TabsList className="flex gap-1 p-1.5 h-auto w-full md:w-fit bg-muted/70 backdrop-blur-sm rounded-xl overflow-x-auto ring-1 ring-muted mb-6 justify-start scrollbar-hide">
+            <TabsList className="flex gap-1 p-1.5 h-auto w-full md:w-fit bg-muted/70 backdrop-blur-xs rounded-xl overflow-x-auto ring-1 ring-muted mb-6 justify-start scrollbar-hide">
               <TabsTrigger
                 value="jobs"
-                className="flex-shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md data-[state=active]:scale-[1.02] dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white dark:data-[state=active]:ring-white/10 hover:bg-black/5 dark:hover:bg-white/5 gap-1.5"
+                className="shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md data-[state=active]:scale-[1.02] dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white dark:data-[state=active]:ring-white/10 hover:bg-black/5 dark:hover:bg-white/5 gap-1.5"
               >
                 <Wrench className="h-4 w-4 shrink-0" />
                 <span>Trabajos</span>
               </TabsTrigger>
               <TabsTrigger
                 value="reception-delivery"
-                className="flex-shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md data-[state=active]:scale-[1.02] dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white dark:data-[state=active]:ring-white/10 hover:bg-black/5 dark:hover:bg-white/5 gap-1.5"
+                className="shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md data-[state=active]:scale-[1.02] dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white dark:data-[state=active]:ring-white/10 hover:bg-black/5 dark:hover:bg-white/5 gap-1.5"
               >
                 <ClipboardList className="h-4 w-4 shrink-0" />
                 <span>Recepción y Entrega</span>
               </TabsTrigger>
               <TabsTrigger
                 value="inspection"
-                className="flex-shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md data-[state=active]:scale-[1.02] dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white dark:data-[state=active]:ring-white/10 hover:bg-black/5 dark:hover:bg-white/5 gap-1.5"
+                className="shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md data-[state=active]:scale-[1.02] dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white dark:data-[state=active]:ring-white/10 hover:bg-black/5 dark:hover:bg-white/5 gap-1.5"
               >
                 <Settings className="h-4 w-4 shrink-0" />
                 <span>Servicio Mecánico</span>
@@ -254,7 +254,7 @@ export function ServiceEditor({
                           setValue("serviceAdvisorSignatureDataUrl", (u as any)?.signatureDataUrl ?? null, { shouldDirty: true });
                         }}
                       >
-                        <SelectTrigger className="bg-card shadow-sm">
+                        <SelectTrigger className="bg-card shadow-xs">
                           <SelectValue placeholder="Seleccione asesor..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -287,7 +287,7 @@ export function ServiceEditor({
                           setValue("technicianSignatureDataUrl", (u as any)?.signatureDataUrl ?? null, { shouldDirty: true });
                         }}
                       >
-                        <SelectTrigger className="bg-card shadow-sm">
+                        <SelectTrigger className="bg-card shadow-xs">
                           <SelectValue placeholder="Seleccione técnico..." />
                         </SelectTrigger>
                         <SelectContent>

@@ -41,7 +41,7 @@ export default function LegalLayout({
                     priority
                 />
             </div>
-          <article className="prose dark:prose-invert max-w-none rounded-b-xl border-x border-b bg-card p-4 sm:p-6 md:p-8 lg:p-10 shadow-sm">
+          <article className="prose dark:prose-invert max-w-none rounded-b-xl border-x border-b bg-card p-4 sm:p-6 md:p-8 lg:p-10 shadow-xs">
             {children}
           </article>
         </div>

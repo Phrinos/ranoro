@@ -89,7 +89,7 @@ export function ServiceItemCard({
   );
 
   return (
-    <Card className={cn("p-4 transition-all", isCollapsed ? "bg-card shadow-sm border-muted" : "bg-muted/30 border-primary/20 shadow-md")}>
+    <Card className={cn("p-4 transition-all", isCollapsed ? "bg-card shadow-xs border-muted" : "bg-muted/30 border-primary/20 shadow-md")}>
       <div className={cn("flex justify-between items-center", isCollapsed ? "" : "mb-4")}>
         <div className="flex items-center gap-3">
           <h4 className="text-base font-semibold flex items-center gap-2">

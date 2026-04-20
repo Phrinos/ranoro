@@ -24,7 +24,7 @@ export function TabPrompt({ config, setConfig, onSave, isSaving, onPurge, isPurg
     <div className="space-y-6">
 
       {/* Prompt Configuration */}
-      <Card className="bg-white rounded-2xl shadow-sm border border-slate-200">
+      <Card className="bg-white rounded-2xl shadow-xs border border-slate-200">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <FileText className="h-5 w-5 text-blue-500" />
@@ -45,7 +45,7 @@ export function TabPrompt({ config, setConfig, onSave, isSaving, onPurge, isPurg
       </Card>
 
       {/* Workshop Schedule Info */}
-      <Card className="bg-white rounded-2xl shadow-sm border border-slate-200">
+      <Card className="bg-white rounded-2xl shadow-xs border border-slate-200">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Calendar className="h-5 w-5 text-green-500" />
@@ -100,7 +100,7 @@ export function TabPrompt({ config, setConfig, onSave, isSaving, onPurge, isPurg
       </Card>
 
       {/* Model & AI Settings */}
-      <Card className="bg-white rounded-2xl shadow-sm border border-slate-200">
+      <Card className="bg-white rounded-2xl shadow-xs border border-slate-200">
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Cpu className="h-5 w-5 text-violet-500" />
@@ -206,7 +206,7 @@ export function TabPrompt({ config, setConfig, onSave, isSaving, onPurge, isPurg
       </Card>
 
       {/* Danger Zone */}
-      <Card className="bg-white rounded-2xl shadow-sm border-red-200">
+      <Card className="bg-white rounded-2xl shadow-xs border-red-200">
         <CardHeader className="pb-3 bg-red-50/30">
           <CardTitle className="text-base flex items-center gap-2 text-red-600">
             <ShieldAlert className="h-5 w-5" />

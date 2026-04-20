@@ -8,7 +8,7 @@ export function Footer() {
     return (
         <footer className="bg-[#09090b] text-white print:hidden border-t border-white/5 relative overflow-hidden">
             {/* Soft decorative glow */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-2xl h-px bg-linear-to-r from-transparent via-primary/50 to-transparent" />
             
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-20">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8 mb-16">
@@ -30,7 +30,7 @@ export function Footer() {
                              <a href="https://www.facebook.com/ranoromecanica" target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#1877F2] hover:text-white transition-all text-slate-300" aria-label="Facebook de Ranoro">
                                 <Icon icon="simple-icons:facebook" className="w-5 h-5"/>
                              </a>
-                             <a href="https://www.instagram.com/ranoromecanica" target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-gradient-to-br hover:from-[#f09433] hover:to-[#bc1888] hover:text-white transition-all text-slate-300" aria-label="Instagram de Ranoro">
+                             <a href="https://www.instagram.com/ranoromecanica" target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-linear-to-br hover:from-[#f09433] hover:to-[#bc1888] hover:text-white transition-all text-slate-300" aria-label="Instagram de Ranoro">
                                 <Icon icon="simple-icons:instagram" className="w-5 h-5"/>
                              </a>
                              <a href="https://wa.me/524491425323" target="_blank" rel="noopener noreferrer" className="h-10 w-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-[#25D366] hover:text-white transition-all text-slate-300" aria-label="WhatsApp de Ranoro">

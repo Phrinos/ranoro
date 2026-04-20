@@ -59,7 +59,7 @@ export function ServiceSummary({
         <CardTitle>Resumen y Pago</CardTitle>
       </CardHeader>
 
-      <CardContent className="pt-0 flex flex-col space-y-4 flex-grow">
+      <CardContent className="pt-0 flex flex-col space-y-4 grow">
         <PaymentSection
           onOpenValidateDialog={onOpenValidateDialog}
           validatedFolios={validatedFolios}

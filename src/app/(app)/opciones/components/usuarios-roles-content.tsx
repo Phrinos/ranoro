@@ -69,7 +69,7 @@ export function UsuariosRolesContent() {
   }
 
   return (
-    <div className="bg-card border rounded-2xl p-6 shadow-sm">
+    <div className="bg-card border rounded-2xl p-6 shadow-xs">
       <TabbedPageLayout
         title=""
         tabs={tabConfigs}

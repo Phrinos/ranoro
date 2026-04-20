@@ -186,14 +186,14 @@ export default function VehicleDetailPage() {
             {/* FLOATING ACTIONS TOP RIGHT */}
             <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex items-center gap-2">
                {userPermissions.has('fleet:edit') && (
-                 <Button variant="outline" size="icon" className="text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full w-10 h-10 transition-all bg-white shadow-sm border-slate-200" onClick={() => setIsEditDialogOpen(true)}>
+                 <Button variant="outline" size="icon" className="text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-full w-10 h-10 transition-all bg-white shadow-xs border-slate-200" onClick={() => setIsEditDialogOpen(true)}>
                    <Edit className="w-4 h-4" />
                  </Button>
                )}
                {userPermissions.has('fleet:delete') && (
                   <ConfirmDialog
                     triggerButton={
-                      <Button variant="outline" size="icon" className="text-red-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 rounded-full w-10 h-10 transition-all bg-white shadow-sm border-slate-200">
+                      <Button variant="outline" size="icon" className="text-red-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 rounded-full w-10 h-10 transition-all bg-white shadow-xs border-slate-200">
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     }
@@ -215,7 +215,7 @@ export default function VehicleDetailPage() {
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-lg font-medium text-slate-600">
                     <span className="text-slate-900 font-extrabold tracking-tight text-xl sm:text-2xl">{vehicle.make}</span>
                     <span className="text-xl sm:text-2xl">{vehicle.model}</span>
-                    <span className="bg-slate-100 px-3.5 py-1 rounded-full border border-slate-200 text-slate-700 text-sm font-bold shadow-sm">{vehicle.year}</span>
+                    <span className="bg-slate-100 px-3.5 py-1 rounded-full border border-slate-200 text-slate-700 text-sm font-bold shadow-xs">{vehicle.year}</span>
                     {vehicle.color && (
                       <span className="flex items-center gap-1.5 ml-1">
                          <div className="w-4 h-4 rounded-full border border-slate-200 shadow-inner" style={{backgroundColor: vehicle.color.toLowerCase()}} title={vehicle.color} />
@@ -228,7 +228,7 @@ export default function VehicleDetailPage() {
                   <div className="flex flex-wrap gap-x-10 gap-y-6 items-center text-sm font-mono text-slate-500 pt-6">
                       <div className="flex flex-col gap-1">
                         <span className="text-[10px] text-slate-400 uppercase tracking-widest font-sans font-bold">Tipo de Motor</span>
-                        <span className="text-base font-bold text-slate-800 bg-slate-50 px-3.5 py-1.5 rounded-lg border border-slate-100 shadow-sm">{vehicle.engine || '—'}</span>
+                        <span className="text-base font-bold text-slate-800 bg-slate-50 px-3.5 py-1.5 rounded-lg border border-slate-100 shadow-xs">{vehicle.engine || '—'}</span>
                       </div>
                       <div className="flex flex-col gap-1">
                         <span className="text-[10px] text-slate-400 uppercase tracking-widest font-sans font-bold">Núm. de Motor</span>
@@ -236,18 +236,18 @@ export default function VehicleDetailPage() {
                       </div>
                       <div className="flex flex-col gap-1">
                         <span className="text-[10px] text-slate-400 uppercase tracking-widest font-sans font-bold">Número VIN</span>
-                        <span className="text-base text-slate-700 font-medium bg-slate-50 px-3.5 py-1.5 rounded-lg border border-slate-100 shadow-sm tracking-wider">{vehicle.vin || '—'}</span>
+                        <span className="text-base text-slate-700 font-medium bg-slate-50 px-3.5 py-1.5 rounded-lg border border-slate-100 shadow-xs tracking-wider">{vehicle.vin || '—'}</span>
                       </div>
                   </div>
                </div>
 
                {/* 2. CONTACT DETAILS */}
-               <div className="w-full md:w-[320px] lg:w-[380px] flex-shrink-0 flex flex-col justify-center pt-6 border-t border-slate-100 md:border-0 md:pt-0">
-                  <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-slate-200/50 to-transparent rounded-bl-full pointer-events-none" />
+               <div className="w-full md:w-[320px] lg:w-[380px] shrink-0 flex flex-col justify-center pt-6 border-t border-slate-100 md:border-0 md:pt-0">
+                  <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-xs relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-linear-to-bl from-slate-200/50 to-transparent rounded-bl-full pointer-events-none" />
                       
                       <div className="flex items-center gap-3 mb-5">
-                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm border border-slate-200">
+                        <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 shadow-xs border border-slate-200">
                           <Phone className="w-3.5 h-3.5 text-slate-600" />
                         </div>
                         <h3 className="font-bold text-xs text-slate-500 uppercase tracking-widest">Contacto Directo</h3>
@@ -259,14 +259,14 @@ export default function VehicleDetailPage() {
                         </p>
                         
                         <div className="flex items-center gap-3 flex-wrap">
-                          <span className="text-lg font-mono text-slate-700 font-bold bg-white px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-sm">
+                          <span className="text-lg font-mono text-slate-700 font-bold bg-white px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-xs">
                              {vehicle.ownerPhone || 'S/N'}
                           </span>
                           
                           {vehicle.ownerPhone && (
                              <Button 
                                onClick={handleWhatsApp} 
-                               className="bg-[#25D366] hover:bg-[#1ebe5d] text-white rounded-xl transition-all h-[42px] px-3.5 shadow-sm font-bold flex gap-2 items-center"
+                               className="bg-[#25D366] hover:bg-[#1ebe5d] text-white rounded-xl transition-all h-[42px] px-3.5 shadow-xs font-bold flex gap-2 items-center"
                                title="Contactar vía WhatsApp"
                              >
                                <MessageCircle className="w-5 h-5 shrink-0" />
@@ -282,16 +282,16 @@ export default function VehicleDetailPage() {
 
         {/* MIDDLE ROW: KM AND NEXT SERVICE */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           <Card className="border-border/60 shadow-sm flex items-center p-6 bg-white gap-6 hover:shadow-md transition-shadow">
-              <div className="bg-primary/10 p-4 rounded-2xl flex-shrink-0"><Gauge className="w-8 h-8 text-primary" /></div>
+           <Card className="border-border/60 shadow-xs flex items-center p-6 bg-white gap-6 hover:shadow-md transition-shadow">
+              <div className="bg-primary/10 p-4 rounded-2xl shrink-0"><Gauge className="w-8 h-8 text-primary" /></div>
               <div>
                 <h3 className="font-bold text-xs text-muted-foreground uppercase tracking-widest mb-1.5">Kilometraje Actual</h3>
                 <p className="font-black font-mono text-3xl sm:text-4xl text-slate-900">{formatNumber(currentMileage)} <span className="text-lg font-bold text-slate-400 font-sans">km</span></p>
               </div>
            </Card>
            
-           <Card className="border-amber-200/60 shadow-sm flex items-center p-6 bg-amber-50 gap-6 hover:shadow-md transition-shadow">
-              <div className="bg-amber-500/20 p-4 rounded-2xl flex-shrink-0"><Calendar className="w-8 h-8 text-amber-700" /></div>
+           <Card className="border-amber-200/60 shadow-xs flex items-center p-6 bg-amber-50 gap-6 hover:shadow-md transition-shadow">
+              <div className="bg-amber-500/20 p-4 rounded-2xl shrink-0"><Calendar className="w-8 h-8 text-amber-700" /></div>
               <div>
                 <h3 className="font-bold text-xs text-amber-800 uppercase tracking-widest mb-2">Aviso de Próximo Servicio</h3>
                 <div className="scale-110 origin-left">
@@ -305,7 +305,7 @@ export default function VehicleDetailPage() {
         <Card className="border-border/60 shadow-md">
            <div className="px-6 py-5 bg-slate-50/50 border-b border-border flex flex-wrap items-center justify-between gap-4">
              <div className="flex items-center gap-3">
-               <div className="bg-white p-2 rounded-lg border shadow-sm"><ClipboardList className="w-4 h-4 text-primary" /></div>
+               <div className="bg-white p-2 rounded-lg border shadow-xs"><ClipboardList className="w-4 h-4 text-primary" /></div>
                <h3 className="font-bold text-lg text-slate-800">Historial de Intervenciones</h3>
              </div>
              <Badge variant="secondary" className="font-mono text-sm px-3 py-1">{recentServices.length} Registros</Badge>
@@ -313,7 +313,7 @@ export default function VehicleDetailPage() {
 
            {recentServices.length === 0 ? (
              <div className="p-12 text-center text-muted-foreground bg-white flex flex-col items-center">
-                <div className="bg-slate-50 p-4 rounded-full shadow-sm mb-4 border border-slate-100">
+                <div className="bg-slate-50 p-4 rounded-full shadow-xs mb-4 border border-slate-100">
                   <ClipboardList className="h-8 w-8 text-slate-400" />
                 </div>
                 <p className="font-medium text-slate-600">Este vehículo no tiene servicios realizados en el taller aún.</p>
@@ -361,7 +361,7 @@ export default function VehicleDetailPage() {
                               <span className="text-xs text-muted-foreground uppercase tracking-wider block">Total</span>
                               <span className="font-bold text-slate-900">{formatCurrency(service.totalCost || 0)}</span>
                            </div>
-                           <div className="bg-white group-hover:bg-primary shadow-sm border border-slate-200 group-hover:border-primary rounded-full p-1.5 transition-colors">
+                           <div className="bg-white group-hover:bg-primary shadow-xs border border-slate-200 group-hover:border-primary rounded-full p-1.5 transition-colors">
                              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-white" />
                            </div>
                          </div>

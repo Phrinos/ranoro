@@ -52,7 +52,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           aria-invalid={invalid || undefined}
           className={cn(
             // Base
-            "block w-full rounded-md border bg-white text-foreground placeholder:text-muted-foreground outline-none transition",
+            "block w-full rounded-md border bg-white text-foreground placeholder:text-muted-foreground outline-hidden transition",
             // Focus sin “doble borde”
             "border-input focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50 ring-offset-1 focus-visible:ring-offset-1",
             // Deshabilitado
