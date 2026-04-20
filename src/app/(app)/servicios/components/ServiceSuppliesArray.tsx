@@ -6,7 +6,7 @@ import React, { useState, useCallback } from 'react';
 import { useFormContext, useFieldArray, type Control } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Trash2, Minus, Plus } from 'lucide-react';
+import { PlusCircle, Trash2, Minus, Plus, PackagePlus } from 'lucide-react';
 import type { InventoryItem, InventoryCategory, Supplier } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { InventorySearchDialog } from '@/components/shared/InventorySearchDialog';
@@ -14,6 +14,7 @@ import { ItemDialog as InventoryItemDialog } from '../../punto-de-venta/componen
 import type { ItemFormValues as InventoryItemFormValues } from "../../punto-de-venta/components/dialogs/item-dialog";
 import { formatCurrency, cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/usePermissions';
+import { ServicePurchaseDialog } from './dialogs/service-purchase-dialog';
 
 interface ServiceSuppliesArrayProps {
   serviceIndex: number;
@@ -45,7 +46,15 @@ export function ServiceSuppliesArray({
 
   const [isInventorySearchDialogOpen, setIsInventorySearchDialogOpen] = useState(false);
   const [isNewItemDialogOpen, setIsNewItemDialogOpen] = useState(false);
+  const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
   const [newItemSearchTerm, setNewItemSearchTerm] = useState('');
+
+  const { watch } = useFormContext();
+  const serviceItems: any[] = watch('serviceItems') || [];
+  const serviceItemNames = serviceItems.map((item: any, idx: number) => ({
+    index: idx,
+    label: `Trabajo #${idx + 1}${item?.itemName ? ` – ${item.itemName}` : ''}`,
+  }));
 
   const handleAddSupply = useCallback((item: InventoryItem, quantity: number) => {
     append({
@@ -153,9 +162,24 @@ export function ServiceSuppliesArray({
       ))}
       
       {!isReadOnly && (
-        <div className="flex justify-end pt-2">
-          <Button type="button" variant="outline" size="sm" className="bg-card" onClick={() => setIsInventorySearchDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Añadir Insumo
+        <div className="flex justify-end gap-2 pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="bg-card text-muted-foreground"
+            onClick={() => setIsInventorySearchDialogOpen(true)}
+          >
+            <PlusCircle className="mr-1.5 h-3.5 w-3.5" /> Del Catálogo
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="bg-card border-primary/30 text-primary hover:bg-primary/10"
+            onClick={() => setIsPurchaseDialogOpen(true)}
+          >
+            <PackagePlus className="mr-1.5 h-3.5 w-3.5" /> Registrar Compra
           </Button>
         </div>
       )}
@@ -173,6 +197,16 @@ export function ServiceSuppliesArray({
         onSave={handleNewItemSaved}
         item={{ name: newItemSearchTerm } as any}
         categories={categories as any}
+      />
+
+      <ServicePurchaseDialog
+        open={isPurchaseDialogOpen}
+        onOpenChange={setIsPurchaseDialogOpen}
+        suppliers={suppliers}
+        inventoryItems={inventoryItems}
+        categories={categories}
+        defaultServiceItemIndex={serviceIndex}
+        serviceItemNames={serviceItemNames}
       />
     </div>
   );
