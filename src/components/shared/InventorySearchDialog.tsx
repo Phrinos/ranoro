@@ -33,7 +33,8 @@ export function InventorySearchDialog({
 }: InventorySearchDialogProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [autoLoaded, setAutoLoaded] = useState<InventoryItem[] | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  // Empezar en true si el diálogo abre con datos aún no cargados
+  const [isLoading, setIsLoading] = useState(open);
 
   // Siempre carga desde Firestore cuando el diálogo está abierto,
   // independientemente de si recibimos inventoryItems como prop.
@@ -41,9 +42,11 @@ export function InventorySearchDialog({
   useEffect(() => {
     if (!open) {
       setAutoLoaded(null);
+      setIsLoading(false);
       return;
     }
 
+    // Mostrar spinner inmediatamente al abrir
     setIsLoading(true);
     const base = collection(db, "inventory");
     const q = includeServices ? query(base) : query(base, where("isService", "==", false));
@@ -138,10 +141,10 @@ export function InventorySearchDialog({
             </div>
 
             <Command.List className="max-h-[52vh] overflow-y-auto">
-              {isLoading ? (
+              {isLoading || autoLoaded === null ? (
                 <div className="p-10 text-center flex flex-col items-center gap-2">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-sm text-muted-foreground font-medium">Cargando catálogo...</p>
+                  <p className="text-sm text-muted-foreground font-medium">Cargando inventario...</p>
                 </div>
               ) : searchTerm.trim().length > 0 && searchTerm.trim().length < 3 ? (
                 <div className="p-10 text-center text-muted-foreground flex flex-col items-center gap-2">
