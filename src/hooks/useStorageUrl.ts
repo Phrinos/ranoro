@@ -1,7 +1,7 @@
 // src/hooks/useStorageUrl.ts
 import { useState, useEffect } from 'react';
 import { ref, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebasePublic'; // Usar la configuración pública
+import { storage } from '@/lib/firebaseClient'; // Usar la configuración pública
 
 /**
  * Hook para obtener la URL de descarga de un archivo en Firebase Storage.

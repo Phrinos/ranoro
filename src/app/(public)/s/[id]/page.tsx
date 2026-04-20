@@ -7,7 +7,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { doc, onSnapshot, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebasePublic";
+import { db } from "@/lib/firebaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ServiceSheetContent } from "@/components/shared/ServiceSheetContent";
