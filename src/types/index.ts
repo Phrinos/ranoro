@@ -33,9 +33,7 @@ export type PaymentMethod =
   | "Tarjeta 6 MSI"
   | "Transferencia"
   | "Transferencia/Contadora"
-  | "Crédito"
-  | "Efectivo+Transferencia"
-  | "Tarjeta+Transferencia";
+  | "Crédito";
 export const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Tarjeta 3 MSI", "Tarjeta 6 MSI", "Transferencia", "Transferencia/Contadora", "Crédito"] as const;
 
 // ✅ Sub-estatus: tu UI compara estos literales
@@ -418,7 +416,7 @@ export interface VehicleGroup {
   id: string;
   name: string;
   description?: string;
-  
+
   // Categorías de insumos compatibles
   items: {
     aceites: GroupItemOption[];

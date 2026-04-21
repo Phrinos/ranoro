@@ -5,8 +5,10 @@
         "type": "Delete"
       },
       "condition": {
-        "age": 7,
-        "matchesPrefix": ["service-photos/"]
+        "age": 30,
+        "matchesPrefix": [
+          "service-photos/"
+        ]
       }
     }
   ]
