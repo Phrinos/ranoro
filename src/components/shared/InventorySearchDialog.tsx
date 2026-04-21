@@ -183,7 +183,8 @@ export function InventorySearchDialog({
                   </p>
                 )}
                 {filteredItems.map((item) => {
-                  const isLowStock = !item.isService && item.quantity <= (item.lowStockThreshold || 0);
+                  const itemStock = item.stock ?? item.quantity ?? 0;
+                  const isLowStock = !item.isService && itemStock <= (item.lowStockThreshold || 0);
                   return (
                     <button
                       key={item.id}

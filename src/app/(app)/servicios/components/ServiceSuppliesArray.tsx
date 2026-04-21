@@ -61,8 +61,8 @@ export function ServiceSuppliesArray({
       supplyId: item.id,
       supplyName: item.name,
       quantity: quantity || 1,
-      unitPrice: item.unitPrice || 0,
-      sellingPrice: item.sellingPrice,
+      unitPrice: item.costPrice || item.unitPrice || 0,  // costPrice es el campo nuevo
+      sellingPrice: item.sellingPrice || item.salePrice || 0,
       isService: item.isService,
       unitType: item.unitType,
     });
@@ -93,8 +93,8 @@ export function ServiceSuppliesArray({
     const newQuantity = (Number(currentSupply.quantity) || 0) + delta;
     if (newQuantity <= 0) return;
     const inventoryItem = inventoryItems.find(inv => inv.id === currentSupply.supplyId);
-    if (inventoryItem && !inventoryItem.isService && newQuantity > inventoryItem.quantity) {
-      toast({ title: 'Stock Insuficiente', description: `Solo hay ${inventoryItem.quantity} de ${inventoryItem.name} en inventario.`, variant: 'destructive' });
+    if (inventoryItem && !inventoryItem.isService && newQuantity > (inventoryItem.stock ?? inventoryItem.quantity ?? Infinity)) {
+      toast({ title: 'Stock Insuficiente', description: `Solo hay ${inventoryItem.stock ?? inventoryItem.quantity} de ${inventoryItem.name} en inventario.`, variant: 'destructive' });
       return;
     }
     update(supplyIndex, { ...currentSupply, quantity: newQuantity });
@@ -106,8 +106,8 @@ export function ServiceSuppliesArray({
     const newQuantity = Number(value);
     if (isNaN(newQuantity) || newQuantity < 0) return;
     const itemDetails = inventoryItems.find(inv => inv.id === currentSupply.supplyId);
-    if (itemDetails && !itemDetails.isService && newQuantity > itemDetails.quantity) {
-      toast({ title: 'Stock Insuficiente', description: `Solo hay ${itemDetails.quantity} de ${itemDetails.name}.`, variant: 'destructive' });
+    if (itemDetails && !itemDetails.isService && newQuantity > (itemDetails.stock ?? itemDetails.quantity ?? Infinity)) {
+      toast({ title: 'Stock Insuficiente', description: `Solo hay ${itemDetails.stock ?? itemDetails.quantity} de ${itemDetails.name}.`, variant: 'destructive' });
       return;
     }
     update(supplyIndex, { ...currentSupply, quantity: newQuantity });

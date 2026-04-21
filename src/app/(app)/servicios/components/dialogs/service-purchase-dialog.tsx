@@ -104,7 +104,7 @@ export function ServicePurchaseDialog({
       inventoryItemId: item.id,
       itemName: item.name,
       quantity: 1,
-      purchasePrice: item.unitPrice || 0,
+      purchasePrice: item.costPrice || item.unitPrice || 0,
       sellingPrice: item.sellingPrice || 0,
     });
     setItemToggles((prev) => [...prev, true]); // default: add to service

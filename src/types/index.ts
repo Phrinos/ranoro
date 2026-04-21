@@ -231,14 +231,21 @@ export interface InventoryItem {
   name: string;
   category: string;
   supplier: string;
+  supplierId?: string;
+  supplierName?: string;
+  // ── Canonical fields (new schema: inventoryItems collection) ──
+  stock?: number;          // was: quantity
+  costPrice?: number;      // was: unitPrice / purchasePrice
+  salePrice?: number;      // was: sellingPrice
+  // ── Legacy aliases (kept for backwards compatibility) ──
+  quantity?: number;
+  unitPrice?: number;
   purchasePrice?: number;
-  salePrice?: number;
-  quantity: number;
+  sellingPrice?: number;
+  // ── Other ──
   lowStockThreshold?: number;
   sku?: string;
   brand?: string;
-  unitPrice?: number;
-  sellingPrice?: number;
   isService?: boolean;
   unitType?: string;
   description?: string;
