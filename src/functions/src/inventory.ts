@@ -56,7 +56,7 @@ export const onStockExit = onDocumentUpdated("serviceRecords/{serviceId}", async
           continue;
         }
 
-        const inventoryItemRef = db.collection("inventory").doc(item.id);
+        const inventoryItemRef = db.collection("inventoryItems").doc(item.id);
         const movementRef = db.collection("inventoryMovements").doc();
 
         transaction.set(movementRef, {
@@ -109,7 +109,7 @@ const processStockEntry = async (purchaseSnap: admin.firestore.DocumentSnapshot,
           logger.warn(`[Inventory] Compra ${purchaseId}: Datos de item inválidos, omitiendo.`, item);
           continue;
         }
-        const inventoryItemRef = db.collection("inventory").doc(item.inventoryItemId);
+        const inventoryItemRef = db.collection("inventoryItems").doc(item.inventoryItemId);
         const movementRef = db.collection("inventoryMovements").doc();
 
         transaction.set(movementRef, {
@@ -186,7 +186,7 @@ export const adjustStock = onCall(async (request) => {
 
   logger.info(`[Inventory] Admin ${auth.uid} está ajustando el stock para el item ${itemId}.`);
 
-  const inventoryItemRef = db.collection("inventory").doc(itemId);
+  const inventoryItemRef = db.collection("inventoryItems").doc(itemId);
   const movementRef = db.collection("inventoryMovements").doc();
 
   try {

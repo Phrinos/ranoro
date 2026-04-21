@@ -178,11 +178,11 @@ const getInventoryStatus = ai.defineTool(
   },
   async ({ onlyLowStock }) => {
     const db = getAdminDb();
-    const snap = await db.collection('inventory').get();
+    const snap = await db.collection('inventoryItems').get();
     
     let items = snap.docs.map(doc => ({ 
         name: (doc.data().name || 'Item').toString(), 
-        stock: Number(doc.data().quantity || 0), 
+        stock: Number(doc.data().stock ?? doc.data().quantity ?? 0), 
         threshold: Number(doc.data().lowStockThreshold || 0) 
     }));
 
