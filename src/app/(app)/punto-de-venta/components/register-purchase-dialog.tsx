@@ -22,6 +22,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trash2, Plus, Receipt, Package, ShoppingBag } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
 import { InventorySearchDialog } from '@/components/shared/InventorySearchDialog';
+import { ItemDialog, type ItemFormValues } from './dialogs/item-dialog';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebaseClient';
+import { useToast } from '@/hooks/use-toast';
+import type { PosCategory } from '../hooks/use-pos-data';
 
 export type { RegisterPurchaseFormValues as PurchaseFormValues };
 
@@ -44,10 +49,13 @@ export function RegisterPurchaseDialog({
   open,
   onOpenChange,
   suppliers,
+  categories,
   onSave,
 }: RegisterPurchaseDialogProps) {
+  const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const form = useForm<RegisterPurchaseFormValues>({
     resolver: zodResolver(registerPurchaseSchema) as any,
@@ -76,6 +84,28 @@ export function RegisterPurchaseDialog({
     setIsSearchOpen(false);
   }, [append]);
 
+  const handleNewInventoryItem = useCallback(async (values: ItemFormValues) => {
+    try {
+      const docRef = await addDoc(collection(db, "inventoryItems"), {
+        ...values,
+        stock: values.isService ? 0 : (values.stock ?? 0),
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      append({
+        inventoryItemId: docRef.id,
+        itemName: values.name,
+        quantity: 1,
+        purchasePrice: values.costPrice || 0,
+        sellingPrice: values.salePrice || 0,
+      });
+      setIsCreateOpen(false);
+      toast({ title: "Producto creado y añadido a la compra ✅" });
+    } catch (e: any) {
+      toast({ title: "Error al crear el producto", description: e.message, variant: "destructive" });
+    }
+  }, [append, toast]);
+
   const handleSubmit = async (data: RegisterPurchaseFormValues) => {
     if (data.items.length === 0) return;
     setIsSaving(true);
@@ -91,8 +121,8 @@ export function RegisterPurchaseDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        {/* Wide horizontal layout */}
-        <DialogContent className="max-w-5xl max-h-[90vh] p-0 overflow-hidden">
+        {/* Wide horizontal layout — no X button */}
+        <DialogContent hideClose className="max-w-5xl max-h-[90vh] p-0 overflow-hidden">
           <div className="flex h-full" style={{ minHeight: 520 }}>
 
             {/* ── LEFT: Product list ─────────────────────────────────── */}
@@ -330,6 +360,16 @@ export function RegisterPurchaseDialog({
         open={isSearchOpen}
         onOpenChange={setIsSearchOpen}
         onItemSelected={handleItemSelected}
+        onNewItemRequest={() => { setIsSearchOpen(false); setIsCreateOpen(true); }}
+      />
+
+      <ItemDialog
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        item={null}
+        categories={(categories as unknown as PosCategory[]) ?? []}
+        suppliers={suppliers}
+        onSave={handleNewInventoryItem}
       />
     </>
   );

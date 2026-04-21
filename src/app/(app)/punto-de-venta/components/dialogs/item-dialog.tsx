@@ -144,8 +144,8 @@ export function ItemDialog({ open, onOpenChange, item, categories, suppliers = [
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* Horizontal wide layout */}
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+      {/* Wide horizontal layout — no X button */}
+      <DialogContent hideClose className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
         <div className="flex flex-col h-full min-h-[500px]">
 
           {/* ── Top: gradient header + type selector ────────────────── */}
@@ -332,11 +332,10 @@ export function ItemDialog({ open, onOpenChange, item, categories, suppliers = [
                       <div>
                         <SectionHeader icon={DollarSign} label="Precios" color="text-emerald-600" />
                         <div className="space-y-3">
-                          {!isService && (
-                            <FormField control={form.control} name="costPrice" render={({ field }) => (
-                              <PriceInput label="Precio Costo" field={field} />
-                            )} />
-                          )}
+                          {/* Services also have a cost price (outsourced providers) */}
+                          <FormField control={form.control} name="costPrice" render={({ field }) => (
+                            <PriceInput label="Precio Costo" field={field} />
+                          )} />
                           <FormField control={form.control} name="salePrice" render={({ field }) => (
                             <PriceInput label="Precio Venta" field={field} required />
                           )} />

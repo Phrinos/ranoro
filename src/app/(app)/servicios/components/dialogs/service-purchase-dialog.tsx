@@ -212,8 +212,8 @@ export function ServicePurchaseDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        {/* max-w-6xl for more horizontal space */}
-        <DialogContent className="max-w-6xl max-h-[92vh] p-0 overflow-hidden">
+        {/* max-w-6xl for more horizontal space — no X button */}
+        <DialogContent hideClose className="max-w-6xl max-h-[92vh] p-0 overflow-hidden">
           <div className="flex h-full min-h-[560px]">
 
             {/* ══ LEFT: Products list ═════════════════════════════════════ */}
@@ -534,6 +534,7 @@ export function ServicePurchaseDialog({
         open={isSearchOpen}
         onOpenChange={setIsSearchOpen}
         onItemSelected={handleItemSelected}
+        onNewItemRequest={() => { setIsSearchOpen(false); setIsCreateOpen(true); }}
       />
 
       {/* Create new inventory item */}
