@@ -14,6 +14,7 @@ import { FormField, FormItem } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Trash2, Wrench } from "lucide-react";
 import { capitalizeWords, formatCurrency, cn } from "@/lib/utils";
 import type { ItemFormValues as InventoryItemFormValues } from "../../punto-de-venta/components/dialogs/item-dialog";
@@ -21,6 +22,52 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { usePermissions } from "@/hooks/usePermissions";
 import { ServiceSuppliesArray } from "./ServiceSuppliesArray";
 import { Separator } from "@/components/ui/separator";
+
+// Pastel color palette rotating per work item index
+const CARD_PALETTES = [
+  { // 0 — amber
+    card: "bg-amber-50 border-amber-200",
+    header: "bg-amber-100/70",
+    badge: "bg-amber-200 text-amber-800",
+    icon: "text-amber-600",
+    accent: "text-amber-700",
+  },
+  { // 1 — sky
+    card: "bg-sky-50 border-sky-200",
+    header: "bg-sky-100/70",
+    badge: "bg-sky-200 text-sky-800",
+    icon: "text-sky-600",
+    accent: "text-sky-700",
+  },
+  { // 2 — emerald
+    card: "bg-emerald-50 border-emerald-200",
+    header: "bg-emerald-100/70",
+    badge: "bg-emerald-200 text-emerald-800",
+    icon: "text-emerald-600",
+    accent: "text-emerald-700",
+  },
+  { // 3 — violet
+    card: "bg-violet-50 border-violet-200",
+    header: "bg-violet-100/70",
+    badge: "bg-violet-200 text-violet-800",
+    icon: "text-violet-600",
+    accent: "text-violet-700",
+  },
+  { // 4 — rose
+    card: "bg-rose-50 border-rose-200",
+    header: "bg-rose-100/70",
+    badge: "bg-rose-200 text-rose-800",
+    icon: "text-rose-600",
+    accent: "text-rose-700",
+  },
+  { // 5 — orange
+    card: "bg-orange-50 border-orange-200",
+    header: "bg-orange-100/70",
+    badge: "bg-orange-200 text-orange-800",
+    icon: "text-orange-600",
+    accent: "text-orange-700",
+  },
+];
 
 const toNumber = (v: unknown): number => {
   if (typeof v === "number") return Number.isFinite(v) ? v : 0;
@@ -88,20 +135,32 @@ export function ServiceItemCard({
     [serviceTypes]
   );
 
+  const palette = CARD_PALETTES[serviceIndex % CARD_PALETTES.length];
+
   return (
-    <Card className={cn("p-4 transition-all", isCollapsed ? "bg-card shadow-xs border-muted" : "bg-muted/30 border-primary/20 shadow-md")}>
-      <div className={cn("flex justify-between items-center", isCollapsed ? "" : "mb-4")}>
+    <Card className={cn(
+      "overflow-hidden border transition-all shadow-sm",
+      isCollapsed ? "shadow-xs" : "shadow-md",
+      palette.card
+    )}>
+      {/* Colored header strip */}
+      <div className={cn("px-4 py-3 flex justify-between items-center", palette.header)}>
         <div className="flex items-center gap-3">
-          <h4 className="text-base font-semibold flex items-center gap-2">
-            <Wrench className="h-5 w-5 text-muted-foreground" />
-            Trabajo #{serviceIndex + 1}
-          </h4>
+          <div className={cn("flex items-center gap-2", palette.icon)}>
+            <Wrench className="h-4 w-4" />
+            <span className="font-black text-sm">
+              Trabajo #{serviceIndex + 1}
+            </span>
+          </div>
+          <Badge className={cn("text-[10px] font-bold border-0 shadow-none", palette.badge)}>
+            #{serviceIndex + 1}
+          </Badge>
           {isCollapsed && (
-             <div className="text-sm border-l pl-3 ml-1 flex items-center gap-2">
-                <span className="font-medium text-foreground">{String(itemNameStr || "Sin nombre")}</span>
-                <span className="text-muted-foreground">({String(serviceTypeStr || "Tipo no asig.")})</span>
-                <span className="font-bold text-green-600 ml-2">{formatCurrency(toNumber(sellingPrice))}</span>
-             </div>
+            <div className="text-sm border-l pl-3 ml-1 flex items-center gap-2">
+              <span className="font-semibold text-foreground">{String(itemNameStr || "Sin nombre")}</span>
+              <span className="text-muted-foreground">({String(serviceTypeStr || "Tipo no asig.")})</span>
+              <span className={cn("font-bold ml-2", palette.accent)}>{formatCurrency(toNumber(sellingPrice))}</span>
+            </div>
           )}
         </div>
         <div className="flex items-center gap-1">
@@ -143,7 +202,7 @@ export function ServiceItemCard({
       </div>
 
       {!isCollapsed && (
-        <>
+        <div className="px-4 pb-4 pt-3">
           <div className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr_auto] gap-3 items-end mb-4 mt-2">
             <FormField
               control={control}
@@ -243,9 +302,9 @@ export function ServiceItemCard({
           <span className="font-bold text-lg text-green-600">{formatCurrency(profit)}</span>
         </div>
       </div>
-    </>
-  )}
-</Card>
+        </div>
+      )}
+    </Card>
   );
 }
 
