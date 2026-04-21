@@ -50,6 +50,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           {...props}
           {...valueProp}
           aria-invalid={invalid || undefined}
+          // Bloquear rueda del mouse en inputs numéricos (evita cambios accidentales)
+          onWheel={type === "number" ? (e) => (e.target as HTMLInputElement).blur() : (props as any).onWheel}
           className={cn(
             // Base
             "block w-full rounded-md border bg-white text-foreground placeholder:text-muted-foreground outline-hidden transition",

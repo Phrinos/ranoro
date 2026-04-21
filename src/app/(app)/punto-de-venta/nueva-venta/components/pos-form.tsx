@@ -68,7 +68,7 @@ export function PosForm({ onSaleComplete, onOpenAddItemDialog }: PosFormProps) {
 
   // ── Quantity ─────────────────────────────────────────────────────────────
   const setQty = (index: number, qty: number) => {
-    const safe = Math.max(0.001, qty);
+    const safe = Math.max(1, Math.round(qty));  // enteros ≥ 1
     const unit = Number(watchedItems[index]?.unitPrice) || 0;
     setValue(`items.${index}.quantity`,   safe,                              { shouldDirty: true });
     setValue(`items.${index}.totalPrice`, parseFloat((safe * unit).toFixed(2)), { shouldDirty: true });
@@ -163,7 +163,7 @@ export function PosForm({ onSaleComplete, onOpenAddItemDialog }: PosFormProps) {
                         <Minus className="h-3 w-3" />
                       </Button>
                       <Input
-                        type="number" step="0.001" min="0.001"
+                        type="number" step="1" min="1"
                         className="w-14 h-7 text-center text-xs bg-white border-slate-200"
                         value={qty}
                         onChange={(e) => setQty(index, Number(e.target.value))}
