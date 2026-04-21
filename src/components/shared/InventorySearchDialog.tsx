@@ -52,28 +52,85 @@ export function InventorySearchDialog({
     setIsLoading(true);
     setSearchTerm("");
 
-    const base = collection(db, "inventory");
-    const q = includeServices ? query(base) : query(base, where("isService", "==", false));
-
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        const loaded = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) } as InventoryItem));
-        console.log(`[InventorySearch] Firestore returned ${loaded.length} items`);
-        setItems(loaded);
+    // Leemos de AMBAS colecciones: "inventory" (legado) y "inventoryItems" (PDV nuevo)
+    // y las unificamos en una sola lista.
+    const seenIds = new Set<string>();
+    let fromLegacy: InventoryItem[] = [];
+    let fromNew: InventoryItem[] = [];
+    let loadedCount = 0;
+    const checkDone = () => {
+      loadedCount++;
+      if (loadedCount >= 2) {
+        // Merge: prioridad a inventoryItems (más nuevo). Deduplica por ID.
+        const merged: InventoryItem[] = [];
+        for (const item of fromNew) {
+          seenIds.add(item.id);
+          merged.push(item);
+        }
+        for (const item of fromLegacy) {
+          if (!seenIds.has(item.id)) {
+            merged.push(item);
+          }
+        }
+        console.log(
+          `[InventorySearch] Merged ${merged.length} items (${fromNew.length} from inventoryItems, ${fromLegacy.length} from inventory)`
+        );
+        setItems(merged);
         setIsLoading(false);
+      }
+    };
+
+    // Normaliza docs de la colección nueva (POS) al formato InventoryItem
+    const normalizeNewItem = (id: string, d: any): InventoryItem => ({
+      id,
+      name: d.name ?? "",
+      sku: d.sku ?? "",
+      category: d.category ?? "",
+      isService: d.isService ?? false,
+      quantity: Number(d.stock ?? d.quantity ?? 0),
+      unitPrice: Number(d.costPrice ?? d.unitPrice ?? 0),
+      sellingPrice: Number(d.salePrice ?? d.sellingPrice ?? 0),
+      lowStockThreshold: Number(d.lowStockThreshold ?? 5),
+      supplier: d.supplierName ?? d.supplier ?? "",
+      brand: d.brand,
+      keywords: d.keywords,
+    } as InventoryItem);
+
+    const qLegacy = includeServices
+      ? query(collection(db, "inventory"))
+      : query(collection(db, "inventory"), where("isService", "==", false));
+    const qNew = includeServices
+      ? query(collection(db, "inventoryItems"))
+      : query(collection(db, "inventoryItems"), where("isService", "==", false));
+
+    const unsub1 = onSnapshot(
+      qLegacy,
+      (snap) => {
+        fromLegacy = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) } as InventoryItem));
+        checkDone();
       },
       (err) => {
-        console.error("[InventorySearch] Firestore error:", err);
-        // Fallback a props si Firestore falla
-        if (inventoryItems && inventoryItems.length > 0) {
-          setItems(inventoryItems);
-        }
-        setIsLoading(false);
+        console.warn("[InventorySearch] Legacy collection error:", err);
+        checkDone(); // Continuar con la otra colección
       }
     );
 
-    return () => unsub();
+    const unsub2 = onSnapshot(
+      qNew,
+      (snap) => {
+        fromNew = snap.docs.map((d) => normalizeNewItem(d.id, d.data()));
+        checkDone();
+      },
+      (err) => {
+        console.warn("[InventorySearch] New collection error:", err);
+        checkDone();
+      }
+    );
+
+    return () => {
+      unsub1();
+      unsub2();
+    };
   }, [open, includeServices]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Autofocus al input
