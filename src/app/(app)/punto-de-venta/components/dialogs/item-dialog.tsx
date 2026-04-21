@@ -15,8 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import { Package, Wrench, Trash2, DollarSign, Tag, Boxes, Info } from "lucide-react";
 import type { PosInventoryItem, PosCategory } from "../../hooks/use-pos-data";
 
 const schema = z.object({
@@ -88,168 +88,261 @@ export function ItemDialog({ open, onOpenChange, item, categories, onSave, onDel
 
   const productCategories = categories.filter((c) => c.type === "product");
   const serviceCategories = categories.filter((c) => c.type === "service");
+  const activeCats = isService ? serviceCategories : productCategories;
+
+  // Input style helper
+  const inputCls = "bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20 h-10";
+  const selectTriggerCls = "bg-white border-slate-200 focus:border-primary h-10";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar" : "Nuevo"} {isService ? "Servicio" : "Producto"}</DialogTitle>
-          <DialogDescription>
-            {isEditing ? "Modifica los datos del ítem." : "Agrega un nuevo ítem al inventario."}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto p-0">
+        {/* Header con color según tipo */}
+        <div className={cn(
+          "px-6 py-5 border-b",
+          isService
+            ? "bg-gradient-to-r from-purple-50 to-violet-50"
+            : "bg-gradient-to-r from-blue-50 to-sky-50"
+        )}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2.5 text-lg">
+              <div className={cn(
+                "p-2 rounded-lg",
+                isService ? "bg-purple-100" : "bg-blue-100"
+              )}>
+                {isService
+                  ? <Wrench className="h-4 w-4 text-purple-600" />
+                  : <Package className="h-4 w-4 text-blue-600" />
+                }
+              </div>
+              {isEditing ? "Editar" : "Nuevo"} {isService ? "Servicio" : "Producto"}
+            </DialogTitle>
+            <DialogDescription className="mt-1">
+              {isEditing ? "Modifica los datos del ítem." : "Agrega un nuevo ítem al inventario."}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Tipo toggle */}
-            <div className="flex items-center gap-3 p-3 rounded-xl border bg-muted/30">
-              <Label htmlFor="isService-toggle" className="text-sm font-medium flex-1">
-                ¿Es un servicio? (sin stock físico)
-              </Label>
-              <FormField
-                control={form.control}
-                name="isService"
-                render={({ field }) => (
-                  <Switch
-                    id="isService-toggle"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                )}
-              />
-            </div>
+        <div className="px-6 py-5">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
 
-            {/* Name */}
-            <FormField control={form.control} name="name" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nombre *</FormLabel>
-                <FormControl><Input placeholder="Nombre del producto o servicio" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+              {/* Tab tipo: Producto / Servicio */}
+              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => form.setValue("isService", false)}
+                  className={cn(
+                    "flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all",
+                    !isService
+                      ? "bg-white shadow-sm text-blue-700 border border-blue-100"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Package className="h-4 w-4" /> Producto
+                </button>
+                <button
+                  type="button"
+                  onClick={() => form.setValue("isService", true)}
+                  className={cn(
+                    "flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold transition-all",
+                    isService
+                      ? "bg-white shadow-sm text-purple-700 border border-purple-100"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Wrench className="h-4 w-4" /> Servicio
+                </button>
+              </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              {/* SKU */}
-              <FormField control={form.control} name="sku" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>SKU</FormLabel>
-                  <FormControl><Input placeholder="SKU-001" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
+              {/* Sección: Identificación */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <Info className="h-3.5 w-3.5" /> Información General
+                </div>
 
-              {/* Marca */}
-              <FormField control={form.control} name="brand" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Marca</FormLabel>
-                  <FormControl><Input placeholder="Marca" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-
-            {/* Categoría */}
-            <FormField control={form.control} name="category" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Categoría *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger><SelectValue placeholder="Selecciona categoría" /></SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {isService ? (
-                      serviceCategories.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)
-                    ) : (
-                      productCategories.map((c) => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)
-                    )}
-                    {(isService ? serviceCategories : productCategories).length === 0 && (
-                      <SelectItem value="_none" disabled>Sin categorías disponibles</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )} />
-
-            {/* Precios */}
-            <div className="grid grid-cols-2 gap-3">
-              <FormField control={form.control} name="costPrice" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Precio Costo</FormLabel>
-                  <FormControl><Input type="number" step="0.01" min="0" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="salePrice" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Precio Venta *</FormLabel>
-                  <FormControl><Input type="number" step="0.01" min="0" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-
-            {/* Stock — solo productos */}
-            {!isService && (
-              <div className="grid grid-cols-3 gap-3">
-                <FormField control={form.control} name="stock" render={({ field }) => (
+                <FormField control={form.control} name="name" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Stock Actual</FormLabel>
-                    <FormControl><Input type="number" min="0" {...field} /></FormControl>
+                    <FormLabel className="text-sm font-medium">Nombre *</FormLabel>
+                    <FormControl>
+                      <Input className={inputCls} placeholder={isService ? "Ej: Cambio de aceite" : "Ej: Aceite Castrol 5W30"} {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
-                <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (
+
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField control={form.control} name="sku" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">SKU / Código</FormLabel>
+                      <FormControl>
+                        <Input className={inputCls} placeholder="SKU-001" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="brand" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Marca</FormLabel>
+                      <FormControl>
+                        <Input className={inputCls} placeholder="Castrol, Mobil…" {...field} />
+                      </FormControl>
+                    </FormItem>
+                  )} />
+                </div>
+
+                <FormField control={form.control} name="category" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Mín. Stock</FormLabel>
-                    <FormControl><Input type="number" min="0" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField control={form.control} name="unitType" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unidad</FormLabel>
+                    <FormLabel className="text-sm font-medium">Categoría *</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger className={selectTriggerCls}>
+                          <SelectValue placeholder="Selecciona categoría" />
+                        </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {UNIT_TYPES.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                        {activeCats.map((c) => (
+                          <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                        ))}
+                        {activeCats.length === 0 && (
+                          <SelectItem value="_none" disabled>Sin categorías disponibles</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                     <FormMessage />
                   </FormItem>
                 )} />
+
+                <FormField control={form.control} name="description" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-sm font-medium">Descripción</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        rows={2}
+                        className="bg-white border-slate-200 focus:border-primary resize-none"
+                        placeholder="Descripción opcional..."
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )} />
               </div>
-            )}
 
-            {/* Descripción */}
-            <FormField control={form.control} name="description" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Descripción</FormLabel>
-                <FormControl><Textarea rows={2} placeholder="Descripción opcional..." {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+              {/* Sección: Precios */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <DollarSign className="h-3.5 w-3.5" /> Precios
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <FormField control={form.control} name="costPrice" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Precio Costo</FormLabel>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                        <FormControl>
+                          <Input type="number" step="0.01" min="0" className={cn(inputCls, "pl-7")} {...field} />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <FormField control={form.control} name="salePrice" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Precio Venta *</FormLabel>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                        <FormControl>
+                          <Input type="number" step="0.01" min="0" className={cn(inputCls, "pl-7")} {...field} />
+                        </FormControl>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+              </div>
 
-            <DialogFooter className="flex-col sm:flex-row gap-2">
-              {isEditing && onDelete && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  className="sm:mr-auto"
-                  onClick={() => { onDelete(item!.id!); onOpenChange(false); }}
-                >
-                  Eliminar
-                </Button>
+              {/* Sección: Stock — solo productos */}
+              {!isService && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    <Boxes className="h-3.5 w-3.5" /> Inventario
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    <FormField control={form.control} name="stock" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Stock Actual</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="0" className={inputCls} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="lowStockThreshold" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Mín. Stock</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="0" className={inputCls} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={form.control} name="unitType" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-medium">Unidad</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className={selectTriggerCls}>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {UNIT_TYPES.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                </div>
               )}
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Guardando…" : isEditing ? "Actualizar" : "Crear"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+
+              {/* Sección: Tags */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <Tag className="h-3.5 w-3.5" /> Identificación adicional
+                </div>
+              </div>
+
+              {/* Footer */}
+              <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2 border-t mt-2">
+                {isEditing && onDelete && (
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    className="sm:mr-auto gap-1.5"
+                    onClick={() => { onDelete(item!.id!); onOpenChange(false); }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Eliminar
+                  </Button>
+                )}
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={form.formState.isSubmitting}
+                  className={cn(
+                    isService
+                      ? "bg-purple-600 hover:bg-purple-700"
+                      : ""
+                  )}
+                >
+                  {form.formState.isSubmitting ? "Guardando…" : isEditing ? "Actualizar" : "Crear"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   );

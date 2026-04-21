@@ -169,6 +169,7 @@ export function InventoryTab({ items, categories }: Props) {
                       <TableHead className="text-white text-right">Stock</TableHead>
                       <TableHead className="text-white text-right">Costo</TableHead>
                       <TableHead className="text-white text-right">Precio Venta</TableHead>
+                      <TableHead className="text-white text-right">Valor Total</TableHead>
                       <TableHead className="text-white" />
                     </TableRow>
                   </TableHeader>
@@ -205,6 +206,15 @@ export function InventoryTab({ items, categories }: Props) {
                           </TableCell>
                           <TableCell className="text-right text-sm text-muted-foreground">{formatCurrency(item.costPrice)}</TableCell>
                           <TableCell className="text-right font-bold text-sm">{formatCurrency(item.salePrice)}</TableCell>
+                          <TableCell className="text-right">
+                            {item.isService ? (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            ) : (
+                              <span className="text-sm font-semibold text-emerald-700">
+                                {formatCurrency(item.stock * item.costPrice)}
+                              </span>
+                            )}
+                          </TableCell>
                           <TableCell>
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); openEdit(item); }}>
                               <Edit className="h-4 w-4" />
@@ -214,7 +224,7 @@ export function InventoryTab({ items, categories }: Props) {
                       );
                     }) : (
                       <TableRow>
-                        <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                        <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                           No se encontraron ítems.
                         </TableCell>
                       </TableRow>

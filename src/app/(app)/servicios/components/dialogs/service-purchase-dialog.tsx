@@ -191,18 +191,24 @@ export function ServicePurchaseDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <PackagePlus className="h-5 w-5 text-primary" />
-              Registrar Compra de Refacciones
-            </DialogTitle>
-            <DialogDescription>
-              Ingresa la factura o nota de compra. Los artículos se agregarán al inventario
-              y opcionalmente se cargarán al servicio activo.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0">
+          {/* Header */}
+          <div className="px-6 py-5 border-b bg-gradient-to-r from-emerald-50 to-teal-50">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2.5 text-lg">
+                <div className="p-2 rounded-lg bg-emerald-100">
+                  <PackagePlus className="h-4 w-4 text-emerald-600" />
+                </div>
+                Registrar Compra de Refacciones
+              </DialogTitle>
+              <DialogDescription>
+                Ingresa la factura o nota de compra. Los artículos se agregarán al inventario
+                y opcionalmente se cargarán al servicio activo.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
 
+          <div className="px-6 py-5">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
               {/* Header: Proveedor + Fecha + Folio */}
@@ -437,16 +443,18 @@ export function ServicePurchaseDialog({
                 </div>
               )}
 
-              <DialogFooter>
+              <DialogFooter className="border-t pt-4">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" disabled={isSaving || fields.length === 0}>
+                <Button type="submit" disabled={isSaving || fields.length === 0} className="gap-2">
+                  <PackagePlus className="h-4 w-4" />
                   {isSaving ? "Registrando..." : "Registrar Compra"}
                 </Button>
               </DialogFooter>
             </form>
           </Form>
+          </div>
         </DialogContent>
       </Dialog>
 
