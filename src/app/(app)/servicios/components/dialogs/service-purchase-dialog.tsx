@@ -292,14 +292,14 @@ export function ServicePurchaseDialog({
               {/* Artículos */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <FormLabel>Artículos Comprados *</FormLabel>
+                  <Label className="text-sm font-medium">Artículos Comprados *</Label>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => setIsSearchOpen(true)}
                   >
-                    <PlusCircle className="mr-1.5 h-3.5 w-3.5" /> Agregar del Catálogo
+                    <PlusCircle className="mr-1.5 h-3.5 w-3.5" /> Agregar del Inventario
                   </Button>
                 </div>
 
