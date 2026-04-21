@@ -1,7 +1,7 @@
 // src/app/(app)/punto-de-venta/components/register-purchase-dialog.tsx
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { registerPurchaseSchema, type RegisterPurchaseFormValues } from '@/schemas/register-purchase-schema';
@@ -18,15 +18,17 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
-import { Trash2, PlusCircle, ShoppingCart, Receipt } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Trash2, Plus, Receipt, Package, ShoppingBag } from 'lucide-react';
 import { formatCurrency, cn } from '@/lib/utils';
+import { InventorySearchDialog } from '@/components/shared/InventorySearchDialog';
 
 export type { RegisterPurchaseFormValues as PurchaseFormValues };
 
 const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Tarjeta 3 MSI", "Tarjeta 6 MSI", "Transferencia", "Crédito"];
 
 const inputCls = "bg-white border-slate-200 focus:border-primary focus:ring-1 focus:ring-primary/20 h-10";
-const selectTriggerCls = "bg-white border-slate-200 focus:border-primary h-10";
+const selectCls = "bg-white border-slate-200 h-10";
 
 interface RegisterPurchaseDialogProps {
   open: boolean;
@@ -42,10 +44,10 @@ export function RegisterPurchaseDialog({
   open,
   onOpenChange,
   suppliers,
-  inventoryItems,
   onSave,
 }: RegisterPurchaseDialogProps) {
   const [isSaving, setIsSaving] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const form = useForm<RegisterPurchaseFormValues>({
     resolver: zodResolver(registerPurchaseSchema) as any,
@@ -53,21 +55,29 @@ export function RegisterPurchaseDialog({
       supplierId: '',
       invoiceId: '',
       purchaseDate: new Date(),
-      items: [{ inventoryItemId: '', itemName: '', quantity: 1, purchasePrice: 0, sellingPrice: 0 }],
+      items: [],
       paymentMethod: 'Efectivo',
       note: '',
     },
   });
 
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name: 'items',
-  });
-
+  const { fields, append, remove } = useFieldArray({ control: form.control, name: 'items' });
   const watchedItems = form.watch('items');
-  const total = watchedItems.reduce((sum, item) => sum + (item.quantity || 0) * (item.purchasePrice || 0), 0);
+  const total = watchedItems.reduce((s, i) => s + (i.quantity || 0) * (i.purchasePrice || 0), 0);
+
+  const handleItemSelected = useCallback((item: InventoryItem) => {
+    append({
+      inventoryItemId: item.id,
+      itemName: item.name,
+      quantity: 1,
+      purchasePrice: item.unitPrice || 0,
+      sellingPrice: item.sellingPrice || 0,
+    });
+    setIsSearchOpen(false);
+  }, [append]);
 
   const handleSubmit = async (data: RegisterPurchaseFormValues) => {
+    if (data.items.length === 0) return;
     setIsSaving(true);
     try {
       await onSave({ ...data, total });
@@ -78,282 +88,249 @@ export function RegisterPurchaseDialog({
     }
   };
 
-  const itemOptions = inventoryItems.map(i => ({
-    value: i.id,
-    label: `${i.name}${i.sku ? ` (${i.sku})` : ''}`,
-  }));
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto p-0">
-        {/* Header */}
-        <div className="px-6 py-5 border-b bg-gradient-to-r from-emerald-50 to-teal-50">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2.5 text-lg">
-              <div className="p-2 rounded-lg bg-emerald-100">
-                <Receipt className="h-4 w-4 text-emerald-600" />
-              </div>
-              Registrar Compra
-            </DialogTitle>
-            <DialogDescription className="mt-1">
-              Registra una compra de productos o materiales.
-            </DialogDescription>
-          </DialogHeader>
-        </div>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        {/* Wide horizontal layout */}
+        <DialogContent className="max-w-5xl max-h-[90vh] p-0 overflow-hidden">
+          <div className="flex h-full" style={{ minHeight: 520 }}>
 
-        <div className="px-6 py-5">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
-
-              {/* Header fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="supplierId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">Proveedor *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className={selectTriggerCls}>
-                            <SelectValue placeholder="Seleccionar proveedor..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {suppliers.map(s => (
-                            <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="purchaseDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">Fecha de compra *</FormLabel>
-                      <FormControl>
-                        <DatePicker date={field.value} onDateChange={(d) => field.onChange(d ?? new Date())} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="invoiceId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">Folio / Factura</FormLabel>
-                      <FormControl>
-                        <Input className={inputCls} {...field} placeholder="Ej: FAC-001" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="paymentMethod"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-medium">Método de Pago *</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className={selectTriggerCls}>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {PAYMENT_METHODS.map(m => (
-                            <SelectItem key={m} value={m}>{m}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Items section */}
-              <div className="space-y-3">
+            {/* ── LEFT: Product list ─────────────────────────────────── */}
+            <div className="flex-1 flex flex-col border-r overflow-hidden">
+              {/* Header */}
+              <div className="px-5 py-4 border-b bg-muted/20">
                 <div className="flex items-center justify-between">
-                  {/* ✅ Label nativo — no FormLabel fuera de FormField */}
-                  <Label className="text-sm font-medium">Artículos *</Label>
+                  <div>
+                    <h3 className="font-bold text-base">Artículos de la Compra</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {fields.length === 0 ? "Sin artículos" : `${fields.length} artículo${fields.length > 1 ? 's' : ''}`}
+                    </p>
+                  </div>
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="destructive"
                     size="sm"
-                    onClick={() => append({ inventoryItemId: '', itemName: '', quantity: 1, purchasePrice: 0, sellingPrice: 0 })}
-                    className="gap-1.5"
+                    onClick={() => setIsSearchOpen(true)}
+                    className="gap-1.5 shadow-sm"
                   >
-                    <PlusCircle className="h-3.5 w-3.5" /> Agregar
+                    <Plus className="h-4 w-4" /> Añadir
                   </Button>
                 </div>
+              </div>
 
-                <div className="border rounded-xl overflow-hidden bg-slate-50">
-                  {/* Column headers */}
-                  <div className="grid grid-cols-12 gap-2 text-xs font-semibold text-muted-foreground bg-muted/60 px-3 py-2.5 border-b">
-                    <div className="col-span-5">Artículo</div>
-                    <div className="col-span-2 text-center">Cant.</div>
-                    <div className="col-span-2 text-right">Costo U.</div>
-                    <div className="col-span-2 text-right">Precio V.</div>
-                    <div className="col-span-1" />
+              {/* Items list */}
+              <ScrollArea className="flex-1">
+                {fields.length === 0 ? (
+                  <div
+                    className="flex flex-col items-center justify-center h-48 gap-3 text-muted-foreground cursor-pointer hover:bg-muted/20 transition-colors mx-4 my-6 rounded-xl border-2 border-dashed"
+                    onClick={() => setIsSearchOpen(true)}
+                  >
+                    <ShoppingBag className="h-10 w-10 opacity-20" />
+                    <p className="text-sm font-medium">Haz clic en Añadir para buscar artículos</p>
                   </div>
+                ) : (
+                  <div className="divide-y">
+                    {/* Table header */}
+                    <div className="grid grid-cols-12 gap-2 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/30">
+                      <div className="col-span-4">Artículo</div>
+                      <div className="col-span-2 text-center">Cant.</div>
+                      <div className="col-span-2 text-right">Costo U.</div>
+                      <div className="col-span-2 text-right">P. Venta</div>
+                      <div className="col-span-2 text-right">Subtotal</div>
+                    </div>
 
-                  <div className="divide-y bg-white">
-                    {fields.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                        <ShoppingCart className="h-7 w-7 mb-2 opacity-30" />
-                        <p className="text-sm">Agrega artículos a la compra</p>
-                      </div>
-                    ) : fields.map((field, index) => (
-                      <div key={field.id} className="grid grid-cols-12 gap-2 items-center px-3 py-2">
-                        <div className="col-span-5">
-                          <FormField
-                            control={form.control}
-                            name={`items.${index}.inventoryItemId`}
-                            render={({ field: f }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Select
-                                    value={f.value}
-                                    onValueChange={(v) => {
-                                      f.onChange(v);
-                                      const it = inventoryItems.find(i => i.id === v);
-                                      if (it) {
-                                        form.setValue(`items.${index}.itemName`, it.name);
-                                        form.setValue(`items.${index}.sellingPrice`, it.sellingPrice || 0);
-                                      }
-                                    }}
-                                  >
-                                    <SelectTrigger className="h-8 text-xs bg-white border-slate-200">
-                                      <SelectValue placeholder="Seleccionar..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {itemOptions.map(o => (
-                                        <SelectItem key={o.value} value={o.value} className="text-xs">{o.label}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
+                    {fields.map((field, index) => (
+                      <div key={field.id} className="grid grid-cols-12 gap-2 items-center px-4 py-2.5 hover:bg-muted/20 group">
+                        <div className="col-span-4 flex items-center gap-2 min-w-0">
+                          <div className="p-1 bg-blue-50 rounded shrink-0">
+                            <Package className="h-3 w-3 text-blue-500" />
+                          </div>
+                          <p className="text-sm font-medium truncate">{watchedItems[index]?.itemName || "—"}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <Input
+                            type="number" step="0.001" min="0.001"
+                            className="h-7 text-xs text-center bg-white border-slate-200 px-1"
+                            value={watchedItems[index]?.quantity ?? ""}
+                            onChange={(e) => form.setValue(`items.${index}.quantity`, Number(e.target.value))}
                           />
                         </div>
                         <div className="col-span-2">
-                          <FormField
-                            control={form.control}
-                            name={`items.${index}.quantity`}
-                            render={({ field: f }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input
-                                    type="number" step="0.001" min="0.001"
-                                    className="h-8 text-xs text-center bg-white border-slate-200"
-                                    {...f}
-                                    onChange={e => f.onChange(Number(e.target.value))}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
+                          <Input
+                            type="number" step="0.01" min="0"
+                            className="h-7 text-xs text-right bg-white border-slate-200 px-1"
+                            value={watchedItems[index]?.purchasePrice ?? ""}
+                            onChange={(e) => form.setValue(`items.${index}.purchasePrice`, Number(e.target.value))}
                           />
                         </div>
                         <div className="col-span-2">
-                          <FormField
-                            control={form.control}
-                            name={`items.${index}.purchasePrice`}
-                            render={({ field: f }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input
-                                    type="number" step="0.01" min="0"
-                                    className="h-8 text-xs text-right bg-white border-slate-200"
-                                    {...f}
-                                    onChange={e => f.onChange(Number(e.target.value))}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
+                          <Input
+                            type="number" step="0.01" min="0"
+                            className="h-7 text-xs text-right bg-white border-slate-200 px-1"
+                            value={watchedItems[index]?.sellingPrice ?? ""}
+                            onChange={(e) => form.setValue(`items.${index}.sellingPrice`, Number(e.target.value))}
                           />
                         </div>
-                        <div className="col-span-2">
-                          <FormField
-                            control={form.control}
-                            name={`items.${index}.sellingPrice`}
-                            render={({ field: f }) => (
-                              <FormItem>
-                                <FormControl>
-                                  <Input
-                                    type="number" step="0.01" min="0"
-                                    className="h-8 text-xs text-right bg-white border-slate-200"
-                                    {...f}
-                                    onChange={e => f.onChange(Number(e.target.value))}
-                                  />
-                                </FormControl>
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-                        <div className="col-span-1 flex justify-center">
+                        <div className="col-span-0 flex items-center justify-end gap-1">
+                          <span className="text-xs font-semibold text-nowrap">
+                            {formatCurrency((watchedItems[index]?.quantity || 0) * (watchedItems[index]?.purchasePrice || 0))}
+                          </span>
                           <Button
                             type="button" variant="ghost" size="icon"
-                            className="h-8 w-8 text-destructive hover:bg-red-50"
+                            className="h-6 w-6 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={() => remove(index)}
-                            disabled={fields.length <= 1}
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
                     ))}
                   </div>
+                )}
+              </ScrollArea>
 
-                  {/* Total row */}
-                  <div className="flex justify-end px-3 py-2.5 bg-muted/30 border-t">
-                    <span className="text-sm font-bold">Total: {formatCurrency(total)}</span>
+              {/* Total */}
+              {fields.length > 0 && (
+                <div className="border-t px-4 py-3 bg-muted/20 flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">{fields.length} artículo{fields.length > 1 ? 's' : ''}</span>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Total de compra</p>
+                    <p className="text-xl font-black text-foreground">{formatCurrency(total)}</p>
                   </div>
                 </div>
+              )}
+            </div>
+
+            {/* ── RIGHT: Form data ───────────────────────────────────── */}
+            <div className="w-72 xl:w-80 shrink-0 flex flex-col">
+              {/* Header */}
+              <div className="px-5 py-4 border-b bg-gradient-to-br from-emerald-50 to-teal-50">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-base">
+                    <div className="p-1.5 rounded-lg bg-emerald-100">
+                      <Receipt className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    Datos de Compra
+                  </DialogTitle>
+                  <DialogDescription className="text-xs mt-1">
+                    Completa la información de la factura.
+                  </DialogDescription>
+                </DialogHeader>
               </div>
 
-              {/* Nota */}
-              <FormField
-                control={form.control}
-                name="note"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-sm font-medium">Notas</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        className="bg-white border-slate-200 focus:border-primary resize-none"
-                        {...field}
-                        placeholder="Observaciones opcionales..."
-                        rows={2}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(handleSubmit)} className="flex flex-col flex-1 overflow-y-auto">
+                  <div className="flex-1 px-4 py-4 space-y-3 overflow-y-auto">
 
-              <DialogFooter className="border-t pt-4">
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isSaving} className="gap-2">
-                  <Receipt className="h-4 w-4" />
-                  {isSaving ? 'Guardando...' : 'Registrar Compra'}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </div>
-      </DialogContent>
-    </Dialog>
+                    {/* Fecha */}
+                    <FormField control={form.control} name="purchaseDate" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Fecha *</FormLabel>
+                        <FormControl>
+                          <DatePicker
+                            date={field.value}
+                            onDateChange={(d) => field.onChange(d ?? new Date())}
+                            className="bg-white border-slate-200 h-10 w-full"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+
+                    {/* Proveedor */}
+                    <FormField control={form.control} name="supplierId" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Proveedor *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className={selectCls}>
+                              <SelectValue placeholder="Seleccionar..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {suppliers.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+
+                    {/* Folio */}
+                    <FormField control={form.control} name="invoiceId" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Folio / Factura</FormLabel>
+                        <FormControl>
+                          <Input className={inputCls} {...field} placeholder="FAC-001" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+
+                    {/* Método de pago */}
+                    <FormField control={form.control} name="paymentMethod" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Método de Pago *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className={selectCls}>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {PAYMENT_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+
+                    {/* Nota */}
+                    <FormField control={form.control} name="note" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nota</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            className="bg-white border-slate-200 resize-none text-sm"
+                            {...field}
+                            placeholder="Observaciones..."
+                            rows={3}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+                  </div>
+
+                  {/* Footer buttons */}
+                  <div className="border-t p-4 space-y-2">
+                    <Button
+                      type="submit"
+                      disabled={isSaving || fields.length === 0}
+                      className="w-full gap-2"
+                    >
+                      <Receipt className="h-4 w-4" />
+                      {isSaving ? 'Registrando...' : 'Registrar Compra'}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => onOpenChange(false)}
+                    >
+                      Regresar
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <InventorySearchDialog
+        open={isSearchOpen}
+        onOpenChange={setIsSearchOpen}
+        onItemSelected={handleItemSelected}
+      />
+    </>
   );
 }

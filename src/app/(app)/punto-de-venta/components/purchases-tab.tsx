@@ -132,14 +132,14 @@ export function PurchasesTab({ purchases, payables, suppliers, items, categories
             <Input placeholder="Buscar folio, proveedor…" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} className="pl-8" />
           </div>
           <Select value={supplierFilter} onValueChange={(v) => { setSupplierFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-full sm:w-[180px]"><SelectValue placeholder="Proveedor" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[180px] bg-white border-slate-200"><SelectValue placeholder="Proveedor" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos los proveedores</SelectItem>
               {suppliers.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={methodFilter} onValueChange={(v) => { setMethodFilter(v); setPage(1); }}>
-            <SelectTrigger className="w-full sm:w-[160px]"><SelectValue placeholder="Método pago" /></SelectTrigger>
+            <SelectTrigger className="w-full sm:w-[160px] bg-white border-slate-200"><SelectValue placeholder="Método pago" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos</SelectItem>
               {PAYMENT_METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}

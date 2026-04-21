@@ -56,7 +56,7 @@ export function CategoryDialog({ open, onOpenChange, category, onSave }: Props) 
             <FormField control={form.control} name="type" render={({ field }) => (
               <FormItem>
                 <FormLabel>Tipo</FormLabel>
-                <div className="flex gap-2 p-1 bg-muted rounded-xl">
+                <div className="flex gap-2 p-1 bg-white border border-slate-200 rounded-xl">
                   {([["product", "Producto", Package], ["service", "Servicio", Wrench]] as const).map(([val, label, Icon]) => (
                     <button
                       key={val}
@@ -64,7 +64,9 @@ export function CategoryDialog({ open, onOpenChange, category, onSave }: Props) 
                       onClick={() => field.onChange(val)}
                       className={cn(
                         "flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all",
-                        type === val ? "bg-background shadow-sm text-foreground" : "text-muted-foreground"
+                        type === val
+                          ? "bg-red-600 text-white shadow-sm"
+                          : "text-muted-foreground hover:text-foreground hover:bg-slate-50"
                       )}
                     >
                       <Icon className="h-4 w-4" /> {label}
@@ -78,7 +80,9 @@ export function CategoryDialog({ open, onOpenChange, category, onSave }: Props) 
               <FormItem>
                 <FormLabel>Nombre *</FormLabel>
                 <FormControl>
-                  <Input placeholder={type === "service" ? "Ej: Diagnóstico, Afinación…" : "Ej: Aceites, Filtros…"} {...field} />
+                  <Input
+                    className="bg-white border-slate-200 h-10"
+                    placeholder={type === "service" ? "Ej: Diagnóstico, Afinación…" : "Ej: Aceites, Filtros…"} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

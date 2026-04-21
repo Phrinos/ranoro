@@ -3,12 +3,7 @@
 
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 interface InventorySearchDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  inventoryItems?: InventoryItem[];
+  inventoryItems?: InventoryItem[]; // kept for API compat, ignored — we always query Firestore
   onItemSelected: (item: InventoryItem, quantity: number) => void;
   onNewItemRequest?: (searchTerm: string) => void;
   includeServices?: boolean;
@@ -32,10 +27,28 @@ interface InventorySearchDialogProps {
 const normalize = (s?: string) =>
   (s ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
+// Converts a raw inventoryItems doc to the InventoryItem shape
+function toInventoryItem(id: string, d: any): InventoryItem {
+  return {
+    id,
+    name: d.name ?? "",
+    sku: d.sku ?? "",
+    category: d.category ?? "",
+    supplier: d.supplierName ?? d.supplier ?? "",
+    isService: d.isService ?? false,
+    quantity: Number(d.stock ?? d.quantity ?? 0),
+    unitPrice: Number(d.costPrice ?? d.unitPrice ?? 0),
+    sellingPrice: Number(d.salePrice ?? d.sellingPrice ?? 0),
+    lowStockThreshold: Number(d.lowStockThreshold ?? 5),
+    brand: d.brand,
+    description: d.description,
+    unitType: d.unitType,
+  };
+}
+
 export function InventorySearchDialog({
   open,
   onOpenChange,
-  inventoryItems,
   onItemSelected,
   onNewItemRequest,
   includeServices = true,
@@ -45,126 +58,54 @@ export function InventorySearchDialog({
   const [isLoading, setIsLoading] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // ── Firestore data ───────────────────────────────────────────────────────
+  // ── Firestore listener — only inventoryItems ──────────────────────────────
   useEffect(() => {
     if (!open) return;
 
     setIsLoading(true);
     setSearchTerm("");
 
-    // Leemos de AMBAS colecciones: "inventory" (legado) y "inventoryItems" (PDV nuevo)
-    // y las unificamos en una sola lista.
-    const seenIds = new Set<string>();
-    let fromLegacy: InventoryItem[] = [];
-    let fromNew: InventoryItem[] = [];
-    let loadedCount = 0;
-    const checkDone = () => {
-      loadedCount++;
-      if (loadedCount >= 2) {
-        // Merge: prioridad a inventoryItems (más nuevo). Deduplica por ID.
-        const merged: InventoryItem[] = [];
-        for (const item of fromNew) {
-          seenIds.add(item.id);
-          merged.push(item);
-        }
-        for (const item of fromLegacy) {
-          if (!seenIds.has(item.id)) {
-            merged.push(item);
-          }
-        }
-        console.log(
-          `[InventorySearch] Merged ${merged.length} items (${fromNew.length} from inventoryItems, ${fromLegacy.length} from inventory)`
-        );
-        setItems(merged);
-        setIsLoading(false);
-      }
-    };
-
-    // Normaliza docs de la colección nueva (POS) al formato InventoryItem
-    const normalizeNewItem = (id: string, d: any): InventoryItem => ({
-      id,
-      name: d.name ?? "",
-      sku: d.sku ?? "",
-      category: d.category ?? "",
-      isService: d.isService ?? false,
-      quantity: Number(d.stock ?? d.quantity ?? 0),
-      unitPrice: Number(d.costPrice ?? d.unitPrice ?? 0),
-      sellingPrice: Number(d.salePrice ?? d.sellingPrice ?? 0),
-      lowStockThreshold: Number(d.lowStockThreshold ?? 5),
-      supplier: d.supplierName ?? d.supplier ?? "",
-      brand: d.brand,
-      keywords: d.keywords,
-    } as InventoryItem);
-
-    const qLegacy = includeServices
-      ? query(collection(db, "inventory"))
-      : query(collection(db, "inventory"), where("isService", "==", false));
-    const qNew = includeServices
+    const q = includeServices
       ? query(collection(db, "inventoryItems"))
       : query(collection(db, "inventoryItems"), where("isService", "==", false));
 
-    const unsub1 = onSnapshot(
-      qLegacy,
+    const unsub = onSnapshot(
+      q,
       (snap) => {
-        fromLegacy = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) } as InventoryItem));
-        checkDone();
+        const loaded = snap.docs.map((d) => toInventoryItem(d.id, d.data()));
+        console.log(`[InventorySearch] ${loaded.length} items from inventoryItems`);
+        setItems(loaded);
+        setIsLoading(false);
       },
       (err) => {
-        console.warn("[InventorySearch] Legacy collection error:", err);
-        checkDone(); // Continuar con la otra colección
+        console.error("[InventorySearch] Firestore error:", err);
+        setIsLoading(false);
       }
     );
 
-    const unsub2 = onSnapshot(
-      qNew,
-      (snap) => {
-        fromNew = snap.docs.map((d) => normalizeNewItem(d.id, d.data()));
-        checkDone();
-      },
-      (err) => {
-        console.warn("[InventorySearch] New collection error:", err);
-        checkDone();
-      }
-    );
+    return () => unsub();
+  }, [open, includeServices]);
 
-    return () => {
-      unsub1();
-      unsub2();
-    };
-  }, [open, includeServices]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Autofocus al input
+  // Autofocus
   useEffect(() => {
-    if (open) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
+    if (open) setTimeout(() => inputRef.current?.focus(), 80);
   }, [open]);
 
-  // ── Scoring & Filtering ──────────────────────────────────────────────────
+  // ── Scoring & Filtering ───────────────────────────────────────────────────
   const score = (it: InventoryItem) =>
-    ((it as any).timesSold || (it as any).salesCount || 0) * 3 +
-    ((it as any).timesUsed || (it as any).serviceUsageCount || 0) * 3 +
-    ((it as any).lastSoldAt ? 2 : 0) +
-    ((it.quantity ?? 0) > 0 ? 1 : 0);
+    ((it as any).timesSold ?? 0) * 3 + ((it as any).timesUsed ?? 0) * 3 + ((it.quantity ?? 0) > 0 ? 1 : 0);
 
   const filteredItems = useMemo(() => {
     const trimmed = searchTerm.trim();
-
-    // Sin búsqueda → mostrar los 30 más frecuentes
     if (!trimmed) {
       return [...items].sort((a, b) => score(b) - score(a)).slice(0, 30);
     }
-
-    // Mínimo 2 caracteres para buscar
     if (trimmed.length < 2) return [];
-
     const tokens = normalize(trimmed).split(/\s+/).filter(Boolean);
     return items
       .filter((item) => {
         const haystack = normalize(
-          [item.name, item.sku, (item as any).brand, item.category, (item as any).keywords]
-            .filter(Boolean)
-            .join(" ")
+          [item.name, item.sku, (item as any).brand, item.category].filter(Boolean).join(" ")
         );
         return tokens.every((t) => haystack.includes(t));
       })
@@ -172,7 +113,6 @@ export function InventorySearchDialog({
       .slice(0, 100);
   }, [items, searchTerm]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
   const handleSelect = (item: InventoryItem) => {
     onItemSelected(item, 1);
     onOpenChange(false);
@@ -183,7 +123,6 @@ export function InventorySearchDialog({
     onOpenChange(false);
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); else onOpenChange(true); }}>
       <DialogContent className="sm:max-w-3xl p-0 overflow-hidden">
@@ -196,7 +135,6 @@ export function InventorySearchDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {/* Search input */}
         <div className="px-6 pt-4">
           <div className="relative">
             <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -211,7 +149,6 @@ export function InventorySearchDialog({
           </div>
         </div>
 
-        {/* Results */}
         <div className="px-6 pb-2">
           <ScrollArea className="h-[50vh]">
             {isLoading ? (
@@ -232,11 +169,7 @@ export function InventorySearchDialog({
                     : "No se encontraron artículos que coincidan."}
                 </p>
                 {!!onNewItemRequest && (
-                  <Button
-                    variant="link"
-                    onClick={() => onNewItemRequest(searchTerm)}
-                    className="font-bold text-primary"
-                  >
+                  <Button variant="link" onClick={() => onNewItemRequest(searchTerm)} className="font-bold text-primary">
                     <PackagePlus className="mr-2 h-4 w-4" />
                     ¿Registrar como Nuevo Artículo?
                   </Button>
@@ -249,10 +182,8 @@ export function InventorySearchDialog({
                     Sugerencias frecuentes
                   </p>
                 )}
-
                 {filteredItems.map((item) => {
                   const isLowStock = !item.isService && item.quantity <= (item.lowStockThreshold || 0);
-
                   return (
                     <button
                       key={item.id}
@@ -262,10 +193,7 @@ export function InventorySearchDialog({
                     >
                       <div className="flex items-center justify-between w-full gap-4">
                         <div className="flex items-center gap-3 min-w-0">
-                          <Badge
-                            variant="secondary"
-                            className="shrink-0 text-[9px] font-bold uppercase tracking-wider h-5"
-                          >
+                          <Badge variant="secondary" className="shrink-0 text-[9px] font-bold uppercase tracking-wider h-5">
                             {item.category || "General"}
                           </Badge>
                           <span className="font-bold text-base truncate">{item.name}</span>
@@ -276,42 +204,23 @@ export function InventorySearchDialog({
                           </span>
                         </div>
                       </div>
-
                       <div className="flex items-center gap-6 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <Tags className="h-3.5 w-3.5 opacity-50" />
-                          <span>
-                            SKU:{" "}
-                            <span className="font-medium text-foreground">{item.sku || "—"}</span>
-                          </span>
-                        </div>
-
+                        {item.sku && (
+                          <div className="flex items-center gap-1.5">
+                            <Tags className="h-3.5 w-3.5 opacity-50" />
+                            <span>SKU: <span className="font-medium text-foreground">{item.sku}</span></span>
+                          </div>
+                        )}
                         {!item.isService && (
                           <div className="flex items-center gap-1.5">
                             <Package className="h-3.5 w-3.5 opacity-50" />
-                            <span>
-                              Stock:{" "}
-                              <span
-                                className={cn(
-                                  "font-bold",
-                                  isLowStock ? "text-destructive" : "text-foreground"
-                                )}
-                              >
-                                {item.quantity}
-                              </span>
-                            </span>
+                            <span>Stock: <span className={cn("font-bold", isLowStock ? "text-destructive" : "text-foreground")}>{item.quantity}</span></span>
                           </div>
                         )}
-
                         {(item as any).brand && (
                           <div className="flex items-center gap-1.5">
                             <Car className="h-3.5 w-3.5 opacity-50" />
-                            <span>
-                              Marca:{" "}
-                              <span className="font-medium text-foreground">
-                                {(item as any).brand}
-                              </span>
-                            </span>
+                            <span>Marca: <span className="font-medium text-foreground">{(item as any).brand}</span></span>
                           </div>
                         )}
                       </div>
@@ -324,9 +233,12 @@ export function InventorySearchDialog({
         </div>
 
         <DialogFooter className="p-4 border-t bg-muted/10">
-          <Button variant="outline" onClick={handleClose}>
-            Cancelar
-          </Button>
+          {!!onNewItemRequest && (
+            <Button variant="outline" onClick={() => onNewItemRequest(searchTerm)} className="mr-auto">
+              <PackagePlus className="mr-2 h-4 w-4" /> Nuevo artículo
+            </Button>
+          )}
+          <Button variant="outline" onClick={handleClose}>Cancelar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

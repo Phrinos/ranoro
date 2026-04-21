@@ -316,14 +316,15 @@ export function ConfigMantenimientoPageContent() {
   // ── 3. Inventario y Finanzas ──────────────────────────────────────────────
 
   const executeResetNegativeInventory = async () => {
-    const snap = await getDocs(collection(db, "inventory"));
+    const snap = await getDocs(collection(db, "inventoryItems"));
     const batch = writeBatch(db);
     let updates = 0;
 
     snap.forEach((d) => {
       const item = d.data();
-      if (typeof item.quantity === 'number' && item.quantity < 0) {
-        batch.update(doc(db, "inventory", d.id), { quantity: 0 });
+      // inventoryItems uses 'stock' field
+      if (typeof item.stock === 'number' && item.stock < 0) {
+        batch.update(doc(db, "inventoryItems", d.id), { stock: 0 });
         updates++;
       }
     });

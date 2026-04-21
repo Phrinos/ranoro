@@ -110,6 +110,7 @@ interface PosData {
     lowStock: number;
     outOfStock: number;
     inventoryValue: number;
+    inventorySaleValue: number;
   };
 }
 
@@ -214,6 +215,7 @@ export function usePosData(): PosData {
       ).length,
       outOfStock: products.filter((i) => i.stock === 0).length,
       inventoryValue: products.reduce((s, i) => s + i.stock * i.costPrice, 0),
+      inventorySaleValue: products.reduce((s, i) => s + i.stock * i.salePrice, 0),
     };
   }, [items]);
 

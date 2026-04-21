@@ -40,16 +40,51 @@ export const deleteCollectionDoc = async (collectionName: string, id: string) =>
 
 const onItemsUpdate = (callback: (items: InventoryItem[]) => void): (() => void) => {
     if (!db) return () => {};
-    const q = query(collection(db, "inventory"));
+    const q = query(collection(db, "inventoryItems"));
     return onSnapshot(q, (snapshot) => {
-        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem)));
+        // Normalize PosInventoryItem fields to InventoryItem fields
+        callback(snapshot.docs.map(d => {
+            const data = d.data();
+            return {
+                id: d.id,
+                name: data.name ?? '',
+                category: data.category ?? '',
+                supplier: data.supplierName ?? data.supplier ?? '',
+                sku: data.sku,
+                brand: data.brand,
+                isService: data.isService ?? false,
+                unitType: data.unitType,
+                description: data.description,
+                quantity: Number(data.stock ?? data.quantity ?? 0),
+                unitPrice: Number(data.costPrice ?? data.unitPrice ?? 0),
+                sellingPrice: Number(data.salePrice ?? data.sellingPrice ?? 0),
+                lowStockThreshold: Number(data.lowStockThreshold ?? 5),
+            } as InventoryItem;
+        }));
     });
 };
 
 const onItemsUpdatePromise = async (): Promise<InventoryItem[]> => {
     if (!db) return [];
-    const snapshot = await getDocs(query(collection(db, "inventory")));
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem));
+    const snapshot = await getDocs(query(collection(db, "inventoryItems")));
+    return snapshot.docs.map(d => {
+        const data = d.data();
+        return {
+            id: d.id,
+            name: data.name ?? '',
+            category: data.category ?? '',
+            supplier: data.supplierName ?? data.supplier ?? '',
+            sku: data.sku,
+            brand: data.brand,
+            isService: data.isService ?? false,
+            unitType: data.unitType,
+            description: data.description,
+            quantity: Number(data.stock ?? data.quantity ?? 0),
+            unitPrice: Number(data.costPrice ?? data.unitPrice ?? 0),
+            sellingPrice: Number(data.salePrice ?? data.sellingPrice ?? 0),
+            lowStockThreshold: Number(data.lowStockThreshold ?? 5),
+        } as InventoryItem;
+    });
 };
 
 const saveItem = async (data: Partial<InventoryItem>, id?: string): Promise<InventoryItem> => {
@@ -78,7 +113,7 @@ const addItem = async (data: Partial<InventoryItem>): Promise<InventoryItem> => 
 
 const deleteItem = async (id: string): Promise<void> => {
   if (!db) throw new Error("Database not initialized.");
-  await fbDeleteDoc(doc(db, "inventory", id));
+  await fbDeleteDoc(doc(db, "inventoryItems", id));
 };
 
 const updateInventoryStock = async (
@@ -98,33 +133,28 @@ const updateInventoryStock = async (
             acc[item.id] = { ...item, quantity: 0 };
         }
         acc[item.id].quantity += item.quantity;
-        // For prices, latest one wins
         if (item.unitPrice !== undefined) acc[item.id].unitPrice = item.unitPrice;
         if (item.sellingPrice !== undefined) acc[item.id].sellingPrice = item.sellingPrice;
         return acc;
     }, {} as Record<string, typeof items[0]>);
 
     const itemUpdates = Object.values(aggregatedItems).map(async (item) => {
-        const itemRef = doc(db, 'inventory', item.id);
+        // inventoryItems uses 'stock' field, not 'quantity'
+        const itemRef = doc(db, 'inventoryItems', item.id);
         const itemDoc = await getDoc(itemRef);
 
         if (itemDoc.exists()) {
             const incrementValue = operation === 'add' ? item.quantity : -item.quantity;
-            
-            const updateData: any = { 
-                quantity: increment(incrementValue),
-                updatedAt: serverTimestamp() 
+            const updateData: any = {
+                stock: increment(incrementValue),  // 'stock' is the field in inventoryItems
+                updatedAt: serverTimestamp()
             };
-            if (item.unitPrice !== undefined) {
-                updateData.unitPrice = item.unitPrice;
-            }
-            if (item.sellingPrice !== undefined) {
-                updateData.sellingPrice = item.sellingPrice;
-            }
-
+            // costPrice ← unitPrice, salePrice ← sellingPrice
+            if (item.unitPrice !== undefined) updateData.costPrice = item.unitPrice;
+            if (item.sellingPrice !== undefined) updateData.salePrice = item.sellingPrice;
             batch.update(itemRef, updateData);
         } else {
-            console.warn(`Item with id ${item.id} not found in inventory. Cannot update stock.`);
+            console.warn(`Item ${item.id} not found in inventoryItems. Cannot update stock.`);
         }
     });
 
