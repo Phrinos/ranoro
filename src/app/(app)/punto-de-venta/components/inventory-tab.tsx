@@ -27,11 +27,12 @@ const PAGE_SIZE = 25;
 interface Props {
   items: PosInventoryItem[];
   categories: PosCategory[];
+  suppliers?: import("@/types").Supplier[];
 }
 
 type QuickFilter = "all" | "product" | "service" | "low_stock" | "out_of_stock";
 
-export function InventoryTab({ items, categories }: Props) {
+export function InventoryTab({ items, categories, suppliers = [] }: Props) {
   const { toast } = useToast();
   const router = useRouter();
 
@@ -296,6 +297,7 @@ export function InventoryTab({ items, categories }: Props) {
         onOpenChange={setDialogOpen}
         item={editItem}
         categories={categories}
+        suppliers={suppliers}
         onSave={handleSave}
         onDelete={handleDelete}
       />

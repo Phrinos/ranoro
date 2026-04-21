@@ -82,7 +82,7 @@ function PuntoDeVentaPageInner() {
       {/* Tab Content */}
       <div>
         {activeTab === "inventario" && (
-          <InventoryTab items={items} categories={categories} />
+          <InventoryTab items={items} categories={categories} suppliers={suppliers} />
         )}
         {activeTab === "categorias" && (
           <CategoriesTab categories={categories} />
