@@ -1,7 +1,7 @@
 // src/app/(app)/punto-de-venta/nueva-venta/components/pos-form.tsx
 "use client";
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import type { POSFormValues } from '@/schemas/pos-form-schema';
 import type { Supplier } from '@/types';
@@ -52,17 +52,13 @@ export function PosForm({ onSaleComplete, onOpenAddItemDialog }: PosFormProps) {
   const watchedItems   = watch('items')    || [];
   const watchedPayments = watch('payments') || [];
 
-  const saleTotal = useMemo(() =>
-    watchedItems
-      .filter(i => i.inventoryItemId !== 'COMMISSION_FEE')
-      .reduce((acc, i) => acc + (Number(i.totalPrice) || 0), 0),
-    [watchedItems]
-  );
+  // Compute totals directly — NO useMemo (watch ref doesn't change on nested setValue)
+  const saleTotal = watchedItems
+    .filter(i => i.inventoryItemId !== 'COMMISSION_FEE')
+    .reduce((acc, i) => acc + ((Number(i.quantity) || 0) * (Number(i.unitPrice) || 0)), 0);
 
-  const paymentTotal = useMemo(() =>
-    watchedPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0),
-    [watchedPayments]
-  );
+  const paymentTotal = watchedPayments
+    .reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
 
   const balance = paymentTotal - saleTotal;
 

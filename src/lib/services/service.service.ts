@@ -297,8 +297,8 @@ const completeService = async (service: ServiceRecord, paymentDetails: any, batc
   }, {});
 
   for (const [supplyId, quantity] of Object.entries(aggregatedSupplies)) {
-    const itemRef = doc(db, 'inventory', supplyId);
-    workBatch.update(itemRef, { quantity: increment(-quantity) });
+    const itemRef = doc(db, 'inventoryItems', supplyId);
+    workBatch.update(itemRef, { stock: increment(-quantity) });
   }
 
   const cleanedNextServiceInfo = cleanObjectForFirestore(paymentDetails.nextServiceInfo);
@@ -424,8 +424,8 @@ const cancelService = async (serviceId: string, reason: string): Promise<void> =
     }, {});
 
     for (const [supplyId, quantity] of Object.entries(aggregatedSupplies)) {
-      const itemRef = doc(db, 'inventory', supplyId);
-      batch.update(itemRef, { quantity: increment(quantity) });
+      const itemRef = doc(db, 'inventoryItems', supplyId);
+      batch.update(itemRef, { stock: increment(quantity) });
     }
   }
 
