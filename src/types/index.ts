@@ -31,16 +31,12 @@ export type PaymentMethod =
   | "Tarjeta MSI" // legacy support
   | "Tarjeta 3 MSI"
   | "Tarjeta 6 MSI"
-  | "Tarjeta 9 MSI"
-  | "Tarjeta 12 MSI"
-  | "Tarjeta 18 MSI"
-  | "Tarjeta 24 MSI"
   | "Transferencia"
   | "Transferencia/Contadora"
   | "Crédito"
   | "Efectivo+Transferencia"
   | "Tarjeta+Transferencia";
-export const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Tarjeta 3 MSI", "Tarjeta 6 MSI", "Tarjeta 9 MSI", "Tarjeta 12 MSI", "Tarjeta 18 MSI", "Tarjeta 24 MSI", "Transferencia", "Transferencia/Contadora", "Crédito"] as const;
+export const PAYMENT_METHODS = ["Efectivo", "Tarjeta", "Tarjeta 3 MSI", "Tarjeta 6 MSI", "Transferencia", "Transferencia/Contadora", "Crédito"] as const;
 
 // ✅ Sub-estatus: tu UI compara estos literales
 export type ServiceSubStatus =

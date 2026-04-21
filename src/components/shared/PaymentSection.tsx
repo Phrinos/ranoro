@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 
 const UI_METHODS = ["Efectivo", "Tarjeta", "Tarjeta MSI", "Transferencia", "Transferencia/Contadora", "Crédito"];
-const MSI_OPTIONS = ["3", "6", "9", "12", "18", "24"];
+const MSI_OPTIONS = ["3", "6"];
 
 const paymentMethodIcons: Record<string, React.ElementType> = {
   Efectivo: Wallet,
