@@ -30,7 +30,7 @@ function FacturacionPageInner() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="mb-2">
+      <div className="mb-6 pl-4 border-l-[3px] border-primary">
         <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Facturación Facturapi</h1>
         <p className="text-muted-foreground text-sm mt-1 max-w-xl">
           Gestiona la facturación electrónica SAT de tu taller y configura las credenciales de tu portal público.

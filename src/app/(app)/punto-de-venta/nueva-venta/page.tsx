@@ -321,7 +321,7 @@ export default function NuevaVentaPage() {
   return (
     <>
       {/* Header */}
-      <div className="mb-4">
+      <div className="mb-6 pl-4 border-l-[3px] border-primary">
         <Link href="/punto-de-venta?tab=ventas" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2 transition-colors w-fit">
           <ArrowLeft className="h-4 w-4" /> Volver a Ventas
         </Link>

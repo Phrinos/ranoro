@@ -51,7 +51,7 @@ function AdminPageInner() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="mb-2">
+      <div className="mb-6 pl-4 border-l-[3px] border-primary">
         <h1 className="text-2xl font-black tracking-tight">Administración</h1>
         <p className="text-muted-foreground text-sm mt-0.5">
           Finanzas del taller: corte de caja, movimientos, reportes y facturación.

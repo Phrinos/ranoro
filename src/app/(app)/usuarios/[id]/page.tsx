@@ -120,7 +120,7 @@ export default function UsuarioDetailPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header */}
-      <div className="mb-2">
+      <div className="mb-6 pl-4 border-l-[3px] border-primary">
         <Link href="/usuarios" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2 transition-colors w-fit">
           <ArrowLeft className="h-4 w-4" /> Volver a Usuarios
         </Link>

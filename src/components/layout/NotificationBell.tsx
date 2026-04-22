@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { db } from '@/lib/firebaseClient';
-const useFirestore = () => db;
+
 import {
   collection,
   query,
@@ -48,7 +48,7 @@ interface AppNotification {
 
 // ── Persistence ────────────────────────────────────────────────────
 
-const STORAGE_KEY = 'avoria_notifications_read_ts';
+const STORAGE_KEY = 'ranoro_notifications_read_ts';
 
 function getReadTimestamp(): number {
   if (typeof window === 'undefined') return 0;
@@ -103,7 +103,7 @@ function playAlertSound() {
 // ── Component ──────────────────────────────────────────────────────
 
 export function NotificationBell() {
-  const db = useFirestore();
+  // db is imported directly from firebaseClient
   const [open, setOpen] = React.useState(false);
   const [notifications, setNotifications] = React.useState<AppNotification[]>([]);
   const [readTs, setReadTs] = React.useState<number>(0);

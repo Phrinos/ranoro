@@ -31,7 +31,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import type { User, NavigationEntry } from "@/types";
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/constants/app';
 import { ALL_PERMISSIONS } from '@/lib/permissions';
 import { useRoles } from '@/lib/contexts/roles-context';
 import { normalizePermissions } from '@/hooks/usePermissions';

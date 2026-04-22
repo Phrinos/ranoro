@@ -134,7 +134,7 @@ function ListaDePreciosPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="mb-2">
+      <div className="mb-6 pl-4 border-l-[3px] border-primary">
         <div className="flex items-center gap-3 mb-0.5">
           <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
             <BookOpen className="h-5 w-5 text-primary" />

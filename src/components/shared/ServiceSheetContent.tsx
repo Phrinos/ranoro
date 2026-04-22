@@ -840,7 +840,7 @@ function ServiceOrderTab({
                 Ticket de Servicio
               </Button>
             )}
-            <Button asChild className="w-full sm:w-auto rounded-xl shadow-xs bg-slate-800 hover:bg-slate-900 text-white font-semibold">
+            <Button asChild className="w-full sm:w-auto rounded-xl shadow-xs bg-primary hover:bg-primary/90 text-white font-semibold">
               <Link href={`/facturar?folio=${service.folio || service.id}&total=${totalCost}`} target="_blank">
                 <FileJson className="mr-2 h-4 w-4" />
                 Solicitar Factura
@@ -872,7 +872,7 @@ function ServiceOrderTab({
                       {service.customerSignatureReception ? (
                         <Image src={normalizeDataUrl(service.customerSignatureReception)} alt="Firma de recepción" width={180} height={90} style={{objectFit:"contain"}} unoptimized />
                       ) : onSignClick ? (
-                        <Button onClick={() => onSignClick('reception')} disabled={isSigning} className="bg-slate-800 hover:bg-slate-900 text-white shadow-xs rounded-xl font-medium px-8">{isSigning ? 'Cargando...' : 'Firmar Recepción'}</Button>
+                        <Button onClick={() => onSignClick('reception')} disabled={isSigning} className="bg-primary hover:bg-primary/90 text-white shadow-xs rounded-xl font-medium px-8">{isSigning ? 'Cargando...' : 'Firmar Recepción'}</Button>
                       ) : (<p className="text-sm font-medium text-slate-400">Firma Pendiente</p>)}
                     </div>
                 </div>
@@ -897,7 +897,7 @@ function ServiceOrderTab({
                     {service.customerSignatureDelivery ? (
                       <Image src={normalizeDataUrl(service.customerSignatureDelivery)} alt="Firma de entrega" width={180} height={90} style={{objectFit:"contain"}} unoptimized />
                     ) : onSignClick ? (
-                      <Button onClick={() => onSignClick('delivery')} disabled={isSigning} className="bg-slate-800 hover:bg-slate-900 text-white shadow-xs rounded-xl font-medium px-8">{isSigning ? 'Cargando...' : 'Firmar Conformidad'}</Button>
+                      <Button onClick={() => onSignClick('delivery')} disabled={isSigning} className="bg-primary hover:bg-primary/90 text-white shadow-xs rounded-xl font-medium px-8">{isSigning ? 'Cargando...' : 'Firmar Conformidad'}</Button>
                     ) : (<p className="text-sm font-medium text-slate-400">Firma Pendiente</p>)}
                   </div>
               </div>
@@ -957,42 +957,6 @@ function ReceptionDetails({ service }: { service: ServiceRecord }) {
   );
 }
 
-function SignatureDisplay({
-  type,
-  signatureUrl,
-  onSignClick,
-  isSigning,
-}: {
-  type: "reception" | "delivery";
-  signatureUrl?: string | null;
-  onSignClick?: (type: "reception" | "delivery") => void;
-  isSigning?: boolean;
-}) {
-  const label = type === "reception" ? "CLIENTE (RECEPCIÓN)" : "CLIENTE (ENTREGA)";
-  return (
-    <div className="text-center">
-      <p className="text-xs font-semibold">{label}</p>
-      <div className="mt-1 p-2 h-20 border rounded-md bg-background flex items-center justify-center">
-        {signatureUrl ? (
-          <Image
-            src={normalizeDataUrl(signatureUrl)}
-            alt={`Firma de ${type}`}
-            width={150}
-            height={75}
-            style={{ objectFit: "contain" }}
-            unoptimized
-          />
-        ) : onSignClick ? (
-          <Button size="sm" onClick={() => onSignClick(type)} disabled={isSigning}>
-            {isSigning ? "Cargando..." : "Firmar"}
-          </Button>
-        ) : (
-          <p className="text-xs text-muted-foreground">Pendiente</p>
-        )}
-      </div>
-    </div>
-  );
-}
 
 type SafetyInspectionRecord = SafetyInspection & {
   inspectionNotes?: string;
