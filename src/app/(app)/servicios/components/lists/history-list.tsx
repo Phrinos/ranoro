@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CalendarDays } from "lucide-react";
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,11 +32,10 @@ import { formatCurrency, cn } from "@/lib/utils";
 import { calcEffectiveProfit, calcSuppliesCostFromItems } from "@/lib/money-helpers";
 import { exportToCsv } from "@/lib/services/export.service";
 import { HistorySummary } from "../shared/history-summary";
-import type { ServiceRecord, Vehicle, User, PaymentMethod } from "@/types";
+import type { ServiceRecord, Vehicle, User } from "@/types";
 import { useTableManager } from "@/hooks/useTableManager";
 import { ServiceListCard } from "../cards/service-list-card";
 import {
-  isValid,
   format as formatFns,
   startOfMonth,
   endOfMonth,
@@ -44,12 +44,14 @@ import {
   subMonths,
   startOfDay,
   endOfDay,
+  addDays,
 } from "date-fns";
 import { es } from "date-fns/locale";
 import { parseDate } from "@/lib/forms";
 import { serviceService } from "@/lib/services";
 
-const MIN_SEARCH_LENGTH = 6;
+const MIN_SEARCH_LENGTH = 2;
+
 const toNumber = (v: unknown) => {
   if (typeof v === "number" && !Number.isNaN(v)) return v;
   const n = parseFloat(String(v ?? 0));
@@ -57,65 +59,24 @@ const toNumber = (v: unknown) => {
 };
 
 type QuickFilter = "sin-tecnico" | "sin-cobrar" | "sin-insumos" | "cancelados";
+
 const QUICK_FILTERS: {
   id: QuickFilter;
   label: string;
   icon: React.ElementType;
-  color: string;
 }[] = [
-  {
-    id: "sin-tecnico",
-    label: "Sin Técnico",
-    icon: UserX,
-    color:
-      "text-orange-600 border-orange-300 bg-orange-50 hover:bg-orange-100 data-[active=true]:bg-orange-500 data-[active=true]:text-white data-[active=true]:border-orange-500",
-  },
-  {
-    id: "sin-cobrar",
-    label: "Sin Cobrar",
-    icon: DollarSign,
-    color:
-      "text-red-600 border-red-300 bg-red-50 hover:bg-red-100 data-[active=true]:bg-red-500 data-[active=true]:text-white data-[active=true]:border-red-500",
-  },
-  {
-    id: "sin-insumos",
-    label: "Sin Insumos",
-    icon: Package,
-    color:
-      "text-purple-600 border-purple-300 bg-purple-50 hover:bg-purple-100 data-[active=true]:bg-purple-500 data-[active=true]:text-white data-[active=true]:border-purple-500",
-  },
-  {
-    id: "cancelados",
-    label: "Cancelados",
-    icon: XCircle,
-    color:
-      "text-gray-600 border-gray-300 bg-gray-50 hover:bg-gray-100 data-[active=true]:bg-gray-600 data-[active=true]:text-white data-[active=true]:border-gray-600",
-  },
+  { id: "sin-tecnico", label: "Sin Técnico", icon: UserX },
+  { id: "sin-cobrar", label: "Sin Cobrar", icon: DollarSign },
+  { id: "sin-insumos", label: "Sin Insumos", icon: Package },
+  { id: "cancelados", label: "Cancelados", icon: XCircle },
 ];
 
-function applyQuickFilters(
-  data: ServiceRecord[],
-  active: Set<QuickFilter>
-): ServiceRecord[] {
-  if (active.size === 0) return data;
-  return data.filter((s) => {
-    for (const f of active) {
-      if (f === "sin-tecnico" && (s.technicianId || s.technicianName)) return false;
-      if (f === "sin-cobrar") {
-        const hasPay = Array.isArray(s.payments) && s.payments.length > 0;
-        const hasTotal = toNumber(s.totalCost) > 0;
-        if (hasPay || hasTotal) return false;
-      }
-      if (f === "sin-insumos") {
-        const hasIns = s.serviceItems?.some(
-          (i) => Array.isArray(i.suppliesUsed) && i.suppliesUsed.length > 0
-        );
-        if (hasIns) return false;
-      }
-      if (f === "cancelados" && s.status !== "Cancelado") return false;
-    }
-    return true;
-  });
+/** Build current-week range: Monday to Saturday */
+function getCurrentWeekRange() {
+  const now = new Date();
+  const monday = startOfWeek(now, { weekStartsOn: 1 });
+  const saturday = addDays(monday, 5); // Mon + 5 = Sat
+  return { from: startOfDay(monday), to: endOfDay(saturday) };
 }
 
 interface HistoryListProps {
@@ -140,11 +101,10 @@ export function HistoryList({
   const [activeQuickFilters, setActiveQuickFilters] = useState<Set<QuickFilter>>(new Set());
   const [remoteServices, setRemoteServices] = useState<ServiceRecord[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [dateField, setDateField] = useState<'serviceDate' | 'deliveryDateTime'>('serviceDate');
 
-  const initialRange = useMemo(
-    () => ({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) }),
-    []
-  );
+  // Default: Monday to Saturday of current week
+  const initialRange = useMemo(() => getCurrentWeekRange(), []);
 
   const tm = useTableManager<ServiceRecord>({
     initialData: remoteServices,
@@ -157,13 +117,14 @@ export function HistoryList({
       "technicianName",
       "serviceAdvisorName",
     ],
-    dateFilterKey: (item) => parseDate(item.deliveryDateTime || item.serviceDate),
+    // No dateFilterKey — Firestore query already handles date filtering server-side
     initialSortOption: "folio_desc",
     itemsPerPage: 25,
     initialDateRange: initialRange,
     minSearchLength: MIN_SEARCH_LENGTH,
   });
 
+  // Fetch historical services from Firestore whenever date range or dateField changes
   useEffect(() => {
     const range = tm.dateRange;
     if (!range?.from) return;
@@ -176,14 +137,39 @@ export function HistoryList({
     const unsub = serviceService.onHistoricalServicesUpdate(startIso, endIso, (data) => {
       setRemoteServices(data);
       setIsLoadingHistory(false);
-    });
+    }, dateField);
     return () => unsub();
-  }, [tm.dateRange]);
+  }, [tm.dateRange, dateField]);
 
-  const displayData = useMemo(
-    () => applyQuickFilters(tm.paginatedData, activeQuickFilters),
-    [tm.paginatedData, activeQuickFilters]
-  );
+  // Apply quick filters to the full filtered data, then paginate manually
+  const quickFilteredData = useMemo(() => {
+    if (activeQuickFilters.size === 0) return tm.fullFilteredData;
+    return tm.fullFilteredData.filter((s) => {
+      for (const f of activeQuickFilters) {
+        if (f === "sin-tecnico" && (s.technicianId || s.technicianName)) return false;
+        if (f === "sin-cobrar") {
+          const hasPay = Array.isArray(s.payments) && s.payments.length > 0;
+          const hasTotal = toNumber(s.totalCost) > 0;
+          if (hasPay || hasTotal) return false;
+        }
+        if (f === "sin-insumos") {
+          const hasIns = s.serviceItems?.some(
+            (i) => Array.isArray(i.suppliesUsed) && i.suppliesUsed.length > 0
+          );
+          if (hasIns) return false;
+        }
+        if (f === "cancelados" && s.status !== "Cancelado") return false;
+      }
+      return true;
+    });
+  }, [tm.fullFilteredData, activeQuickFilters]);
+
+  // Use tm pagination when no quick filters, otherwise paginate quickFilteredData
+  const displayData = useMemo(() => {
+    if (activeQuickFilters.size === 0) return tm.paginatedData;
+    const start = (tm.currentPage - 1) * 25;
+    return quickFilteredData.slice(start, start + 25);
+  }, [activeQuickFilters, tm.paginatedData, tm.currentPage, quickFilteredData]);
 
   const toggleFilter = (id: QuickFilter) => {
     setActiveQuickFilters((prev) => {
@@ -197,7 +183,7 @@ export function HistoryList({
     const now = new Date();
     const ranges = {
       today: { from: startOfDay(now), to: endOfDay(now) },
-      week: { from: startOfWeek(now, { weekStartsOn: 1 }), to: endOfWeek(now, { weekStartsOn: 1 }) },
+      week: getCurrentWeekRange(),
       month: { from: startOfMonth(now), to: endOfMonth(now) },
       lastMonth: { from: startOfMonth(subMonths(now, 1)), to: endOfMonth(subMonths(now, 1)) },
     };
@@ -205,11 +191,12 @@ export function HistoryList({
   };
 
   const handleExport = () => {
-    if (!tm.fullFilteredData.length) {
+    const dataToExport = activeQuickFilters.size > 0 ? quickFilteredData : tm.fullFilteredData;
+    if (!dataToExport.length) {
       toast({ title: "Sin datos para exportar", variant: "destructive" });
       return;
     }
-    const rows = tm.fullFilteredData.map((s) => {
+    const rows = dataToExport.map((s) => {
       const v = vehicles.find((veh) => veh.id === s.vehicleId);
       const totalCost = toNumber(s.totalCost || (s as any).total || 0);
       const payMethod = s.payments?.length
@@ -265,116 +252,133 @@ export function HistoryList({
     [router]
   );
 
+  // Effective counts for pagination display
+  const effectiveTotal = activeQuickFilters.size > 0 ? quickFilteredData.length : tm.totalItems;
+  const effectiveTotalPages = Math.ceil(effectiveTotal / 25);
+
   return (
     <div className="space-y-4">
-      <HistorySummary filteredServices={tm.fullFilteredData} />
+      {/* Summary Cards — always reflect the full filtered + quick-filtered data */}
+      <HistorySummary filteredServices={quickFilteredData} />
 
-      {/* Filters Row */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col xl:flex-row items-start xl:items-center gap-2">
-          <div className="relative w-full xl:w-[300px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-            <Input
-              placeholder={`Buscar (mín. ${MIN_SEARCH_LENGTH} caracteres)...`}
-              value={tm.searchTerm}
-              onChange={(e) => tm.onSearchTermChange(e.target.value)}
-              className="h-10 bg-background pl-9 pr-8"
-            />
-            {tm.searchTerm && (
-              <button
-                onClick={() => tm.onSearchTermChange("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-2 w-full xl:w-auto overflow-x-auto pb-1">
-            <DatePickerWithRange date={tm.dateRange} onDateChange={tm.onDateRangeChange} />
-            {(["today", "week", "month", "lastMonth"] as const).map((p) => (
-              <Button
-                key={p}
-                variant="outline"
-                size="sm"
-                onClick={() => setPreset(p)}
-                className="whitespace-nowrap bg-background text-xs h-9"
-              >
-                {p === "today" ? "Hoy" : p === "week" ? "Esta semana" : p === "month" ? "Este mes" : "Mes pasado"}
-              </Button>
-            ))}
-          </div>
+      {/* ═══ LINE 1: Date range picker, date field selector, preset buttons, export button ═══ */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+        <DatePickerWithRange date={tm.dateRange} onDateChange={tm.onDateRangeChange} />
+        <Select value={dateField} onValueChange={(v) => setDateField(v as 'serviceDate' | 'deliveryDateTime')}>
+          <SelectTrigger className="h-9 w-full sm:w-[200px] bg-white border-border text-foreground shrink-0">
+            <CalendarDays className="h-4 w-4 mr-1.5 text-muted-foreground" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="serviceDate">Fecha de Recepción</SelectItem>
+            <SelectItem value="deliveryDateTime">Fecha de Entrega</SelectItem>
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {(["today", "week", "month", "lastMonth"] as const).map((p) => (
+            <Button
+              key={p}
+              variant="outline"
+              size="sm"
+              onClick={() => setPreset(p)}
+              className="whitespace-nowrap text-xs h-9 bg-white border-border text-foreground hover:bg-muted"
+            >
+              {p === "today" ? "Hoy" : p === "week" ? "Esta semana" : p === "month" ? "Este mes" : "Mes pasado"}
+            </Button>
+          ))}
+        </div>
+        <div className="sm:ml-auto">
           <Button
             onClick={handleExport}
-            variant="outline"
-            className="h-10 bg-background border-primary text-primary hover:bg-primary/5 shrink-0"
+            size="sm"
+            className="h-9 bg-zinc-700 text-white hover:bg-zinc-800 border-0"
           >
             <Download className="h-4 w-4 mr-2" />
             Exportar
           </Button>
         </div>
+      </div>
 
-        {/* Quick Filters */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Filtros rápidos:
-          </span>
-          {QUICK_FILTERS.map(({ id, label, icon: Ico, color }) => {
+      {/* ═══ LINE 2: Search, Status filter, Sort/Folio, Quick filter buttons ═══ */}
+      <div className="flex flex-col lg:flex-row items-start lg:items-center gap-2">
+        {/* Search — takes remaining width */}
+        <div className="relative flex-1 w-full lg:w-auto">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder={`Buscar por nombre, folio, vehículo…`}
+            value={tm.searchTerm}
+            onChange={(e) => tm.onSearchTermChange(e.target.value)}
+            className="h-9 bg-background pl-9 pr-8"
+          />
+          {tm.searchTerm && (
+            <button
+              onClick={() => tm.onSearchTermChange("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Status selector */}
+        <Select
+          value={tm.otherFilters["status"] || "all"}
+          onValueChange={(v) => tm.setOtherFilters({ ...tm.otherFilters, status: v })}
+        >
+          <SelectTrigger className="h-9 w-full lg:w-[160px] bg-white border-border text-foreground shrink-0">
+            <SelectValue placeholder="Estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los estados</SelectItem>
+            <SelectItem value="Entregado">Entregado</SelectItem>
+            <SelectItem value="Cancelado">Cancelado</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Sort selector */}
+        <Select value={tm.sortOption} onValueChange={tm.onSortOptionChange}>
+          <SelectTrigger className="h-9 w-full lg:w-[180px] bg-white border-border text-foreground shrink-0">
+            <SelectValue placeholder="Ordenar por..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="folio_desc">Folio (Reciente)</SelectItem>
+            <SelectItem value="folio_asc">Folio (Antiguo)</SelectItem>
+            <SelectItem value="deliveryDateTime_desc">Fecha (Reciente)</SelectItem>
+            <SelectItem value="deliveryDateTime_asc">Fecha (Antiguo)</SelectItem>
+            <SelectItem value="totalCost_desc">Costo (Mayor)</SelectItem>
+            <SelectItem value="totalCost_asc">Costo (Menor)</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Quick filter buttons — aligned left, same height as search */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {QUICK_FILTERS.map(({ id, label, icon: Ico }) => {
             const isActive = activeQuickFilters.has(id);
             return (
-              <button
+              <Button
                 key={id}
-                data-active={isActive}
+                variant="outline"
+                size="sm"
                 onClick={() => toggleFilter(id)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-all",
-                  color
+                  "h-9 text-xs gap-1.5 bg-white border-border",
+                  isActive && "bg-zinc-800 text-white border-zinc-800 hover:bg-zinc-700 hover:text-white"
                 )}
               >
                 <Ico className="h-3.5 w-3.5" />
                 {label}
                 {isActive && <X className="h-3 w-3 ml-0.5" />}
-              </button>
+              </Button>
             );
           })}
           {activeQuickFilters.size > 0 && (
             <button
               onClick={() => setActiveQuickFilters(new Set())}
-              className="text-xs text-muted-foreground underline hover:text-foreground"
+              className="text-xs text-muted-foreground underline hover:text-foreground ml-1"
             >
               Limpiar
             </button>
           )}
-        </div>
-
-        {/* Status + Sort */}
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Select
-            value={tm.otherFilters["status"] || "all"}
-            onValueChange={(v) => tm.setOtherFilters({ ...tm.otherFilters, status: v })}
-          >
-            <SelectTrigger className="h-10 w-full sm:w-[180px] bg-background">
-              <SelectValue placeholder="Estado" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los estados</SelectItem>
-              <SelectItem value="Entregado">Entregado</SelectItem>
-              <SelectItem value="Cancelado">Cancelado</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={tm.sortOption} onValueChange={tm.onSortOptionChange}>
-            <SelectTrigger className="h-10 w-full sm:w-[200px] bg-background">
-              <SelectValue placeholder="Ordenar por..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="folio_desc">Folio (Reciente)</SelectItem>
-              <SelectItem value="folio_asc">Folio (Antiguo)</SelectItem>
-              <SelectItem value="deliveryDateTime_desc">Fecha (Reciente)</SelectItem>
-              <SelectItem value="deliveryDateTime_asc">Fecha (Antiguo)</SelectItem>
-              <SelectItem value="totalCost_desc">Costo (Mayor)</SelectItem>
-              <SelectItem value="totalCost_asc">Costo (Menor)</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
 
@@ -382,14 +386,26 @@ export function HistoryList({
       <div className="flex items-center justify-between pt-1">
         <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
           {tm.isSearchActive
-            ? `${tm.fullFilteredData.length} resultados`
-            : tm.paginationSummary}
+            ? `${effectiveTotal} resultados`
+            : `Mostrando ${displayData.length > 0 ? (tm.currentPage - 1) * 25 + 1 : 0} a ${Math.min(tm.currentPage * 25, effectiveTotal)} de ${effectiveTotal} resultados`}
         </p>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={tm.goToPreviousPage} disabled={!tm.canGoPrevious} className="bg-background">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={tm.goToPreviousPage}
+            disabled={!tm.canGoPrevious}
+            className="bg-white border-border text-foreground hover:bg-muted"
+          >
             <ChevronLeft className="h-4 w-4" /> Anterior
           </Button>
-          <Button size="sm" variant="outline" onClick={tm.goToNextPage} disabled={!tm.canGoNext} className="bg-background">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={tm.goToNextPage}
+            disabled={tm.currentPage >= effectiveTotalPages}
+            className="bg-white border-border text-foreground hover:bg-muted"
+          >
             Siguiente <ChevronRight className="h-4 w-4" />
           </Button>
         </div>

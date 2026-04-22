@@ -57,21 +57,11 @@ export function useAuth() {
       cleanupDocListener();
 
       if (firebaseUser) {
-        // --- Midnight Expiration Check ---
+        // --- Midnight Session Stamp ---
+        // We always allow the auth state through. We just stamp/re-stamp the login date.
+        // The actual daily logout is handled by a separate timer effect below.
         if (typeof window !== 'undefined') {
-          const savedLoginDate = localStorage.getItem("ranoro_login_date");
           const todayStr = new Date().toDateString();
-          
-          if (savedLoginDate && savedLoginDate !== todayStr) {
-            console.warn("[AUTH-AUDIT] Session expired (past midnight). Forcing sign out.");
-            localStorage.removeItem("ranoro_login_date");
-            localStorage.removeItem(AUTH_USER_LOCALSTORAGE_KEY);
-            setCurrentUser(null);
-            setIsLoading(false);
-            if (auth) await signOut(auth);
-            return;
-          }
-          // Stamp the login date on every fresh session (or if missing)
           localStorage.setItem("ranoro_login_date", todayStr);
         }
         // ---------------------------------
@@ -162,6 +152,27 @@ export function useAuth() {
       cleanupDocListener();
     };
   }, [cleanupDocListener, handleLogout]);
+
+  // --- Midnight auto-logout timer ---
+  // Schedules a sign-out at exactly 00:00:00 of the next day.
+  // Keeps the session alive all day; only logs out at midnight.
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const now = new Date();
+    const midnight = new Date(now);
+    midnight.setDate(midnight.getDate() + 1);
+    midnight.setHours(0, 0, 0, 0);
+    const msUntilMidnight = midnight.getTime() - now.getTime();
+
+    console.log(`[AUTH-AUDIT] Midnight logout scheduled in ${Math.round(msUntilMidnight / 60000)} minutes.`);
+    const timer = setTimeout(() => {
+      console.warn("[AUTH-AUDIT] Midnight reached. Logging out.");
+      handleLogout();
+    }, msUntilMidnight);
+
+    return () => clearTimeout(timer);
+  }, [currentUser, handleLogout]);
 
   return { currentUser, isLoading, handleLogout };
 }

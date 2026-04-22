@@ -166,18 +166,18 @@ const onActiveServicesUpdate = (callback: (services: ServiceRecord[]) => void): 
 const onHistoricalServicesUpdate = (
   startDateISO: string, 
   endDateISO: string, 
-  callback: (services: ServiceRecord[]) => void
+  callback: (services: ServiceRecord[]) => void,
+  /** Which date field to query by. Defaults to 'serviceDate' (reception date). */
+  dateField: 'serviceDate' | 'deliveryDateTime' = 'serviceDate'
 ): (() => void) => {
   if (!db) return () => {};
-  // Using serviceDate allows us to bypass the need for a composite index on status + date.
   const q = query(
     collection(db, 'serviceRecords'),
-    where('serviceDate', '>=', startDateISO),
-    where('serviceDate', '<=', endDateISO),
-    orderBy('serviceDate', 'desc')
+    where(dateField, '>=', startDateISO),
+    where(dateField, '<=', endDateISO),
+    orderBy(dateField, 'desc')
   );
   return onSnapshot(q, (snapshot) => {
-    // We only care about completed or cancelled workflows in history
     const data = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as ServiceRecord));
     callback(data.filter(s => s.status === 'Entregado' || s.status === 'Cancelado'));
   });

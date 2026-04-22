@@ -16,7 +16,7 @@ interface UseTableManagerOptions<T> {
   initialData: T[];
   initialSortOption?: string;
   searchKeys: (keyof T | string)[];
-  dateFilterKey: keyof T | string | FilterFn<T>;
+  dateFilterKey?: keyof T | string | FilterFn<T>;
   itemsPerPage?: number;
   initialDateRange?: DateRange;
   minSearchLength?: number;
