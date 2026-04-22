@@ -94,7 +94,7 @@ export function GlobalPricesTab({ oils, partTypes, onSaveOils, onSavePartType, o
               <Button variant="outline" size="sm" onClick={() => setAddingOil(true)} className="gap-1.5">
                 <PlusCircle className="h-3.5 w-3.5" /> Agregar Aceite
               </Button>
-              <Button size="sm" className="gap-1.5 bg-black text-white hover:bg-zinc-800" onClick={handleSaveOils} disabled={savingOils}>
+              <Button size="sm" className="gap-1.5 bg-primary text-white hover:bg-primary/90" onClick={handleSaveOils} disabled={savingOils}>
                 {savingOils ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                 Guardar
               </Button>
@@ -121,7 +121,7 @@ export function GlobalPricesTab({ oils, partTypes, onSaveOils, onSavePartType, o
               </div>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setAddingOil(false)}>Cancelar</Button>
-                <Button size="sm" className="h-7 text-xs bg-black text-white" onClick={addOil} disabled={!newOil.name.trim() || !newOil.brand.trim()}>Agregar</Button>
+                <Button size="sm" className="h-7 text-xs bg-primary text-white hover:bg-primary/90" onClick={addOil} disabled={!newOil.name.trim() || !newOil.brand.trim()}>Agregar</Button>
               </div>
             </div>
           )}
@@ -214,7 +214,7 @@ export function GlobalPricesTab({ oils, partTypes, onSaveOils, onSavePartType, o
               </div>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setAddingPartType(false)}>Cancelar</Button>
-                <Button size="sm" className="h-7 text-xs bg-black text-white" onClick={handleAddPartType} disabled={savingPartType || !newPartType.name.trim()}>
+                <Button size="sm" className="h-7 text-xs bg-primary text-white hover:bg-primary/90" onClick={handleAddPartType} disabled={savingPartType || !newPartType.name.trim()}>
                   {savingPartType ? <Loader2 className="h-3 w-3 animate-spin" /> : "Agregar"}
                 </Button>
               </div>

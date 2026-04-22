@@ -132,7 +132,7 @@ export function GroupDetail({ group: initialGroup, oils, partTypes, onSave, onBa
             <p className="text-xs text-muted-foreground">{group.vehicles?.length ?? 0} vehículo{group.vehicles?.length !== 1 ? "s" : ""} · {group.parts?.length ?? 0} insumos · {group.services?.length ?? 0} trabajos</p>
           </div>
         </div>
-        <Button onClick={handleSave} disabled={isSaving} className="bg-black text-white hover:bg-zinc-800 gap-2">
+        <Button onClick={handleSave} disabled={isSaving} className="bg-primary text-white hover:bg-primary/90 gap-2">
           <Save className="h-4 w-4" />
           {isSaving ? "Guardando…" : "Guardar Todo"}
         </Button>
@@ -156,7 +156,7 @@ export function GroupDetail({ group: initialGroup, oils, partTypes, onSave, onBa
                 />
                 <span className="text-xs text-amber-700 font-medium">litros de aceite</span>
               </div>
-              <Button size="sm" className="h-7 text-xs gap-1 bg-black text-white hover:bg-zinc-800" onClick={() => setAddingVehicle(true)}>
+              <Button size="sm" className="h-7 text-xs gap-1 bg-primary text-white hover:bg-primary/90" onClick={() => setAddingVehicle(true)}>
                 <PlusCircle className="h-3.5 w-3.5" /> Agregar
               </Button>
             </div>
@@ -186,7 +186,7 @@ export function GroupDetail({ group: initialGroup, oils, partTypes, onSave, onBa
               </div>
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setAddingVehicle(false)}>Cancelar</Button>
-                <Button size="sm" className="h-7 text-xs bg-black text-white" onClick={addVehicle} disabled={!newVehicle.make.trim() || !newVehicle.model.trim()}>Agregar</Button>
+                <Button size="sm" className="h-7 text-xs bg-primary text-white hover:bg-primary/90" onClick={addVehicle} disabled={!newVehicle.make.trim() || !newVehicle.model.trim()}>Agregar</Button>
               </div>
             </div>
           )}
@@ -203,7 +203,7 @@ export function GroupDetail({ group: initialGroup, oils, partTypes, onSave, onBa
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 <Wrench className="h-4 w-4 text-zinc-500" /> Trabajos
               </CardTitle>
-              <Button size="sm" className="h-7 text-xs gap-1 bg-black text-white hover:bg-zinc-800" onClick={() => setAddingService(true)}>
+              <Button size="sm" className="h-7 text-xs gap-1 bg-primary text-white hover:bg-primary/90" onClick={() => setAddingService(true)}>
                 <PlusCircle className="h-3.5 w-3.5" /> Nuevo Trabajo
               </Button>
             </div>
@@ -220,7 +220,7 @@ export function GroupDetail({ group: initialGroup, oils, partTypes, onSave, onBa
                 </div>
                 <div className="flex gap-2 justify-end">
                   <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setAddingService(false)}>Cancelar</Button>
-                  <Button size="sm" className="h-7 text-xs bg-black text-white" onClick={addService} disabled={!newSvcName.trim()}>Crear</Button>
+                  <Button size="sm" className="h-7 text-xs bg-primary text-white hover:bg-primary/90" onClick={addService} disabled={!newSvcName.trim()}>Crear</Button>
                 </div>
               </div>
             )}
@@ -314,7 +314,7 @@ export function GroupDetail({ group: initialGroup, oils, partTypes, onSave, onBa
                 <Package className="h-4 w-4 text-zinc-500" /> Insumos
                 <span className="text-muted-foreground font-normal text-xs">— específicos de este vehículo</span>
               </CardTitle>
-              <Button size="sm" className="h-7 text-xs gap-1 bg-black text-white hover:bg-zinc-800" onClick={() => setAddingPart(true)}>
+              <Button size="sm" className="h-7 text-xs gap-1 bg-primary text-white hover:bg-primary/90" onClick={() => setAddingPart(true)}>
                 <PlusCircle className="h-3.5 w-3.5" /> Agregar
               </Button>
             </div>
@@ -360,7 +360,7 @@ export function GroupDetail({ group: initialGroup, oils, partTypes, onSave, onBa
                 </div>
                 <div className="flex gap-2 justify-end">
                   <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => setAddingPart(false)}>Cancelar</Button>
-                  <Button size="sm" className="h-7 text-xs bg-black text-white" onClick={addPart} disabled={!newPart.typeName.trim() || newPart.typeName === "__custom__" || !newPart.brand.trim()}>Agregar</Button>
+                  <Button size="sm" className="h-7 text-xs bg-primary text-white hover:bg-primary/90" onClick={addPart} disabled={!newPart.typeName.trim() || newPart.typeName === "__custom__" || !newPart.brand.trim()}>Agregar</Button>
                 </div>
               </div>
             )}
@@ -493,7 +493,7 @@ function AddComponentRow({ parts, oils, onAdd }: { parts: VehiclePart[]; oils: O
               <SelectContent>{parts.map(p => <SelectItem key={p.id} value={p.id}>{p.typeName} — {p.brand}</SelectItem>)}</SelectContent>
             </Select>
             <Input type="number" min={1} value={qty} onChange={e => setQty(parseInt(e.target.value) || 1)} className="h-7 text-xs bg-white w-14 text-right" />
-            <Button size="sm" className="h-7 text-xs bg-black text-white" onClick={handleAdd} disabled={!selectedPartId}>Agregar</Button>
+            <Button size="sm" className="h-7 text-xs bg-primary text-white hover:bg-primary/90" onClick={handleAdd} disabled={!selectedPartId}>Agregar</Button>
           </>
         )}
 
@@ -508,7 +508,7 @@ function AddComponentRow({ parts, oils, onAdd }: { parts: VehiclePart[]; oils: O
               <span className="text-[10px] text-amber-700">Cap. motor</span>
             </div>
             {!useOilCap && <Input type="number" min={0.5} step={0.5} value={qty} onChange={e => setQty(parseFloat(e.target.value) || 1)} className="h-7 text-xs bg-white w-14" />}
-            <Button size="sm" className="h-7 text-xs bg-black text-white" onClick={handleAdd} disabled={!selectedOilId}>Agregar</Button>
+            <Button size="sm" className="h-7 text-xs bg-primary text-white hover:bg-primary/90" onClick={handleAdd} disabled={!selectedOilId}>Agregar</Button>
           </>
         )}
       </div>

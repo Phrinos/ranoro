@@ -255,13 +255,13 @@ function VehicleProfilePage() {
             <CardContent>
               <div className="rounded-md border overflow-hidden">
                 <Table>
-                  <TableHeader className="bg-black">
+                  <TableHeader className="bg-muted/50">
                     <TableRow>
-                      <TableHead className="text-white">Folio</TableHead>
-                      <TableHead className="text-white">Fecha</TableHead>
-                      <TableHead className="text-white">Trabajo</TableHead>
-                      <TableHead className="text-white text-right">Monto</TableHead>
-                      <TableHead className="text-white">Estatus</TableHead>
+                      <TableHead>Folio</TableHead>
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Trabajo</TableHead>
+                      <TableHead className="text-right">Monto</TableHead>
+                      <TableHead>Estatus</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

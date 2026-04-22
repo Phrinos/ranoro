@@ -148,7 +148,7 @@ function FlotillaPage() {
       {canManageRentals && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="sm" className="bg-zinc-900 hover:bg-zinc-800 text-white font-semibold shadow-xs gap-2 border border-zinc-700 h-9">
+            <Button size="sm" className="bg-primary hover:bg-primary/90 text-white font-semibold shadow-xs gap-2 h-9">
               Acciones Rápidas <ChevronDown className="h-3.5 w-3.5 opacity-70" />
             </Button>
           </DropdownMenuTrigger>

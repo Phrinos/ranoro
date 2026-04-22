@@ -84,13 +84,13 @@ export function StaffListTab({ staff, archivedStaff }: Props) {
         <Card>
           <CardContent className="p-0">
             <Table>
-              <TableHeader className="bg-black">
+              <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead className="text-white">Nombre</TableHead>
-                  <TableHead className="text-white">Rol</TableHead>
-                  <TableHead className="text-white text-right">Salario</TableHead>
-                  <TableHead className="text-white text-right">Comisión</TableHead>
-                  <TableHead className="text-white" />
+                  <TableHead>Nombre</TableHead>
+                  <TableHead>Rol</TableHead>
+                  <TableHead className="text-right">Salario</TableHead>
+                  <TableHead className="text-right">Comisión</TableHead>
+                  <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>

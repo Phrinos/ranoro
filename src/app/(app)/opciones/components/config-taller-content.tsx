@@ -189,7 +189,7 @@ export function ConfigTallerPageContent() {
             <div className="flex justify-end pt-4 pb-2 sticky bottom-0 bg-background/90 backdrop-blur-sm border-t mt-4 -mx-1 px-1 py-3">
               <Button
                 type="submit"
-                className="bg-black hover:bg-zinc-800 text-white gap-2 h-10 px-6"
+                className="bg-primary hover:bg-primary/90 text-white gap-2 h-10 px-6"
                 disabled={methods.formState.isSubmitting || isUploading}
               >
                 <Save className="h-4 w-4" />

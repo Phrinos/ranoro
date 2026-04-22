@@ -207,7 +207,7 @@ export function DriverStatement({ driver, vehicle, fleetData, canManage }: Drive
         <div className="hidden md:block overflow-hidden rounded-xl border border-border/60 shadow-xs">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-zinc-900 text-zinc-300">
+              <tr className="bg-muted/50 text-muted-foreground">
                 {["Fecha", "Tipo", "Descripción", "Cargo", "Abono", "Balance", ""].map(h => (
                   <th key={h} className={cn("px-4 py-3 text-[11px] font-semibold uppercase tracking-wider",
                     ["Cargo", "Abono", "Balance"].includes(h) ? "text-right" : "text-left"

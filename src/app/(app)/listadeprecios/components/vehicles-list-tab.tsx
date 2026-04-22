@@ -108,7 +108,7 @@ export function VehiclesListTab({ groups, oils, onOpen, onCreate, onDelete }: Pr
               <p className="font-bold">Sin grupos de vehículos</p>
               <p className="text-muted-foreground text-sm">Crea el primero para empezar a registrar precios.</p>
             </div>
-            <Button className="bg-black text-white hover:bg-zinc-800 gap-2" onClick={() => setNewGroupOpen(true)}>
+            <Button className="bg-primary text-white hover:bg-primary/90 gap-2" onClick={() => setNewGroupOpen(true)}>
               <PlusCircle className="h-4 w-4" /> Crear Primer Grupo
             </Button>
           </div>

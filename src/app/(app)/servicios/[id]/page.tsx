@@ -180,14 +180,6 @@ export default function ServicioEditorPage() {
     if (lastHydrationKey.current === key) return;
 
     const normalized = normalizeForForm(initialData, users);
-    console.log("[ServiceEditor] Hydrating form:", {
-      serviceId: initialData.id,
-      advisorIdFromDB: initialData.serviceAdvisorId,
-      techIdFromDB: (initialData as any).technicianId,
-      normalizedAdvisorId: normalized.serviceAdvisorId,
-      normalizedTechId: normalized.technicianId,
-      usersCount: users.length,
-    });
     methods.reset(normalized);
     lastHydrationKey.current = key;
     hydratedRef.current = initialData.id;

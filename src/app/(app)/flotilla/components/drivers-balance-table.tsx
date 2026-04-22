@@ -159,7 +159,7 @@ export function DriversBalanceTable({
       <div className="hidden md:block overflow-hidden rounded-xl border border-border/60 shadow-xs">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-zinc-900 text-zinc-300">
+            <tr className="bg-muted/50 text-muted-foreground">
               {["Conductor", "Vehículo", "Generado", "Abonos", "Adeudo / Saldo", "Último Pago", ""].map(h => (
                 <th key={h} className={cn(
                   "px-4 py-3 text-[11px] font-semibold uppercase tracking-wider",
