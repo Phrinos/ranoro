@@ -34,7 +34,7 @@ import { VehicleInfoCard } from "../cards/vehicle-info-card";
 import { MileageServiceCard } from "../cards/mileage-service-card";
 import { StatusControlsCard } from "../cards/status-controls-card";
 import { ServiceItemsEditor } from "./service-items-editor";
-import { PaymentSummary } from "./payment-summary";
+import { ServiceSummary as PaymentSummary } from "../ServiceSummary";
 import { SignatureDialog } from "../dialogs/signature-dialog";
 import { cn } from "@/lib/utils";
 
@@ -189,7 +189,7 @@ export function ServiceEditor({
                     onUpdate={(info: NextServiceInfo) =>
                       setValue("nextServiceInfo" as any, info, { shouldDirty: true })
                     }
-                    currentMileage={watch("mileage" as any)}
+                    currentMileage={watch("mileage")}
                     onUpdateCurrentMileage={(m) =>
                       setValue("mileage", m, { shouldValidate: true, shouldDirty: true })
                     }

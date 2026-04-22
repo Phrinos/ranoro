@@ -164,6 +164,7 @@ export default function ServicioEditorPage() {
       serviceItems: [],
       serviceDate: new Date(),
       photoReports: [],
+      mileage: null,
     },
   });
 

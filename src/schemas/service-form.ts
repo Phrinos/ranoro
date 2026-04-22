@@ -46,7 +46,10 @@ export const serviceFormSchema = z.object({
   technicianName: z.string().optional().default(""),
   technicianSignatureDataUrl: z.string().nullable().optional(),
   vehicleId: z.string().min(1, "Debe seleccionar un vehículo."),
-  mileage: z.coerce.number().nullable().optional(),
+  mileage: z.preprocess(
+    (v) => (v === null || v === undefined || v === '' ? null : Number(v)),
+    z.number().nullable().optional()
+  ),
   customerComplaints: z.string().optional(),
   recommendations: z.string().optional(),
   serviceItems: z.array(serviceItemSchema).min(1, 'Debe añadir al menos un trabajo o servicio.'),
