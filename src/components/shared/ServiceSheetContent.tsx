@@ -713,7 +713,7 @@ export const ServiceSheetContent = React.forwardRef<
             <div className="flex justify-center mb-8">
                <TabsList className="bg-slate-200/50 p-1.5 rounded-full inline-flex max-w-full overflow-x-auto scrollbar-hide shadow-inner border border-slate-200/50">
                  {tabs.map((tab) => (
-                   <TabsTrigger key={tab.value} value={tab.value} className="rounded-full px-5 py-2 text-sm font-semibold text-slate-500 data-[state=active]:bg-white data-[state=active]:text-slate-800 data-[state=active]:shadow-xs transition-all whitespace-nowrap">
+                   <TabsTrigger key={tab.value} value={tab.value} className="rounded-full px-5 py-2 text-sm font-semibold text-slate-500 data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:shadow-xs transition-all whitespace-nowrap">
                      {tab.label}
                    </TabsTrigger>
                  ))}

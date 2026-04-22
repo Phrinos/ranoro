@@ -92,15 +92,15 @@ export function PaymentSection({
                         const isFolioValidated = validatedFolios[index];
 
                         return (
-                        <div key={field.id} className="space-y-2 p-3 border rounded-md bg-background">
-                            <div className="flex gap-2 items-end">
+                        <div key={field.id} className="space-y-3 p-3 border rounded-md bg-slate-50/50">
+                            <div className="flex gap-2 items-start">
                             <FormField
                                 control={control}
                                 name={`payments.${index}.amount`}
                                 render={({ field: formField }) => (
                                 <FormItem className="grow">
                                     <div className="relative">
-                                    <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <DollarSign className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground z-10" />
                                     <FormControl>
                                         <Input
                                         type="number"
@@ -108,7 +108,7 @@ export function PaymentSection({
                                         placeholder="0.00"
                                         {...formField}
                                         value={formField.value ?? ""}
-                                        className="pl-8 bg-card"
+                                        className="pl-8 bg-white"
                                         onChange={(e) => {
                                             const raw = e.target.value;
                                             formField.onChange(raw === "" ? undefined : raw);
@@ -199,25 +199,25 @@ export function PaymentSection({
                             </div>
 
                             {needsFolio && (
-                            <div className="flex items-end gap-2 mt-2">
+                            <div className="flex items-start gap-2 mt-2">
                                 <FormField
                                 control={control}
                                 name={`payments.${index}.folio`}
                                 render={({ field: formField }) => (
                                     <FormItem className="grow">
-                                    <FormControl>
                                         <div className="relative">
-                                        <Input
-                                            placeholder={folioLabel}
-                                            {...formField}
-                                            value={formField.value ?? ""}
-                                            className="bg-card"
-                                        />
+                                        <FormControl>
+                                            <Input
+                                                placeholder={folioLabel}
+                                                {...formField}
+                                                value={formField.value ?? ""}
+                                                className="bg-white"
+                                            />
+                                        </FormControl>
                                         {isFolioValidated && (
                                             <CheckCircle className="absolute right-2 top-2.5 h-5 w-5 text-green-500" />
                                         )}
                                         </div>
-                                    </FormControl>
                                     <FormMessage />
                                     </FormItem>
                                 )}
@@ -226,9 +226,10 @@ export function PaymentSection({
                                 onOpenValidateDialog && (
                                     <Button
                                     type="button"
-                                    variant="destructive"
+                                    variant="secondary"
                                     size="sm"
                                     onClick={() => onOpenValidateDialog(index)}
+                                    className="h-10 px-4 shadow-sm"
                                     >
                                     Validar
                                     </Button>

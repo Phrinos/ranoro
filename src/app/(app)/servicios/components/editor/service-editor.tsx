@@ -223,21 +223,21 @@ export function ServiceEditor({
             <TabsList className="flex gap-1 p-1.5 h-auto w-full md:w-fit bg-muted/70 backdrop-blur-xs rounded-xl overflow-x-auto ring-1 ring-muted mb-6 justify-start scrollbar-hide">
               <TabsTrigger
                 value="jobs"
-                className="shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md data-[state=active]:scale-[1.02] dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white dark:data-[state=active]:ring-white/10 hover:bg-black/5 dark:hover:bg-white/5 gap-1.5"
+                className="shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:scale-[1.02] dark:data-[state=active]:bg-red-700 dark:data-[state=active]:text-white dark:data-[state=active]:ring-white/10 hover:bg-black/5 dark:hover:bg-white/5 gap-1.5"
               >
                 <Wrench className="h-4 w-4 shrink-0" />
                 <span>Trabajos</span>
               </TabsTrigger>
               <TabsTrigger
                 value="reception-delivery"
-                className="shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md data-[state=active]:scale-[1.02] dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white dark:data-[state=active]:ring-white/10 hover:bg-black/5 dark:hover:bg-white/5 gap-1.5"
+                className="shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:scale-[1.02] dark:data-[state=active]:bg-red-700 dark:data-[state=active]:text-white dark:data-[state=active]:ring-white/10 hover:bg-black/5 dark:hover:bg-white/5 gap-1.5"
               >
                 <ClipboardList className="h-4 w-4 shrink-0" />
                 <span>Recepción y Entrega</span>
               </TabsTrigger>
               <TabsTrigger
                 value="inspection"
-                className="shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap data-[state=active]:bg-white data-[state=active]:text-black data-[state=active]:shadow-md data-[state=active]:scale-[1.02] dark:data-[state=active]:bg-slate-800 dark:data-[state=active]:text-white dark:data-[state=active]:ring-white/10 hover:bg-black/5 dark:hover:bg-white/5 gap-1.5"
+                className="shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=active]:scale-[1.02] dark:data-[state=active]:bg-red-700 dark:data-[state=active]:text-white dark:data-[state=active]:ring-white/10 hover:bg-black/5 dark:hover:bg-white/5 gap-1.5"
               >
                 <Settings className="h-4 w-4 shrink-0" />
                 <span>Servicio Mecánico</span>
