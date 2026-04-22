@@ -26,6 +26,7 @@ import { EditDriverDialog, type EditDriverFormValues } from "../../components/di
 import { PaymentDialog, type PaymentFormValues } from "../../components/dialogs/payment-dialog";
 import { ChargeDialog, type ChargeFormValues } from "../../components/dialogs/charge-dialog";
 import { rentalService } from "@/lib/services/rental.service";
+import { DocumentsTab } from "@/components/shared/documents-tab";
 
 function DriverProfilePage() {
   const params = useParams();
@@ -163,6 +164,9 @@ function DriverProfilePage() {
           <TabsTrigger value="history" className="rounded-xl gap-2">
             <History className="h-3.5 w-3.5" /> Estado de Cuenta
           </TabsTrigger>
+          <TabsTrigger value="docs" className="rounded-xl gap-2">
+            <FileText className="h-3.5 w-3.5" /> Documentos
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview */}
@@ -290,6 +294,22 @@ function DriverProfilePage() {
         {/* Statement of account */}
         <TabsContent value="history" className="mt-6">
           <DriverStatement driver={driver} vehicle={vehicle} fleetData={fleetData} canManage={canManage} />
+        </TabsContent>
+
+        {/* Documents */}
+        <TabsContent value="docs" className="mt-6">
+          <DocumentsTab
+            context="driver"
+            person={{ name: driver.name, phone: driver.phone }}
+            vehicle={vehicle ? {
+              licensePlate: vehicle.licensePlate,
+              make: vehicle.make,
+              model: vehicle.model,
+              year: vehicle.year,
+              vin: vehicle.vin,
+              dailyRentalCost: vehicle.dailyRentalCost,
+            } : undefined}
+          />
         </TabsContent>
       </Tabs>
 

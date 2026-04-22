@@ -18,6 +18,7 @@ import { es } from "date-fns/locale";
 import { useFleetData } from "../../hooks/use-fleet-data";
 import { EditVehicleDialog, type EditVehicleFormValues } from "../../components/dialogs/edit-vehicle-dialog";
 import { UnifiedPreviewDialog } from "@/components/shared/unified-preview-dialog";
+import { DocumentsTab } from "@/components/shared/documents-tab";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { parseFleetDate } from "../../hooks/use-fleet-data";
@@ -227,13 +228,21 @@ function VehicleProfilePage() {
           </div>
         </TabsContent>
 
-        {/* Docs tab — placeholder for VehicleDocumentsCard & FineCheckCard */}
+        {/* Docs tab */}
         <TabsContent value="docs" className="mt-6">
-          <div className="rounded-xl border bg-card p-8 text-center text-muted-foreground">
-            <FileText className="h-10 w-10 mx-auto mb-2" />
-            <p className="font-semibold">Documentos del Vehículo</p>
-            <p className="text-sm">Implementación en progreso.</p>
-          </div>
+          <DocumentsTab
+            context="vehicle"
+            vehicle={{
+              licensePlate: vehicle.licensePlate,
+              make: vehicle.make,
+              model: vehicle.model,
+              year: vehicle.year,
+              vin: vehicle.vin,
+              ownerName: vehicle.ownerName,
+              dailyRentalCost: vehicle.dailyRentalCost,
+            }}
+            person={assignedDriver ? { name: assignedDriver.name } : undefined}
+          />
         </TabsContent>
 
         {/* Maintenance tab */}
