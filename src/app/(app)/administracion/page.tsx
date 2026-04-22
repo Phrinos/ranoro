@@ -30,7 +30,7 @@ function AdminPageInner() {
 
   const {
     services, sales, cashTransactions, users,
-    fixedExpenses, purchases, dailyCuts, isLoading,
+    fixedExpenses, purchases, dailyCuts, inventoryItems, isLoading,
   } = useAdminData();
 
   const handleTabChange = (tab: TabValue) => {
@@ -88,6 +88,7 @@ function AdminPageInner() {
             cashTransactions={cashTransactions}
             users={users}
             purchases={purchases}
+            inventoryItems={inventoryItems}
           />
         )}
         {activeTab === "resumen" && (

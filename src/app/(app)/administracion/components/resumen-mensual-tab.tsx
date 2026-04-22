@@ -63,13 +63,25 @@ export function ResumenMensualTab({ services, sales, cashTransactions, purchases
 
     // Purchases
     const monthPurchases = purchases.filter((p) => inInterval(p.invoiceDate));
-    const purchaseCost = monthPurchases.reduce((s, p) => s + (p.invoiceTotal ?? 0), 0);
+    const purchaseCost = monthPurchases.reduce((s, p) => {
+      const t = (p.invoiceTotal && p.invoiceTotal > 0)
+        ? p.invoiceTotal
+        : ((p as any).items ?? []).reduce((si: number, it: any) =>
+            si + (Number(it.purchasePrice) || 0) * (Number(it.quantity) || 1), 0);
+      return s + t;
+    }, 0);
 
     // Fixed expenses (active, monthly estimate)
-    const fixedTotal = fixedExpenses.filter((e) => e.isActive).reduce((s, e) => {
-      const m = e.frequency === "quincenal" ? 2 : e.frequency === "semanal" ? 4.33 : 1;
-      return s + e.amount * m;
-    }, 0);
+    // isActive undefined → treat as active (resilient to legacy docs without the field)
+    const fixedTotal = fixedExpenses
+      .filter((e) => (e as any).isActive !== false && (e as any).active !== false)
+      .reduce((s, e) => {
+        const rawAmount = (e as any).amount ?? (e as any).monto ?? (e as any).monthlyAmount ?? (e as any).cost ?? 0;
+        const amount = Number(rawAmount) || 0;
+        const freq = (e as any).frequency ?? (e as any).frecuencia ?? "mensual";
+        const m = freq === "quincenal" ? 2 : freq === "semanal" ? 4.33 : 1;
+        return s + amount * m;
+      }, 0);
 
     const totalRevenue = serviceRevenue + saleRevenue + manualIncome;
     const totalExpenses = manualExpenses + purchaseCost + fixedTotal;

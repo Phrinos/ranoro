@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { db } from "@/lib/firebaseClient";
 import { collection, onSnapshot, orderBy, query, Timestamp } from "firebase/firestore";
-import type { ServiceRecord, SaleReceipt, User, CashDrawerTransaction } from "@/types";
+import type { ServiceRecord, SaleReceipt, User, CashDrawerTransaction, InventoryItem } from "@/types";
 
 // ── Tipos nuevos ──────────────────────────────────────────────────────────────
 
@@ -35,6 +35,7 @@ export interface FixedExpense {
   frequency: "mensual" | "quincenal" | "semanal";
   nextDueDate?: string;
   isActive: boolean;
+  notes?: string;
 }
 
 export interface AdminPurchase {
@@ -69,6 +70,7 @@ interface AdminData {
   fixedExpenses: FixedExpense[];
   purchases: AdminPurchase[];
   dailyCuts: DailyCut[];
+  inventoryItems: InventoryItem[];
   isLoading: boolean;
 }
 
@@ -80,9 +82,10 @@ export function useAdminData(): AdminData {
   const [fixedExpenses, setFixedExpenses] = useState<FixedExpense[]>([]);
   const [purchases, setPurchases] = useState<AdminPurchase[]>([]);
   const [dailyCuts, setDailyCuts] = useState<DailyCut[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
   const [loadCount, setLoadCount] = useState(0);
 
-  const isLoading = loadCount < 7;
+  const isLoading = loadCount < 8;
   const done = () => setLoadCount((c) => c + 1);
 
   useEffect(() => {
@@ -111,7 +114,7 @@ export function useAdminData(): AdminData {
       done();
     }));
 
-    unsubs.push(onSnapshot(collection(db, "fixedExpenses"), (snap) => {
+    unsubs.push(onSnapshot(collection(db, "fixedMonthlyExpenses"), (snap) => {
       setFixedExpenses(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) } as FixedExpense)));
       done();
     }));
@@ -129,6 +132,21 @@ export function useAdminData(): AdminData {
       }
     ));
 
+    unsubs.push(onSnapshot(collection(db, "inventoryItems"), (snap) => {
+      setInventoryItems(snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          name: data.name ?? "",
+          category: data.category ?? "",
+          supplier: data.supplierName ?? data.supplier ?? "",
+          unitPrice: Number(data.costPrice ?? data.unitPrice ?? 0),
+          sellingPrice: Number(data.salePrice ?? data.sellingPrice ?? 0),
+        } as InventoryItem;
+      }));
+      done();
+    }));
+
     return () => unsubs.forEach((u) => u());
   }, []);
 
@@ -138,5 +156,5 @@ export function useAdminData(): AdminData {
     [allCashTxs]
   );
 
-  return { services, sales, cashTransactions, users, fixedExpenses, purchases, dailyCuts, isLoading };
+  return { services, sales, cashTransactions, users, fixedExpenses, purchases, dailyCuts, inventoryItems, isLoading };
 }

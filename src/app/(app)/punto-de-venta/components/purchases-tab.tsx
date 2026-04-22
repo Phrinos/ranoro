@@ -9,7 +9,16 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatCurrency, cn } from "@/lib/utils";
-import { Search, PlusCircle, ChevronLeft, ChevronRight, ShoppingCart, AlertCircle } from "lucide-react";
+import { Search, PlusCircle, ChevronLeft, ChevronRight, ShoppingCart, AlertCircle, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { format, isValid, startOfMonth, endOfMonth, isWithinInterval, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
@@ -58,6 +67,9 @@ export function PurchasesTab({ purchases, payables, suppliers, items, categories
   const [page, setPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedPurchase, setSelectedPurchase] = useState<PosPurchase | null>(null);
+  const [editPurchase, setEditPurchase] = useState<PosPurchase | null>(null);
+  const [deletePending, setDeletePending] = useState<PosPurchase | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filtered = useMemo(() => {
     return purchases.filter((p) => {
@@ -79,7 +91,13 @@ export function PurchasesTab({ purchases, payables, suppliers, items, categories
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const kpis = useMemo(() => {
-    const total = filtered.reduce((s, p) => s + (p.invoiceTotal || 0), 0);
+    const total = filtered.reduce((s, p) => {
+      const t = (p.invoiceTotal && p.invoiceTotal > 0)
+        ? p.invoiceTotal
+        : (p.items ?? []).reduce((si: number, it: any) =>
+            si + (Number(it.purchasePrice) || 0) * (Number(it.quantity) || 1), 0);
+      return s + t;
+    }, 0);
     const pending = payables.filter((a) => a.status === "pending").reduce((s, a) => s + (a.amount || 0), 0);
     return { total, count: filtered.length, pendingDebt: pending };
   }, [filtered, payables]);
@@ -94,17 +112,33 @@ export function PurchasesTab({ purchases, payables, suppliers, items, categories
     }
   }, [toast]);
 
-  const handleDeletePurchase = useCallback(async (purchaseId: string) => {
+  const handleDeletePurchase = useCallback(async () => {
+    if (!deletePending) return;
+    setIsDeleting(true);
     try {
       const userStr = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
       const user = userStr ? JSON.parse(userStr) : null;
-      await purchaseService.deletePurchase(purchaseId, user);
-      toast({ title: "Compra anulada" });
+      await purchaseService.deletePurchase(deletePending.id, user);
+      toast({ title: "Compra eliminada" });
+      setDeletePending(null);
       setSelectedPurchase(null);
     } catch (e: any) {
-      toast({ title: "Error al anular", description: e.message, variant: "destructive" });
+      toast({ title: "Error al eliminar", description: e.message, variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
     }
-  }, [toast]);
+  }, [deletePending, toast]);
+
+  const handleUpdatePurchase = useCallback(async (data: RegisterPurchaseFormValues) => {
+    if (!editPurchase) return;
+    try {
+      await purchaseService.updatePurchase(editPurchase.id, data);
+      toast({ title: "Compra actualizada" });
+      setEditPurchase(null);
+    } catch (e: any) {
+      toast({ title: "Error al actualizar", description: e.message, variant: "destructive" });
+    }
+  }, [editPurchase, toast]);
 
   return (
     <>
@@ -165,6 +199,7 @@ export function PurchasesTab({ purchases, payables, suppliers, items, categories
                     <TableHead className="text-white">Método</TableHead>
                     <TableHead className="text-white text-right">Total</TableHead>
                     <TableHead className="text-white text-center">Estado</TableHead>
+                    <TableHead className="text-white w-[44px]" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -172,10 +207,15 @@ export function PurchasesTab({ purchases, payables, suppliers, items, categories
                     const d = parseAnyDate(p.invoiceDate);
                     const isCredit = p.paymentMethod === "Crédito";
                     const hasDebt = payables.some((a) => a.purchaseId === p.id && a.status === "pending");
+                    // Fallback: some legacy records have invoiceTotal=0 but correct items data
+                    const effectiveTotal = (p.invoiceTotal && p.invoiceTotal > 0)
+                      ? p.invoiceTotal
+                      : (p.items ?? []).reduce((s: number, it: any) =>
+                          s + (Number(it.purchasePrice) || 0) * (Number(it.quantity) || 1), 0);
                     return (
                       <TableRow
                         key={p.id}
-                        className="hover:bg-muted/40 cursor-pointer"
+                        className="hover:bg-muted/40 cursor-pointer group"
                         onClick={() => setSelectedPurchase(p)}
                       >
                         <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
@@ -185,11 +225,27 @@ export function PurchasesTab({ purchases, payables, suppliers, items, categories
                         <TableCell className="font-medium text-sm">{p.supplierName}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{p.items?.length ?? 0} artículos</TableCell>
                         <TableCell>
-                          <Badge variant={isCredit ? "outline-solid" : "secondary"} className={cn("text-[11px]", isCredit && "border-amber-400 text-amber-700")}>
-                            {p.paymentMethod}
-                          </Badge>
+                          {(() => {
+                            const m = p.paymentMethod ?? '';
+                            const isEfectivo    = m === 'Efectivo';
+                            const isTransfer    = m === 'Transferencia';
+                            const isCard        = m.startsWith('Tarjeta');
+                            const isCreditPay   = m === 'Crédito';
+                            return (
+                              <span className={cn(
+                                'inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold',
+                                isEfectivo  && 'bg-emerald-100 text-emerald-800',
+                                isCard      && 'bg-purple-100 text-purple-800',
+                                isTransfer  && 'bg-blue-100 text-blue-800',
+                                isCreditPay && 'bg-amber-100 text-amber-800',
+                                !isEfectivo && !isCard && !isTransfer && !isCreditPay && 'bg-slate-100 text-slate-700',
+                              )}>
+                                {m}
+                              </span>
+                            );
+                          })()}
                         </TableCell>
-                        <TableCell className="text-right font-bold">{formatCurrency(p.invoiceTotal)}</TableCell>
+                        <TableCell className="text-right font-bold">{formatCurrency(effectiveTotal)}</TableCell>
                         <TableCell className="text-center">
                           {isCredit && hasDebt ? (
                             <Badge variant="outline" className="border-amber-400 text-amber-700 text-[10px]">
@@ -198,6 +254,35 @@ export function PurchasesTab({ purchases, payables, suppliers, items, categories
                           ) : (
                             <Badge variant="outline" className="border-emerald-400 text-emerald-700 text-[10px]">Pagado</Badge>
                           )}
+                        </TableCell>
+
+                        {/* 3-dot menu */}
+                        <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost" size="icon"
+                                className="h-7 w-7 transition-opacity data-[state=open]:opacity-100"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem onClick={() => setSelectedPurchase(p)}>
+                                <ShoppingCart className="h-3.5 w-3.5 mr-2" /> Ver detalle
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setEditPurchase(p)}>
+                                <Pencil className="h-3.5 w-3.5 mr-2" /> Editar compra
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive focus:bg-red-50"
+                                onClick={() => setDeletePending(p)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 mr-2" /> Eliminar
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     );
@@ -225,21 +310,46 @@ export function PurchasesTab({ purchases, payables, suppliers, items, categories
         )}
       </div>
 
-      {/* Register Purchase Dialog — reuses the old module's dialog which is fully functional */}
-      {dialogOpen && (
+      {/* Register / Edit Purchase Dialog */}
+      {(dialogOpen || !!editPurchase) && (
         <RegisterPurchaseDialog
-          open={dialogOpen}
-          onOpenChange={setDialogOpen}
+          open={dialogOpen || !!editPurchase}
+          onOpenChange={(open) => {
+            if (!open) { setDialogOpen(false); setEditPurchase(null); }
+          }}
           suppliers={suppliers}
           inventoryItems={items as any}
           categories={categories as any}
-          onSave={handleSavePurchase}
-          onInventoryItemCreated={async (data: any) => {
-            // New items should go to inventoryItems collection — handled by the item dialog separately
-            return data;
-          }}
+          initialValues={editPurchase ?? undefined}
+          onSave={editPurchase ? handleUpdatePurchase : handleSavePurchase}
+          onInventoryItemCreated={async (data: any) => data}
         />
       )}
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deletePending} onOpenChange={(open) => { if (!open) setDeletePending(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-destructive" /> Eliminar compra
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              ¿Eliminar la compra de <strong>{deletePending?.supplierName}</strong>
+              {deletePending?.invoiceId ? ` (${deletePending.invoiceId})` : ""}? Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeletePurchase}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting ? "Eliminando..." : "Sí, eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

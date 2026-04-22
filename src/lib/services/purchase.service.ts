@@ -15,6 +15,7 @@ import {
   orderBy,
   runTransaction,
   deleteDoc,
+  updateDoc,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { RegisterPurchaseFormValues } from '@/schemas/register-purchase-schema';
@@ -310,10 +311,61 @@ const registerPayableAccountPayment = async (
   });
 };
 
+/**
+ * Actualiza los datos editables de una compra existente.
+ * No modifica el inventario (solo corrige metadatos: proveedor, folio, método de pago, artículos, nota).
+ */
+const updatePurchase = async (purchaseId: string, data: PurchaseFormValues): Promise<void> => {
+  if (!db) throw new Error('Database not initialized.');
+
+  const asMoneySafe = (v: unknown) => asMoney(v);
+  const invoiceTotal = data.invoiceTotal
+    ? asMoneySafe(data.invoiceTotal)
+    : data.items.reduce((s, it: any) => s + asMoneySafe(it.purchasePrice) * (it.quantity ?? 1), 0);
+
+  // Resolve supplier name
+  let supplierName = 'N/A';
+  try {
+    const supplierDoc = await inventoryService.getDocById('suppliers', data.supplierId);
+    supplierName = (supplierDoc as any)?.name || 'N/A';
+  } catch { /* ignore */ }
+
+  const updatedFields = cleanObjectForFirestore({
+    supplierId: data.supplierId,
+    supplierName,
+    invoiceId: data.invoiceId || undefined,
+    invoiceDate: data.purchaseDate ? new Date(data.purchaseDate as any).toISOString() : undefined,
+    paymentMethod: data.paymentMethod,
+    note: data.note ?? '',
+    invoiceTotal,
+    items: data.items.map((it: any) => ({
+      inventoryItemId: it.inventoryItemId,
+      itemName: it.itemName,
+      quantity: it.quantity,
+      purchasePrice: asMoneySafe(it.purchasePrice),
+      sellingPrice: it.sellingPrice != null ? asMoneySafe(it.sellingPrice) : undefined,
+      subtotal: asMoneySafe((it.quantity ?? 0) * asMoneySafe(it.purchasePrice)),
+    })),
+    updatedAt: serverTimestamp(),
+  });
+
+  await updateDoc(doc(db, 'purchases', purchaseId), updatedFields);
+
+  const userStr = typeof window !== 'undefined' ? localStorage.getItem('authUser') : null;
+  const user: User | null = userStr ? JSON.parse(userStr) : null;
+  await adminService.logAudit('Editar', `Editó la compra #${data.invoiceId || purchaseId} de ${supplierName}.`, {
+    entityType: 'Compra',
+    entityId: purchaseId,
+    userId: user?.id || 'system',
+    userName: user?.name || 'Sistema',
+  });
+};
+
 export const purchaseService = {
   onPayableAccountsUpdate,
   onPurchasesUpdate,
   registerPurchase,
+  updatePurchase,
   deletePurchase,
   registerPayableAccountPayment,
 };

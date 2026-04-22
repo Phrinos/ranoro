@@ -41,6 +41,7 @@ interface RegisterPurchaseDialogProps {
   suppliers: Supplier[];
   inventoryItems: InventoryItem[];
   categories: InventoryCategory[];
+  initialValues?: Partial<RegisterPurchaseFormValues & { id?: string }>;
   onSave: (data: RegisterPurchaseFormValues) => Promise<void>;
   onInventoryItemCreated?: (data: any) => Promise<any>;
 }
@@ -50,6 +51,7 @@ export function RegisterPurchaseDialog({
   onOpenChange,
   suppliers,
   categories,
+  initialValues,
   onSave,
 }: RegisterPurchaseDialogProps) {
   const { toast } = useToast();
@@ -57,15 +59,17 @@ export function RegisterPurchaseDialog({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  const isEditMode = !!initialValues?.id || (!!initialValues && Object.keys(initialValues).length > 0);
+
   const form = useForm<RegisterPurchaseFormValues>({
     resolver: zodResolver(registerPurchaseSchema) as any,
     defaultValues: {
-      supplierId: '',
-      invoiceId: '',
-      purchaseDate: new Date(),
-      items: [],
-      paymentMethod: 'Efectivo',
-      note: '',
+      supplierId: initialValues?.supplierId ?? '',
+      invoiceId: initialValues?.invoiceId ?? '',
+      purchaseDate: initialValues?.purchaseDate ? new Date(initialValues.purchaseDate as any) : new Date(),
+      items: (initialValues?.items ?? []) as any,
+      paymentMethod: initialValues?.paymentMethod ?? 'Efectivo',
+      note: initialValues?.note ?? '',
     },
   });
 
@@ -107,7 +111,20 @@ export function RegisterPurchaseDialog({
   }, [append, toast]);
 
   const handleSubmit = async (data: RegisterPurchaseFormValues) => {
-    if (data.items.length === 0) return;
+    if (data.items.length === 0) {
+      toast({ title: 'Sin artículos', description: 'Agrega al menos un artículo a la compra.', variant: 'destructive' });
+      return;
+    }
+    // Validar que ningún artículo tenga precio en 0
+    const zeroPrice = data.items.find(it => !it.purchasePrice || it.purchasePrice <= 0);
+    if (zeroPrice) {
+      toast({
+        title: 'Precio de costo inválido',
+        description: `"${zeroPrice.itemName}" tiene un costo de $0. Actualiza el precio antes de registrar.`,
+        variant: 'destructive',
+      });
+      return;
+    }
     setIsSaving(true);
     try {
       await onSave({ ...data, total });
@@ -240,7 +257,7 @@ export function RegisterPurchaseDialog({
                     <div className="p-1.5 rounded-lg bg-emerald-100">
                       <Receipt className="h-4 w-4 text-emerald-600" />
                     </div>
-                    Datos de Compra
+                    {isEditMode ? 'Editar Compra' : 'Datos de Compra'}
                   </DialogTitle>
                   <DialogDescription className="text-xs mt-1">
                     Completa la información de la factura.
@@ -338,7 +355,7 @@ export function RegisterPurchaseDialog({
                       className="w-full gap-2"
                     >
                       <Receipt className="h-4 w-4" />
-                      {isSaving ? 'Registrando...' : 'Registrar Compra'}
+                      {isSaving ? 'Guardando...' : isEditMode ? 'Guardar Cambios' : 'Registrar Compra'}
                     </Button>
                     <Button
                       type="button"

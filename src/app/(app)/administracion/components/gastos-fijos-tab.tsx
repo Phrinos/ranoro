@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { PlusCircle, Edit, Trash2 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { db } from "@/lib/firebaseClient";
 import { addDoc, updateDoc, deleteDoc, doc, collection } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -33,6 +34,7 @@ const schema = z.object({
   category: z.string().min(1, "Categoría requerida"),
   frequency: z.enum(["mensual", "quincenal", "semanal"]),
   isActive: z.boolean(),
+  notes: z.string().optional(),
 });
 type FormValues = z.infer<typeof schema>;
 
@@ -49,7 +51,7 @@ function ExpenseDialog({
 }) {
   const form = useForm<FormValues>({
     resolver: zodResolver(schema) as any,
-    defaultValues: { name: "", amount: 0, category: "", frequency: "mensual", isActive: true },
+    defaultValues: { name: "", amount: 0, category: "", frequency: "mensual", isActive: true, notes: "" },
   });
 
   React.useEffect(() => {
@@ -59,6 +61,7 @@ function ExpenseDialog({
       category: expense?.category ?? "",
       frequency: expense?.frequency ?? "mensual",
       isActive: expense?.isActive ?? true,
+      notes: expense?.notes ?? (expense as any)?.notas ?? "",
     });
   }, [open, expense, form]);
 
@@ -99,6 +102,11 @@ function ExpenseDialog({
                   <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                 </Select><FormMessage /></FormItem>
             )} />
+            <FormField control={form.control} name="notes" render={({ field }) => (
+              <FormItem><FormLabel>Notas / Detalles</FormLabel>
+                <FormControl><Textarea className="resize-none h-16" placeholder="Información adicional…" {...field} /></FormControl>
+                <FormMessage /></FormItem>
+            )} />
             <FormField control={form.control} name="isActive" render={({ field }) => (
               <div className="flex items-center gap-3 p-3 rounded-xl border bg-muted/30">
                 <Label>Activo</Label>
@@ -125,22 +133,34 @@ export function GastosFijosTab({ fixedExpenses }: Props) {
   const [deleteTarget, setDeleteTarget] = useState<FixedExpense | null>(null);
 
   const totalMensual = fixedExpenses
-    .filter((e) => e.isActive)
+    .filter((e) => (e as any).isActive !== false && (e as any).active !== false)
     .reduce((s, e) => {
-      const m = e.frequency === "quincenal" ? 2 : e.frequency === "semanal" ? 4.33 : 1;
-      return s + e.amount * m;
+      const rawAmount = (e as any).amount ?? (e as any).monto ?? (e as any).monthlyAmount ?? (e as any).cost ?? 0;
+      const amount = Number(rawAmount) || 0;
+      const freq = (e as any).frequency ?? (e as any).frecuencia ?? "mensual";
+      const m = freq === "quincenal" ? 2 : freq === "semanal" ? 4.33 : 1;
+      return s + amount * m;
     }, 0);
 
   const handleSave = useCallback(async (values: FormValues, id?: string) => {
     try {
-      if (id) { await updateDoc(doc(db, "fixedExpenses", id), values); toast({ title: "Gasto actualizado" }); }
-      else { await addDoc(collection(db, "fixedExpenses"), values); toast({ title: "Gasto creado" }); }
+      if (id) { await updateDoc(doc(db, "fixedMonthlyExpenses", id), values); toast({ title: "Gasto actualizado" }); }
+      else { await addDoc(collection(db, "fixedMonthlyExpenses"), values); toast({ title: "Gasto creado" }); }
     } catch { toast({ title: "Error al guardar", variant: "destructive" }); }
   }, [toast]);
 
   const handleDelete = useCallback(async (e: FixedExpense) => {
-    try { await deleteDoc(doc(db, "fixedExpenses", e.id)); toast({ title: "Eliminado" }); setDeleteTarget(null); }
+    try { await deleteDoc(doc(db, "fixedMonthlyExpenses", e.id)); toast({ title: "Eliminado" }); setDeleteTarget(null); }
     catch { toast({ title: "Error al eliminar", variant: "destructive" }); }
+  }, [toast]);
+
+  const handleToggleActive = useCallback(async (e: FixedExpense) => {
+    const currentState = (e as any).isActive !== false && (e as any).active !== false;
+    try { 
+      await updateDoc(doc(db, "fixedMonthlyExpenses", e.id), { isActive: !currentState }); 
+      toast({ title: currentState ? "Gasto desactivado" : "Gasto activado" }); 
+    }
+    catch { toast({ title: "Error al cambiar estado", variant: "destructive" }); }
   }, [toast]);
 
   return (
@@ -156,31 +176,70 @@ export function GastosFijosTab({ fixedExpenses }: Props) {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {fixedExpenses.length > 0 ? fixedExpenses.map((e) => (
-            <Card key={e.id} className={!e.isActive ? "opacity-50" : ""}>
-              <CardContent className="p-4 flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-semibold text-sm">{e.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{e.category} · {FREQ_LABELS[e.frequency]}</p>
-                  <Badge variant={e.isActive ? "default" : "secondary"} className="text-[10px] mt-1">{e.isActive ? "Activo" : "Inactivo"}</Badge>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="font-black text-base">{formatCurrency(e.amount)}</p>
-                  <div className="flex gap-1 mt-1 justify-end">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditExpense(e); setDialogOpen(true); }}>
-                      <Edit className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeleteTarget(e)}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {fixedExpenses.length > 0 ? fixedExpenses.map((e) => {
+            const rawAmount = (e as any).amount ?? (e as any).monto ?? (e as any).monthlyAmount ?? (e as any).cost ?? 0;
+            const amount = Number(rawAmount) || 0;
+            const freq = (e as any).frequency ?? (e as any).frecuencia ?? "mensual";
+            const m = freq === "quincenal" ? 2 : freq === "semanal" ? 4.33 : 1;
+            const isActive = (e as any).isActive !== false && (e as any).active !== false;
+
+            return (
+              <Card key={e.id} className={cn("transition-all", !isActive && "opacity-60 grayscale-[0.3]")}>
+                <CardContent className="p-5 flex flex-col gap-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <p className="font-bold text-base leading-tight truncate">{e.name}</p>
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium h-5 bg-muted/40">
+                          {e.category}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground font-medium">Pago {FREQ_LABELS[freq] || "Mensual"}</p>
+                      {((e as any).notes || (e as any).notas) && (
+                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2 bg-muted/40 p-2 rounded border border-muted" title={(e as any).notes || (e as any).notas}>
+                          {(e as any).notes || (e as any).notas}
+                        </p>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-black text-xl text-primary leading-tight">{formatCurrency(amount)}</p>
+                      {freq !== "mensual" && (
+                        <p className="text-[11px] text-muted-foreground font-semibold mt-1 bg-muted/30 inline-block px-1.5 py-0.5 rounded">
+                          ≈ {formatCurrency(amount * m)} / mes
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )) : (
-            <div className="col-span-2 text-center text-muted-foreground py-12 border-2 border-dashed rounded-xl">
-              Sin gastos fijos registrados.
+
+                  <div className="flex items-center justify-between pt-3 border-t">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={isActive}
+                        onCheckedChange={() => handleToggleActive(e)}
+                        id={`switch-${e.id}`}
+                      />
+                      <Label htmlFor={`switch-${e.id}`} className="text-xs font-medium cursor-pointer select-none text-muted-foreground">
+                        {isActive ? "Activo en resumen" : "Inactivo"}
+                      </Label>
+                    </div>
+                    
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground" onClick={() => { setEditExpense(e); setDialogOpen(true); }}>
+                        <Edit className="h-3.5 w-3.5 mr-1" /> Editar
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 px-2 text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setDeleteTarget(e)}>
+                        <Trash2 className="h-3.5 w-3.5 mr-1" /> Eliminar
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          }) : (
+            <div className="col-span-full text-center text-muted-foreground py-16 border-2 border-dashed rounded-xl bg-muted/10">
+              <p className="text-lg font-medium">Sin gastos fijos registrados</p>
+              <p className="text-sm mt-1">Registra la renta, luz o internet para verlos en tu resumen mensual.</p>
             </div>
           )}
         </div>
@@ -205,6 +264,13 @@ export function GastosFijosTab({ fixedExpenses }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <ExpenseDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        expense={editExpense}
+        onSave={handleSave}
+      />
     </>
   );
 }
