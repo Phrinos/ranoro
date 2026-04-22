@@ -71,9 +71,9 @@ function UsuariosPageInner() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-black text-white rounded-2xl p-6">
+      <div className="mb-2">
         <h1 className="text-2xl font-black tracking-tight">Usuarios del Sistema</h1>
-        <p className="text-white/60 text-sm mt-0.5">
+        <p className="text-muted-foreground text-sm mt-0.5">
           Gestión de accesos, roles y permisos del sistema.
         </p>
       </div>
@@ -87,7 +87,7 @@ function UsuariosPageInner() {
             className={cn(
               "shrink-0 flex-1 min-w-[100px] px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap",
               activeTab === tab.value
-                ? "bg-white text-black shadow-md ring-1 ring-black/10 dark:bg-slate-800 dark:text-white dark:ring-white/10 scale-[1.02]"
+                ? "bg-red-700 text-white shadow-md scale-[1.02]"
                 : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
             )}
           >

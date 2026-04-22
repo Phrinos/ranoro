@@ -134,26 +134,18 @@ function ListaDePreciosPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-6 shadow-xl">
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "20px 20px" }}
-        />
-        <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-1">
-              <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
-                <BookOpen className="h-5 w-5 text-white" />
-              </div>
-              <h1 className="text-2xl font-black text-white tracking-tight">Lista de Precios</h1>
-            </div>
-            <p className="text-zinc-400 text-sm">Base de datos de precios por vehículo para cotizaciones automáticas vía IA.</p>
-            <div className="flex items-center gap-2 mt-3">
-              <div className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 rounded-full px-3 py-1 text-xs font-semibold border border-emerald-500/30">
-                <Bot className="h-3 w-3" />
-                <span>IA activa · {groups.length} grupo{groups.length !== 1 ? "s" : ""}</span>
-              </div>
-            </div>
+      <div className="mb-2">
+        <div className="flex items-center gap-3 mb-0.5">
+          <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+            <BookOpen className="h-5 w-5 text-primary" />
+          </div>
+          <h1 className="text-2xl font-black tracking-tight">Lista de Precios</h1>
+        </div>
+        <p className="text-muted-foreground text-sm ml-12">Base de datos de precios por vehículo para cotizaciones automáticas vía IA.</p>
+        <div className="flex items-center gap-2 mt-2 ml-12">
+          <div className="flex items-center gap-1.5 bg-emerald-500/10 text-emerald-700 rounded-full px-3 py-1 text-xs font-semibold border border-emerald-500/20">
+            <Bot className="h-3 w-3" />
+            <span>IA activa · {groups.length} grupo{groups.length !== 1 ? "s" : ""}</span>
           </div>
         </div>
       </div>
@@ -165,7 +157,7 @@ function ListaDePreciosPage() {
             key={t}
             onClick={() => setActiveTab(t)}
             className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
-              activeTab === t ? "bg-black text-white shadow-sm" : "text-zinc-600 hover:text-zinc-900"
+              activeTab === t ? "bg-red-700 text-white shadow-sm" : "text-zinc-600 hover:text-zinc-900"
             }`}
           >
             {t === "vehiculos" ? "Vehículos" : "Precios Globales"}

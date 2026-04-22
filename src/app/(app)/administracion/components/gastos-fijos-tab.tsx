@@ -183,16 +183,16 @@ export function GastosFijosTab({ fixedExpenses }: Props) {
 
         <Card className="overflow-hidden">
           <Table>
-            <TableHeader className="bg-black">
+            <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead className="text-white text-xs w-[200px]">Nombre</TableHead>
-                <TableHead className="text-white text-xs">Categoría</TableHead>
-                <TableHead className="text-white text-xs">Frecuencia</TableHead>
-                <TableHead className="text-white text-xs text-right">Monto</TableHead>
-                <TableHead className="text-white text-xs text-right">Equiv. Mensual</TableHead>
-                <TableHead className="text-white text-xs">Notas</TableHead>
-                <TableHead className="text-white text-xs text-center">Estado</TableHead>
-                <TableHead className="text-white text-xs" />
+                <TableHead className="text-xs w-[200px]">Nombre</TableHead>
+                <TableHead className="text-xs">Categoría</TableHead>
+                <TableHead className="text-xs">Frecuencia</TableHead>
+                <TableHead className="text-xs text-right">Monto</TableHead>
+                <TableHead className="text-xs text-right">Equiv. Mensual</TableHead>
+                <TableHead className="text-xs">Notas</TableHead>
+                <TableHead className="text-xs text-center">Estado</TableHead>
+                <TableHead className="text-xs" />
               </TableRow>
             </TableHeader>
             <TableBody>

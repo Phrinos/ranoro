@@ -80,13 +80,13 @@ export function SuppliersTab({ suppliers, purchases }: Props) {
           <Card>
             <CardContent className="p-0">
               <Table>
-                <TableHeader className="bg-black">
+                <TableHeader className="bg-muted/50">
                   <TableRow>
-                    <TableHead className="text-white">Proveedor</TableHead>
-                    <TableHead className="text-white">Contacto</TableHead>
-                    <TableHead className="text-white text-center">Compras</TableHead>
-                    <TableHead className="text-white text-right">Total comprado</TableHead>
-                    <TableHead className="text-white" />
+                    <TableHead>Proveedor</TableHead>
+                    <TableHead>Contacto</TableHead>
+                    <TableHead className="text-center">Compras</TableHead>
+                    <TableHead className="text-right">Total comprado</TableHead>
+                    <TableHead />
                   </TableRow>
                 </TableHeader>
                 <TableBody>

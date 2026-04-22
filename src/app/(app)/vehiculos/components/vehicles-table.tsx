@@ -214,13 +214,13 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
   // ── Sort header component ─────────────────────────────
   const SortHeader = ({ k, label, className }: { k: SortKey; label: string; className?: string }) => (
     <TableHead
-      className={cn("cursor-pointer select-none whitespace-nowrap text-slate-300 text-xs font-bold uppercase tracking-widest hover:text-white transition-colors", className)}
+      className={cn("cursor-pointer select-none whitespace-nowrap text-muted-foreground text-xs font-bold uppercase tracking-widest hover:text-foreground transition-colors", className)}
       onClick={() => handleSort(k)}
     >
       <div className="flex items-center gap-1.5">
         {label}
         <ArrowUpDown className={cn("h-3 w-3 opacity-40 transition-opacity", sortKey === k && "opacity-100 text-primary")} />
-        {sortKey === k && <span className="text-[10px] text-sky-400">{sortDir === 'asc' ? '↑' : '↓'}</span>}
+        {sortKey === k && <span className="text-[10px] text-primary">{sortDir === 'asc' ? '↑' : '↓'}</span>}
       </div>
     </TableHead>
   );
@@ -301,7 +301,7 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
 
           {/* New Vehicle button */}
           {permissions.has('vehicles:manage') && (
-            <Button onClick={onAdd} className="h-10 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-xs gap-2 font-bold shrink-0">
+            <Button onClick={onAdd} className="h-10 rounded-xl bg-primary hover:bg-primary/90 text-white shadow-xs gap-2 font-bold shrink-0">
               <PlusCircle className="h-4 w-4" /> Nuevo Vehículo
             </Button>
           )}
@@ -317,7 +317,7 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
               className={cn(
                 "h-7 px-3.5 rounded-full text-[11px] font-bold transition-all whitespace-nowrap border uppercase tracking-wider",
                 quickFilter === id
-                  ? "bg-slate-800 text-white border-slate-800 shadow-xs"
+                  ? "bg-red-700 text-white border-red-700 shadow-xs"
                   : "bg-white text-slate-500 border-slate-200 hover:bg-slate-100 hover:text-slate-800"
               )}
             >
@@ -345,7 +345,7 @@ export function VehiclesTable({ vehicles, systemStats, permissions, onAdd, onDel
         <div className="hidden md:block overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="bg-slate-900 hover:bg-slate-900 border-none">
+              <TableRow className="bg-muted/50 hover:bg-muted/50 border-none">
                 <SortHeader k="licensePlate" label="Placa"   className="pl-5 w-[130px]" />
                 <SortHeader k="make"         label="Vehículo" className="min-w-[220px]" />
                 <SortHeader k="ownerName"    label="Propietario / Contacto" className="min-w-[200px]" />

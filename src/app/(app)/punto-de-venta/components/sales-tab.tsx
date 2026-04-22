@@ -175,15 +175,15 @@ export function SalesTab({ sales }: Props) {
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader className="bg-black">
+                  <TableHeader className="bg-muted/50">
                     <TableRow>
-                      <TableHead className="text-white">Fecha</TableHead>
-                      <TableHead className="text-white">Folio</TableHead>
-                      <TableHead className="text-white">Cliente</TableHead>
-                      <TableHead className="text-white">Ítems</TableHead>
-                      <TableHead className="text-white text-center">Estado</TableHead>
-                      <TableHead className="text-white text-right">Total</TableHead>
-                      <TableHead className="text-white" />
+                      <TableHead>Fecha</TableHead>
+                      <TableHead>Folio</TableHead>
+                      <TableHead>Cliente</TableHead>
+                      <TableHead>Ítems</TableHead>
+                      <TableHead className="text-center">Estado</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                      <TableHead />
                     </TableRow>
                   </TableHeader>
                   <TableBody>

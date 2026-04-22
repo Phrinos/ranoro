@@ -232,13 +232,13 @@ export function CorteDiarioTab({ cashTransactions, dailyCuts }: Props) {
             {dayTxs.length > 0 ? (
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader className="bg-black">
+                  <TableHeader className="bg-muted/50">
                     <TableRow>
-                      <TableHead className="text-white text-xs">Hora</TableHead>
-                      <TableHead className="text-white text-xs">Concepto</TableHead>
-                      <TableHead className="text-white text-xs">Método</TableHead>
-                      <TableHead className="text-white text-xs">Fuente</TableHead>
-                      <TableHead className="text-white text-xs text-right">Monto</TableHead>
+                      <TableHead className="text-xs">Hora</TableHead>
+                      <TableHead className="text-xs">Concepto</TableHead>
+                      <TableHead className="text-xs">Método</TableHead>
+                      <TableHead className="text-xs">Fuente</TableHead>
+                      <TableHead className="text-xs text-right">Monto</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

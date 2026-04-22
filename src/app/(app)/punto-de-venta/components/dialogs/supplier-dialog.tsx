@@ -61,11 +61,10 @@ export function SupplierDialog({ open, onOpenChange, supplier, onSave }: Props) 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0 overflow-hidden">
-        {/* Colored header */}
-        <div className="bg-zinc-900 text-white px-6 py-4">
-          <DialogTitle className="text-base font-bold text-white">{isEditing ? "Editar" : "Nuevo"} Proveedor</DialogTitle>
-          <DialogDescription className="text-zinc-400 text-xs mt-0.5">Datos del proveedor para compras e inventario.</DialogDescription>
-        </div>
+        <DialogHeader className="px-6 pt-6 pb-2">
+          <DialogTitle>{isEditing ? "Editar" : "Nuevo"} Proveedor</DialogTitle>
+          <DialogDescription className="text-xs">Datos del proveedor para compras e inventario.</DialogDescription>
+        </DialogHeader>
 
         <div className="p-6 overflow-y-auto max-h-[70vh]">
           <Form {...form}>
@@ -130,7 +129,7 @@ export function SupplierDialog({ open, onOpenChange, supplier, onSave }: Props) 
 
               <DialogFooter className="pt-2">
                 <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                <Button type="submit" className="bg-zinc-900 hover:bg-zinc-800 text-white" disabled={form.formState.isSubmitting}>
+                <Button type="submit" className="bg-primary hover:bg-primary/90 text-white" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? "Guardando…" : isEditing ? "Actualizar" : "Crear Proveedor"}
                 </Button>
               </DialogFooter>

@@ -321,12 +321,12 @@ export default function NuevaVentaPage() {
   return (
     <>
       {/* Header */}
-      <div className="bg-black text-white rounded-2xl p-6 mb-6">
-        <Link href="/punto-de-venta?tab=ventas" className="text-sm text-white/60 hover:text-white flex items-center gap-1 mb-2 transition-colors w-fit">
+      <div className="mb-4">
+        <Link href="/punto-de-venta?tab=ventas" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2 transition-colors w-fit">
           <ArrowLeft className="h-4 w-4" /> Volver a Ventas
         </Link>
         <h1 className="text-2xl font-black">Nueva Venta</h1>
-        <p className="text-white/60 text-sm mt-0.5">Añade artículos del inventario y finaliza la transacción.</p>
+        <p className="text-muted-foreground text-sm mt-0.5">Añade artículos del inventario y finaliza la transacción.</p>
       </div>
 
       <FormProvider {...methods}>

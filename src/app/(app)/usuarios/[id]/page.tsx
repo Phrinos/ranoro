@@ -120,12 +120,12 @@ export default function UsuarioDetailPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header */}
-      <div className="bg-black text-white rounded-2xl p-6">
-        <Link href="/usuarios" className="text-sm text-white/60 hover:text-white flex items-center gap-1 mb-2 transition-colors w-fit">
+      <div className="mb-2">
+        <Link href="/usuarios" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 mb-2 transition-colors w-fit">
           <ArrowLeft className="h-4 w-4" /> Volver a Usuarios
         </Link>
         <h1 className="text-2xl font-black">{isNew ? "Nuevo Usuario" : "Editar Usuario"}</h1>
-        <p className="text-white/60 text-sm mt-0.5">
+        <p className="text-muted-foreground text-sm mt-0.5">
           {isNew ? "Crea un nuevo acceso al sistema." : "Ajusta los permisos y rol del usuario."}
         </p>
       </div>

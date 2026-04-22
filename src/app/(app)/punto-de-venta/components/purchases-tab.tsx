@@ -190,16 +190,16 @@ export function PurchasesTab({ purchases, payables, suppliers, items, categories
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
-                <TableHeader className="bg-black">
+                <TableHeader className="bg-muted/50">
                   <TableRow>
-                    <TableHead className="text-white">Fecha</TableHead>
-                    <TableHead className="text-white">Folio</TableHead>
-                    <TableHead className="text-white">Proveedor</TableHead>
-                    <TableHead className="text-white">Artículos</TableHead>
-                    <TableHead className="text-white">Método</TableHead>
-                    <TableHead className="text-white text-right">Total</TableHead>
-                    <TableHead className="text-white text-center">Estado</TableHead>
-                    <TableHead className="text-white w-[44px]" />
+                    <TableHead>Fecha</TableHead>
+                    <TableHead>Folio</TableHead>
+                    <TableHead>Proveedor</TableHead>
+                    <TableHead>Artículos</TableHead>
+                    <TableHead>Método</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="text-center">Estado</TableHead>
+                    <TableHead className="w-[44px]" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>

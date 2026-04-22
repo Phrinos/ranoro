@@ -69,13 +69,13 @@ export function UsersListTab({ users }: Props) {
         <Card>
           <CardContent className="p-0">
             <Table>
-              <TableHeader className="bg-black">
+              <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead className="text-white">Usuario</TableHead>
-                  <TableHead className="text-white">Rol del Sistema</TableHead>
-                  <TableHead className="text-white">Email</TableHead>
-                  <TableHead className="text-white text-center">Estado</TableHead>
-                  <TableHead className="text-white" />
+                  <TableHead>Usuario</TableHead>
+                  <TableHead>Rol del Sistema</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead className="text-center">Estado</TableHead>
+                  <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>

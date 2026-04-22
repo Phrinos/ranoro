@@ -56,9 +56,9 @@ function PersonalPageInner() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-black text-white rounded-2xl p-6">
+      <div className="mb-2">
         <h1 className="text-2xl font-black tracking-tight">Personal</h1>
-        <p className="text-white/60 text-sm mt-0.5">
+        <p className="text-muted-foreground text-sm mt-0.5">
           Directorio del equipo, comisiones y rendimiento laboral.
         </p>
       </div>

@@ -166,15 +166,15 @@ export function InventoryTab({ items, categories, suppliers = [] }: Props) {
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
-                  <TableHeader className="bg-black">
+                  <TableHeader className="bg-muted/50">
                     <TableRow>
-                      <TableHead className="text-white">Ítem</TableHead>
-                      <TableHead className="text-white">Categoría</TableHead>
-                      <TableHead className="text-white text-right">Stock</TableHead>
-                      <TableHead className="text-white text-right">Costo</TableHead>
-                      <TableHead className="text-white text-right">Precio Venta</TableHead>
-                      <TableHead className="text-white text-right">Valor Total</TableHead>
-                      <TableHead className="text-white" />
+                      <TableHead>Ítem</TableHead>
+                      <TableHead>Categoría</TableHead>
+                      <TableHead className="text-right">Stock</TableHead>
+                      <TableHead className="text-right">Costo</TableHead>
+                      <TableHead className="text-right">Precio Venta</TableHead>
+                      <TableHead className="text-right">Valor Total</TableHead>
+                      <TableHead />
                     </TableRow>
                   </TableHeader>
                   <TableBody>

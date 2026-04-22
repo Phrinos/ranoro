@@ -94,7 +94,7 @@ export function VehiclesListTab({ groups, oils, onOpen, onCreate, onDelete }: Pr
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Buscar por marca, modelo…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 bg-white" />
           </div>
-          <Button className="bg-black text-white hover:bg-zinc-800 gap-2" onClick={() => setNewGroupOpen(true)}>
+          <Button className="bg-primary text-white hover:bg-primary/90 gap-2" onClick={() => setNewGroupOpen(true)}>
             <PlusCircle className="h-4 w-4" /> Nuevo Grupo
           </Button>
         </div>
@@ -120,13 +120,13 @@ export function VehiclesListTab({ groups, oils, onOpen, onCreate, onDelete }: Pr
                 <CardContent className="p-0">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-zinc-900 hover:bg-zinc-900">
-                        <TableHead className="text-white font-bold rounded-tl-lg">Vehículos</TableHead>
-                        <TableHead className="text-white font-bold text-center">Aceite</TableHead>
-                        <TableHead className="text-white font-bold text-center">Insumos</TableHead>
-                        <TableHead className="text-white font-bold text-center">Trabajos</TableHead>
-                        <TableHead className="text-white font-bold">Rango de precios</TableHead>
-                        <TableHead className="text-white rounded-tr-lg" />
+                      <TableRow className="bg-muted/50 hover:bg-muted/50">
+                        <TableHead className="font-bold rounded-tl-lg">Vehículos</TableHead>
+                        <TableHead className="font-bold text-center">Aceite</TableHead>
+                        <TableHead className="font-bold text-center">Insumos</TableHead>
+                        <TableHead className="font-bold text-center">Trabajos</TableHead>
+                        <TableHead className="font-bold">Rango de precios</TableHead>
+                        <TableHead className="rounded-tr-lg" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -219,8 +219,8 @@ export function VehiclesListTab({ groups, oils, onOpen, onCreate, onDelete }: Pr
       {/* New group dialog */}
       <Dialog open={newGroupOpen} onOpenChange={setNewGroupOpen}>
         <DialogContent className="p-0 overflow-hidden">
-          <DialogHeader className="bg-zinc-900 text-white px-6 py-5">
-            <DialogTitle className="text-white font-black">Nuevo Grupo de Vehículos</DialogTitle>
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle className="font-black">Nuevo Grupo de Vehículos</DialogTitle>
           </DialogHeader>
           <div className="px-6 py-5 space-y-4">
             <p className="text-xs text-muted-foreground">Ingresa el primer vehículo del grupo. Podrás agregar más después.</p>
@@ -253,7 +253,7 @@ export function VehiclesListTab({ groups, oils, onOpen, onCreate, onDelete }: Pr
           </div>
           <DialogFooter className="px-6 pb-5 flex gap-2 justify-end">
             <Button variant="outline" onClick={() => setNewGroupOpen(false)}>Cancelar</Button>
-            <Button className="bg-black text-white hover:bg-zinc-800" onClick={handleCreate} disabled={creating || !nMake.trim() || !nModel.trim()}>
+            <Button className="bg-primary text-white hover:bg-primary/90" onClick={handleCreate} disabled={creating || !nMake.trim() || !nModel.trim()}>
               {creating ? "Creando…" : "Crear Grupo"}
             </Button>
           </DialogFooter>

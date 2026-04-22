@@ -30,13 +30,11 @@ function FacturacionPageInner() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12 animate-in fade-in duration-300">
       {/* Header */}
-      <div className="bg-black text-white rounded-2xl p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Facturación Facturapi</h1>
-          <p className="text-white/70 text-sm mt-1 max-w-xl">
-            Gestiona la facturación electrónica SAT de tu taller y configura las credenciales de tu portal público.
-          </p>
-        </div>
+      <div className="mb-2">
+        <h1 className="text-2xl sm:text-3xl font-black tracking-tight">Facturación Facturapi</h1>
+        <p className="text-muted-foreground text-sm mt-1 max-w-xl">
+          Gestiona la facturación electrónica SAT de tu taller y configura las credenciales de tu portal público.
+        </p>
       </div>
       
       {/* Main Content */}

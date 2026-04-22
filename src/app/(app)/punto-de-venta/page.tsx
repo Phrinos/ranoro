@@ -51,9 +51,9 @@ function PuntoDeVentaPageInner() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-black text-white rounded-2xl p-6">
+      <div className="mb-2">
         <h1 className="text-2xl font-black tracking-tight">Punto de Venta</h1>
-        <p className="text-white/60 text-sm mt-0.5">
+        <p className="text-muted-foreground text-sm mt-0.5">
           Inventario, compras, ventas y proveedores en un solo lugar.
         </p>
       </div>
