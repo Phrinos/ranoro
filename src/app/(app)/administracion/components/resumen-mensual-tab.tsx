@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { formatCurrency, capitalizeWords } from "@/lib/utils";
 import { format, startOfMonth, endOfMonth, isWithinInterval, isValid, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
-import type { ServiceRecord, SaleReceipt, CashDrawerTransaction } from "@/types";
+import type { ServiceRecord, SaleReceipt, CashDrawerTransaction, User } from "@/types";
 import type { AdminPurchase, FixedExpense } from "../hooks/use-admin-data";
 
 interface Props {
@@ -16,6 +16,7 @@ interface Props {
   cashTransactions: CashDrawerTransaction[];
   purchases: AdminPurchase[];
   fixedExpenses: FixedExpense[];
+  users: User[];
 }
 
 function parseAnyDate(v: any): Date | null {
@@ -35,7 +36,7 @@ function generateMonthOptions() {
   return opts;
 }
 
-export function ResumenMensualTab({ services, sales, cashTransactions, purchases, fixedExpenses }: Props) {
+export function ResumenMensualTab({ services, sales, cashTransactions, purchases, fixedExpenses, users }: Props) {
   const monthOptions = useMemo(generateMonthOptions, []);
   const [selectedMonth, setSelectedMonth] = useState(monthOptions[0]?.value ?? "");
 
@@ -83,8 +84,13 @@ export function ResumenMensualTab({ services, sales, cashTransactions, purchases
         return s + amount * m;
       }, 0);
 
+    // Payroll — sum of monthlySalary for all non-archived users
+    const totalPayroll = users
+      .filter((u) => !u.isArchived)
+      .reduce((s, u) => s + (Number(u.monthlySalary) || 0), 0);
+
     const totalRevenue = serviceRevenue + saleRevenue + manualIncome;
-    const totalExpenses = manualExpenses + purchaseCost + fixedTotal;
+    const totalExpenses = manualExpenses + purchaseCost + fixedTotal + totalPayroll;
     const netProfit = totalRevenue - totalExpenses;
 
     return {
@@ -94,14 +100,16 @@ export function ResumenMensualTab({ services, sales, cashTransactions, purchases
       manualExpenses,
       purchaseCost,
       fixedTotal,
+      totalPayroll,
       totalRevenue,
       totalExpenses,
       netProfit,
       serviceCount: deliveredServices.length,
       saleCount: completedSales.length,
       purchaseCount: monthPurchases.length,
+      staffCount: users.filter((u) => !u.isArchived).length,
     };
-  }, [selectedMonth, services, sales, cashTransactions, purchases, fixedExpenses]);
+  }, [selectedMonth, services, sales, cashTransactions, purchases, fixedExpenses, users]);
 
   if (!kpis) return <div className="text-muted-foreground text-center py-12">Selecciona un mes.</div>;
 
@@ -110,6 +118,7 @@ export function ResumenMensualTab({ services, sales, cashTransactions, purchases
     { label: "Ingresos por Ventas PDV", value: kpis.saleRevenue, note: `${kpis.saleCount} ventas completadas`, color: "text-emerald-600" },
     { label: "Ingresos Manuales", value: kpis.manualIncome, color: "text-emerald-600" },
     { label: "Compras / Insumos", value: -kpis.purchaseCost, note: `${kpis.purchaseCount} compras`, color: "text-red-600", isExpense: true },
+    { label: "Sueldos / Nómina", value: -kpis.totalPayroll, note: `${kpis.staffCount} empleados activos`, color: "text-red-600", isExpense: true },
     { label: "Gastos Fijos (estimado)", value: -kpis.fixedTotal, color: "text-amber-600", isExpense: true },
     { label: "Salidas Manuales", value: -kpis.manualExpenses, color: "text-red-600", isExpense: true },
   ];
@@ -123,7 +132,7 @@ export function ResumenMensualTab({ services, sales, cashTransactions, purchases
           <p className="text-sm text-muted-foreground">Estado de resultados estimado del mes.</p>
         </div>
         <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[200px] bg-white border-slate-200"><SelectValue /></SelectTrigger>
           <SelectContent>{monthOptions.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
         </Select>
       </div>

@@ -3,9 +3,9 @@
 
 import React, { useState } from "react";
 import { withSuspense } from "@/lib/withSuspense";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Wrench, FileText, Clock } from "lucide-react";
+import { PlusCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { ActiveServicesList } from "./components/lists/active-services-list";
 import { QuotesList } from "./components/lists/quotes-list";
@@ -14,9 +14,15 @@ import { useServicesData } from "./components/hooks/use-services-data";
 import { TicketPreviewModal } from "@/app/(app)/ticket/components";
 import { PaymentDetailsDialog } from "@/components/shared/PaymentDetailsDialog";
 import { TiposDeServicioPageContent } from "./components/service-types-content";
-import type { ServiceRecord } from "@/types";
 
 type Tab = "activos" | "cotizaciones" | "historial" | "categorias";
+
+const TABS: { value: Tab; label: string }[] = [
+  { value: "activos", label: "Activos" },
+  { value: "cotizaciones", label: "Cotizaciones" },
+  { value: "historial", label: "Historial" },
+  { value: "categorias", label: "Categorías" },
+];
 
 function PageInner() {
   const {
@@ -55,27 +61,27 @@ function PageInner() {
           </Link>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Tab)}>
-          <TabsList className="grid w-full grid-cols-3 sm:w-fit sm:grid-cols-none sm:flex h-10 p-1 bg-muted/50 rounded-lg">
-            <TabsTrigger value="activos" className="flex items-center gap-1.5 text-sm">
-              <Wrench className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Activos</span>
-            </TabsTrigger>
-            <TabsTrigger value="cotizaciones" className="flex items-center gap-1.5 text-sm">
-              <FileText className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Cotizaciones</span>
-            </TabsTrigger>
-            <TabsTrigger value="historial" className="flex items-center gap-1.5 text-sm">
-              <Clock className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Historial</span>
-            </TabsTrigger>
-            <TabsTrigger value="categorias" className="flex items-center gap-1.5 text-sm">
-              <Wrench className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Categorías</span>
-            </TabsTrigger>
-          </TabsList>
+        {/* Tab pills */}
+        <div className="flex gap-1 p-1.5 bg-muted/70 backdrop-blur-xs rounded-xl overflow-x-auto ring-1 ring-muted mb-4">
+          {TABS.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveTab(tab.value)}
+              className={cn(
+                "shrink-0 flex-1 min-w-[90px] px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap",
+                activeTab === tab.value
+                  ? "bg-red-700 text-white shadow-md scale-[1.02]"
+                  : "text-muted-foreground hover:text-foreground hover:bg-black/5"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-          <TabsContent value="activos" className="pt-4">
+        {/* Tab content */}
+        <div>
+          {activeTab === "activos" && (
             <ActiveServicesList
               vehicles={vehicles}
               personnel={personnel}
@@ -84,9 +90,8 @@ function PageInner() {
               onShowTicket={openShareDialog}
               onComplete={openPaymentDialog}
             />
-          </TabsContent>
-
-          <TabsContent value="cotizaciones" className="pt-4">
+          )}
+          {activeTab === "cotizaciones" && (
             <QuotesList
               vehicles={vehicles}
               personnel={personnel}
@@ -94,9 +99,8 @@ function PageInner() {
               onView={openShareDialog}
               onDelete={deleteService}
             />
-          </TabsContent>
-
-          <TabsContent value="historial" className="pt-4">
+          )}
+          {activeTab === "historial" && (
             <HistoryList
               vehicles={vehicles}
               personnel={personnel}
@@ -105,12 +109,11 @@ function PageInner() {
               onShowTicket={openShareDialog}
               onDelete={deleteService}
             />
-          </TabsContent>
-
-          <TabsContent value="categorias" className="pt-4">
+          )}
+          {activeTab === "categorias" && (
             <TiposDeServicioPageContent serviceTypes={serviceTypes} />
-          </TabsContent>
-        </Tabs>
+          )}
+        </div>
       </div>
 
       {/* Shared Modals */}

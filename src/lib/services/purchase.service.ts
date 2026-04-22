@@ -84,8 +84,11 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     throw new Error('Para compras a crédito, debes indicar la fecha de vencimiento (dueDate).');
   }
 
-  // Normalización de importes
-  const invoiceTotal = asMoney(data.invoiceTotal);
+  // Normalización de importes — si invoiceTotal es 0 o no viene, lo calculamos desde items
+  const itemsTotal = asMoney(
+    data.items.reduce((s: number, it: any) => s + asMoney(it.purchasePrice) * ((it.quantity as number) ?? 1), 0)
+  );
+  const invoiceTotal = asMoney(data.invoiceTotal) > 0 ? asMoney(data.invoiceTotal) : itemsTotal;
   const subtotal = data.subtotal != null ? asMoney(data.subtotal) : undefined;
   const taxes = data.taxes != null ? asMoney(data.taxes) : undefined;
   const discounts = data.discounts != null ? asMoney(data.discounts) : undefined;

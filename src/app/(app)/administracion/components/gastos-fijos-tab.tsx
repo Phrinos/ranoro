@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { PlusCircle, Edit, Trash2 } from "lucide-react";
 import { formatCurrency, cn } from "@/lib/utils";
 import { db } from "@/lib/firebaseClient";
@@ -67,58 +68,62 @@ function ExpenseDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>{expense ? "Editar" : "Nuevo"} Gasto Fijo</DialogTitle>
-          <DialogDescription>Gastos recurrentes del taller.</DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit((v) => onSave(v, expense?.id).then(() => onOpenChange(false)))} className="space-y-4">
-            <FormField control={form.control} name="name" render={({ field }) => (
-              <FormItem><FormLabel>Nombre *</FormLabel>
-                <FormControl><Input placeholder="Ej: Renta local, Internet…" {...field} /></FormControl>
-                <FormMessage /></FormItem>
-            )} />
-            <div className="grid grid-cols-2 gap-3">
-              <FormField control={form.control} name="amount" render={({ field }) => (
-                <FormItem><FormLabel>Monto *</FormLabel>
-                  <FormControl><Input type="number" min="0" step="0.01" {...field} /></FormControl>
+      <DialogContent className="max-w-sm p-0 overflow-hidden">
+        <div className="bg-red-700 text-white px-6 py-4">
+          <DialogTitle className="text-base font-bold text-white">{expense ? "Editar" : "Nuevo"} Gasto Fijo</DialogTitle>
+          <DialogDescription className="text-red-200 text-xs mt-0.5">Gastos recurrentes del taller.</DialogDescription>
+        </div>
+        <div className="p-6">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit((v) => onSave(v, expense?.id).then(() => onOpenChange(false)))} className="space-y-4">
+              <FormField control={form.control} name="name" render={({ field }) => (
+                <FormItem><FormLabel>Nombre *</FormLabel>
+                  <FormControl><Input placeholder="Ej: Renta, Internet…" className="bg-white" {...field} /></FormControl>
                   <FormMessage /></FormItem>
               )} />
-              <FormField control={form.control} name="frequency" render={({ field }) => (
-                <FormItem><FormLabel>Frecuencia</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      {Object.entries(FREQ_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
-                    </SelectContent>
-                  </Select></FormItem>
-              )} />
-            </div>
-            <FormField control={form.control} name="category" render={({ field }) => (
-              <FormItem><FormLabel>Categoría *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl><SelectTrigger><SelectValue placeholder="Selecciona…" /></SelectTrigger></FormControl>
-                  <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                </Select><FormMessage /></FormItem>
-            )} />
-            <FormField control={form.control} name="notes" render={({ field }) => (
-              <FormItem><FormLabel>Notas / Detalles</FormLabel>
-                <FormControl><Textarea className="resize-none h-16" placeholder="Información adicional…" {...field} /></FormControl>
-                <FormMessage /></FormItem>
-            )} />
-            <FormField control={form.control} name="isActive" render={({ field }) => (
-              <div className="flex items-center gap-3 p-3 rounded-xl border bg-muted/30">
-                <Label>Activo</Label>
-                <Switch checked={field.value} onCheckedChange={field.onChange} />
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="amount" render={({ field }) => (
+                  <FormItem><FormLabel>Monto *</FormLabel>
+                    <FormControl><Input type="number" min="0" step="0.01" className="bg-white" {...field} /></FormControl>
+                    <FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="frequency" render={({ field }) => (
+                  <FormItem><FormLabel>Frecuencia</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl><SelectTrigger className="bg-white"><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        {Object.entries(FREQ_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
+                      </SelectContent>
+                    </Select></FormItem>
+                )} />
               </div>
-            )} />
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>{form.formState.isSubmitting ? "Guardando…" : expense ? "Actualizar" : "Crear"}</Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              <FormField control={form.control} name="category" render={({ field }) => (
+                <FormItem><FormLabel>Categoría *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl><SelectTrigger className="bg-white"><SelectValue placeholder="Selecciona…" /></SelectTrigger></FormControl>
+                    <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select><FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="notes" render={({ field }) => (
+                <FormItem><FormLabel>Notas / Detalles</FormLabel>
+                  <FormControl><Textarea className="resize-none h-16 bg-white" placeholder="Información adicional…" {...field} /></FormControl>
+                  <FormMessage /></FormItem>
+              )} />
+              <FormField control={form.control} name="isActive" render={({ field }) => (
+                <div className="flex items-center gap-3 p-3 rounded-xl border bg-muted/30">
+                  <Label>Activo en resumen mensual</Label>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} />
+                </div>
+              )} />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                <Button type="submit" className="bg-red-700 hover:bg-red-800 text-white" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "Guardando…" : expense ? "Actualizar" : "Crear"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -176,73 +181,79 @@ export function GastosFijosTab({ fixedExpenses }: Props) {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {fixedExpenses.length > 0 ? fixedExpenses.map((e) => {
-            const rawAmount = (e as any).amount ?? (e as any).monto ?? (e as any).monthlyAmount ?? (e as any).cost ?? 0;
-            const amount = Number(rawAmount) || 0;
-            const freq = (e as any).frequency ?? (e as any).frecuencia ?? "mensual";
-            const m = freq === "quincenal" ? 2 : freq === "semanal" ? 4.33 : 1;
-            const isActive = (e as any).isActive !== false && (e as any).active !== false;
+        <Card className="overflow-hidden">
+          <Table>
+            <TableHeader className="bg-black">
+              <TableRow>
+                <TableHead className="text-white text-xs w-[200px]">Nombre</TableHead>
+                <TableHead className="text-white text-xs">Categoría</TableHead>
+                <TableHead className="text-white text-xs">Frecuencia</TableHead>
+                <TableHead className="text-white text-xs text-right">Monto</TableHead>
+                <TableHead className="text-white text-xs text-right">Equiv. Mensual</TableHead>
+                <TableHead className="text-white text-xs">Notas</TableHead>
+                <TableHead className="text-white text-xs text-center">Estado</TableHead>
+                <TableHead className="text-white text-xs" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {fixedExpenses.length > 0 ? fixedExpenses.map((e) => {
+                const rawAmount = (e as any).amount ?? (e as any).monto ?? (e as any).monthlyAmount ?? (e as any).cost ?? 0;
+                const amount = Number(rawAmount) || 0;
+                const freq = (e as any).frequency ?? (e as any).frecuencia ?? "mensual";
+                const m = freq === "quincenal" ? 2 : freq === "semanal" ? 4.33 : 1;
+                const isActive = (e as any).isActive !== false && (e as any).active !== false;
+                const notes = (e as any).notes || (e as any).notas || "";
 
-            return (
-              <Card key={e.id} className={cn("transition-all", !isActive && "opacity-60 grayscale-[0.3]")}>
-                <CardContent className="p-5 flex flex-col gap-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <p className="font-bold text-base leading-tight truncate">{e.name}</p>
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium h-5 bg-muted/40">
-                          {e.category}
-                        </Badge>
+                return (
+                  <TableRow key={e.id} className={cn("transition-all", !isActive && "opacity-50")}>
+                    <TableCell>
+                      <p className="font-semibold text-sm">{e.name}</p>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-[10px] bg-muted/30">{e.category}</Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{FREQ_LABELS[freq] || "Mensual"}</TableCell>
+                    <TableCell className="text-right font-bold text-sm text-primary">{formatCurrency(amount)}</TableCell>
+                    <TableCell className="text-right text-sm text-muted-foreground">
+                      {freq !== "mensual" ? <span className="font-semibold">≈ {formatCurrency(amount * m)}</span> : <span>&mdash;</span>}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground max-w-[160px] truncate" title={notes}>
+                      {notes || <span className="text-muted-foreground/50">—</span>}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <Switch
+                          checked={isActive}
+                          onCheckedChange={() => handleToggleActive(e)}
+                          id={`switch-${e.id}`}
+                        />
+                        <span className={cn("text-[10px] font-semibold", isActive ? "text-emerald-600" : "text-muted-foreground")}>
+                          {isActive ? "Activo" : "Inactivo"}
+                        </span>
                       </div>
-                      <p className="text-sm text-muted-foreground font-medium">Pago {FREQ_LABELS[freq] || "Mensual"}</p>
-                      {((e as any).notes || (e as any).notas) && (
-                        <p className="text-xs text-muted-foreground mt-2 line-clamp-2 bg-muted/40 p-2 rounded border border-muted" title={(e as any).notes || (e as any).notas}>
-                          {(e as any).notes || (e as any).notas}
-                        </p>
-                      )}
-                    </div>
-                    <div className="text-right shrink-0">
-                      <p className="font-black text-xl text-primary leading-tight">{formatCurrency(amount)}</p>
-                      {freq !== "mensual" && (
-                        <p className="text-[11px] text-muted-foreground font-semibold mt-1 bg-muted/30 inline-block px-1.5 py-0.5 rounded">
-                          ≈ {formatCurrency(amount * m)} / mes
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-3 border-t">
-                    <div className="flex items-center gap-2">
-                      <Switch
-                        checked={isActive}
-                        onCheckedChange={() => handleToggleActive(e)}
-                        id={`switch-${e.id}`}
-                      />
-                      <Label htmlFor={`switch-${e.id}`} className="text-xs font-medium cursor-pointer select-none text-muted-foreground">
-                        {isActive ? "Activo en resumen" : "Inactivo"}
-                      </Label>
-                    </div>
-                    
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground" onClick={() => { setEditExpense(e); setDialogOpen(true); }}>
-                        <Edit className="h-3.5 w-3.5 mr-1" /> Editar
-                      </Button>
-                      <Button variant="ghost" size="sm" className="h-8 px-2 text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setDeleteTarget(e)}>
-                        <Trash2 className="h-3.5 w-3.5 mr-1" /> Eliminar
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          }) : (
-            <div className="col-span-full text-center text-muted-foreground py-16 border-2 border-dashed rounded-xl bg-muted/10">
-              <p className="text-lg font-medium">Sin gastos fijos registrados</p>
-              <p className="text-sm mt-1">Registra la renta, luz o internet para verlos en tu resumen mensual.</p>
-            </div>
-          )}
-        </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-0.5 justify-end">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => { setEditExpense(e); setDialogOpen(true); }}>
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => setDeleteTarget(e)}>
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              }) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                    Sin gastos fijos registrados.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </Card>
       </div>
 
       <AlertDialog open={!!deleteTarget} onOpenChange={(v) => !v && setDeleteTarget(null)}>

@@ -67,7 +67,7 @@ function AdminPageInner() {
             className={cn(
               "shrink-0 flex-1 min-w-[100px] px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap",
               activeTab === tab.value
-                ? "bg-white text-black shadow-md ring-1 ring-black/10 dark:bg-slate-800 dark:text-white dark:ring-white/10 scale-[1.02]"
+                ? "bg-red-700 text-white shadow-md scale-[1.02]"
                 : "text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
             )}
           >
@@ -98,6 +98,7 @@ function AdminPageInner() {
             cashTransactions={cashTransactions}
             purchases={purchases}
             fixedExpenses={fixedExpenses}
+            users={users}
           />
         )}
         {activeTab === "gastos" && (

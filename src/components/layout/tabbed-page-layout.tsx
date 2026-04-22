@@ -53,7 +53,7 @@ export function TabbedPageLayout({
               className={cn(
                 'shrink-0 flex-1 min-w-max px-4 py-2.5 rounded-lg text-sm font-bold transition-all duration-200 whitespace-nowrap flex items-center gap-2',
                 activeTab === tab.value
-                  ? 'bg-white text-black shadow-md scale-[1.02] dark:bg-slate-800 dark:text-white dark:ring-1 dark:ring-white/10'
+                  ? 'bg-red-700 text-white shadow-md scale-[1.02]'
                   : 'text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5'
               )}
             >

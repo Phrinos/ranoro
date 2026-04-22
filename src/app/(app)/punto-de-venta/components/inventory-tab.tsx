@@ -105,22 +105,22 @@ export function InventoryTab({ items, categories, suppliers = [] }: Props) {
   return (
     <>
       <div className="space-y-4">
-        {/* Top bar */}
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          {/* Search */}
-          <div className="relative flex-1 w-full sm:max-w-xs">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        {/* Top bar — single row */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Search — wide */}
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar nombre, SKU, marca…"
               value={search}
               onChange={(e) => { setSearch(e.target.value); resetPage(); }}
-              className="pl-8"
+              className="pl-9 h-10 bg-white border-slate-200"
             />
           </div>
 
-          {/* Category filter */}
+          {/* Category select */}
           <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); resetPage(); }}>
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger className="w-[180px] h-10 bg-white border-slate-200">
               <SelectValue placeholder="Categoría" />
             </SelectTrigger>
             <SelectContent>
@@ -131,30 +131,33 @@ export function InventoryTab({ items, categories, suppliers = [] }: Props) {
             </SelectContent>
           </Select>
 
-          <Button onClick={openNew} className="w-full sm:w-auto">
-            <PlusCircle className="mr-2 h-4 w-4" /> Agregar Ítem
-          </Button>
-        </div>
+          {/* Quick filters — same height as search */}
+          <div className="flex gap-1">
+            {quickFilters.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => { setQuickFilter(f.value); resetPage(); }}
+                className={cn(
+                  "h-10 px-3 rounded-lg text-xs font-semibold border transition-all whitespace-nowrap",
+                  quickFilter === f.value
+                    ? "bg-red-700 text-white border-red-700"
+                    : "bg-white text-muted-foreground border-slate-200 hover:border-slate-400"
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
 
-        {/* Quick filters */}
-        <div className="flex gap-2 flex-wrap">
-          {quickFilters.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => { setQuickFilter(f.value); resetPage(); }}
-              className={cn(
-                "px-3 py-1 rounded-full text-xs font-semibold border transition-all",
-                quickFilter === f.value
-                  ? "bg-foreground text-background border-foreground"
-                  : "bg-card text-muted-foreground border-border hover:border-foreground"
-              )}
-            >
-              {f.label}
-            </button>
-          ))}
-          <span className="ml-auto self-center text-xs text-muted-foreground">
+          {/* Result count */}
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
             {filtered.length} resultado{filtered.length !== 1 ? "s" : ""}
           </span>
+
+          {/* Add button — right */}
+          <Button onClick={openNew} className="ml-auto h-10">
+            <PlusCircle className="mr-2 h-4 w-4" /> Agregar Ítem
+          </Button>
         </div>
 
         {/* Table — desktop */}

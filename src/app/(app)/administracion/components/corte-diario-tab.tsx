@@ -144,8 +144,8 @@ export function CorteDiarioTab({ cashTransactions, dailyCuts }: Props) {
   return (
     <>
       <div className="space-y-5">
-        {/* Date navigator */}
-        <div className="flex items-center justify-between gap-2 flex-wrap">
+        {/* Date navigator — white bar */}
+        <div className="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between gap-2 flex-wrap shadow-sm">
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={() => goDay(-1)}>
               <ChevronLeft className="h-4 w-4" />
@@ -155,6 +155,7 @@ export function CorteDiarioTab({ cashTransactions, dailyCuts }: Props) {
               <ChevronRight className="h-4 w-4" />
             </Button>
             <Button variant="outline" size="sm" onClick={() => setSelectedDate(new Date())}>Hoy</Button>
+            <Button variant="outline" size="sm" onClick={() => goDay(-1)}>Ayer</Button>
           </div>
 
           <div className="flex items-center gap-2">
@@ -172,7 +173,7 @@ export function CorteDiarioTab({ cashTransactions, dailyCuts }: Props) {
                 <Scissors className="mr-2 h-4 w-4" /> Cerrar Corte
               </Button>
             )}
-            <Button variant="outline" size="sm" asChild>
+            <Button size="sm" className="bg-zinc-800 hover:bg-zinc-700 text-white" asChild>
               <Link href="/administracion/cortes">Ver Historial</Link>
             </Button>
           </div>
