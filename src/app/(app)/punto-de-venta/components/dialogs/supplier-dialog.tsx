@@ -60,80 +60,83 @@ export function SupplierDialog({ open, onOpenChange, supplier, onSave }: Props) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Editar" : "Nuevo"} Proveedor</DialogTitle>
-          <DialogDescription>Datos del proveedor para compras e inventario.</DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0 overflow-hidden">
+        {/* Colored header */}
+        <div className="bg-zinc-900 text-white px-6 py-4">
+          <DialogTitle className="text-base font-bold text-white">{isEditing ? "Editar" : "Nuevo"} Proveedor</DialogTitle>
+          <DialogDescription className="text-zinc-400 text-xs mt-0.5">Datos del proveedor para compras e inventario.</DialogDescription>
+        </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField control={form.control} name="name" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Razón Social / Nombre *</FormLabel>
-                <FormControl><Input placeholder="Distribuidora XYZ S.A." {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-
-            <div className="grid grid-cols-2 gap-3">
-              <FormField control={form.control} name="contactPerson" render={({ field }) => (
+        <div className="p-6 overflow-y-auto max-h-[70vh]">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField control={form.control} name="name" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Contacto</FormLabel>
-                  <FormControl><Input placeholder="Nombre del contacto" {...field} /></FormControl>
+                  <FormLabel>Razón Social / Nombre *</FormLabel>
+                  <FormControl><Input className="bg-white border-slate-200" placeholder="Distribuidora XYZ S.A." {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
-              <FormField control={form.control} name="phone" render={({ field }) => (
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="contactPerson" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contacto</FormLabel>
+                    <FormControl><Input className="bg-white border-slate-200" placeholder="Nombre del contacto" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="phone" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Teléfono</FormLabel>
+                    <FormControl><Input className="bg-white border-slate-200" type="tel" placeholder="55 1234 5678" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <FormField control={form.control} name="email" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl><Input className="bg-white border-slate-200" type="email" placeholder="proveedor@email.com" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+                <FormField control={form.control} name="rfc" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>RFC</FormLabel>
+                    <FormControl><Input className="bg-white border-slate-200" placeholder="XAXX010101000" {...field} /></FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )} />
+              </div>
+
+              <FormField control={form.control} name="address" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Teléfono</FormLabel>
-                  <FormControl><Input type="tel" placeholder="55 1234 5678" {...field} /></FormControl>
+                  <FormLabel>Dirección</FormLabel>
+                  <FormControl><Input className="bg-white border-slate-200" placeholder="Calle, colonia, ciudad" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
-            </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <FormField control={form.control} name="email" render={({ field }) => (
+              <FormField control={form.control} name="description" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl><Input type="email" placeholder="proveedor@email.com" {...field} /></FormControl>
+                  <FormLabel>Notas</FormLabel>
+                  <FormControl><Textarea rows={2} className="bg-white border-slate-200 resize-none" placeholder="Notas adicionales..." {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
-              <FormField control={form.control} name="rfc" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>RFC</FormLabel>
-                  <FormControl><Input placeholder="XAXX010101000" {...field} /></FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
 
-            <FormField control={form.control} name="address" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Dirección</FormLabel>
-                <FormControl><Input placeholder="Calle, colonia, ciudad" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-
-            <FormField control={form.control} name="description" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Notas</FormLabel>
-                <FormControl><Textarea rows={2} placeholder="Notas adicionales..." {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Guardando…" : isEditing ? "Actualizar" : "Crear"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+              <DialogFooter className="pt-2">
+                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
+                <Button type="submit" className="bg-zinc-900 hover:bg-zinc-800 text-white" disabled={form.formState.isSubmitting}>
+                  {form.formState.isSubmitting ? "Guardando…" : isEditing ? "Actualizar" : "Crear Proveedor"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -384,7 +384,7 @@ const EDIT_URL_MAP: Record<string, (id: string) => string | null> = {
   Venta:    () => null,
   Entrada:  () => null,
   Salida:   () => null,
-  Compra:   () => null,
+  Compra:   () => `/punto-de-venta?tab=compras`,
 };
 
 export default function DetallesReporteContent({ services, sales, cashTransactions, users, purchases = [], inventoryItems = [] }: Props) {
@@ -730,14 +730,21 @@ export default function DetallesReporteContent({ services, sales, cashTransactio
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44">
-                          {/* Ver detalle */}
+                        <DropdownMenuContent align="end" className="w-48">
+                           {/* Ver detalle */}
                           <DropdownMenuItem onClick={() => setSelectedRow(row)}>
                             <FileText className="h-3.5 w-3.5 mr-2" /> Ver detalle
                           </DropdownMenuItem>
 
-                          {/* Editar — solo si hay URL */}
-                          {EDIT_URL_MAP[row.type]?.(row.id) && (
+                          {/* Ver / Editar compra */}
+                          {row.type === 'Compra' && (
+                            <DropdownMenuItem onClick={() => router.push(`/punto-de-venta?tab=compras`)}>
+                              <ExternalLink className="h-3.5 w-3.5 mr-2" /> Ver compra
+                            </DropdownMenuItem>
+                          )}
+
+                          {/* Editar — solo si hay URL (no Compra, no Venta) */}
+                          {row.type !== 'Compra' && EDIT_URL_MAP[row.type]?.(row.id) && (
                             <DropdownMenuItem onClick={() => router.push(EDIT_URL_MAP[row.type]!(row.id)!)}>
                               <Pencil className="h-3.5 w-3.5 mr-2" /> Editar orden
                             </DropdownMenuItem>
