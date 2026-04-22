@@ -29,18 +29,11 @@ export const storage: FirebaseStorage = getStorage(app);
 // Initialize Auth only on the client-side to prevent server-side errors
 export const auth: Auth | null = typeof window !== 'undefined' ? getAuth(app) : null;
 
-// Ensure persistence is set if auth is initialized
+// Set local persistence on client-side only
 if (typeof window !== 'undefined' && auth) {
-  console.log("[AUTH-AUDIT] Initializing client-side auth persistence...");
-  setPersistence(auth, browserLocalPersistence)
-    .then(() => {
-      console.log("[AUTH-AUDIT] Auth persistence set to 'LOCAL' successfully.");
-    })
-    .catch((err) => {
-      console.error("[AUTH-AUDIT] Critical error setting auth persistence:", err);
-    });
-} else {
-  console.warn("[AUTH-AUDIT] Auth initialization skipped (possible Server Side execution).");
+  setPersistence(auth, browserLocalPersistence).catch((err) => {
+    console.error("[Firebase] Failed to set auth persistence:", err);
+  });
 }
 
 // Export the Firebase app instance if needed elsewhere
