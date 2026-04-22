@@ -197,6 +197,7 @@ export function ServiceSuppliesArray({
         onSave={handleNewItemSaved}
         item={{ name: newItemSearchTerm } as any}
         categories={categories as any}
+        suppliers={suppliers}
       />
 
       <ServicePurchaseDialog

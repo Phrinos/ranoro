@@ -15,7 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import {
   Package, Wrench, Trash2, DollarSign, Boxes, Package2,
@@ -145,7 +144,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, suppliers = [
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* Wide horizontal layout — no X button */}
-      <DialogContent hideClose className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+      <DialogContent hideClose className="max-w-4xl w-[95vw] max-h-[90vh] p-0 overflow-hidden">
         <div className="flex flex-col h-full min-h-[500px]">
 
           {/* ── Top: gradient header + type selector ────────────────── */}
@@ -197,7 +196,8 @@ export function ItemDialog({ open, onOpenChange, item, categories, suppliers = [
               <div className="flex flex-1 overflow-hidden">
 
                 {/* LEFT column — identification fields */}
-                <ScrollArea className="flex-1 border-r">
+                {/* Using plain div instead of Radix ScrollArea to avoid double-click-to-focus bug */}
+                <div className="flex-1 border-r overflow-y-auto">
                   <div className="px-6 py-5 space-y-4">
                     <SectionHeader icon={Tag} label="Identificación" color="text-slate-500" />
 
@@ -321,11 +321,11 @@ export function ItemDialog({ open, onOpenChange, item, categories, suppliers = [
                       </FormItem>
                     )} />
                   </div>
-                </ScrollArea>
+                </div>
 
                 {/* RIGHT column — prices & stock */}
-                <div className="w-64 xl:w-72 shrink-0 flex flex-col bg-slate-50/60">
-                  <ScrollArea className="flex-1">
+                <div className="w-56 xl:w-64 shrink-0 flex flex-col bg-slate-50/60">
+                  <div className="flex-1 overflow-y-auto">
                     <div className="px-5 py-5 space-y-5">
 
                       {/* Prices */}
@@ -384,7 +384,7 @@ export function ItemDialog({ open, onOpenChange, item, categories, suppliers = [
                         </div>
                       )}
                     </div>
-                  </ScrollArea>
+                  </div>
 
                   {/* Footer buttons — inside right column */}
                   <div className="border-t p-4 space-y-2 bg-white">

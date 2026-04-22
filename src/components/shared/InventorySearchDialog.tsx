@@ -13,7 +13,6 @@ import { formatCurrency, cn } from "@/lib/utils";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface InventorySearchDialogProps {
   open: boolean;
@@ -150,7 +149,8 @@ export function InventorySearchDialog({
         </div>
 
         <div className="px-6 pb-2">
-          <ScrollArea className="h-[50vh]">
+          {/* Using plain div instead of Radix ScrollArea to avoid double-click-to-focus bug */}
+          <div className="h-[50vh] overflow-y-auto pr-1">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -230,7 +230,7 @@ export function InventorySearchDialog({
                 })}
               </div>
             )}
-          </ScrollArea>
+          </div>
         </div>
 
         <DialogFooter className="p-4 border-t bg-muted/10">
