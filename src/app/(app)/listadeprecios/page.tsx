@@ -1,39 +1,107 @@
 // src/app/(app)/listadeprecios/page.tsx
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { withSuspense } from "@/lib/withSuspense";
-import { Button } from "@/components/ui/button";
-import { Loader2, PlusCircle, BookOpen, Bot } from "lucide-react";
+import { Loader2, BookOpen, Bot } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { inventoryService } from "@/lib/services";
-import type { PricingGroup } from "@/types";
-import { usePricingData } from "./hooks/use-pricing-data";
-import { PricingGroupsTable } from "./components/pricing-groups-table";
-import { GroupEditor } from "./components/group-editor";
+import type { PricingGroup, OilType, PartTypeCatalogEntry } from "@/types";
+import { VehiclesListTab } from "./components/vehicles-list-tab";
+import { GlobalPricesTab } from "./components/global-prices-tab";
+import { GroupDetail } from "./components/group-detail";
+
+type TabId = "vehiculos" | "global";
 
 function ListaDePreciosPage() {
   const { toast } = useToast();
-  const { groups, isLoading } = usePricingData();
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editingGroup, setEditingGroup] = useState<PricingGroup | null>(null);
 
-  const handleNew = () => {
-    setEditingGroup(null);
-    setEditorOpen(true);
-  };
+  // ── Data ──────────────────────────────────────────────────
+  const [groups, setGroups] = useState<PricingGroup[]>([]);
+  const [oils, setOils] = useState<OilType[]>([]);
+  const [partTypes, setPartTypes] = useState<PartTypeCatalogEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleEdit = (group: PricingGroup) => {
-    setEditingGroup(group);
-    setEditorOpen(true);
-  };
+  // ── Navigation ────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<TabId>("vehiculos");
+  const [openGroup, setOpenGroup] = useState<PricingGroup | null>(null); // null = list view
 
-  const handleDelete = useCallback(async (id: string) => {
+  useEffect(() => {
+    let loaded = 0;
+    const done = () => { if (++loaded >= 3) setIsLoading(false); };
+
+    const u1 = inventoryService.onPricingGroupsUpdate(data => { setGroups(data as PricingGroup[]); done(); });
+    const u2 = inventoryService.onOilsCatalogUpdate(data => { setOils(data as OilType[]); done(); });
+    const u3 = inventoryService.onPartTypesCatalogUpdate(data => { setPartTypes(data as PartTypeCatalogEntry[]); done(); });
+    return () => { u1(); u2(); u3(); };
+  }, []);
+
+  // ── Group CRUD ────────────────────────────────────────────
+  const handleCreateGroup = useCallback(async (
+    name: string,
+    vehicles: PricingGroup["vehicles"],
+    oilCapacityLiters: number
+  ) => {
+    const newGroup: Partial<PricingGroup> = {
+      name, vehicles, oilCapacityLiters, parts: [], services: [],
+    };
+    try {
+      const id = await inventoryService.savePricingGroup(newGroup);
+      toast({ title: "Grupo creado ✓" });
+      // Open the new group detail immediately
+      setOpenGroup({ ...newGroup as PricingGroup, id });
+    } catch (e) {
+      toast({ title: "Error al crear", variant: "destructive" });
+    }
+  }, [toast]);
+
+  const handleSaveGroup = useCallback(async (updated: PricingGroup) => {
+    try {
+      await inventoryService.savePricingGroup(updated, updated.id);
+      setOpenGroup(updated);
+      toast({ title: "Guardado ✓" });
+    } catch (e) {
+      toast({ title: "Error al guardar", variant: "destructive" });
+      throw e;
+    }
+  }, [toast]);
+
+  const handleDeleteGroup = useCallback(async (id: string) => {
     try {
       await inventoryService.deletePricingGroup(id);
       toast({ title: "Grupo eliminado" });
-    } catch (e) {
+    } catch {
       toast({ title: "Error al eliminar", variant: "destructive" });
+    }
+  }, [toast]);
+
+  // ── Oils ──────────────────────────────────────────────────
+  const handleSaveOils = useCallback(async (updated: OilType[]) => {
+    try {
+      await inventoryService.saveOilsCatalog(updated);
+      toast({ title: "Aceites guardados ✓" });
+    } catch {
+      toast({ title: "Error al guardar aceites", variant: "destructive" });
+    }
+  }, [toast]);
+
+  // ── Part types ────────────────────────────────────────────
+  const handleSavePartType = useCallback(async (
+    entry: Omit<PartTypeCatalogEntry, "id">,
+    id?: string
+  ) => {
+    try {
+      await inventoryService.savePartType(entry, id);
+    } catch {
+      toast({ title: "Error al guardar insumo", variant: "destructive" });
+    }
+  }, [toast]);
+
+  const handleDeletePartType = useCallback(async (id: string) => {
+    try {
+      await inventoryService.deletePartType(id);
+    } catch {
+      toast({ title: "Error al eliminar tipo", variant: "destructive" });
     }
   }, [toast]);
 
@@ -45,11 +113,32 @@ function ListaDePreciosPage() {
     );
   }
 
+  // ── Group detail view ─────────────────────────────────────
+  if (openGroup) {
+    // Merge with latest data from Firestore (in case it was updated)
+    const latestGroup = groups.find(g => g.id === openGroup.id) ?? openGroup;
+    return (
+      <div className="space-y-0">
+        <GroupDetail
+          group={latestGroup}
+          oils={oils}
+          partTypes={partTypes}
+          onSave={handleSaveGroup}
+          onBack={() => setOpenGroup(null)}
+        />
+      </div>
+    );
+  }
+
+  // ── Main list view ────────────────────────────────────────
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 p-6 shadow-xl">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "20px 20px" }} />
+        <div
+          className="absolute inset-0 opacity-10"
+          style={{ backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)", backgroundSize: "20px 20px" }}
+        />
         <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-1">
@@ -58,41 +147,52 @@ function ListaDePreciosPage() {
               </div>
               <h1 className="text-2xl font-black text-white tracking-tight">Lista de Precios</h1>
             </div>
-            <p className="text-zinc-400 text-sm">
-              Base de datos de costos por vehículo. La IA utiliza estos datos para cotizar automáticamente vía WhatsApp.
-            </p>
+            <p className="text-zinc-400 text-sm">Base de datos de precios por vehículo para cotizaciones automáticas vía IA.</p>
             <div className="flex items-center gap-2 mt-3">
               <div className="flex items-center gap-1.5 bg-emerald-500/20 text-emerald-400 rounded-full px-3 py-1 text-xs font-semibold border border-emerald-500/30">
                 <Bot className="h-3 w-3" />
-                <span>IA activa — {groups.length} grupo{groups.length !== 1 ? "s" : ""} cargado{groups.length !== 1 ? "s" : ""}</span>
+                <span>IA activa · {groups.length} grupo{groups.length !== 1 ? "s" : ""}</span>
               </div>
             </div>
           </div>
-          <Button
-            onClick={handleNew}
-            className="bg-white text-zinc-900 hover:bg-zinc-100 font-bold gap-2 shrink-0"
-          >
-            <PlusCircle className="h-4 w-4" />
-            Nuevo Grupo
-          </Button>
         </div>
       </div>
 
-      {/* Pricing groups table */}
-      <PricingGroupsTable
-        groups={groups}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onNew={handleNew}
-      />
+      {/* Tabs */}
+      <div className="flex gap-1 bg-zinc-100 rounded-xl p-1 w-fit">
+        {(["vehiculos", "global"] as TabId[]).map(t => (
+          <button
+            key={t}
+            onClick={() => setActiveTab(t)}
+            className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
+              activeTab === t ? "bg-black text-white shadow-sm" : "text-zinc-600 hover:text-zinc-900"
+            }`}
+          >
+            {t === "vehiculos" ? "Vehículos" : "Precios Globales"}
+          </button>
+        ))}
+      </div>
 
-      {/* Group editor sheet */}
-      <GroupEditor
-        group={editingGroup}
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-        onSaved={() => {}}
-      />
+      {/* Tab content */}
+      {activeTab === "vehiculos" && (
+        <VehiclesListTab
+          groups={groups}
+          oils={oils}
+          onOpen={setOpenGroup}
+          onCreate={handleCreateGroup}
+          onDelete={handleDeleteGroup}
+        />
+      )}
+
+      {activeTab === "global" && (
+        <GlobalPricesTab
+          oils={oils}
+          partTypes={partTypes}
+          onSaveOils={handleSaveOils}
+          onSavePartType={handleSavePartType}
+          onDeletePartType={handleDeletePartType}
+        />
+      )}
     </div>
   );
 }

@@ -539,6 +539,55 @@ const deletePricingGroup = async (id: string): Promise<void> => {
     await fbDeleteDoc(doc(db, PRICING_GROUPS_COLLECTION, id));
 };
 
+// ── Oils Catalog (single doc: oilsCatalog/main) ───────────────────────────
+
+const OILS_CATALOG_DOC = "oilsCatalog/main";
+
+const getOilsCatalog = async (): Promise<any[]> => {
+    if (!db) return [];
+    const snap = await getDoc(doc(db, "oilsCatalog", "main"));
+    return snap.exists() ? (snap.data().oils ?? []) : [];
+};
+
+const onOilsCatalogUpdate = (callback: (oils: any[]) => void): (() => void) => {
+    if (!db) return () => {};
+    return onSnapshot(doc(db, "oilsCatalog", "main"), (snap) => {
+        callback(snap.exists() ? (snap.data()?.oils ?? []) : []);
+    });
+};
+
+const saveOilsCatalog = async (oils: any[]): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await setDoc(doc(db, "oilsCatalog", "main"), { oils }, { merge: false });
+};
+
+// ── Part Types Catalog (collection: partTypesCatalog) ─────────────────────
+
+const onPartTypesCatalogUpdate = (callback: (types: any[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, "partTypesCatalog"));
+    return onSnapshot(q, (snap) => {
+        callback(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+};
+
+const savePartType = async (entry: any, id?: string): Promise<string> => {
+    if (!db) throw new Error("Database not initialized.");
+    const { id: _id, ...data } = entry;
+    if (id) {
+        await updateDoc(doc(db, "partTypesCatalog", id), data);
+        return id;
+    } else {
+        const ref = await addDoc(collection(db, "partTypesCatalog"), data);
+        return ref.id;
+    }
+};
+
+const deletePartType = async (id: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await fbDeleteDoc(doc(db, "partTypesCatalog", id));
+};
+
 const createNewMake = async (makeName: string): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     const makeRef = doc(db, VEHICLE_COLLECTION, makeName.toUpperCase().trim());
@@ -605,4 +654,12 @@ export const inventoryService = {
   onPricingGroupsUpdate,
   savePricingGroup,
   deletePricingGroup,
+  // Oils Catalog
+  getOilsCatalog,
+  onOilsCatalogUpdate,
+  saveOilsCatalog,
+  // Part Types Catalog
+  onPartTypesCatalogUpdate,
+  savePartType,
+  deletePartType,
 };

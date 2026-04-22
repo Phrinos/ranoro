@@ -405,12 +405,8 @@ export interface Vehicle {
   assignedDriverName?: string;
 }
 
-// ── Legacy: kept for type-safety during migration ──────────────────────────
-export interface GroupItemOption {
-  inventoryItemId: string;
-  name: string;
-  quantity: number;
-}
+// ── Legacy VehicleGroup (kept for migration safety) ─────────────────────────
+export interface GroupItemOption { inventoryItemId: string; name: string; quantity: number; }
 export interface VehicleGroup {
   id: string; name: string; description?: string;
   items: { aceites: GroupItemOption[]; filtrosAceite: GroupItemOption[]; filtrosAire: GroupItemOption[]; bujias: GroupItemOption[]; otros: GroupItemOption[]; };
@@ -418,61 +414,83 @@ export interface VehicleGroup {
   createdAt?: string; updatedAt?: string;
 }
 
-// ── Lista de Precios v2 — Sistema de Costos Dinámicos ──────────────────────
+// ── Lista de Precios v2 ──────────────────────────────────────────────────────
 
-/** Un vehículo que pertenece a un PricingGroup */
+/** Un vehículo dentro de un grupo (comparten motor/insumos) */
 export interface VehicleMatch {
-  make: string;       // "NISSAN"
-  model: string;      // "VERSA"
-  yearFrom: number;   // 2015
-  yearTo: number;     // 2020
-  engine?: string;    // "1.6L" — solo si hay variantes de motor en el mismo make/model
+  make: string;      // "NISSAN"
+  model: string;     // "VERSA"
+  yearFrom: number;
+  yearTo: number;
+  engine?: string;   // "1.6L" — solo si existen variantes de motor
 }
 
-/** Una variante específica de una refacción (ej: bujía cobre, bujía iridio) */
-export interface PartVariant {
-  label: string;        // "Cobre", "Iridio", "Sintético 5W-30"
-  brand: string;        // "NGK", "Mobil 1"
-  partNumber?: string;  // Número de parte (opcional)
-  cost: number;         // Costo interno por unidad
-  price: number;        // Precio al cliente por unidad
+/** Un insumo ESPECÍFICO de un vehículo (marca, SKU, precio propio) */
+export interface VehiclePart {
+  id: string;          // nanoid — ID local dentro del grupo
+  typeName: string;    // "Bujía Cobre" — display name (referencia débil al catálogo global)
+  typeId?: string;     // opcional — ref a partTypesCatalog doc id
+  brand: string;       // "NGK"
+  partNumber?: string; // "BKR6E"
+  sku?: string;        // SKU interno del taller
+  cost: number;        // Costo interno por unidad
+  price: number;       // Precio al cliente por unidad
+  unit: string;        // "pieza" | "par" | "juego" | "litro"
 }
 
-/** Una categoría de refacción con sus variantes (ej: "Bujía" → cobre, platino, iridio) */
-export interface PartCategory {
-  name: string;           // "Bujía", "Aceite", "Filtro de Aceite"
-  unit: string;           // "pieza" | "litro" | "juego" | "par"
-  variants: PartVariant[];
-}
-
-/** Un componente dentro de una receta de servicio */
+/** Un componente de un servicio — referencia a VehiclePart o aceite global */
 export interface ServiceComponent {
-  partCategoryName: string;  // Referencia a PartCategory.name del grupo
-  quantity: number;          // Ignorado si useOilCapacity=true
-  useOilCapacity?: boolean;  // Si true → cantidad = oilCapacityLiters del grupo
-  defaultVariant: string;    // Label de la variante default (ej: "Cobre")
+  type: "part" | "oil";
+  // type="part"
+  partId?: string;       // ref a VehiclePart.id dentro del mismo grupo
+  partName?: string;     // desnormalizado para display
+  quantity?: number;
+  // type="oil"
+  oilId?: string;        // ref a OilType.id en el catálogo global
+  oilName?: string;      // desnormalizado
+  useOilCapacity?: boolean; // si true: cantidad = group.oilCapacityLiters
+  oilQuantity?: number;  // manual (ignorado si useOilCapacity=true)
 }
 
-/** Una receta de servicio (precio calculado dinámicamente según variantes) */
+/** Una receta de trabajo (afinación, cambio de aceite, etc.) */
 export interface ServiceTemplate {
-  id: string;               // ID local dentro del array (nanoid o uuid)
-  name: string;             // "Afinación Menor", "Cambio de Aceite"
+  id: string;
+  name: string;
   description?: string;
-  laborCost: number;        // Costo interno de mano de obra
-  laborPrice: number;       // Precio al cliente de mano de obra
+  laborCost: number;    // Costo mano de obra
+  laborPrice: number;   // Precio mano de obra al cliente
   components: ServiceComponent[];
 }
 
-/** Grupo de vehículos que comparten motor, refacciones y precios */
+/** Grupo de vehículos con sus insumos y servicios */
 export interface PricingGroup {
   id: string;
-  name: string;                 // Auto: "NISSAN Versa / March 1.6L (2015–2020)"
+  name: string;
   vehicles: VehicleMatch[];
-  oilCapacityLiters: number;    // Ej: 4.5 — litros de aceite que requiere este motor
-  partCategories: PartCategory[];
-  services: ServiceTemplate[];
+  oilCapacityLiters: number;
+  defaultOilId?: string;       // ID del aceite global usado por default
+  parts: VehiclePart[];        // Insumos específicos de este vehículo
+  services: ServiceTemplate[]; // Trabajos/recetas
   createdAt?: any;
   updatedAt?: any;
+}
+
+/** Aceite — precio GLOBAL por litro (aplica a todos los vehículos) */
+export interface OilType {
+  id: string;
+  name: string;           // "Sintético 5W-30"
+  brand: string;          // "Mobil 1"
+  viscosity?: string;     // "5W-30"
+  costPerLiter: number;
+  pricePerLiter: number;
+}
+
+/** Tipo de insumo del catálogo global (Bujía Cobre, Filtro de Aceite, etc.) */
+export interface PartTypeCatalogEntry {
+  id: string;
+  name: string;   // "Bujía Cobre"
+  unit: string;   // "pieza" | "par" | "juego"
+  order?: number;
 }
 
 export interface NextServiceInfo {
