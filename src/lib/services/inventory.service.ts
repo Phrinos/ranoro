@@ -509,6 +509,36 @@ const deleteVehicleGroup = async (id: string): Promise<void> => {
     await fbDeleteDoc(doc(db, "vehicleGroups", id));
 };
 
+// ── Lista de Precios v2 — pricingGroups ────────────────────────────────────
+
+const PRICING_GROUPS_COLLECTION = "pricingGroups";
+
+const onPricingGroupsUpdate = (callback: (groups: any[]) => void): (() => void) => {
+    if (!db) return () => {};
+    const q = query(collection(db, PRICING_GROUPS_COLLECTION));
+    return onSnapshot(q, (snapshot) => {
+        callback(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+};
+
+const savePricingGroup = async (group: Partial<any>, id?: string): Promise<string> => {
+    if (!db) throw new Error("Database not initialized.");
+    const { id: _id, ...dataWithoutId } = group as any;
+    const dataToSave = { ...cleanObjectForFirestore(dataWithoutId), updatedAt: serverTimestamp() };
+    if (id) {
+        await updateDoc(doc(db, PRICING_GROUPS_COLLECTION, id), dataToSave);
+        return id;
+    } else {
+        const ref = await addDoc(collection(db, PRICING_GROUPS_COLLECTION), { ...dataToSave, createdAt: serverTimestamp() });
+        return ref.id;
+    }
+};
+
+const deletePricingGroup = async (id: string): Promise<void> => {
+    if (!db) throw new Error("Database not initialized.");
+    await fbDeleteDoc(doc(db, PRICING_GROUPS_COLLECTION, id));
+};
+
 const createNewMake = async (makeName: string): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
     const makeRef = doc(db, VEHICLE_COLLECTION, makeName.toUpperCase().trim());
@@ -571,4 +601,8 @@ export const inventoryService = {
   createMasterMake,
   renameMasterMake,
   deleteMasterMake,
+  // Pricing Groups v2
+  onPricingGroupsUpdate,
+  savePricingGroup,
+  deletePricingGroup,
 };

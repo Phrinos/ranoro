@@ -405,35 +405,74 @@ export interface Vehicle {
   assignedDriverName?: string;
 }
 
-// ✅ Grupos de Vehículos para Reglas de Precios (Precotizador Inteligente)
+// ── Legacy: kept for type-safety during migration ──────────────────────────
 export interface GroupItemOption {
   inventoryItemId: string;
   name: string;
   quantity: number;
 }
-
 export interface VehicleGroup {
-  id: string;
-  name: string;
+  id: string; name: string; description?: string;
+  items: { aceites: GroupItemOption[]; filtrosAceite: GroupItemOption[]; filtrosAire: GroupItemOption[]; bujias: GroupItemOption[]; otros: GroupItemOption[]; };
+  members: { make: string; model: string; startYear?: number; endYear?: number; }[];
+  createdAt?: string; updatedAt?: string;
+}
+
+// ── Lista de Precios v2 — Sistema de Costos Dinámicos ──────────────────────
+
+/** Un vehículo que pertenece a un PricingGroup */
+export interface VehicleMatch {
+  make: string;       // "NISSAN"
+  model: string;      // "VERSA"
+  yearFrom: number;   // 2015
+  yearTo: number;     // 2020
+  engine?: string;    // "1.6L" — solo si hay variantes de motor en el mismo make/model
+}
+
+/** Una variante específica de una refacción (ej: bujía cobre, bujía iridio) */
+export interface PartVariant {
+  label: string;        // "Cobre", "Iridio", "Sintético 5W-30"
+  brand: string;        // "NGK", "Mobil 1"
+  partNumber?: string;  // Número de parte (opcional)
+  cost: number;         // Costo interno por unidad
+  price: number;        // Precio al cliente por unidad
+}
+
+/** Una categoría de refacción con sus variantes (ej: "Bujía" → cobre, platino, iridio) */
+export interface PartCategory {
+  name: string;           // "Bujía", "Aceite", "Filtro de Aceite"
+  unit: string;           // "pieza" | "litro" | "juego" | "par"
+  variants: PartVariant[];
+}
+
+/** Un componente dentro de una receta de servicio */
+export interface ServiceComponent {
+  partCategoryName: string;  // Referencia a PartCategory.name del grupo
+  quantity: number;          // Ignorado si useOilCapacity=true
+  useOilCapacity?: boolean;  // Si true → cantidad = oilCapacityLiters del grupo
+  defaultVariant: string;    // Label de la variante default (ej: "Cobre")
+}
+
+/** Una receta de servicio (precio calculado dinámicamente según variantes) */
+export interface ServiceTemplate {
+  id: string;               // ID local dentro del array (nanoid o uuid)
+  name: string;             // "Afinación Menor", "Cambio de Aceite"
   description?: string;
+  laborCost: number;        // Costo interno de mano de obra
+  laborPrice: number;       // Precio al cliente de mano de obra
+  components: ServiceComponent[];
+}
 
-  // Categorías de insumos compatibles
-  items: {
-    aceites: GroupItemOption[];
-    filtrosAceite: GroupItemOption[];
-    filtrosAire: GroupItemOption[];
-    bujias: GroupItemOption[];
-    otros: GroupItemOption[];
-  };
-
-  members: {
-    make: string;
-    model: string;
-    startYear?: number;
-    endYear?: number;
-  }[];
-  createdAt?: string;
-  updatedAt?: string;
+/** Grupo de vehículos que comparten motor, refacciones y precios */
+export interface PricingGroup {
+  id: string;
+  name: string;                 // Auto: "NISSAN Versa / March 1.6L (2015–2020)"
+  vehicles: VehicleMatch[];
+  oilCapacityLiters: number;    // Ej: 4.5 — litros de aceite que requiere este motor
+  partCategories: PartCategory[];
+  services: ServiceTemplate[];
+  createdAt?: any;
+  updatedAt?: any;
 }
 
 export interface NextServiceInfo {
