@@ -152,6 +152,21 @@ service cloud.firestore {
       allow write: if isStaff();
     }
 
+    match /pricingGroups/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
+    match /oilsCatalog/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
+    match /partTypesCatalog/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
     // ─── Flotilla ─────────────────────────────────────────────────────
     match /drivers/{id} {
       allow read: if isSignedIn();
