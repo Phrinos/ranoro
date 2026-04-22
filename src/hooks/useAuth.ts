@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { onAuthStateChanged, signOut, deleteUser } from 'firebase/auth';
+import { onAuthStateChanged, signOut, deleteUser, browserLocalPersistence, setPersistence } from 'firebase/auth';
 import { doc, getDoc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebaseClient';
 import type { User } from '@/types';
@@ -48,6 +48,11 @@ export function useAuth() {
       setIsLoading(false);
       return;
     }
+
+    // Set persistence once on mount (moved here from firebaseClient to avoid Fast Refresh full reloads)
+    setPersistence(auth, browserLocalPersistence).catch((err) => {
+      console.error("[Auth] Failed to set persistence:", err);
+    });
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
       cleanupDocListener();

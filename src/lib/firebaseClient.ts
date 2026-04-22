@@ -1,40 +1,20 @@
 
 // src/lib/firebaseClient.ts
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
-import { getStorage, FirebaseStorage } from 'firebase/storage';
-import { getAuth, Auth, browserLocalPersistence, setPersistence, GoogleAuthProvider } from 'firebase/auth';
+import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
+import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { getAuth, type Auth, GoogleAuthProvider } from 'firebase/auth';
 import { firebaseConfig } from './firebase.config';
 
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-/**
- * ----------------------------------------------------------
- * Initializes Firebase services, avoiding duplication during
- * hot module replacement (HMR) in development.
- * ----------------------------------------------------------
- */
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-/**
- * ----------------------------------------------------------
- * Exports initialized Firebase services for use throughout
- * the application.
- * ----------------------------------------------------------
- */
 export const db: Firestore = getFirestore(app);
 export const storage: FirebaseStorage = getStorage(app);
 
-// Initialize Auth only on the client-side to prevent server-side errors
+// Auth is only available client-side
 export const auth: Auth | null = typeof window !== 'undefined' ? getAuth(app) : null;
 
-// Set local persistence on client-side only
-if (typeof window !== 'undefined' && auth) {
-  setPersistence(auth, browserLocalPersistence).catch((err) => {
-    console.error("[Firebase] Failed to set auth persistence:", err);
-  });
-}
-
-// Export the Firebase app instance if needed elsewhere
 export { app };
