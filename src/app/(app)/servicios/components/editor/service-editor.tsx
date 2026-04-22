@@ -1,5 +1,6 @@
 // src/app/(app)/servicios/components/editor/service-editor.tsx
 "use client";
+import type { AutosaveStatus } from "@/hooks/useAutosave";
 
 import React, { useState } from "react";
 import { useFormContext, type FieldErrors } from "react-hook-form";
@@ -65,6 +66,11 @@ export interface ServiceEditorProps {
   onTabChange?: (v: string) => void;
   isChecklistWizardOpen?: boolean;
   setIsChecklistWizardOpen?: (v: boolean) => void;
+  // Autosave props
+  autosaveStatus?: AutosaveStatus;
+  lastSavedAt?: Date | null;
+  hasUnsavedChanges?: boolean;
+  onSaveQuiet?: () => Promise<void>;
 }
 
 export function ServiceEditor({
@@ -87,6 +93,10 @@ export function ServiceEditor({
   onTabChange,
   isChecklistWizardOpen = false,
   setIsChecklistWizardOpen,
+  autosaveStatus,
+  lastSavedAt,
+  hasUnsavedChanges,
+  onSaveQuiet,
 }: ServiceEditorProps) {
   const { handleSubmit, watch, setValue, control, formState: { isSubmitting } } = useFormContext<ServiceFormValues>();
 
@@ -196,6 +206,9 @@ export function ServiceEditor({
               onCancel={onCancel}
               isSubmitting={isSubmitting}
               isReadOnly={isReadOnly}
+              autosaveStatus={autosaveStatus}
+              lastSavedAt={lastSavedAt}
+              hasUnsavedChanges={hasUnsavedChanges}
             />
           </Card>
         </div>
@@ -330,7 +343,13 @@ export function ServiceEditor({
                     !isReadOnly && (
                       <Button
                         type="button"
-                        onClick={onComplete}
+                        onClick={async () => {
+                          // Save first, then open completion dialog
+                          if (onSaveQuiet && hasUnsavedChanges) {
+                            await onSaveQuiet();
+                          }
+                          onComplete?.();
+                        }}
                         disabled={isSubmitting || totalCost <= 0 || watch("status") === "Cotizacion"}
                         className="w-full bg-blue-600 hover:bg-blue-700 shadow-md h-12 text-base font-semibold"
                         title={

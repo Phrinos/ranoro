@@ -41,6 +41,7 @@ import { TicketPreviewModal } from "@/app/(app)/ticket/components";
 import { PhotoReportModal } from "@/app/(app)/servicios/components/PhotoReportModal";
 import { PaymentDetailsDialog } from "@/components/shared/PaymentDetailsDialog";
 import { formatCurrency } from "@/lib/utils";
+import { useAutosave } from "@/hooks/useAutosave";
 
 // ── Normalization helpers (unchanged from old page) ──────────────────────────
 
@@ -358,6 +359,42 @@ export default function ServicioEditorPage() {
     }
   };
 
+  /**
+   * Quiet save — persists the form to Firestore WITHOUT navigating away.
+   * Used by the autosave timer and the "Entregar y Cobrar" pre-save.
+   */
+  const handleQuietSave = useCallback(async (values: ServiceFormValues) => {
+    try {
+      const cleaned = {
+        ...values,
+        serviceItems: (values.serviceItems || [])
+          .map((item) => ({
+            ...item,
+            suppliesUsed: (item.suppliesUsed || []).filter(
+              (s) => s.supplyId && s.quantity > 0
+            ),
+          }))
+          .filter((item) => (item.name || "").trim() !== ""),
+      };
+      const payload = normalizeForForm(cleaned, users);
+      await serviceService.saveService(payload as unknown as ServiceRecord);
+    } catch (err) {
+      console.error("[Autosave] Quiet save failed:", err);
+      throw err;
+    }
+  }, [users]);
+
+  // ── Autosave ──
+  const isDeliveredOrCancelled =
+    initialData?.status === "Entregado" || initialData?.status === "Cancelado";
+
+  const autosave = useAutosave({
+    form: methods,
+    onSave: handleQuietSave,
+    interval: 30_000,
+    enabled: !isDeliveredOrCancelled && !isLoading && !!initialData?.id,
+  });
+
   const formMode: "quote" | "service" = isEditMode
     ? initialData?.status === "Cotizacion"
       ? "quote"
@@ -560,6 +597,10 @@ export default function ServicioEditorPage() {
         onTabChange={setActiveTab}
         isChecklistWizardOpen={isChecklistWizardOpen}
         setIsChecklistWizardOpen={setIsChecklistWizardOpen}
+        autosaveStatus={autosave.status}
+        lastSavedAt={autosave.lastSavedAt}
+        hasUnsavedChanges={autosave.hasUnsavedChanges}
+        onSaveQuiet={autosave.saveNow}
       />
 
       {/* Modals */}

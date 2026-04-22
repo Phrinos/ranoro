@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils";
 import type { ServiceFormValues } from "@/schemas/service-form";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { AutosaveIndicator } from "./autosave-indicator";
+import type { AutosaveStatus } from "@/hooks/useAutosave";
 
 const STATUS_OPTIONS: { value: ServiceFormValues["status"]; label: string }[] = [
   { value: "Cotizacion", label: "Cotización" },
@@ -40,6 +42,9 @@ interface StatusControlsCardProps {
   onCancel: () => void;
   isSubmitting?: boolean;
   isReadOnly?: boolean;
+  autosaveStatus?: AutosaveStatus;
+  lastSavedAt?: Date | null;
+  hasUnsavedChanges?: boolean;
 }
 
 export function StatusControlsCard({
@@ -47,6 +52,9 @@ export function StatusControlsCard({
   onCancel,
   isSubmitting,
   isReadOnly,
+  autosaveStatus = "idle",
+  lastSavedAt = null,
+  hasUnsavedChanges = false,
 }: StatusControlsCardProps) {
   const { control, watch, setValue } = useFormContext<ServiceFormValues>();
   const status = watch("status");
@@ -142,9 +150,14 @@ export function StatusControlsCard({
           />
         )}
 
-        {/* Save + Cancel buttons */}
+        {/* Autosave indicator + Save/Cancel buttons */}
         {!isReadOnly && (
-          <div className="flex items-center gap-2 ml-auto">
+          <div className="flex items-center gap-3 ml-auto">
+            <AutosaveIndicator
+              status={autosaveStatus}
+              lastSavedAt={lastSavedAt}
+              hasUnsavedChanges={hasUnsavedChanges}
+            />
             <Button
               type="button"
               onClick={onSave}
