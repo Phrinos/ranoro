@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import type { ServiceRecord, Vehicle, User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { inventoryService, adminService, serviceService } from "@/lib/services";
-import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/constants/app";
 import { writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
 

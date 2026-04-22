@@ -24,7 +24,7 @@ import { inventoryService } from './inventory.service';
 import { adminService } from './admin.service';
 import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 import { startOfDay, endOfDay } from 'date-fns';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '../placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '../constants/app';
 
 // --- Daily Rental Charges ---
 

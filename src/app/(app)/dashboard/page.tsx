@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { serviceService, inventoryService, personnelService, rentalService, dashboardService } from '@/lib/services';
 import { parseDate } from '@/lib/forms';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/constants/app';
 import { isValid, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { formatCurrency, cn } from '@/lib/utils';
 import Link from 'next/link';

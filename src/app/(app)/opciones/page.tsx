@@ -6,7 +6,7 @@ import { Suspense, lazy, useState, useEffect, useMemo } from 'react';
 import { Loader2, Settings, Building, Shapes, Wrench, FileJson } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 import type { User, AppRole, ServiceTypeRecord } from '@/types';
-import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/constants/app';
 import { inventoryService } from '@/lib/services';
 import { useRoles } from '@/lib/contexts/roles-context';
 const ConfigTallerPageContent = lazy(() => import('./components/config-taller-content').then(module => ({ default: module.ConfigTallerPageContent })));

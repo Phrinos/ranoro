@@ -14,7 +14,7 @@ import {
 import { format, parseISO, isValid, startOfDay, endOfDay, isWithinInterval } from "date-fns";
 import { es } from "date-fns/locale";
 import { capitalizeWords } from "@/lib/utils";
-import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/constants/app";
 import type { CashDrawerTransaction, User } from "@/types";
 import type { DailyCut } from "../hooks/use-admin-data";
 import { DailyCutDialog } from "./dialogs/daily-cut-dialog";

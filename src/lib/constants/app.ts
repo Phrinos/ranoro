@@ -104,3 +104,15 @@ export const placeholderAppRoles: AppRole[] = [
     ],
   },
 ];
+
+// =======================================
+// ===     FALLBACK USER (dev only)    ===
+// =======================================
+import type { User } from '@/types';
+export const defaultSuperAdmin: User = {
+  id: "superadmin",
+  name: "Super Admin",
+  email: "admin@example.com",
+  role: "Superadministrador",
+  isArchived: false,
+};

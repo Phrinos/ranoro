@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { SignatureDialog } from '@/app/(app)/servicios/components/dialogs/signature-dialog';
 import { Save, Signature, Loader2 } from 'lucide-react';
 import type { User } from '@/types';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/constants/app';
 import { adminService } from '@/lib/services';
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { auth } from '@/lib/firebaseClient';

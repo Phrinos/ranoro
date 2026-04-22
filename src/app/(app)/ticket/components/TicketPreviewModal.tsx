@@ -32,8 +32,8 @@ import html2canvas from "html2canvas";
 import type { SaleReceipt, ServiceRecord, Vehicle } from "@/types";
 import { TicketContent } from "./TicketContent";
 import { WhatsAppSendModal } from "./WhatsAppSendModal";
-import type { TicketSettings } from "@/lib/placeholder-data";
-import { defaultTicketSettings } from "@/lib/placeholder-data";
+import type { TicketSettings } from "@/lib/constants/app";
+import { defaultTicketSettings } from "@/lib/constants/app";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

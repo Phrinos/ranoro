@@ -24,7 +24,7 @@ import dynamic from "next/dynamic";
 
 import { posFormSchema, type POSFormValues } from "@/schemas/pos-form-schema";
 import { saleService } from "@/lib/services";
-import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/constants/app";
 import { formatCurrency, generateTicketId } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { usePosData } from "../hooks/use-pos-data";

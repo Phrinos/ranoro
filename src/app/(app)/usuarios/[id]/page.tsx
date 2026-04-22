@@ -18,7 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { syncFirebaseAuthUser } from "@/app/(app)/usuarios/actions";
 import { Loader2, ArrowLeft, Archive, ArchiveRestore } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/constants/app";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 

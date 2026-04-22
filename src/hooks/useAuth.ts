@@ -5,7 +5,7 @@ import { onAuthStateChanged, signOut, deleteUser, browserLocalPersistence, setPe
 import { doc, getDoc, onSnapshot, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebaseClient';
 import type { User } from '@/types';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/constants/app';
 
 export function useAuth() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);

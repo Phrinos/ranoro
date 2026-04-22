@@ -58,7 +58,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { defaultTicketSettings } from "@/lib/placeholder-data";
+import { defaultTicketSettings } from "@/lib/constants/app";
 
 const pickFirstText = (...vals: any[]) => {
     for (const v of vals) {

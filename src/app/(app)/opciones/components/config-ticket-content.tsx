@@ -22,7 +22,7 @@ import { MensajesPiePaginaCard } from "./config-ticket/mensajes-pie-pagina-card"
 import { PieTicketEspaciadoCard } from "./config-ticket/pie-ticket-espaciado-card";
 import { TicketContent } from "@/app/(app)/ticket/components";
 import { useDebouncedCallback } from "use-debounce";
-import { defaultTicketSettings } from "@/lib/placeholder-data";
+import { defaultTicketSettings } from "@/lib/constants/app";
 
 const LOCALSTORAGE_KEY = "workshopTicketInfo";
 

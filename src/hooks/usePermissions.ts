@@ -5,7 +5,7 @@
 import * as React from 'react';
 import { useRoles } from '@/lib/contexts/roles-context';
 import type { User } from '@/types';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/constants/app';
 import { ALL_PERMISSIONS, PERMISSION_GROUPS } from '@/lib/permissions';
 
 // ── Build lookup maps for resolving corrupted permission data ──

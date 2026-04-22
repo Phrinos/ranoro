@@ -4,7 +4,7 @@ import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
 
 import type { User, AppRole } from '@/types';
 import { adminService } from '@/lib/services';
-import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/placeholder-data';
+import { AUTH_USER_LOCALSTORAGE_KEY } from '@/lib/constants/app';
 
 import { UsuariosPageContent } from '@/app/(app)/usuarios/components/usuarios-content';
 import { RolesPageContent } from '@/app/(app)/usuarios/components/roles-content';

@@ -24,7 +24,7 @@ import { es } from "date-fns/locale";
 import { DatePickerWithRange } from "@/components/ui/date-picker-with-range";
 import { purchaseService } from "@/lib/services/purchase.service";
 import { useToast } from "@/hooks/use-toast";
-import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/constants/app";
 import type { PosPurchase, PosPayableAccount, PosInventoryItem, PosCategory } from "../hooks/use-pos-data";
 import type { Supplier } from "@/types";
 import { registerPurchaseSchema, type RegisterPurchaseFormValues } from "@/schemas/register-purchase-schema";

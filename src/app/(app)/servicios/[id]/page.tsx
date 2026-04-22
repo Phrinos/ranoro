@@ -26,7 +26,7 @@ import { VehicleDialog } from "@/app/(app)/vehiculos/components/vehicle-dialog";
 import type { VehicleFormValues } from "@/schemas/vehicle-form-schema";
 import { serviceFormSchema, type ServiceFormValues } from "@/schemas/service-form";
 import { PageHeader } from "@/components/page-header";
-import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/constants/app";
 import { Button } from "@/components/ui/button";
 import {
   FormProvider,

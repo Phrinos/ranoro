@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { useUsersData } from "./hooks/use-users-data";
 import { UsersListTab } from "./components/users-list-tab";
 import dynamic from "next/dynamic";
-import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/placeholder-data";
+import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/constants/app";
 import type { User as AppUser } from "@/types";
 
 const RolesPageContent = dynamic(

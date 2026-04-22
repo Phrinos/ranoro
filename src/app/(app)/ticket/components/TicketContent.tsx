@@ -9,8 +9,8 @@ import React, { useMemo } from 'react';
 import { cn, formatCurrency, formatNumber, normalizeDataUrl } from "@/lib/utils";
 import { parseDate } from '@/lib/forms';
 import Image from 'next/image';
-import type { TicketSettings } from '@/lib/placeholder-data';
-import { defaultTicketSettings } from '@/lib/placeholder-data';
+import type { TicketSettings } from '@/lib/constants/app';
+import { defaultTicketSettings } from '@/lib/constants/app';
 
 export interface TicketContentProps {
   sale?: SaleReceipt;
