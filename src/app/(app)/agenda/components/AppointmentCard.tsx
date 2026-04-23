@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/usePermissions";
+import Link from "next/link";
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -58,6 +59,14 @@ const STATUS_CONFIG: Record<
   },
 };
 
+const CARD_BG: Record<string, string> = {
+  Pendiente: "bg-amber-50/80 border-amber-200 hover:border-amber-300",
+  Confirmada: "bg-emerald-50/80 border-emerald-200 hover:border-emerald-300",
+  Cancelada: "bg-slate-50 border-slate-200 opacity-60 grayscale-[0.5]",
+  "No se presentó": "bg-rose-50/80 border-rose-200 hover:border-rose-300",
+  Completada: "bg-blue-50/80 border-blue-200 hover:border-blue-300",
+};
+
 export function AppointmentCard({
   appointment,
   onEdit,
@@ -73,149 +82,99 @@ export function AppointmentCard({
   const StatusIcon = config.icon;
   const isCancelled = appointment.status === "Cancelada";
   const hasQuote = !!appointment.relatedQuoteId;
+  const isTemporal = appointment.vehicleId === "temporal";
+  const startHref = isTemporal
+    ? `/vehiculos`
+    : `/servicios/nuevo?vehicleId=${appointment.vehicleId}&appointmentId=${appointment.id}`;
 
   return (
     <Card
       className={cn(
-        "overflow-hidden border shadow-xs transition-all hover:shadow-md",
-        isCancelled && "opacity-60"
+        "border shadow-xs hover:shadow-md transition-all rounded-xl relative group w-full",
+        CARD_BG[appointment.status] || "bg-white border-slate-200 hover:border-slate-300",
+        isCancelled && "opacity-60 grayscale-[0.5]"
       )}
     >
-      <CardContent className="p-0">
-        <div className="flex flex-col sm:flex-row divide-y sm:divide-y-0 sm:divide-x divide-border">
+      <div className="p-3.5 flex flex-col gap-2.5">
+        
+        {/* Row 1: Placas & Estado */}
+        <div className="flex justify-between items-start">
+          <div className="flex flex-col">
+            <span className="font-mono font-black text-[17px] text-slate-800 leading-none">
+              {appointment.licensePlate}
+            </span>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+              {appointment.vehicleIdentifier?.replace(appointment.licensePlate, "").replace("–", "").trim() || "Vehículo"}
+            </span>
+          </div>
+          <div className={cn("inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border", config.badge)}>
+            <StatusIcon className="h-3 w-3" />
+            {config.label}
+          </div>
+        </div>
 
-          {/* ── Col 1: Fecha/Hora ── */}
-          <div className="flex flex-row sm:flex-col sm:w-28 shrink-0 items-center justify-center gap-3 sm:gap-1 p-4 bg-muted/20 text-center">
-            <div>
-              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
-                {apptDate && isValid(apptDate) ? format(apptDate, "EEE", { locale: es }) : "—"}
-              </p>
-              <p className="text-2xl font-bold text-foreground leading-none mt-0.5">
-                {apptDate && isValid(apptDate) ? format(apptDate, "dd") : "—"}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {apptDate && isValid(apptDate) ? format(apptDate, "MMM yyyy", { locale: es }) : ""}
-              </p>
-            </div>
-            <div className="flex items-center gap-1 text-xs font-semibold text-foreground sm:mt-1">
-              <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-              {apptDate && isValid(apptDate) ? format(apptDate, "HH:mm") : "—"}
-            </div>
-            {appointment.durationMinutes && (
-              <div className="hidden sm:flex items-center text-[10px] text-muted-foreground gap-0.5">
-                <CalendarClock className="h-3 w-3" /> {appointment.durationMinutes} min
-              </div>
+        {/* Row 2: Propietario - Teléfono */}
+        {appointment.ownerName && (
+          <div className="flex items-center gap-2 text-[11px] text-slate-600 font-semibold bg-slate-50/50 p-1.5 rounded-md border border-slate-100">
+            <User className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+            <span className="truncate">{appointment.ownerName}</span>
+            {appointment.ownerPhone && (
+              <>
+                <span className="text-slate-300">•</span>
+                <span>{appointment.ownerPhone}</span>
+              </>
             )}
           </div>
+        )}
 
-          {/* ── Col 2: Vehículo / Propietario ── */}
-          <div className="p-4 flex flex-col justify-center flex-2 min-w-0 space-y-1.5">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Car className="h-4 w-4 text-primary shrink-0" />
-              <span className="font-mono font-bold text-base text-foreground">
-                {appointment.licensePlate}
-              </span>
-              {appointment.vehicleIdentifier && (
-                <span className="text-sm text-muted-foreground truncate">
-                  {appointment.vehicleIdentifier.replace(appointment.licensePlate, "").replace("–", "").trim()}
-                </span>
-              )}
-            </div>
-
-            {appointment.ownerName && (
-              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                <User className="h-3.5 w-3.5 shrink-0" />
-                <span>{appointment.ownerName}</span>
-                {appointment.ownerPhone && (
-                  <span className="flex items-center gap-0.5 ml-2">
-                    <Phone className="h-3 w-3" /> {appointment.ownerPhone}
-                  </span>
-                )}
-              </div>
-            )}
-
-            {/* Service types */}
+        {/* Row 3: Servicio a Realizar & Acciones */}
+        <div className="mt-1 flex items-end justify-between border-t border-slate-100 pt-2.5 gap-2">
+          
+          {/* Servicio */}
+          <div className="flex-1 min-w-0">
             {appointment.serviceTypeLabels && appointment.serviceTypeLabels.length > 0 && (
-              <div className="flex flex-wrap gap-1 pt-0.5">
-                {appointment.serviceTypeLabels.map((t) => (
-                  <span
-                    key={t}
-                    className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20"
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {appointment.notes && (
-              <p className="text-[11px] text-muted-foreground line-clamp-1 italic">
-                "{appointment.notes}"
+              <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5 truncate">
+                {appointment.serviceTypeLabels[0]}
               </p>
             )}
+            <p className="text-[11px] text-slate-500 leading-tight line-clamp-1 italic font-medium">
+              {appointment.notes || "Sin detalles"}
+            </p>
           </div>
 
-          {/* ── Col 3: Personal / Estado ── */}
-          <div className="p-4 flex flex-col justify-center flex-1 min-w-0 space-y-2">
-            {/* Status badge */}
-            <div className={cn("inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border w-fit", config.badge)}>
-              <StatusIcon className="h-3.5 w-3.5" />
-              {config.label}
-            </div>
-
-            {/* Quote indicator */}
-            {hasQuote && (
-              <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-0.5 w-fit">
-                <FileText className="h-3 w-3" /> Con cotización previa
-              </div>
+          {/* Acciones */}
+          <div className="flex items-center gap-0.5 shrink-0 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+            {["Pendiente", "Confirmada"].includes(appointment.status) && (
+              <Link href={startHref}>
+                <Button variant="default" size="sm" className="h-7 px-2.5 text-[10px] uppercase font-bold tracking-wider mr-1 shadow-md bg-slate-800 hover:bg-slate-700 text-white">
+                  {isTemporal ? "Crear Auto" : "Iniciar"}
+                </Button>
+              </Link>
             )}
-
-            {/* Advisor */}
-            {appointment.serviceAdvisorName && (
-              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                <UserCheck className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">Asesor: {appointment.serviceAdvisorName}</span>
-              </p>
-            )}
-
-            {/* Technician */}
-            {appointment.technicianName ? (
-              <p className="text-[11px] text-muted-foreground flex items-center gap-1">
-                <Wrench className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{appointment.technicianName}</span>
-              </p>
-            ) : (
-              <p className="text-[11px] text-orange-500 flex items-center gap-1">
-                <Wrench className="h-3.5 w-3.5 shrink-0" /> Sin técnico
-              </p>
-            )}
-          </div>
-
-          {/* ── Col 4: Acciones ── */}
-          <div className="p-3 flex flex-row sm:flex-col items-center justify-center gap-1 sm:w-14 shrink-0 bg-muted/10">
-            {perms.has("services:edit") && (
-              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onEdit} title="Editar">
-                <Edit className="h-4 w-4" />
-              </Button>
-            )}
+            
             {appointment.status === "Pendiente" && onConfirm && (
-              <Button variant="ghost" size="icon" className="h-9 w-9 text-emerald-600 hover:text-emerald-700" onClick={onConfirm} title="Confirmar">
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50" onClick={onConfirm} title="Confirmar">
                 <CheckCircle className="h-4 w-4" />
               </Button>
             )}
             {appointment.status !== "Cancelada" && onCancel && (
-              <Button variant="ghost" size="icon" className="h-9 w-9 text-red-500 hover:text-red-600" onClick={onCancel} title="Cancelar">
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={onCancel} title="Cancelar">
                 <XCircle className="h-4 w-4" />
               </Button>
             )}
+            {perms.has("services:edit") && (
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-500 hover:text-primary hover:bg-primary/10" onClick={onEdit} title="Editar">
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
             {perms.has("services:delete") && (
-              <Button variant="ghost" size="icon" className="h-9 w-9 text-destructive hover:text-destructive" onClick={onDelete} title="Eliminar">
+              <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-destructive hover:bg-destructive/10" onClick={onDelete} title="Eliminar">
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}
           </div>
         </div>
-      </CardContent>
+      </div>
     </Card>
   );
 }

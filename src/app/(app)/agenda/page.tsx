@@ -5,10 +5,10 @@ import { withSuspense } from "@/lib/withSuspense";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Loader2, PlusCircle, Search, X, CalendarX } from "lucide-react";
-import type { Appointment, User } from "@/types";
+import { Loader2, PlusCircle, Search, X, CalendarX, Clock } from "lucide-react";
+import type { Appointment } from "@/types";
 import { agendaService } from "@/lib/services/agenda.service";
-import { adminService, inventoryService } from "@/lib/services";
+import { inventoryService } from "@/lib/services";
 import { AppointmentDialog } from "./components/AppointmentDialog";
 import { AppointmentCard } from "./components/AppointmentCard";
 import { useToast } from "@/hooks/use-toast";
@@ -29,7 +29,6 @@ const STATUS_DOT: Record<Appointment["status"], string> = {
 function PageInner() {
   const { toast } = useToast();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [personnel, setPersonnel] = useState<User[]>([]);
   const [serviceTypeLabels, setServiceTypeLabels] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -38,6 +37,7 @@ function PageInner() {
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAppt, setEditingAppt] = useState<Appointment | null>(null);
+  const [defaultTimeSlot, setDefaultTimeSlot] = useState("08:30");
 
   useEffect(() => {
     setIsLoading(true);
@@ -49,11 +49,6 @@ function PageInner() {
         setAppointments(data);
         setIsLoading(false);
       })
-    );
-
-    // Personnel
-    unsubs.push(
-      adminService.onUsersUpdate((users) => setPersonnel(users))
     );
 
     // Service types for the dialog chips
@@ -71,8 +66,9 @@ function PageInner() {
     setDialogOpen(true);
   }, []);
 
-  const handleNew = useCallback(() => {
+  const handleNew = useCallback((timeSlot?: string) => {
     setEditingAppt(null);
+    setDefaultTimeSlot(typeof timeSlot === 'string' ? timeSlot : "08:30");
     setDialogOpen(true);
   }, []);
 
@@ -139,19 +135,36 @@ function PageInner() {
     );
   }, [selectedDate, byDate, search]);
 
+  const morningAppts = useMemo(() => dayAppointments.filter(a => {
+    if (!a.appointmentDateTime) return true;
+    return new Date(a.appointmentDateTime).getHours() < 13;
+  }), [dayAppointments]);
+
+  const afternoonAppts = useMemo(() => dayAppointments.filter(a => {
+    if (!a.appointmentDateTime) return false;
+    return new Date(a.appointmentDateTime).getHours() >= 13;
+  }), [dayAppointments]);
+
   const tileContent = ({ date, view }: { date: Date; view: string }) => {
     if (view !== "month") return null;
     const key = format(date, "yyyy-MM-dd");
     const appts = byDate.get(key);
     if (!appts || appts.length === 0) return null;
+    
+    const validApptsCount = appts.filter(a => a.status !== "Cancelada").length;
+    if (validApptsCount === 0) return null;
+
+    const occupancy = Math.min(validApptsCount * 10, 100);
+    
+    let colorClass = "bg-emerald-100 text-emerald-700";
+    if (occupancy >= 100) colorClass = "bg-red-100 text-red-700 font-black";
+    else if (occupancy >= 70) colorClass = "bg-amber-100 text-amber-800";
+    
     return (
-      <div className="flex justify-center gap-0.5 mt-0.5 max-w-full overflow-hidden">
-        {appts.slice(0, 3).map((a, i) => (
-          <span key={i} className={cn("h-1.5 w-1.5 rounded-full shrink-0", STATUS_DOT[a.status] || "bg-gray-400")} />
-        ))}
-        {appts.length > 3 && (
-          <span className="text-[8px] text-muted-foreground font-bold leading-none">+</span>
-        )}
+      <div className="flex justify-center mt-1">
+        <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded border border-black/5 leading-none", colorClass)}>
+          {occupancy}%
+        </span>
       </div>
     );
   };
@@ -183,10 +196,6 @@ function PageInner() {
             Gestiona las citas y servicios programados en una vista de calendario.
           </p>
         </div>
-        <Button onClick={handleNew} className="shrink-0 group">
-          <PlusCircle className="h-4 w-4 mr-2 transition-transform group-hover:scale-110" />
-          Nueva Cita
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] xl:grid-cols-[400px_1fr] gap-6 items-start">
@@ -272,16 +281,6 @@ function PageInner() {
               prev2Label={null}
             />
           </Card>
-
-          {/* Legend */}
-          <div className="flex flex-wrap gap-2.5 px-1 justify-center sm:justify-start">
-            {(Object.entries(STATUS_DOT) as [Appointment["status"], string][]).map(([status, dot]) => (
-              <div key={status} className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                <span className={cn("h-2.5 w-2.5 rounded-full", dot)} />
-                {status}
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* Right Column: Appointments List */}
@@ -303,46 +302,100 @@ function PageInner() {
               </div>
             </div>
             
-            <div className="relative max-w-sm flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar (ej. DZT-59)..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-9"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              )}
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="relative max-w-sm flex-1 sm:w-[250px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  placeholder="Buscar (ej. DZT-59)..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 h-11 rounded-xl bg-slate-50 border-slate-200 focus-visible:ring-primary/20 transition-all"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              <Button 
+                onClick={() => handleNew()} 
+                className="shrink-0 h-11 px-5 rounded-xl bg-linear-to-b from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-white font-bold shadow-md shadow-primary/20 transition-all active:scale-[0.98] group flex items-center gap-2"
+              >
+                <PlusCircle className="h-5 w-5 transition-transform group-hover:rotate-90" />
+                <span className="hidden sm:inline">Nueva Cita</span>
+              </Button>
             </div>
           </div>
 
-          <div className="space-y-3 pt-2">
-            {dayAppointments.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed rounded-xl bg-muted/10">
-                <CalendarX className="h-12 w-12 text-muted-foreground/30 mb-3" />
-                <p className="text-foreground font-medium">Sin citas programadas</p>
-                <p className="text-sm text-muted-foreground mt-1 max-w-sm">
-                  {search ? "No hay resultados para tu búsqueda." : "Selecciona otro día en el calendario o crea una nueva cita."}
-                </p>
-              </div>
-            ) : (
-              dayAppointments.map((appt) => (
-                <AppointmentCard
-                  key={appt.id}
-                  appointment={appt}
-                  onEdit={() => handleEdit(appt)}
-                  onDelete={() => handleDelete(appt)}
-                  onConfirm={appt.status === "Pendiente" ? () => handleConfirm(appt) : undefined}
-                  onCancel={appt.status !== "Cancelada" ? () => handleCancel(appt) : undefined}
-                />
-              ))
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+            {/* Morning Slots */}
+            <div className="space-y-3">
+              <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+                 <Clock className="h-4 w-4 text-primary" /> Ronda 8:30 hrs
+              </h3>
+              {Array.from({ length: 5 }).map((_, i) => {
+                 const appt = morningAppts[i];
+                 if (appt) {
+                   return (
+                     <AppointmentCard
+                       key={appt.id}
+                       appointment={appt}
+                       onEdit={() => handleEdit(appt)}
+                       onDelete={() => handleDelete(appt)}
+                       onConfirm={appt.status === "Pendiente" ? () => handleConfirm(appt) : undefined}
+                       onCancel={appt.status !== "Cancelada" ? () => handleCancel(appt) : undefined}
+                     />
+                   );
+                 } else {
+                   return (
+                     <button
+                       key={`empty-m-${i}`}
+                       onClick={() => handleNew("08:30")}
+                       className="w-full min-h-[140px] border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-colors flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 gap-2 shadow-xs"
+                     >
+                       <PlusCircle className="h-8 w-8" />
+                       <span className="text-xs font-bold uppercase tracking-wider">Agregar Cita</span>
+                     </button>
+                   );
+                 }
+              })}
+            </div>
+
+            {/* Afternoon Slots */}
+            <div className="space-y-3">
+              <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+                 <Clock className="h-4 w-4 text-primary" /> Ronda 13:30 hrs
+              </h3>
+              {Array.from({ length: 5 }).map((_, i) => {
+                 const appt = afternoonAppts[i];
+                 if (appt) {
+                   return (
+                     <AppointmentCard
+                       key={appt.id}
+                       appointment={appt}
+                       onEdit={() => handleEdit(appt)}
+                       onDelete={() => handleDelete(appt)}
+                       onConfirm={appt.status === "Pendiente" ? () => handleConfirm(appt) : undefined}
+                       onCancel={appt.status !== "Cancelada" ? () => handleCancel(appt) : undefined}
+                     />
+                   );
+                 } else {
+                   return (
+                     <button
+                       key={`empty-a-${i}`}
+                       onClick={() => handleNew("13:30")}
+                       className="w-full min-h-[140px] border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50 hover:bg-slate-100 hover:border-slate-300 transition-colors flex flex-col items-center justify-center text-slate-400 hover:text-slate-600 gap-2 shadow-xs"
+                     >
+                       <PlusCircle className="h-8 w-8" />
+                       <span className="text-xs font-bold uppercase tracking-wider">Agregar Cita</span>
+                     </button>
+                   );
+                 }
+              })}
+            </div>
           </div>
         </div>
       </div>
@@ -353,8 +406,8 @@ function PageInner() {
         onOpenChange={setDialogOpen}
         appointment={editingAppt}
         selectedDate={selectedDate} // Pass selected date
-        personnel={personnel}
         serviceTypes={serviceTypeLabels}
+        defaultTime={defaultTimeSlot}
         onSaved={() => {}} // realtime listener auto-refreshes
       />
     </div>
