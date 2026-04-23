@@ -64,8 +64,8 @@ export function TabConexion({
           <div className="space-y-2">
             <Label className="text-sm font-semibold">URL del Webhook (Destino de mensajes)</Label>
             <div className="flex gap-2">
-              <Input value={webhookUrl} readOnly className="bg-slate-50 font-mono text-sm border-dashed" />
-              <Button variant="outline" className="shrink-0" onClick={onCopyWebhook}>
+              <Input value={webhookUrl} readOnly className="flex-1 bg-slate-50 font-mono text-sm border-dashed py-6" />
+              <Button variant="outline" className="shrink-0 h-auto" onClick={onCopyWebhook}>
                 {copiedWebhook ? <Check className="h-4 w-4 text-green-500 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
                 {copiedWebhook ? 'Copiado' : 'Copiar'}
               </Button>
@@ -76,12 +76,12 @@ export function TabConexion({
           <div className="space-y-2">
             <Label className="text-sm font-semibold">Clave de Acceso (API Key)</Label>
             <div className="flex gap-2">
-              <Input value={config.webhookSecret} readOnly className="bg-slate-50 font-mono text-sm border-dashed" />
-              <Button variant="outline" className="shrink-0" onClick={onCopyApiKey} title="Copiar">
+              <Input value={config.webhookSecret} readOnly className="flex-1 bg-slate-50 font-mono text-sm border-dashed py-6" />
+              <Button variant="outline" className="shrink-0 h-auto" onClick={onCopyApiKey} title="Copiar">
                 {copiedApiKey ? <Check className="h-4 w-4 text-green-500 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
                 {copiedApiKey ? 'Copiado' : 'Copiar'}
               </Button>
-              <Button variant="ghost" className="shrink-0 text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={onRegenerateKey} title="Regenerar">
+              <Button variant="ghost" className="shrink-0 h-auto text-amber-600 hover:text-amber-700 hover:bg-amber-50" onClick={onRegenerateKey} title="Regenerar">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Renovar
               </Button>
