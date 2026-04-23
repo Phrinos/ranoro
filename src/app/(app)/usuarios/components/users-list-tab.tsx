@@ -56,7 +56,7 @@ export function UsersListTab({ users }: Props) {
             <Archive className="mr-2 h-4 w-4" />
             {showArchived ? `Activos (${active.length})` : `Archivados (${archived.length})`}
           </Button>
-          <Button onClick={() => router.push("/personal/nuevo")} className="flex-1 sm:flex-none">
+          <Button onClick={() => router.push("/usuarios/nuevo")} className="flex-1 sm:flex-none">
             <PlusCircle className="mr-2 h-4 w-4" /> Nuevo Usuario
           </Button>
         </div>

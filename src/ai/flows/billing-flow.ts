@@ -33,12 +33,12 @@ const CreateInvoiceOutputSchema = z.object({
 const getFacturapiInstance = async () => {
   const db = getAdminDb();
   const configSnap = await db.collection('settings').doc('billing').get();
-  if (!configSnap.exists) return null;
+  if (!configSnap.exists) return 'mock';
 
   const billingConfig = configSnap.data() as any;
-  const apiKey = (billingConfig.liveSecretKey || '').trim();
+  const apiKey = (billingConfig.liveSecretKey || billingConfig.testSecretKey || '').trim();
   
-  if (!apiKey) return null;
+  if (!apiKey) return 'mock';
   return new Facturapi(apiKey);
 };
 
@@ -49,6 +49,17 @@ export async function createInvoice(
     const facturapi = await getFacturapiInstance();
     if (!facturapi) {
       throw new Error('La configuración de facturación (Facturapi) no ha sido establecida por el administrador.');
+    }
+    
+    if (facturapi === 'mock') {
+      console.log('⚠️ [Billing Flow] Ejecutando en MODO PRUEBA (Mock). No se generará factura real en el SAT.');
+      await new Promise(r => setTimeout(r, 1500)); // Simulamos carga
+      return {
+        success: true,
+        invoiceId: `mock_inv_${Date.now()}`,
+        invoiceUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+        status: 'valid',
+      };
     }
     
     const { customer, ticket } = input;

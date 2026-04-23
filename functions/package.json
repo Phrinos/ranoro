@@ -29,6 +29,7 @@
     "typescript-eslint": "^8.58.2"
   },
   "overrides": {
-    "@tootallnate/once": "^3.0.1"
+    "@tootallnate/once": "^3.0.1",
+    "uuid": "^14.0.0"
   }
 }

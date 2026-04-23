@@ -39,14 +39,14 @@ function FacturacionPageInner() {
       
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2 mb-6">
-          <TabsTrigger value="lista" className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Lista de Facturas
+        <TabsList className="bg-muted/50 p-1.5 rounded-2xl border mb-6 inline-flex max-w-full overflow-x-auto">
+          <TabsTrigger value="lista" className="rounded-xl gap-2 px-4 sm:px-6">
+            <FileText className="h-4 w-4 shrink-0" />
+            <span>Lista de Facturas</span>
           </TabsTrigger>
-          <TabsTrigger value="config" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Facturapi Config
+          <TabsTrigger value="config" className="rounded-xl gap-2 px-4 sm:px-6">
+            <Settings className="h-4 w-4 shrink-0" />
+            <span>Configuración</span>
           </TabsTrigger>
         </TabsList>
 

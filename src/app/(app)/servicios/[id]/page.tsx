@@ -9,7 +9,7 @@ import {
   inventoryService,
   adminService,
 } from "@/lib/services";
-import { Loader2, Ban, ArrowLeft, Trash2 } from "lucide-react";
+import { Loader2, Ban, ArrowLeft, Trash2, AlertTriangle } from "lucide-react";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { Textarea } from "@/components/ui/textarea";
 import { ServiceEditor } from "../components/editor/service-editor";
@@ -416,18 +416,31 @@ export default function ServicioEditorPage() {
     router.push("/servicios?tab=cotizaciones");
   };
 
-  const handleConfirmCancelLocal = async () => {
+  const handleConfirmDelete = async () => {
     if (formMode !== "quote" && !cancellationReason.trim()) {
       toast({
         title: "Falta Motivo",
-        description: "El motivo de cancelación es obligatorio",
+        description: "El motivo de eliminación es obligatorio por seguridad.",
         variant: "destructive",
       });
       return;
     }
-    if (formMode === "quote") handleDeleteQuote();
-    else if (initialData?.id) {
+    
+    if (formMode === "quote") {
+      await handleDeleteQuote();
+    } else if (initialData?.id) {
       try {
+        const authUserStr = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
+        const cu = authUserStr ? JSON.parse(authUserStr) : null;
+        
+        if (cu) {
+          adminService.logAudit(
+            "Eliminar",
+            `Eliminó el servicio #${folio} permanentemente. Motivo: ${cancellationReason}`,
+            { entityType: "Servicio", entityId: initialData.id, userId: cu.id, userName: cu.name }
+          );
+        }
+        
         await serviceService.deleteService(initialData.id);
         toast({ title: "Servicio Eliminado", description: "El servicio ha sido borrado del sistema." });
         router.push("/servicios?tab=activos");
@@ -520,23 +533,43 @@ export default function ServicioEditorPage() {
                 {formMode === "quote" ? "Eliminar" : "Eliminar Servicio"}
               </Button>
             }
-            title={formMode === "quote" ? "¿Eliminar Cotización?" : "¿Eliminar Servicio?"}
+            title={formMode === "quote" ? "¿Eliminar Cotización permanentemente?" : "¿Eliminar Servicio permanentemente?"}
             description={
               formMode === "quote"
-                ? "Esta acción no se puede deshacer."
-                : "Se borrará permanentemente este servicio del sistema."
+                ? "Esta acción borrará la cotización de forma permanente y no se podrá recuperar."
+                : "Se borrará permanentemente este servicio del sistema, liberando su folio."
             }
-            onConfirm={handleConfirmCancelLocal}
-            confirmText="Eliminar"
+            onConfirm={handleConfirmDelete}
+            confirmText="Eliminar permanentemente"
           >
-            {formMode !== "quote" && (
-              <Textarea
-                placeholder="Motivo de la cancelación..."
-                value={cancellationReason}
-                onChange={(e) => setCancellationReason(e.target.value)}
-                className="mt-4"
-              />
-            )}
+            <div className="space-y-4 mt-2">
+              <div className="rounded-md bg-destructive/10 p-3 flex items-start gap-3 text-sm text-destructive">
+                <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                <p className="leading-relaxed">
+                  {formMode === "quote" 
+                    ? "Al eliminar esta cotización, perderás todo el historial de trabajos y precios registrados."
+                    : "Esta es una acción destructiva irreversible. Se recomienda 'Cancelar' el servicio si deseas mantener el historial para auditoría."}
+                </p>
+              </div>
+
+              {formMode !== "quote" && (
+                <div className="space-y-2 mt-4">
+                  <label className="text-sm font-semibold text-foreground">
+                    Motivo de eliminación (Obligatorio)
+                  </label>
+                  <Textarea
+                    placeholder="Escribe el motivo por el cual estás eliminando este registro..."
+                    value={cancellationReason}
+                    onChange={(e) => setCancellationReason(e.target.value)}
+                    className="resize-none"
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Este motivo quedará registrado en la bitácora de auditoría.
+                  </p>
+                </div>
+              )}
+            </div>
           </ConfirmDialog>
         </div>
       )}
@@ -582,7 +615,7 @@ export default function ServicioEditorPage() {
             onValidationErrors
           )()
         }
-        onCancel={handleConfirmCancelLocal}
+        onCancel={handleConfirmDelete}
         onOpenNewVehicleDialog={handleOpenNewVehicleDialog}
         isReadOnly={isReadOnly}
         currentUser={currentUser}

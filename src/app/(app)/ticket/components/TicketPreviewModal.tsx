@@ -73,6 +73,8 @@ export interface TicketPreviewModalProps {
   vehicle?: Vehicle | null;
   /** Override workshop branding */
   workshopInfo?: Partial<TicketSettings>;
+  /** Hide admin-specific tools when viewed from the public portal */
+  isPublicView?: boolean;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -84,6 +86,7 @@ export function TicketPreviewModal({
   sale,
   vehicle,
   workshopInfo,
+  isPublicView = false,
 }: TicketPreviewModalProps) {
   const { toast } = useToast();
   const ticketRef = useRef<HTMLDivElement>(null);
@@ -228,10 +231,11 @@ export function TicketPreviewModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-3xl p-0 overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-[300px_1fr]">
+        <DialogContent className={cn("p-0 overflow-hidden", isPublicView ? "max-w-md" : "max-w-3xl")}>
+          <div className={cn("grid grid-cols-1", !isPublicView && "md:grid-cols-[300px_1fr]")}>
 
             {/* ── LEFT PANEL: Actions ───────────────────────────── */}
+            {!isPublicView && (
             <div className="bg-muted/30 p-5 flex flex-col gap-4 border-r border-border/50">
               <DialogHeader className="space-y-1">
                 <DialogTitle className="text-base flex items-center gap-2">
@@ -283,8 +287,8 @@ export function TicketPreviewModal({
 
               <Separator />
 
-              {/* Public link */}
-              {publicUrl && (
+              {/* Public link (admin only) */}
+              {publicUrl && !isPublicView && (
                 <div className="space-y-2">
                   <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                     Enlace Público
@@ -307,21 +311,22 @@ export function TicketPreviewModal({
                   </Button>
                 </div>
               )}
+              {!isPublicView && <Separator />}
 
-              <Separator />
-
-              {/* WhatsApp */}
+              {/* WhatsApp & Sharing */}
               <div className="space-y-2">
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                   Compartir
                 </label>
-                <Button
-                  onClick={() => setWhatsappOpen(true)}
-                  className="w-full h-11 bg-[#25D366] hover:bg-[#1ebe57] text-white gap-2 shadow-xs"
-                >
-                  <Icon icon="logos:whatsapp-icon" className="h-5 w-5" />
-                  Enviar Ticket
-                </Button>
+                {!isPublicView && (
+                  <Button
+                    onClick={() => setWhatsappOpen(true)}
+                    className="w-full h-11 bg-[#25D366] hover:bg-[#1ebe57] text-white gap-2 shadow-xs"
+                  >
+                    <Icon icon="logos:whatsapp-icon" className="h-5 w-5" />
+                    Enviar Ticket
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   onClick={handleShare}
@@ -332,12 +337,15 @@ export function TicketPreviewModal({
                 </Button>
               </div>
             </div>
+            )}
 
             {/* ── RIGHT PANEL: 80mm Preview ─────────────────────── */}
-            <div className="hidden md:flex flex-col bg-neutral-100 max-h-[90vh]">
-              <div className="px-4 py-3 border-b bg-background shrink-0">
-                <p className="text-sm font-medium">Vista previa — 80mm</p>
-              </div>
+            <div className={cn("flex flex-col bg-neutral-100 max-h-[90vh]", !isPublicView && "hidden md:flex")}>
+              {!isPublicView && (
+                <div className="px-4 py-3 border-b bg-background shrink-0">
+                  <p className="text-sm font-medium">Vista previa — 80mm</p>
+                </div>
+              )}
               <ScrollArea className="flex-1">
                 <div className="flex justify-center p-6">
                   <div className="shadow-xl rounded-sm">
@@ -350,6 +358,15 @@ export function TicketPreviewModal({
                   </div>
                 </div>
               </ScrollArea>
+
+              {isPublicView && (
+                <div className="p-4 bg-background border-t">
+                  <Button onClick={handleShare} className="w-full gap-2 bg-primary hover:bg-primary/90 text-white font-bold h-12 shadow-md" size="lg">
+                    <Share2 className="h-5 w-5" />
+                    Compartir Ticket
+                  </Button>
+                </div>
+              )}
             </div>
 
           </div>

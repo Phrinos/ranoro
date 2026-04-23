@@ -72,7 +72,7 @@ export function ActiveServicesList({
     unsubs.push(
       serviceService.onHistoricalServicesUpdate(startIso, endIso, (data) => {
         setTodayDelivered(data.filter((s) => s.status === "Entregado"));
-      })
+      }, "deliveryDateTime")
     );
 
     return () => unsubs.forEach((u) => u());

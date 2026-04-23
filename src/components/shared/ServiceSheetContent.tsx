@@ -35,9 +35,9 @@ import {
   Ban,
   Signature,
   Loader2,
-  CalendarDays,
   Receipt,
   FileJson,
+  AlertTriangle,
 } from "lucide-react";
 import Link from "next/link";
 import { Icon } from "@iconify/react";
@@ -751,6 +751,8 @@ function ServiceOrderTab({
   isSigning?: boolean;
   onShowTicketClick?: () => void;
 }) {
+  const [showBillingPolicies, setShowBillingPolicies] = useState(false);
+
   const items = useMemo(
     () =>
       (service?.serviceItems ?? []).map((it) => ({
@@ -833,19 +835,62 @@ function ServiceOrderTab({
             </div>
           </div>
         {service.status === "Entregado" && (
-          <div className="bg-white border-t border-slate-100 px-6 py-4 flex flex-col sm:flex-row justify-end items-center gap-3">
-            {onShowTicketClick && (
-              <Button onClick={onShowTicketClick} variant="outline" className="w-full sm:w-auto rounded-xl shadow-xs border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold">
-                <Receipt className="mr-2 h-4 w-4 text-slate-400" />
-                Ticket de Servicio
-              </Button>
+          <div className="bg-white border-t border-slate-100 px-6 py-8 md:px-8">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex-1 text-center md:text-left">
+                <h4 className="font-bold text-lg text-slate-800 flex items-center justify-center md:justify-start gap-2 mb-1">
+                  <Receipt className="h-5 w-5 text-primary" />
+                  Comprobantes y Facturación
+                </h4>
+                <p className="text-sm text-slate-500">
+                  Consulta tu ticket detallado o genera tu factura electrónica (CFDI).
+                </p>
+              </div>
+
+              <div className="w-full md:w-auto flex flex-col sm:flex-row gap-3">
+                {onShowTicketClick && (
+                  <Button onClick={onShowTicketClick} variant="outline" className="w-full sm:w-auto h-12 rounded-xl shadow-xs border-slate-200 hover:bg-slate-50 text-slate-700 font-bold">
+                    <Receipt className="mr-2 h-4 w-4 text-slate-400" />
+                    Ver Ticket
+                  </Button>
+                )}
+                <Button 
+                  onClick={() => setShowBillingPolicies(!showBillingPolicies)} 
+                  className={cn("w-full sm:w-auto h-12 rounded-xl shadow-md font-bold transition-all", showBillingPolicies ? "bg-slate-100 text-slate-700 hover:bg-slate-200" : "bg-primary text-white hover:bg-primary/90")}
+                >
+                  <FileJson className="mr-2 h-4 w-4" />
+                  {showBillingPolicies ? "Ocultar Facturación" : "Generar Factura"}
+                </Button>
+              </div>
+            </div>
+
+            {/* Collapsible Policy Area */}
+            {showBillingPolicies && (
+              <div className="mt-6 pt-6 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="bg-amber-50/80 rounded-2xl p-5 border border-amber-100 mb-5">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+                    <div className="text-sm leading-relaxed text-amber-900">
+                      <p className="font-bold mb-1 tracking-wide uppercase text-[10px] text-amber-600">Políticas de Facturación</p>
+                      <p className="mb-2">
+                        Tienes <strong>48 horas</strong> posteriores a la emisión de este ticket para facturar. Si es el último día del mes, debe generarse antes de las <strong>20:00 hrs</strong>.
+                      </p>
+                      <p>
+                        Toda cancelación o re-emisión por errores en los datos conlleva un costo administrativo de <strong>$250.00 MXN</strong>.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end">
+                  <Button asChild size="lg" className="w-full sm:w-auto h-14 px-8 rounded-2xl shadow-md bg-green-600 hover:bg-green-700 text-white font-bold transition-all active:scale-[0.98]">
+                    <Link href={`/facturar?folio=${service.folio || service.id}&total=${totalCost}`} target="_blank">
+                      Ir al Portal de Facturación
+                    </Link>
+                  </Button>
+                </div>
+              </div>
             )}
-            <Button asChild className="w-full sm:w-auto rounded-xl shadow-xs bg-primary hover:bg-primary/90 text-white font-semibold">
-              <Link href={`/facturar?folio=${service.folio || service.id}&total=${totalCost}`} target="_blank">
-                <FileJson className="mr-2 h-4 w-4" />
-                Solicitar Factura
-              </Link>
-            </Button>
           </div>
         )}
       </div>

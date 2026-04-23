@@ -10,8 +10,11 @@ import { doc, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { ServiceSheetContent } from "@/components/shared/ServiceSheetContent";
-import { SignatureDialog } from "@/app/(app)/servicios/components/dialogs/signature-dialog";
+import SignatureCanvas from "react-signature-canvas";
+import { Eraser, Save, Car as CarIcon, Key, PenTool, User, Phone } from "lucide-react";
 import { AppointmentScheduler } from "@/components/shared/AppointmentScheduler";
 import { TicketPreviewModal } from "@/app/(app)/ticket/components";
 import {
@@ -95,6 +98,132 @@ const normalizeVehicle = (v: any) => {
   };
 };
 
+function AutoSignatureModal({
+  open,
+  onOpenChange,
+  onSave,
+  type,
+  service,
+  vehicle
+}: {
+  open: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+  onSave: (data: string) => void;
+  type: "reception" | "delivery" | null;
+  service: any;
+  vehicle: any;
+}) {
+  const sigCanvas = React.useRef<any>(null);
+  const { toast } = useToast();
+
+  const handleClear = () => sigCanvas.current?.clear();
+
+  const handleSave = () => {
+    if (sigCanvas.current?.isEmpty()) {
+      toast({ title: "Firma requerida", description: "Por favor, trace su firma en el recuadro.", variant: "destructive" });
+      return;
+    }
+    const data = sigCanvas.current?.getTrimmedCanvas().toDataURL("image/png");
+    if (data) onSave(data);
+  };
+
+  if (!type || !service) return null;
+
+  // Better extraction of Vehicle Info
+  const idSplit = (() => {
+    const s = service?.vehicleIdentifier ?? "";
+    const t = s.trim();
+    if (!t) return { title: "", plate: null };
+    const m = t.toUpperCase().match(/([A-Z0-9-]{5,10})$/);
+    const plate = m?.[1] ?? null;
+    const title = plate ? t.replace(new RegExp(`${plate}$`, "i"), "").trim() : t;
+    return { title, plate };
+  })();
+
+  const plateFromVehicle = vehicle?.licensePlate ? String(vehicle.licensePlate).trim() : null;
+  const vehicleLicensePlate = plateFromVehicle ?? idSplit.plate ?? service?.folio ?? "Sin placas";
+
+  const composedTitle = `${vehicle?.make || ""} ${vehicle?.model || ""}`.trim();
+  const vehicleTitle =
+      (composedTitle ? `${composedTitle}${vehicle?.year ? ` (${vehicle.year})` : ""}` : "") ||
+      idSplit.title ||
+      "Vehículo en Taller";
+
+  const isReception = type === "reception";
+  const title = isReception ? "Autorización de Ingreso" : "Conformidad de Entrega";
+  const description = isReception 
+    ? "Acepto que las condiciones del vehículo anotadas en mi orden de servicio son correctas y autorizo a realizar los diagnósticos y/o reparaciones."
+    : "Recibo mi vehículo a mi entera satisfacción y acepto los términos de garantía indicados en mi comprobante de servicio.";
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md w-[95vw] rounded-3xl p-0 overflow-hidden flex flex-col max-h-[90vh] shadow-2xl border-0">
+        
+        {/* Dynamic Header Gradient & Policy Text */}
+        <div className={`relative p-5 pb-4 border-b ${isReception ? 'bg-linear-to-b from-primary/10 to-white border-primary/10' : 'bg-linear-to-b from-green-500/10 to-white border-green-500/10'}`}>
+          <DialogTitle className={`text-xl font-black flex items-center gap-2.5 ${isReception ? 'text-primary' : 'text-green-700'}`}>
+            <div className={`p-2 rounded-xl shadow-xs ${isReception ? 'bg-primary/10 text-primary' : 'bg-green-500/10 text-green-600'}`}>
+              {isReception ? <PenTool className="h-5 w-5" /> : <Key className="h-5 w-5" />}
+            </div>
+            {title}
+          </DialogTitle>
+          <DialogDescription className={`mt-3 p-3 rounded-xl border font-semibold text-xs leading-relaxed shadow-xs ${isReception ? 'bg-amber-50/80 text-amber-900 border-amber-100/50' : 'bg-blue-50/80 text-blue-900 border-blue-100/50'}`}>
+            {description}
+          </DialogDescription>
+        </div>
+
+        <div className="px-5 py-4 overflow-y-auto bg-white flex-1 flex flex-col gap-4">
+          
+          {/* Combined Info Card */}
+          <div className="bg-slate-50 border border-slate-100 rounded-2xl flex flex-col shadow-xs divide-y divide-slate-100">
+             {/* Vehicle Row */}
+             <div className="p-3 px-4 flex items-center gap-3">
+               <div className="bg-white p-2.5 rounded-full border border-slate-200 shadow-xs shrink-0">
+                 <CarIcon className="h-4 w-4 text-slate-500" />
+               </div>
+               <div className="flex-1 overflow-hidden">
+                 <p className="font-black text-slate-800 text-sm leading-none truncate uppercase">{vehicleLicensePlate}</p>
+                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 truncate">{vehicleTitle}</p>
+               </div>
+             </div>
+             
+             {/* Customer Row */}
+             <div className="p-3 px-4 flex items-center gap-3">
+               <div className="bg-white p-2.5 rounded-full border border-slate-200 shadow-xs shrink-0">
+                 <User className="h-4 w-4 text-slate-400" />
+               </div>
+               <div className="flex-1 overflow-hidden">
+                 <p className="font-bold text-slate-800 text-sm truncate">{service?.customerName || vehicle?.ownerName || "Cliente"}</p>
+                 <p className="text-[10px] font-bold text-slate-400 mt-1 truncate tracking-wider">{service?.customerPhone || vehicle?.ownerPhone || "Sin teléfono"}</p>
+               </div>
+             </div>
+          </div>
+          
+          {/* Signature Area */}
+          <div className="border-2 border-dashed border-slate-200 rounded-2xl bg-slate-50/50 relative overflow-hidden h-[190px] touch-none shadow-inner group transition-colors focus-within:border-primary/50 focus-within:bg-white shrink-0">
+             <div className="absolute top-3 left-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest pointer-events-none group-focus-within:text-primary/50 transition-colors">Área de firma</div>
+             <SignatureCanvas
+                ref={sigCanvas}
+                penColor="#000"
+                canvasProps={{ className: "w-full h-full cursor-crosshair" }}
+             />
+          </div>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="p-5 border-t border-slate-100 bg-slate-50/50 flex justify-between gap-3 mt-auto">
+          <Button variant="outline" onClick={handleClear} className="w-1/3 rounded-xl h-12 shadow-xs bg-white hover:bg-slate-50 text-slate-600 font-bold">
+            <Eraser className="mr-2 h-4 w-4 text-slate-400" /> Limpiar
+          </Button>
+          <Button onClick={handleSave} className={`w-2/3 rounded-xl h-12 text-white font-black shadow-md transition-all active:scale-[0.98] ${isReception ? 'bg-primary hover:bg-primary/90' : 'bg-green-600 hover:bg-green-700'}`}>
+            <Save className="mr-2 h-4 w-4" /> Autorizar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function PublicServicePage() {
   const params = useParams();
   const publicId = decodeURIComponent((params?.id as string) ?? "");
@@ -150,6 +279,20 @@ export default function PublicServicePage() {
     );
     return () => unsub();
   }, [publicId]);
+
+  useEffect(() => {
+    if (!service) return;
+    const status = (service.status || "").toLowerCase();
+    
+    // Automatically popup signature if missing based on status
+    if (status === "en taller" && !service.customerSignatureReception) {
+       setSignatureType("reception");
+       setIsSigning(true);
+    } else if (status === "entregado" && !service.customerSignatureDelivery) {
+       setSignatureType("delivery");
+       setIsSigning(true);
+    }
+  }, [service?.status, service?.customerSignatureReception, service?.customerSignatureDelivery]);
 
   const handleSaveSignature = async (signatureDataUrl: string) => {
     if (!service || !signatureType) return;
@@ -266,10 +409,13 @@ export default function PublicServicePage() {
         />
       </div>
 
-      <SignatureDialog
+      <AutoSignatureModal
         open={isSigning}
         onOpenChange={(isOpen) => !isOpen && setIsSigning(false)}
         onSave={handleSaveSignature}
+        type={signatureType}
+        service={service}
+        vehicle={vehicle}
       />
 
       <AppointmentScheduler
@@ -284,6 +430,7 @@ export default function PublicServicePage() {
         service={service as any}
         vehicle={vehicle as any}
         workshopInfo={workshopInfo}
+        isPublicView={true}
       />
     </>
   );
