@@ -1,0 +1,175 @@
+Unused files (51)
+functions/eslint.config.js                                          
+functions/lib/dashboard.js                                          
+functions/lib/index.js                                              
+functions/lib/inventory.js                                          
+functions/lib/migration.js                                          
+functions/lib/stats-cron.js                                         
+functions/src/dashboard.ts                                          
+functions/src/index.ts                                              
+functions/src/stats-cron.ts                                         
+public/service-worker.js                                            
+query_fleet.js                                                      
+scratch.js                                                          
+scripts/fix-roles-permissions.ts                                    
+src/ai/dev.ts                                                       
+src/ai/flows/text-enhancement-flow.ts                               
+src/ai/genkit.ts                                                    
+src/api/services/[id]/confirm/route.ts                              
+src/app/(app)/opciones/components/config-facturacion-content.tsx    
+src/app/(app)/opciones/components/config-taller/facturacion-card.tsx
+src/app/(app)/opciones/components/manual-content.tsx                
+src/app/(app)/opciones/components/perfil-content.tsx                
+src/app/(app)/opciones/components/usuarios-roles-content.tsx        
+src/app/(app)/usuarios/components/usuarios-content.tsx              
+src/components/shared/table-toolbar.tsx                             
+src/components/theme/ThemeToggle.tsx                                
+src/components/ui/accordion.tsx                                     
+src/components/ui/avatar.tsx                                        
+src/components/ui/print-ticket-dialog.tsx                           
+src/components/ui/radio-group.tsx                                   
+src/components/ui/sidebar.tsx                                       
+src/functions/src/index.ts                                          
+src/functions/src/inventory.ts                                      
+src/hooks/use-mobile.tsx                                            
+src/hooks/use-sidebar.tsx                                           
+src/lib/data/manual-data.tsx                                        
+src/lib/services/whatsapp/whatsapp.service.ts                       
+src/schemas/driver-form-schema.ts                                   
+src/schemas/engine-data-form-schema.ts                              
+src/schemas/financial-info-schema.ts                                
+src/schemas/global-transaction-schema.ts                            
+src/schemas/inventory-item-form-schema.ts                           
+src/schemas/owner-withdrawal-schema.ts                              
+src/schemas/payable-account-form-schema.ts                          
+src/schemas/register-payment-schema.ts                              
+src/schemas/supplier-form-schema.ts                                 
+src/schemas/vehicle-info-schema.ts                                  
+src/types/sidebar.types.ts                                          
+test-find-ticket.cjs                                                
+test-find-ticket.js                                                 
+test-find-ticket2.cjs                                               
+test-find-ticket3.cjs                                               
+Unused dependencies (11)
+@cfworker/json-schema        package.json:25:6
+@genkit-ai/google-genai      package.json:26:6
+@google-cloud/firestore      package.json:27:6
+@radix-ui/react-accordion    package.json:31:6
+@radix-ui/react-avatar       package.json:33:6
+@radix-ui/react-radio-group  package.json:41:6
+file-saver                   package.json:58:6
+firebase-functions           package.json:61:6
+genkit                       package.json:63:6
+sharp                        package.json:78:6
+tailwindcss-animate          package.json:80:6
+Unused devDependencies (10)
+@eslint/eslintrc    package.json:85:6 
+@types/file-saver   package.json:89:6 
+dotenv              package.json:93:6 
+eslint-config-next  package.json:95:6 
+glob                package.json:97:6 
+lightningcss        package.json:99:6 
+rimraf              package.json:101:6
+ts-node             package.json:103:6
+ts-prune            package.json:104:6
+tsx                 package.json:105:6
+Unlisted dependencies (1)
+postcss-load-config  postcss.config.mjs:1:10
+Unlisted binaries (1)
+genkit  package.json
+Unused exports (60)
+cancelInvoice             function  src/ai/flows/billing-flow.ts:143:23           
+getInvoicePdfUrl          function  src/ai/flows/billing-flow.ts:156:23           
+getInvoices               function  src/ai/flows/billing-flow.ts:174:23           
+WhatsAppSendModal                   src/app/(app)/ticket/components/index.ts:7:10 
+findPatientByPhone        function  src/app/api/whatsapp/webhook/tools.ts:698:23  
+useTheme                            src/components/theme/ThemeProvider.tsx:23:10  
+AlertDialogPortal                   src/components/ui/alert-dialog.tsx:131:3      
+AlertDialogOverlay                  src/components/ui/alert-dialog.tsx:132:3      
+badgeVariants                       src/components/ui/badge.tsx:69:17             
+CommandDialog                       src/components/ui/command.tsx:160:3           
+CommandShortcut                     src/components/ui/command.tsx:166:3           
+CommandSeparator                    src/components/ui/command.tsx:167:3           
+DialogPortal                        src/components/ui/dialog.tsx:11:14            
+DialogClose                         src/components/ui/dialog.tsx:12:14            
+DialogOverlay                       src/components/ui/dialog.tsx:14:14            
+DropdownMenuCheckboxItem            src/components/ui/dropdown-menu.tsx:189:3     
+DropdownMenuRadioItem               src/components/ui/dropdown-menu.tsx:190:3     
+DropdownMenuShortcut                src/components/ui/dropdown-menu.tsx:193:3     
+DropdownMenuGroup                   src/components/ui/dropdown-menu.tsx:194:3     
+DropdownMenuPortal                  src/components/ui/dropdown-menu.tsx:195:3     
+DropdownMenuSub                     src/components/ui/dropdown-menu.tsx:196:3     
+DropdownMenuSubContent              src/components/ui/dropdown-menu.tsx:197:3     
+DropdownMenuSubTrigger              src/components/ui/dropdown-menu.tsx:198:3     
+DropdownMenuRadioGroup              src/components/ui/dropdown-menu.tsx:199:3     
+useFormField                        src/components/ui/form.tsx:167:3              
+ScrollBar                           src/components/ui/scroll-area.tsx:48:22       
+SelectSeparator                     src/components/ui/select.tsx:158:3            
+SelectScrollUpButton                src/components/ui/select.tsx:159:3            
+SelectScrollDownButton              src/components/ui/select.tsx:160:3            
+SheetPortal                         src/components/ui/sheet.tsx:132:3             
+SheetOverlay                        src/components/ui/sheet.tsx:133:3             
+SheetFooter                         src/components/ui/sheet.tsx:138:3             
+TableFooter                         src/components/ui/table.tsx:113:3             
+TableCaption                        src/components/ui/table.tsx:117:3             
+reducer                             src/hooks/use-toast.ts:66:14                  
+toDate                              src/lib/contracts/format.ts:4:14              
+default                   function  src/lib/contracts/LeasePdf.tsx:277:16         
+CARD_RATE                           src/lib/money-helpers.ts:6:14                 
+CARD_MSI_3_RATE                     src/lib/money-helpers.ts:7:14                 
+CARD_MSI_6_RATE                     src/lib/money-helpers.ts:8:14                 
+CARD_MSI_9_RATE                     src/lib/money-helpers.ts:9:14                 
+CARD_MSI_12_RATE                    src/lib/money-helpers.ts:10:14                
+CARD_MSI_18_RATE                    src/lib/money-helpers.ts:11:14                
+CARD_MSI_24_RATE                    src/lib/money-helpers.ts:12:14                
+calcTotalFromItems        function  src/lib/money-helpers.ts:25:17                
+calcCardCommission        function  src/lib/money-helpers.ts:41:17                
+toNumber                            src/lib/money.ts:2:14                         
+IVA_RATE                            src/lib/money.ts:8:14                         
+logAudit                            src/lib/services/admin.service.ts:27:14       
+billingService                      src/lib/services/billing.service.ts:52:14     
+deleteCollectionDoc                 src/lib/services/inventory.service.ts:36:14   
+toNumber                            src/lib/utils.ts:7:10                         
+IVA_RATE                            src/lib/utils.ts:7:49                         
+calculateDriverDebt                 src/lib/utils.ts:31:14                        
+capitalizeSentences       function  src/lib/utils.ts:190:17                       
+getMonthName              function  src/lib/utils.ts:195:17                       
+CURRENCY_FORMATTER                  src/lib/utils.ts:201:14                       
+getToday                            src/lib/utils.ts:206:14                       
+isDeliveredStatus                   src/lib/vehicles/serviceRecordHelpers.ts:7:14 
+getServiceEffectiveDate             src/lib/vehicles/serviceRecordHelpers.ts:12:14
+Unused exported types (30)
+PaymentReceiptProps      interface  src/app/(app)/flotilla/components/receipt/payment-receipt.tsx:43:18 
+ReceiptModalProps        interface  src/app/(app)/flotilla/components/receipt/receipt-modal.tsx:20:18   
+ServicePriceResult       interface  src/app/(app)/listadeprecios/lib/pricing-calc.ts:4:18               
+ServiceListCardProps     interface  src/app/(app)/servicios/components/cards/service-list-card.tsx:32:18
+ServiceEditorProps       interface  src/app/(app)/servicios/components/editor/service-editor.tsx:49:18  
+TicketContentProps       type       src/app/(app)/ticket/components/index.ts:4:15                       
+TicketPreviewModalProps  type       src/app/(app)/ticket/components/index.ts:6:15                       
+WhatsAppSendModalProps   type       src/app/(app)/ticket/components/index.ts:8:15                       
+TicketContentProps       interface  src/app/(app)/ticket/components/TicketContent.tsx:15:18             
+TicketPreviewModalProps  interface  src/app/(app)/ticket/components/TicketPreviewModal.tsx:67:18        
+WhatsAppSendModalProps   interface  src/app/(app)/ticket/components/WhatsAppSendModal.tsx:50:18         
+WhatsAppConversation     type       src/app/(app)/whatsapp/lib/types.ts:9:3                             
+WhatsAppMessage          type       src/app/(app)/whatsapp/lib/types.ts:10:3                            
+WorkshopAppointment      type       src/app/(app)/whatsapp/lib/types.ts:11:3                            
+AnimatedDivProps         interface  src/app/(public)/landing/AnimatedDiv.tsx:7:18                       
+TabConfig                type       src/components/layout/tabbed-page-layout.tsx:6:13                   
+DocumentsTabProps        interface  src/components/shared/documents-tab.tsx:38:18                       
+BadgeProps               interface  src/components/ui/badge.tsx:51:18                                   
+ButtonProps              interface  src/components/ui/button.tsx:37:18                                  
+CalendarValue            type       src/components/ui/calendar.tsx:9:13                                 
+CalendarProps            type       src/components/ui/calendar.tsx:11:13                                
+NewCalendarProps         type       src/components/ui/calendar.tsx:39:13                                
+PhotoReport              type       src/schemas/service-form.ts:90:13                                   
+UserFormInput            type       src/schemas/user-form-schema.ts:19:13                               
+EngineData               interface  src/types/index.ts:501:18                                           
+FinancialSummary         interface  src/types/index.ts:548:18                                           
+Infraction               interface  src/types/index.ts:556:18                                           
+WhatsAppConversation     interface  src/types/index.ts:629:18                                           
+WhatsAppMessage          interface  src/types/index.ts:638:18                                           
+WorkshopAppointment      interface  src/types/index.ts:647:18                                           
+Duplicate exports (2)
+ServiceItemCard|default  src/app/(app)/servicios/components/ServiceItemCard.tsx
+AppTopNav|default        src/components/layout/app-sidebar.tsx                 
+Configuration hints (1)
