@@ -9,7 +9,7 @@ import {
   Shield, Zap, Wifi, WifiOff, Info,
 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { StickySaveBar } from './sticky-save-bar';
+
 import type { WhatsAppAgentConfig } from '../lib/types';
 
 interface TabConexionProps {
@@ -36,7 +36,7 @@ export function TabConexion({
 }: TabConexionProps) {
   return (
     <div className="space-y-6">
-      <StickySaveBar onSave={onSave} isSaving={isSaving} label="Guardar Configuración" />
+
 
       <Alert className="bg-blue-50 border-blue-200">
         <Info className="h-4 w-4 text-blue-500" />

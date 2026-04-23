@@ -6,48 +6,41 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Switch } from '@/components/ui/switch';
-import { StickySaveBar } from './sticky-save-bar';
-import {
-  User, MapPin, DollarSign, Clock, Info, ExternalLink,
-  Eye, EyeOff, Loader2, CheckCircle2, CreditCard, MessageSquare, Star, Settings2,
+import { 
+  Wrench, MapPin, DollarSign, Clock, Info, ExternalLink, 
+  Eye, EyeOff, Loader2, CheckCircle2, CreditCard, Settings2 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
-// Interface kept minimal — services now live in settings/services (Firestore via servicios-admin)
 interface KnowledgeData {
-  doctor: {
-    fullName: string;
+  workshop: {
+    name: string;
     specialty: string;
-    certification: string;
-    bio: string;
+    description: string;
     website: string;
   };
   location: {
-    hospital: string;
-    office: string;
     address: string;
     reference: string;
     mapsUrl: string;
     phone: string;
   };
+  schedule: {
+    weekdays: string;
+    saturday: string;
+    sunday: string;
+    appointmentSlots: string;
+    noAppointmentNeeded: string;
+  };
   payment: {
     methods: string[];
     notes: string;
   };
-  followUp: {
-    enabled: boolean;
-    googleReviewUrl: string;
-    template: string;
-    delayHours: number;
-  };
-  botRules: string; // Additional instructions / FAQ for the bot
+  botRules: string;
   extra: string;
 }
-
 
 const PAYMENT_OPTIONS = [
   { id: 'efectivo', label: 'Efectivo', icon: '💵' },
@@ -56,92 +49,77 @@ const PAYMENT_OPTIONS = [
 ];
 
 const DEFAULT_DATA: KnowledgeData = {
-  doctor: {
-    fullName: 'Dr. Pedro Carrasco Santillán',
-    specialty: 'Pediatría',
-    certification: 'Consejo Mexicano de Pediatría',
-    bio: 'El Dr. Pedro Carrasco no trata expedientes, acompaña historias en crecimiento.',
-    website: 'mipediatra.mx',
+  workshop: {
+    name: 'Taller Mecánico Ranoro',
+    specialty: 'Mecánica General, Afinaciones, Frenos, Suspensión',
+    description: 'Servicio mecánico automotriz de confianza, enfocados en diagnósticos precisos y reparaciones duraderas.',
+    website: 'ranoro.mx',
   },
   location: {
-    hospital: 'Hospital Rebren',
-    office: 'Consultorio 10',
-    address: 'Calle Paloma 903, Durango, 34060',
-    reference: 'Frente a Farmacia Guadalajara',
+    address: 'Av. Principal 123, Colonia Centro',
+    reference: 'Frente a la gasolinera principal',
     mapsUrl: '',
-    phone: '+52 1 618 188 9562',
+    phone: '+52 1 234 567 8900',
+  },
+  schedule: {
+    weekdays: 'Lunes a Viernes de 8:30 AM a 5:30 PM',
+    saturday: 'Sábados de 8:30 AM a 1:30 PM',
+    sunday: 'Cerrado',
+    appointmentSlots: 'Turno Mañana: 08:30 AM, Turno Tarde: 01:30 PM',
+    noAppointmentNeeded: 'Para cambios de aceite sencillos y revisiones exprés no se requiere cita obligatoria, se atienden conforme llegan.',
   },
   payment: {
-    methods: ['efectivo', 'transferencia'],
-    notes: '',
+    methods: ['efectivo', 'transferencia', 'tarjeta'],
+    notes: 'Para reparaciones mayores al 50% se requiere anticipo del 50%.',
   },
-  followUp: {
-    enabled: true,
-    googleReviewUrl: 'https://g.page/r/CbQfly1Or2D7EBM/review',
-    template: 'Hola {{tutor}} 👋\n\n¿Cómo ha seguido {{paciente}} después de su visita con el {{doctor}}?\n\nEsperamos que se sienta mucho mejor. Si tienes alguna duda o pregunta sobre el tratamiento, con gusto te atendemos por aquí 😊\n\nY si tu experiencia fue positiva, nos ayudarías mucho dejándonos tu opinión en Google 🙏\n👉 {{reviewUrl}}\n\nGracias por confiar en nosotros ❤️\n— Consultorio {{doctor}} | mipediatra.mx',
-    delayHours: 24,
-  },
-  botRules: '',
-  extra: '',
+  botRules: '- SofIA debe priorizar agendar citas en los horarios 08:30 y 13:30.\\n- Si el cliente pregunta por servicios de Hojalatería o Enderezado y Pintura, informar que próximamente estará disponible, pero por ahora solo es mecánica general.',
+  extra: 'Los precios exactos solo se dan después de un diagnóstico físico, ya que cada marca y modelo requiere refacciones distintas.',
 };
-
-// ── Serializer: structured → text for bot ─────────────────────────────
 
 function buildKnowledgeString(data: KnowledgeData): string {
   const lines: string[] = [];
 
-  // Doctor
-  lines.push('== MÉDICO ==');
-  lines.push(`Nombre: ${data.doctor.fullName}`);
-  lines.push(`Especialidad: ${data.doctor.specialty}`);
-  if (data.doctor.certification) lines.push(`Certificación: ${data.doctor.certification}`);
-  if (data.doctor.bio) lines.push(`Presentación: ${data.doctor.bio}`);
-  if (data.doctor.website) lines.push(`Sitio web: ${data.doctor.website}`);
+  lines.push('== TALLER ==');
+  lines.push(`Nombre: ${data.workshop.name}`);
+  lines.push(`Especialidades: ${data.workshop.specialty}`);
+  lines.push(`Descripción: ${data.workshop.description}`);
+  if (data.workshop.website) lines.push(`Sitio web: ${data.workshop.website}`);
 
-  // Location
-  lines.push('\n== UBICACIÓN ==');
-  if (data.location.hospital) lines.push(`Hospital / Edificio: ${data.location.hospital}`);
-  if (data.location.office) lines.push(`Consultorio: ${data.location.office}`);
-  if (data.location.address) lines.push(`Dirección: ${data.location.address}`);
+  lines.push('\\n== UBICACIÓN ==');
+  lines.push(`Dirección: ${data.location.address}`);
   if (data.location.reference) lines.push(`Referencia: ${data.location.reference}`);
   if (data.location.phone) lines.push(`Teléfono / WhatsApp: ${data.location.phone}`);
   if (data.location.mapsUrl) lines.push(`Google Maps: ${data.location.mapsUrl}`);
 
-  // Horarios note
-  lines.push('\n== HORARIOS ==');
-  lines.push('Los horarios de atención están configurados en la agenda del doctor.');
-  lines.push('Usa la herramienta check_availability para verificar disponibilidad real.');
+  lines.push('\\n== HORARIOS Y CITAS ==');
+  lines.push(`Lunes a Viernes: ${data.schedule.weekdays}`);
+  lines.push(`Sábados: ${data.schedule.saturday}`);
+  lines.push(`Domingos: ${data.schedule.sunday}`);
+  lines.push(`Horarios disponibles para agendar citas: ${data.schedule.appointmentSlots}`);
+  lines.push(`Sin cita previa: ${data.schedule.noAppointmentNeeded}`);
 
-  // NOTE: Services & prices come from settings/services (injected separately by loadServicesKnowledge)
+  lines.push('\\n== SERVICIOS Y PRECIOS ==');
+  lines.push('Los servicios y refacciones pueden consultarse directamente en el catálogo interno del bot o en la URL: /listadeprecios. Siempre aconsejar diagnóstico físico para precio real.');
 
-  // Payment
   if (data.payment.methods.length > 0) {
-    lines.push('\n== FORMAS DE PAGO ==');
-    const methods: Record<string, string> = {
-      efectivo: 'Efectivo',
-      transferencia: 'Transferencia bancaria',
-      tarjeta: 'Tarjeta (débito y crédito)',
-    };
+    lines.push('\\n== FORMAS DE PAGO ==');
+    const methods: Record<string, string> = { efectivo: 'Efectivo', transferencia: 'Transferencia bancaria', tarjeta: 'Tarjeta (débito y crédito)' };
     lines.push(data.payment.methods.map(m => methods[m] || m).join(', '));
     if (data.payment.notes) lines.push(data.payment.notes);
   }
 
-  // Bot rules
   if (data.botRules?.trim()) {
-    lines.push('\n== REGLAS Y POLÍTICAS ==');
+    lines.push('\\n== REGLAS Y POLÍTICAS ==');
     lines.push(data.botRules.trim());
   }
 
-  // Extra
   if (data.extra?.trim()) {
-    lines.push('\n== INFORMACIÓN ADICIONAL ==');
+    lines.push('\\n== INFORMACIÓN ADICIONAL ==');
     lines.push(data.extra.trim());
   }
 
-  return lines.join('\n');
+  return lines.join('\\n');
 }
-
-// ── Component ─────────────────────────────────────────────────────────
 
 export function TabConocimiento() {
   const [data, setData] = useState<KnowledgeData>(DEFAULT_DATA);
@@ -150,15 +128,11 @@ export function TabConocimiento() {
   const [showPreview, setShowPreview] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Load from API
   useEffect(() => {
     fetch('/api/whatsapp/knowledge')
       .then(r => r.json())
       .then(d => {
         if (d.structured) setData(d.structured);
-        else if (d.content) {
-          // It only has content string — keep defaults
-        }
       })
       .catch(console.error)
       .finally(() => setIsLoading(false));
@@ -171,7 +145,7 @@ export function TabConocimiento() {
       await fetch('/api/whatsapp/knowledge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, structured: data, followUp: data.followUp }),
+        body: JSON.stringify({ content, structured: data }),
       });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -182,24 +156,14 @@ export function TabConocimiento() {
     }
   }, [data]);
 
-  const updateDoctor = (key: keyof KnowledgeData['doctor'], value: string) =>
-    setData(d => ({ ...d, doctor: { ...d.doctor, [key]: value } }));
-
-  const updateLocation = (key: keyof KnowledgeData['location'], value: string) =>
-    setData(d => ({ ...d, location: { ...d.location, [key]: value } }));
+  const updateSection = (section: keyof KnowledgeData, key: string, value: string) => {
+    setData(d => ({ ...d, [section]: { ...(d[section] as any), [key]: value } }));
+  };
 
   const togglePayment = (method: string) =>
     setData(d => {
       const current = d.payment.methods;
-      return {
-        ...d,
-        payment: {
-          ...d.payment,
-          methods: current.includes(method)
-            ? current.filter(m => m !== method)
-            : [...current, method],
-        },
-      };
+      return { ...d, payment: { ...d.payment, methods: current.includes(method) ? current.filter(m => m !== method) : [...current, method] } };
     });
 
   if (isLoading) {
@@ -212,354 +176,97 @@ export function TabConocimiento() {
   }
 
   return (
-    <div className="space-y-8">
-      <StickySaveBar onSave={handleSave} isSaving={isSaving} label="Guardar Base de Conocimiento" />
+    <div className="space-y-8 relative">
+      <div className="sticky top-20 z-20 flex justify-end">
+        <Button onClick={handleSave} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center gap-2">
+          {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          {isSaving ? 'Guardando...' : 'Guardar Base de Conocimiento'}
+        </Button>
+      </div>
 
       {saveSuccess && (
         <Alert className="bg-green-50 border-green-200">
           <CheckCircle2 className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-700">
-            Base de conocimiento guardada. El bot usará los datos actualizados en los próximos mensajes.
-          </AlertDescription>
+          <AlertDescription className="text-green-700">Base de conocimiento guardada.</AlertDescription>
         </Alert>
       )}
 
-      {/* ── Card 1: Médico ── */}
+      {/* Taller */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <User className="h-4 w-4 text-blue-500" />
-            Datos del Médico
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Información del doctor que el bot presentará a los pacientes.
-          </CardDescription>
+          <CardTitle className="flex items-center gap-2 text-base"><Wrench className="h-4 w-4 text-blue-500" /> Datos del Taller</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label className="text-xs">Nombre completo</Label>
-            <Input value={data.doctor.fullName} onChange={e => updateDoctor('fullName', e.target.value)} placeholder="Dr. Juan Pérez García" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Especialidad</Label>
-            <Input value={data.doctor.specialty} onChange={e => updateDoctor('specialty', e.target.value)} placeholder="Pediatría" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Certificación</Label>
-            <Input value={data.doctor.certification} onChange={e => updateDoctor('certification', e.target.value)} placeholder="Consejo Mexicano de Pediatría" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Sitio web</Label>
-            <Input value={data.doctor.website} onChange={e => updateDoctor('website', e.target.value)} placeholder="mipediatra.mx" />
-          </div>
-          <div className="space-y-1.5 md:col-span-2">
-            <Label className="text-xs">Presentación del doctor (bio breve)</Label>
-            <Textarea
-              rows={3}
-              value={data.doctor.bio}
-              onChange={e => updateDoctor('bio', e.target.value)}
-              placeholder="El Dr. Pedro Carrasco no trata expedientes, acompaña historias en crecimiento."
-              className="text-xs"
-            />
-          </div>
+          <div className="space-y-1.5"><Label className="text-xs">Nombre</Label><Input value={data.workshop.name} onChange={e => updateSection('workshop', 'name', e.target.value)} /></div>
+          <div className="space-y-1.5"><Label className="text-xs">Especialidades</Label><Input value={data.workshop.specialty} onChange={e => updateSection('workshop', 'specialty', e.target.value)} /></div>
+          <div className="space-y-1.5 md:col-span-2"><Label className="text-xs">Descripción corta</Label><Input value={data.workshop.description} onChange={e => updateSection('workshop', 'description', e.target.value)} /></div>
         </CardContent>
       </Card>
 
-      {/* ── Card 2: Ubicación ── */}
+      {/* Horarios */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <MapPin className="h-4 w-4 text-rose-500" />
-            Ubicación y Contacto
-          </CardTitle>
-          <CardDescription className="text-xs">
-            El bot usará esta información cuando le pregunten dónde está el consultorio.
-          </CardDescription>
+          <CardTitle className="flex items-center gap-2 text-base"><Clock className="h-4 w-4 text-purple-500" /> Horarios del Taller</CardTitle>
+          <CardDescription className="text-xs">SofIA usará estos datos para ofrecer opciones al cliente y saber cuándo el taller está abierto.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label className="text-xs">Hospital / Edificio</Label>
-            <Input value={data.location.hospital} onChange={e => updateLocation('hospital', e.target.value)} placeholder="Hospital Rebren" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Consultorio / Número</Label>
-            <Input value={data.location.office} onChange={e => updateLocation('office', e.target.value)} placeholder="Consultorio 10" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Dirección completa</Label>
-            <Input value={data.location.address} onChange={e => updateLocation('address', e.target.value)} placeholder="Calle Paloma 903, Durango, 34060" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Referencia / Punto de referencia</Label>
-            <Input value={data.location.reference} onChange={e => updateLocation('reference', e.target.value)} placeholder="Frente a Farmacia Guadalajara" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Teléfono / WhatsApp del consultorio</Label>
-            <Input value={data.location.phone} onChange={e => updateLocation('phone', e.target.value)} placeholder="+52 1 618 188 9562" />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Enlace de Google Maps (opcional)</Label>
-            <Input value={data.location.mapsUrl} onChange={e => updateLocation('mapsUrl', e.target.value)} placeholder="https://maps.app.goo.gl/..." />
-          </div>
+          <div className="space-y-1.5"><Label className="text-xs">Lunes a Viernes</Label><Input value={data.schedule.weekdays} onChange={e => updateSection('schedule', 'weekdays', e.target.value)} /></div>
+          <div className="space-y-1.5"><Label className="text-xs">Sábados</Label><Input value={data.schedule.saturday} onChange={e => updateSection('schedule', 'saturday', e.target.value)} /></div>
+          <div className="space-y-1.5"><Label className="text-xs">Turnos disponibles para agendar (Ej. 08:30 y 13:30)</Label><Input value={data.schedule.appointmentSlots} onChange={e => updateSection('schedule', 'appointmentSlots', e.target.value)} /></div>
+          <div className="space-y-1.5"><Label className="text-xs">Servicios sin cita (Ej. Cambios de Aceite)</Label><Input value={data.schedule.noAppointmentNeeded} onChange={e => updateSection('schedule', 'noAppointmentNeeded', e.target.value)} /></div>
         </CardContent>
       </Card>
 
-      {/* ── Card 3: Horarios ── */}
-      <Card className="border-blue-200 bg-blue-50/30">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Clock className="h-4 w-4 text-blue-500" />
-            Horarios de Atención
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Los horarios se configuran en la agenda del doctor. La IA lee la disponibilidad real directamente.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-lg border border-blue-200 bg-white p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <Clock className="h-5 w-5 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-sm">Configura los horarios en tu agenda</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Sof-IA consulta la agenda en tiempo real para verificar disponibilidad.
-                Los bloqueos y citas ya agendadas también se consideran automáticamente.
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-blue-600 border-blue-200 hover:bg-blue-50 flex-shrink-0"
-              onClick={() => window.open('/configuracion-agenda', '_blank')}
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Configurar agenda
-            </Button>
-          </div>
+      {/* Ubicacion */}
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2 text-base"><MapPin className="h-4 w-4 text-rose-500" /> Ubicación y Contacto</CardTitle></CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1.5"><Label className="text-xs">Dirección completa</Label><Input value={data.location.address} onChange={e => updateSection('location', 'address', e.target.value)} /></div>
+          <div className="space-y-1.5"><Label className="text-xs">Referencia</Label><Input value={data.location.reference} onChange={e => updateSection('location', 'reference', e.target.value)} /></div>
         </CardContent>
       </Card>
 
-      {/* ── Card 4: Servicios y Precios → redirect to servicios-admin ── */}
+      {/* Servicios Link */}
       <Card className="border-dashed">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <DollarSign className="h-4 w-4 text-emerald-500" />
-            Servicios y Precios
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Los servicios ahora son la fuente única de verdad. Edítalos desde el panel de administración.
-          </CardDescription>
-        </CardHeader>
+        <CardHeader><CardTitle className="flex items-center gap-2 text-base"><DollarSign className="h-4 w-4 text-emerald-500" /> Lista de Precios</CardTitle></CardHeader>
         <CardContent>
           <div className="flex items-center justify-between rounded-lg border bg-muted/30 p-4">
-            <div className="space-y-1">
-              <p className="text-sm font-medium">Panel de Servicios</p>
-              <p className="text-xs text-muted-foreground">
-                Los servicios se editan en <strong>Servicios → Gestión de Servicios</strong> y el bot los lee automáticamente desde Firestore.
-              </p>
-            </div>
-            <Button variant="outline" size="sm" asChild className="gap-2 shrink-0">
-              <Link href="/servicios-admin">
-                <ExternalLink className="h-3.5 w-3.5" />
-                Ir a Servicios
-              </Link>
-            </Button>
+            <div><p className="text-sm font-medium">Lista de Precios</p><p className="text-xs text-muted-foreground">La IA recomendará consultar la lista oficial si le preguntan precios detallados.</p></div>
+            <Button variant="outline" size="sm" asChild><Link href="/listadeprecios"><ExternalLink className="h-3.5 w-3.5 mr-2" />Ir a Lista de Precios</Link></Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* ── Card 5: Formas de Pago ── */}
+      {/* Formas de Pago */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <CreditCard className="h-4 w-4 text-violet-500" />
-            Formas de Pago
-          </CardTitle>
-          <CardDescription className="text-xs">
-            El bot informará estas opciones cuando un paciente pregunte cómo pagar.
-          </CardDescription>
-        </CardHeader>
+        <CardHeader><CardTitle className="flex items-center gap-2 text-base"><CreditCard className="h-4 w-4 text-violet-500" /> Formas de Pago</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-3">
             {PAYMENT_OPTIONS.map(opt => (
-              <button
-                key={opt.id}
-                onClick={() => togglePayment(opt.id)}
-                className={cn(
-                  'flex items-center gap-2 rounded-lg border-2 px-4 py-2.5 text-sm font-medium transition-colors',
-                  data.payment.methods.includes(opt.id)
-                    ? 'border-violet-400 bg-violet-50 text-violet-700'
-                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
-                )}
-              >
-                <span>{opt.icon}</span>
-                {opt.label}
-                {data.payment.methods.includes(opt.id) && (
-                  <CheckCircle2 className="h-3.5 w-3.5 text-violet-500" />
-                )}
+              <button key={opt.id} onClick={() => togglePayment(opt.id)} className={cn('flex items-center gap-2 rounded-lg border-2 px-4 py-2.5 text-sm font-medium transition-colors', data.payment.methods.includes(opt.id) ? 'border-violet-400 bg-violet-50 text-violet-700' : 'border-gray-200 bg-white text-gray-500')} >
+                <span>{opt.icon}</span>{opt.label}{data.payment.methods.includes(opt.id) && <CheckCircle2 className="h-3.5 w-3.5 text-violet-500" />}
               </button>
             ))}
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs">Nota adicional sobre pagos (opcional)</Label>
-            <Input
-              value={data.payment.notes}
-              onChange={e => setData(d => ({ ...d, payment: { ...d.payment, notes: e.target.value } }))}
-              placeholder="Ej: Solo se acepta transferencia para citas de domingo"
-              className="text-xs"
-            />
-          </div>
+          <div className="space-y-1.5"><Label className="text-xs">Nota de pagos</Label><Input value={data.payment.notes} onChange={e => setData(d => ({ ...d, payment: { ...d.payment, notes: e.target.value } }))} /></div>
         </CardContent>
       </Card>
 
-      {/* ── Card 6: Follow-up Post-Consulta ── */}
+      {/* Reglas IA */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <MessageSquare className="h-4 w-4 text-teal-500" />
-            Follow-up Automático Post-Consulta
-          </CardTitle>
-          <CardDescription className="text-xs">
-            El sistema enviará este mensaje automáticamente a las {data.followUp.delayHours} horas de la consulta para saber cómo sigue el paciente e invitar a dejar una reseña.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between rounded-lg border p-3">
-            <div>
-              <div className="text-sm font-medium">Activar envío automático</div>
-              <div className="text-xs text-muted-foreground">Requiere que el paciente tenga teléfono del tutor registrado.</div>
-            </div>
-            <Switch
-              checked={data.followUp.enabled}
-              onCheckedChange={v => setData(d => ({ ...d, followUp: { ...d.followUp, enabled: v } }))}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Horas después de la consulta</Label>
-              <Input
-                type="number"
-                min={1}
-                max={72}
-                value={data.followUp.delayHours}
-                onChange={e => setData(d => ({ ...d, followUp: { ...d.followUp, delayHours: Number(e.target.value) } }))}
-                className="text-xs w-28"
-              />
-              <p className="text-[10px] text-muted-foreground">Recomendado: 24 horas</p>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs flex items-center gap-1.5">
-                <Star className="h-3 w-3 text-yellow-500" />
-                URL de reseña Google
-              </Label>
-              <Input
-                value={data.followUp.googleReviewUrl}
-                onChange={e => setData(d => ({ ...d, followUp: { ...d.followUp, googleReviewUrl: e.target.value } }))}
-                placeholder="https://g.page/r/..."
-                className="text-xs"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs">Mensaje de follow-up</Label>
-            <Textarea
-              rows={8}
-              value={data.followUp.template}
-              onChange={e => setData(d => ({ ...d, followUp: { ...d.followUp, template: e.target.value } }))}
-              className="font-mono text-xs"
-              placeholder="Hola {{tutor}} 👋..."
-            />
-            <div className="flex flex-wrap gap-1.5">
-              {['{{tutor}}', '{{paciente}}', '{{doctor}}', '{{reviewUrl}}'].map(v => (
-                <Badge key={v} variant="outline" className="text-[10px] font-mono cursor-pointer hover:bg-muted"
-                  onClick={() => setData(d => ({ ...d, followUp: { ...d.followUp, template: d.followUp.template + v } }))}
-                >
-                  {v}
-                </Badge>
-              ))}
-            </div>
-            <p className="text-[10px] text-muted-foreground">
-              Variables disponibles: <code>{'{{tutor}}'}</code> nombre del padre/tutor, <code>{'{{paciente}}'}</code> nombre del niño, <code>{'{{doctor}}'}</code> nombre del bot/doctor, <code>{'{{reviewUrl}}'}</code> link de Google.
-            </p>
-          </div>
-        </CardContent>
+        <CardHeader><CardTitle className="flex items-center gap-2 text-base"><Settings2 className="h-4 w-4 text-purple-500" /> Reglas del Bot (Bot Rules)</CardTitle></CardHeader>
+        <CardContent><Textarea rows={4} value={data.botRules} onChange={e => setData(d => ({ ...d, botRules: e.target.value }))} className="font-mono text-xs" /></CardContent>
       </Card>
 
-      {/* ── Card 6b: Reglas del Bot ── */}
+      {/* Preview */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Settings2 className="h-4 w-4 text-purple-500" />
-            Reglas y Políticas para el Bot
-          </CardTitle>
-          <CardDescription className="text-xs">
-            Instrucciones especiales que Sof-IA siempre seguirá. Ej: políticas de pago, excepciones de precio, restricciones de horario.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            rows={5}
-            value={data.botRules}
-            onChange={e => setData(d => ({ ...d, botRules: e.target.value }))}
-            placeholder={`Ej:\n- Solo se acepta efectivo y transferencia, NUNCA menciones tarjeta.\n- Los domingos la consulta tiene un costo adicional de $300 sobre el precio de semana.\n- Si preguntan por vacunas, aclarar que el costo de la aplicación es aparte del biológico.`}
-            className="font-mono text-xs"
-          />
-        </CardContent>
-      </Card>
-
-      {/* ── Card 7: Información Adicional ── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Info className="h-4 w-4 text-amber-500" />
-            Información Adicional
-          </CardTitle>
-          <CardDescription className="text-xs">
-            FAQs, información extra, políticas o cualquier dato que el bot deba conocer.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            rows={6}
-            value={data.extra}
-            onChange={e => setData(d => ({ ...d, extra: e.target.value }))}
-            placeholder="Ej: Si el paciente es menor de 1 mes, es considerado recién nacido y la tarifa aplica diferente..."
-            className="font-mono text-xs"
-          />
-        </CardContent>
-      </Card>
-
-      {/* ── Vista Previa ── */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base">Vista previa para el bot</CardTitle>
-              <CardDescription className="text-xs">
-                Así leerá Sof-IA la base de conocimiento cada vez que responda.
-              </CardDescription>
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowPreview(p => !p)}
-              className="gap-1.5 text-xs"
-            >
-              {showPreview ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-              {showPreview ? 'Ocultar' : 'Ver preview'}
-            </Button>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-base">Vista previa para el bot</CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => setShowPreview(p => !p)}>{showPreview ? 'Ocultar' : 'Ver preview'}</Button>
           </div>
         </CardHeader>
-        {showPreview && (
-          <CardContent>
-            <pre className="text-xs font-mono bg-gray-50 rounded-lg p-4 whitespace-pre-wrap border overflow-auto max-h-96">
-              {buildKnowledgeString(data)}
-            </pre>
-          </CardContent>
-        )}
+        {showPreview && <CardContent><pre className="text-xs font-mono bg-gray-50 p-4 border rounded-lg whitespace-pre-wrap">{buildKnowledgeString(data)}</pre></CardContent>}
       </Card>
     </div>
   );

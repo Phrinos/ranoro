@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrig
 import { FileText, Cpu, Bell, MessageSquare, Users, X, Plus, Trash2 } from 'lucide-react';
 import type { WhatsAppAgentConfig } from '../lib/types';
 import { MODEL_OPTIONS } from '../lib/constants';
-import { StickySaveBar } from './sticky-save-bar';
+
 import { cn } from '@/lib/utils';
 
 // ── Types ─────────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ export function TabPrompt({ config, setConfig, onSave, isSaving, onPurge, isPurg
 
   return (
     <div className="space-y-6">
-      <StickySaveBar onSave={onSave} isSaving={isSaving} label="Guardar Configuración" />
+
 
       {/* ── Card 1: Master Prompt ── */}
       <Card>
@@ -92,7 +92,7 @@ export function TabPrompt({ config, setConfig, onSave, isSaving, onPurge, isPurg
             value={config.customInstructions}
             onChange={e => setConfig(prev => ({ ...prev, customInstructions: e.target.value }))}
             className="font-mono text-xs leading-relaxed min-h-[500px]"
-            placeholder="Eres Sof-IA, la asistente virtual del consultorio del Dr. Pedro Carrasco Santillán..."
+            placeholder="Eres SofIA, la asistente virtual del taller mecánico Ranoro..."
           />
         </CardContent>
       </Card>

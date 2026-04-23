@@ -167,7 +167,7 @@ export default function WhatsAppPage() {
       <div className="flex items-start justify-between flex-wrap gap-4 px-1 pb-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">
-            Sof<span className="text-blue-500 font-extrabold">-IA</span> WhatsApp
+            Sof<span className="text-blue-500 font-extrabold">IA</span> WhatsApp
           </h1>
           <div className="flex items-center gap-2 flex-wrap">
             {config.whatsappPhone && (
@@ -195,29 +195,42 @@ export default function WhatsAppPage() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="border-b mb-6">
-        <nav className="flex overflow-x-auto">
-          {tabDefs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.value;
-            return (
-              <button
-                key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
-                className={cn(
-                  'flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors',
-                  isActive
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
-                )}
-              >
-                <Icon className="h-3.5 w-3.5 shrink-0" />
-                {tab.label}
-              </button>
-            );
-          })}
-        </nav>
+      {/* Sticky Tabs Bar */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b mb-6 pt-2">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
+          <nav className="flex overflow-x-auto w-full sm:w-auto">
+            {tabDefs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.value;
+              return (
+                <button
+                  key={tab.value}
+                  onClick={() => setActiveTab(tab.value)}
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors',
+                    isActive
+                      ? 'border-primary text-primary'
+                      : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </nav>
+          
+          {(activeTab === 'ia' || activeTab === 'conexion') && (
+            <button
+              onClick={handleSaveConfig}
+              disabled={isSaving}
+              className="mb-2 sm:mb-0 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {isSaving ? 'Guardando...' : 'Guardar Configuración'}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tab content */}
