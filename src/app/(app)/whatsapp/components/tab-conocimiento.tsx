@@ -177,7 +177,7 @@ export function TabConocimiento() {
 
   return (
     <div className="space-y-8 relative">
-      <div className="sticky top-20 z-20 flex justify-end">
+      <div className="sticky top-32 z-30 flex justify-end">
         <Button onClick={handleSave} disabled={isSaving} className="bg-blue-600 hover:bg-blue-700 text-white shadow-lg flex items-center gap-2">
           {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           {isSaving ? 'Guardando...' : 'Guardar Base de Conocimiento'}

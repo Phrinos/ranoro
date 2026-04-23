@@ -196,7 +196,7 @@ export default function WhatsAppPage() {
       </div>
 
       {/* Sticky Tabs Bar */}
-      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b mb-6 pt-2">
+      <div className="sticky top-14 sm:top-16 z-40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 border-b mb-6 pt-3 pb-2 -mx-4 px-4 sm:-mx-8 sm:px-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 px-1">
           <nav className="flex overflow-x-auto w-full sm:w-auto">
             {tabDefs.map((tab) => {
