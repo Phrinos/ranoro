@@ -1,0 +1,51 @@
+.next/dev/types/validator.ts(378,31): error TS2344: Type 'typeof import("/Users/phrinos/Documents/Proyectos/ranoro/src/app/api/invoices/[id]/download/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/invoices/[id]/download">'.
+  Types of property 'GET' are incompatible.
+    Type '(req: NextRequest, { params }: { params: { id: string; }; }) => Promise<NextResponse<unknown>>' is not assignable to type '(request: NextRequest, context: { params: Promise<{ id: string; }>; }) => void | Response | Promise<void | Response>'.
+      Types of parameters '__1' and 'context' are incompatible.
+        Type '{ params: Promise<{ id: string; }>; }' is not assignable to type '{ params: { id: string; }; }'.
+          Types of property 'params' are incompatible.
+            Property 'id' is missing in type 'Promise<{ id: string; }>' but required in type '{ id: string; }'.
+.next/dev/types/validator.ts(414,31): error TS2344: Type 'typeof import("/Users/phrinos/Documents/Proyectos/ranoro/src/app/api/whatsapp/webhook/route")' does not satisfy the constraint 'RouteHandlerConfig<"/api/whatsapp/webhook">'.
+  The types returned by 'POST(...)' are incompatible between these types.
+    Type 'Promise<unknown>' is not assignable to type 'void | Response | Promise<void | Response>'.
+      Type 'Promise<unknown>' is not assignable to type 'Promise<void | Response>'.
+        Type 'unknown' is not assignable to type 'void | Response'.
+src/ai/flows/billing-flow.ts(148,21): error TS2339: Property 'invoices' does not exist on type '"mock" | Facturapi'.
+  Property 'invoices' does not exist on type '"mock"'.
+src/ai/flows/billing-flow.ts(162,37): error TS2339: Property 'invoices' does not exist on type '"mock" | Facturapi'.
+  Property 'invoices' does not exist on type '"mock"'.
+src/ai/flows/billing-flow.ts(179,36): error TS2339: Property 'invoices' does not exist on type '"mock" | Facturapi'.
+  Property 'invoices' does not exist on type '"mock"'.
+src/app/(app)/agenda/components/AppointmentDialog.tsx(12,90): error TS2300: Duplicate identifier 'User'.
+src/app/(app)/agenda/components/AppointmentDialog.tsx(16,24): error TS2300: Duplicate identifier 'User'.
+src/app/(app)/agenda/components/AppointmentDialog.tsx(26,15): error TS2749: 'User' refers to a value, but is being used as a type here. Did you mean 'typeof User'?
+src/app/(app)/whatsapp/components/tab-conexion.tsx(104,42): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-conexion.tsx(112,42): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-conexion.tsx(120,42): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-conexion.tsx(184,40): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-historial.tsx(8,30): error TS2307: Cannot find module '@/lib/firebase' or its corresponding type declarations.
+src/app/(app)/whatsapp/components/tab-mensajes.tsx(108,51): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-mensajes.tsx(128,102): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-mensajes.tsx(153,106): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-mensajes.tsx(233,51): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-mensajes.tsx(264,42): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-mensajes.tsx(283,42): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-prompt.tsx(50,15): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-prompt.tsx(59,15): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-prompt.tsx(66,15): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-prompt.tsx(93,38): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-prompt.tsx(116,49): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-prompt.tsx(153,44): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-prompt.tsx(167,49): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-prompt.tsx(187,44): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-prompt.tsx(314,47): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-prompt.tsx(325,49): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-prompt.tsx(341,49): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-prompt.tsx(374,40): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/components/tab-prompt.tsx(384,40): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/app/(app)/whatsapp/lib/types.ts(12,8): error TS2307: Cannot find module '@/lib/types' or its corresponding type declarations.
+src/app/(app)/whatsapp/lib/types.ts(15,37): error TS2307: Cannot find module '@/lib/types' or its corresponding type declarations.
+src/app/(app)/whatsapp/page.tsx(8,30): error TS2307: Cannot find module '@/lib/firebase' or its corresponding type declarations.
+src/app/(app)/whatsapp/page.tsx(102,15): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/app/(app)/whatsapp/page.tsx(195,47): error TS7006: Parameter 'prev' implicitly has an 'any' type.
+src/components/shared/ServiceSheetContent.tsx(705,16): error TS2304: Cannot find name 'CalendarDays'.

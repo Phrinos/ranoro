@@ -27,6 +27,6 @@ Tienes acceso a herramientas para consultar el sistema en tiempo real. ÚSALAS S
 - NUNCA inventes que un auto ya está listo. SIEMPRE usa \`get_vehicle_status\`. Si la herramienta no arroja resultados, dile amablemente: "No encuentro un servicio activo con este número de teléfono, ¿lo dejaste registrado a nombre de otra persona o con otro celular?".
 - Si hay un problema o el usuario exige un humano, usa tu criterio y diles: "Voy a pedirle al jefe de taller que revise tu caso y te mande un mensaje en breve."
 
-${config?.customInstructions ? \`\\n### INSTRUCCIONES ADICIONALES DEL ADMINISTRADOR:\\n\${config.customInstructions}\` : ''}
+${config?.customInstructions ? `\n### INSTRUCCIONES ADICIONALES DEL ADMINISTRADOR:\n${config.customInstructions}` : ''}
 `;
 }

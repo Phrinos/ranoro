@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Search, Car, FileText, Check, CalendarIcon, Clock, AlertCircle, Edit3, User, Phone, Tag, XCircle } from "lucide-react";
+import { Loader2, Search, Car, FileText, Check, CalendarIcon, Clock, AlertCircle, Edit3, User as UserIcon, Phone, Tag, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { inventoryService } from "@/lib/services";
 import { agendaService } from "@/lib/services/agenda.service";
@@ -430,7 +430,7 @@ export function AppointmentDialog({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <Label className="text-[10px] font-bold text-amber-800/70 uppercase tracking-widest flex items-center gap-1.5"><User className="h-3 w-3" /> Nombre de Cliente</Label>
+                      <Label className="text-[10px] font-bold text-amber-800/70 uppercase tracking-widest flex items-center gap-1.5"><UserIcon className="h-3 w-3" /> Nombre de Cliente</Label>
                       <Input className="h-10 bg-white border-amber-200/50" placeholder="Nombre completo" value={tempName} onChange={e => setTempName(e.target.value)} />
                     </div>
                     <div className="space-y-1.5">

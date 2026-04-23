@@ -1,6 +1,7 @@
 /**
- * WhatsApp Module — Shared Constants
- * Configuration defaults, model options, and helpers for the workshop WhatsApp agent.
+ * SinergIA WhatsApp Module — Shared Constants
+ * Re-usable configuration defaults, tone presets, emoji options, and model lists.
+ * Extracted from page.tsx for self-contained module portability.
  */
 
 import type { WhatsAppAgentConfig, WhatsAppTemplate } from './types';
@@ -9,7 +10,7 @@ import type { WhatsAppAgentConfig, WhatsAppTemplate } from './types';
 
 export function generateApiKey(): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  let result = 'rnr_';
+  let result = 'sng_';
   for (let i = 0; i < 40; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
@@ -20,59 +21,53 @@ export function generateApiKey(): string {
 
 export const DEFAULT_CONFIG: WhatsAppAgentConfig = {
   enabled: false,
-  botName: 'Asistente Ranoro',
-  workshopName: 'Taller Ranoro',
+  botName: 'SofIA',
+  workshopName: 'Ranoro',
   defaultCountryCode: '+52',
-  baileysHost: '127.0.0.1',
+  baileysHost: '62.171.187.165',
   baileysPort: '3000',
   baileysSessionId: 'ranoro',
-  webhookSecret: 'YOUR_SECRET_KEY_HERE',
-  greetingMessage: '¡Hola! Soy el asistente virtual del taller. ¿En qué puedo ayudarte?',
+  baileysAdminUser: '',
+  baileysAdminPassword: '',
+  webhookSecret: generateApiKey(),
+  greetingMessage: '',
   tone: 'profesional-calido',
   emojiLevel: 'moderado',
   customInstructions: '',
-  outOfHoursMessage: 'En este momento el taller se encuentra cerrado. Nuestro horario es de Lunes a Viernes 8:30-18:00 y Sábados 8:30-14:00. Déjanos tu mensaje y te responderemos a primera hora.',
-  fallbackErrorMessage: 'Disculpa, tuvimos un inconveniente técnico. Por favor envía tu mensaje de nuevo.',
+  outOfHoursMessage: 'En este momento estamos fuera de horario, pero con gusto te ayudo. No te preocupes, estamos para ayudarte.',
+  fallbackErrorMessage: 'Disculpa, tuve un problema técnico. Por favor intenta de nuevo en unos minutos. 🙏',
   remindersEnabled: true,
   reminderHoursBefore: 24,
   confirmationHoursBefore: 2,
-  pollsEnabled: false,
+  pollsEnabled: true,
   messageExpirationHours: 24,
   systemPromptOverride: '',
   sessionTTLHours: 4,
   geminiModel: 'gemini-2.5-flash',
   geminiMaxRetries: 3,
-  geminiRetryDelayMs: 6000,
-  escalationEnabled: true,
-  advisorTakeoverKeyword: '#asesoren',
-  aiReturnKeyword: '#asesoroff',
-  escalationTimeoutHours: 4,
+  geminiRetryDelayMs: 10000,
+  escalationEnabled: false,
+  advisorTakeoverKeyword: '#staffon',
+  aiReturnKeyword: '#staffoff',
+  escalationTimeoutHours: 2,
   autoEscalateOnComplaint: true,
   autoEscalateOnRequest: true,
-  escalationMessage: 'Te comunico directamente con nuestro asesor de servicio. Dame unos minutos.',
-  returnMessage: 'El asesor ha finalizado la atención. Vuelvo a estar a tu disposición para cotizar servicios o agendar citas.',
+  escalationMessage: 'Te comunico con el jefe de taller. En un momento te responderán.',
+  returnMessage: 'SofIA vuelve a estar a tu servicio. ¿En qué te puedo apoyar?',
   advisorPhoneNumber: '',
+  staffMembers: [],
   knowledgeBase: '',
   whatsappPhone: '',
 };
 
 export const DEFAULT_TEMPLATES: WhatsAppTemplate = {
-  welcome: '¡Hola! Soy el asistente virtual del taller. ¿En qué puedo ayudarte? Puedo cotizarte servicios, agendar una cita o darte seguimiento a tu vehículo.',
-  reminder: 'Hola {{nombre}} 👋\n\nTe recordamos tu cita de mañana en el taller:\n📅 {{fecha}}\n🕐 {{hora}}\n🚗 {{vehiculo}}\n🔧 {{servicio}}\n\n¿Confirmas tu asistencia? Responde Sí o No.',
-  confirmation: '✅ ¡Tu cita ha sido confirmada!\n\n📅 {{fecha}}\n🕐 {{hora}}\n🚗 {{vehiculo}}\n🔧 {{servicio}}\n\n¡Te esperamos en el taller!',
-  cancellation: '❌ Tu cita del {{fecha}} a las {{hora}} ha sido cancelada.\n\nSi deseas reagendar, escríbenos o agenda desde aquí: {{link}}',
+  welcome: 'Hola Soy SinergIA el asistente de Avoria. ¿En qué puedo ayudarte?',
+  reminder: 'Hola {{nombre}} 👋\n\nTe recordamos tu cita mañana:\n📅 {{fecha}}\n🕐 {{hora}}\n📍 Área de {{area}}\n\n¿Confirmas tu asistencia? Responde Sí o No.',
+  confirmation: '✅ ¡Tu cita ha sido confirmada!\n\n📅 {{fecha}}\n🕐 {{hora}}\n📍 Área de {{area}}\n\nTe esperamos. ¡Gracias!',
+  cancellation: '❌ Tu cita del {{fecha}} a las {{hora}} ha sido cancelada.\n\nSi deseas reagendar, escríbenos.',
 };
 
-// ── Agenda: horarios del taller ────────────────────────────────────
 
-export const WORKSHOP_SCHEDULE = {
-  morningSlot: '08:30',
-  afternoonSlot: '13:30',
-  slotsPerBlock: 4,
-  // Lunes a Viernes: mañana + tarde. Sábado: solo mañana. Domingo: cerrado.
-  workDays: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'] as const,
-  saturdayAfternoon: false,
-} as const;
 
 // ── Gemini Model Options ───────────────────────────────────────────
 

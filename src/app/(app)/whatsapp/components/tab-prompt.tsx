@@ -1,14 +1,27 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { FileText, Cpu, Trash2, ShieldAlert, Calendar, Wrench } from 'lucide-react';
-import type { WhatsAppAgentConfig } from '../lib/types';
-import { MODEL_OPTIONS, WORKSHOP_SCHEDULE } from '../lib/constants';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FileText, Cpu, Bell, MessageSquare, Users, X, Plus, Trash2 } from 'lucide-react';
+import type { WhatsAppAgentConfig } from '../lib/types';
+import { MODEL_OPTIONS } from '../lib/constants';
+import { StickySaveBar } from './sticky-save-bar';
+import { cn } from '@/lib/utils';
+
+// ── Types ─────────────────────────────────────────────────────────────
+
+interface StaffMember {
+  uid: string;
+  name: string;
+  notifyEscalation?: boolean;
+}
 
 interface TabPromptProps {
   config: WhatsAppAgentConfig;
@@ -19,19 +32,59 @@ interface TabPromptProps {
   isPurging: boolean;
 }
 
+// ── Component ─────────────────────────────────────────────────────────
+
 export function TabPrompt({ config, setConfig, onSave, isSaving, onPurge, isPurging }: TabPromptProps) {
+  const [newMemberUid, setNewMemberUid] = useState('');
+  const [newMemberName, setNewMemberName] = useState('');
+
+  const staffMembers: StaffMember[] = Array.isArray((config as any).staffMembers)
+    ? (config as any).staffMembers
+    : [];
+
+  const addStaffMember = useCallback(() => {
+    const uid = newMemberUid.trim();
+    const name = newMemberName.trim();
+    if (!uid || !name) return;
+    if (staffMembers.some(m => m.uid === uid)) return;
+    setConfig(prev => ({
+      ...prev,
+      staffMembers: [...staffMembers, { uid, name, notifyEscalation: true }],
+    } as any));
+    setNewMemberUid('');
+    setNewMemberName('');
+  }, [newMemberUid, newMemberName, staffMembers, setConfig]);
+
+  const removeStaffMember = (uid: string) => {
+    setConfig(prev => ({
+      ...prev,
+      staffMembers: staffMembers.filter(m => m.uid !== uid),
+    } as any));
+  };
+
+  const toggleNotify = (uid: string) => {
+    setConfig(prev => ({
+      ...prev,
+      staffMembers: staffMembers.map(m =>
+        m.uid === uid ? { ...m, notifyEscalation: !m.notifyEscalation } : m
+      ),
+    } as any));
+  };
+
   return (
     <div className="space-y-6">
+      <StickySaveBar onSave={onSave} isSaving={isSaving} label="Guardar Configuración" />
 
-      {/* Prompt Configuration */}
-      <Card className="bg-white rounded-2xl shadow-xs border border-slate-200">
+      {/* ── Card 1: Master Prompt ── */}
+      <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <FileText className="h-5 w-5 text-blue-500" />
-            Prompt del Sistema (IA)
+            Master Prompt (Personalidad y Flujos)
           </CardTitle>
-          <CardDescription>
-            Instrucciones maestras. Define la personalidad, reglas de negocio, servicios que ofrece el taller y comportamiento de escalamiento.
+          <CardDescription className="text-xs">
+            Define aquí la personalidad, reglas de comportamiento, flujos de conversación y límites de Sof-IA.
+            Los datos del consultorio (precios, ubicación) se configuran en la pestaña "Base de Conocimiento".
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -39,85 +92,28 @@ export function TabPrompt({ config, setConfig, onSave, isSaving, onPurge, isPurg
             value={config.customInstructions}
             onChange={e => setConfig(prev => ({ ...prev, customInstructions: e.target.value }))}
             className="font-mono text-xs leading-relaxed min-h-[500px]"
-            placeholder={`Eres el asistente virtual del taller mecánico. Tu trabajo es:\n1. Cotizar servicios usando la lista de precios del taller\n2. Agendar citas en los horarios disponibles (8:30 AM y 1:30 PM)\n3. Enviar links de seguimiento al cliente\n4. Cancelar y reagendar citas moviendo la existente\n5. Responder dudas sobre servicios y precios`}
+            placeholder="Eres Sof-IA, la asistente virtual del consultorio del Dr. Pedro Carrasco Santillán..."
           />
         </CardContent>
       </Card>
 
-      {/* Workshop Schedule Info */}
-      <Card className="bg-white rounded-2xl shadow-xs border border-slate-200">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-green-500" />
-            Agenda del Taller
-          </CardTitle>
-          <CardDescription>
-            Configuración de los bloques de citas disponibles. El bot agendará dentro de estos horarios.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Morning block */}
-            <div className="rounded-xl border-2 border-blue-200 bg-blue-50/50 p-5 space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <Wrench className="h-4 w-4 text-blue-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-sm">Bloque Matutino</p>
-                  <p className="text-xs text-muted-foreground">Lunes a Sábado</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl font-bold text-blue-700">{WORKSHOP_SCHEDULE.morningSlot}</span>
-                <span className="text-sm text-muted-foreground">— {WORKSHOP_SCHEDULE.slotsPerBlock} espacios</span>
-              </div>
-            </div>
-
-            {/* Afternoon block */}
-            <div className="rounded-xl border-2 border-amber-200 bg-amber-50/50 p-5 space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center">
-                  <Wrench className="h-4 w-4 text-amber-600" />
-                </div>
-                <div>
-                  <p className="font-semibold text-sm">Bloque Vespertino</p>
-                  <p className="text-xs text-muted-foreground">Lunes a Viernes (Sábado cerrado)</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-2xl font-bold text-amber-700">{WORKSHOP_SCHEDULE.afternoonSlot}</span>
-                <span className="text-sm text-muted-foreground">— {WORKSHOP_SCHEDULE.slotsPerBlock} espacios</span>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-xs text-muted-foreground">
-            <strong>Domingos:</strong> Cerrado. <strong>Sábados:</strong> Solo bloque matutino ({WORKSHOP_SCHEDULE.morningSlot}).
-            Total diario Lun-Vie: {WORKSHOP_SCHEDULE.slotsPerBlock * 2} vehículos. Sábados: {WORKSHOP_SCHEDULE.slotsPerBlock} vehículos.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Model & AI Settings */}
-      <Card className="bg-white rounded-2xl shadow-xs border border-slate-200">
+      {/* ── Card 2: AI Settings ── */}
+      <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <Cpu className="h-5 w-5 text-violet-500" />
             Configuración de IA
           </CardTitle>
-          <CardDescription>
-            Opciones del modelo y memoria del asistente.
-          </CardDescription>
+          <CardDescription className="text-xs">Modelo y parámetros de memoria.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6 pt-2">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-base font-medium">Modelo de Gemini</Label>
+                <Label className="text-sm font-medium">Modelo de Gemini</Label>
                 <Select
-                  value={config.geminiModel || 'gemini-2.5-flash'}
-                  onValueChange={(v) => setConfig(p => ({ ...p, geminiModel: v }))}
+                  value={config.geminiModel || 'gemini-2.0-flash-lite'}
+                  onValueChange={v => setConfig(p => ({ ...p, geminiModel: v }))}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecciona un modelo" />
@@ -147,32 +143,31 @@ export function TabPrompt({ config, setConfig, onSave, isSaving, onPurge, isPurg
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground mt-1">El modelo Flash es el más equilibrado para chats rápidos.</p>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-base font-medium">Memoria de Conversación (TTL)</Label>
+                <Label className="text-sm font-medium">Memoria de sesión (horas)</Label>
                 <Input
-                  type="number"
-                  min={1}
-                  max={48}
+                  type="number" min={1} max={48}
                   value={config.sessionTTLHours || 4}
                   onChange={e => setConfig(p => ({ ...p, sessionTTLHours: Number(e.target.value) || 4 }))}
                   className="w-[120px]"
                 />
-                <p className="text-xs text-muted-foreground">Cuánto tiempo la IA recordará la plática de un cliente antes de reiniciar el contexto.</p>
+                <p className="text-xs text-muted-foreground">
+                  Tiempo antes de que el bot "olvide" la conversación y empiece de nuevo.
+                </p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-base font-medium">Reintentos por Error 503</Label>
+                <Label className="text-sm font-medium">Reintentos por error 503</Label>
                 <Select
                   value={String(config.geminiMaxRetries || 3)}
-                  onValueChange={(v) => setConfig(p => ({ ...p, geminiMaxRetries: Number(v) }))}
+                  onValueChange={v => setConfig(p => ({ ...p, geminiMaxRetries: Number(v) }))}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Selecciona reintentos" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="0">0 (Sin reintentos)</SelectItem>
@@ -182,54 +177,217 @@ export function TabPrompt({ config, setConfig, onSave, isSaving, onPurge, isPurg
                     <SelectItem value="5">5 reintentos</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">Cuántas veces reintentar si Gemini está saturado o devuelve un 503.</p>
               </div>
 
               <div className="space-y-2">
-                <Label className="text-base font-medium">Espera entre Reintentos (Segundos)</Label>
+                <Label className="text-sm font-medium">Espera entre reintentos (seg)</Label>
                 <Input
-                  type="number"
-                  min={1}
-                  max={30}
+                  type="number" min={1} max={30}
                   value={(config.geminiRetryDelayMs || 10000) / 1000}
-                  onChange={e => {
-                    const secs = Number(e.target.value) || 10;
-                    setConfig(p => ({ ...p, geminiRetryDelayMs: secs * 1000 }));
-                  }}
+                  onChange={e => setConfig(p => ({ ...p, geminiRetryDelayMs: Number(e.target.value) * 1000 }))}
                   className="w-[120px]"
                 />
-                <p className="text-xs text-muted-foreground">Tiempo de espera antes de volver a llamar a la API tras un error.</p>
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Danger Zone */}
-      <Card className="bg-white rounded-2xl shadow-xs border-red-200">
-        <CardHeader className="pb-3 bg-red-50/30">
-          <CardTitle className="text-base flex items-center gap-2 text-red-600">
-            <ShieldAlert className="h-5 w-5" />
-            Zona de Peligro
+      {/* ── Card 3: Staff Members ── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Users className="h-5 w-5 text-emerald-500" />
+            Equipo de Staff
           </CardTitle>
+          <CardDescription className="text-xs">
+            Miembros con acceso de staff al bot. Usa el UID de WhatsApp (Baileys) — no el número de teléfono.
+            Los miembros con notificación activada reciben alertas cuando un paciente solicita asistencia humana.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="pt-4">
-          <div className="flex flex-col gap-2">
-            <Label className="text-base font-medium text-red-800">Purgar Conversaciones</Label>
-            <p className="text-xs text-muted-foreground">Elimina TODOS los historiales de chat activos. Útil si la IA se queda atascada o al hacer un reset.</p>
-            <Button
-              variant="destructive"
-              onClick={onPurge}
-              disabled={isPurging}
-              className="w-fit mt-2"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              {isPurging ? 'Purgando...' : 'Purgar Conversaciones'}
-            </Button>
+        <CardContent className="space-y-4">
+          {/* Member list */}
+          <div className="space-y-2">
+            {staffMembers.length === 0 ? (
+              <p className="text-xs text-muted-foreground italic text-center py-3 border border-dashed rounded-lg">
+                No hay miembros de staff configurados.
+              </p>
+            ) : (
+              staffMembers.map(member => (
+                <div
+                  key={member.uid}
+                  className="flex items-center gap-3 rounded-lg border p-3 bg-gray-50/50"
+                >
+                  {/* Avatar */}
+                  <div className="h-9 w-9 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-emerald-700">
+                      {member.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{member.name}</p>
+                    <p className="text-xs font-mono text-muted-foreground truncate">{member.uid}</p>
+                  </div>
+
+                  {/* Escalation toggle */}
+                  <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                    <Label className="text-[10px] text-muted-foreground">Notif.</Label>
+                    <Switch
+                      checked={member.notifyEscalation !== false}
+                      onCheckedChange={() => toggleNotify(member.uid)}
+                      className={cn(member.notifyEscalation !== false ? 'data-[state=checked]:bg-green-500' : '')}
+                    />
+                  </div>
+
+                  {/* Remove */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-red-500 flex-shrink-0"
+                    onClick={() => removeStaffMember(member.uid)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Add member form */}
+          <div className="rounded-lg border p-3 space-y-3 bg-white">
+            <Label className="text-xs font-medium">Añadir miembro</Label>
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
+              <Input
+                placeholder="UID de Baileys (ej: 235776675729492)"
+                value={newMemberUid}
+                onChange={e => setNewMemberUid(e.target.value.replace(/\D/g, ''))}
+                onKeyDown={e => e.key === 'Enter' && addStaffMember()}
+                className="font-mono text-xs"
+              />
+              <Input
+                placeholder="Nombre del miembro"
+                value={newMemberName}
+                onChange={e => setNewMemberName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addStaffMember()}
+                className="text-xs"
+              />
+              <Button
+                variant="secondary"
+                onClick={addStaffMember}
+                disabled={!newMemberUid.trim() || !newMemberName.trim()}
+                className="gap-1.5 text-xs"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Añadir
+              </Button>
+            </div>
+            <p className="text-[10px] text-muted-foreground">
+              El UID de Baileys es el identificador numérico que usa WhatsApp internamente (no el número de teléfono).
+            </p>
           </div>
         </CardContent>
       </Card>
 
+      {/* ── Card 4: Recordatorios ── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Bell className="h-5 w-5 text-amber-500" />
+            Recordatorios Automáticos
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Configuración del timing de recordatorios. Los mensajes se definen en el Master Prompt.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-medium">Recordatorios activados</Label>
+              <p className="text-xs text-muted-foreground">
+                El bot enviará mensajes automáticos antes de cada cita.
+              </p>
+            </div>
+            <Switch
+              checked={config.remindersEnabled}
+              onCheckedChange={v => setConfig(p => ({ ...p, remindersEnabled: v }))}
+              className={cn(config.remindersEnabled ? 'data-[state=checked]:bg-green-500' : '')}
+            />
+          </div>
+
+          {config.remindersEnabled && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-lg border p-3 space-y-2">
+                <Label className="text-xs font-medium">Recordatorio — Anticipación</Label>
+                <Select
+                  value={String(config.reminderHoursBefore || 24)}
+                  onValueChange={v => setConfig(p => ({ ...p, reminderHoursBefore: Number(v) }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="12">12 horas antes</SelectItem>
+                    <SelectItem value="24">24 horas antes (1 día)</SelectItem>
+                    <SelectItem value="48">48 horas antes (2 días)</SelectItem>
+                    <SelectItem value="72">72 horas antes (3 días)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="rounded-lg border p-3 space-y-2">
+                <Label className="text-xs font-medium">Confirmación — Anticipación</Label>
+                <Select
+                  value={String(config.confirmationHoursBefore || 2)}
+                  onValueChange={v => setConfig(p => ({ ...p, confirmationHoursBefore: Number(v) }))}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 hora antes</SelectItem>
+                    <SelectItem value="2">2 horas antes</SelectItem>
+                    <SelectItem value="3">3 horas antes</SelectItem>
+                    <SelectItem value="4">4 horas antes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ── Card 5: Mensajes del Sistema ── */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-indigo-500" />
+            Mensajes del Sistema
+          </CardTitle>
+          <CardDescription className="text-xs">
+            Mensajes especiales que el bot envía automáticamente en situaciones específicas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Mensaje fuera de horario</Label>
+            <Textarea
+              rows={4}
+              value={config.outOfHoursMessage || ''}
+              onChange={e => setConfig(p => ({ ...p, outOfHoursMessage: e.target.value }))}
+              placeholder="Lineamiento para cuando contacten fuera de horario."
+              className="text-xs"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Mensaje de error técnico</Label>
+            <Textarea
+              rows={4}
+              value={config.fallbackErrorMessage || ''}
+              onChange={e => setConfig(p => ({ ...p, fallbackErrorMessage: e.target.value }))}
+              placeholder="Se envía si el servidor falla. Nunca expone errores técnicos reales."
+              className="text-xs"
+            />
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

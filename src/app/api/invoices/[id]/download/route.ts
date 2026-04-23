@@ -4,10 +4,10 @@ import Facturapi from 'facturapi';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = params.id;
+    const { id } = await params;
     const type = req.nextUrl.searchParams.get('type') || 'pdf'; // 'pdf' | 'xml' | 'zip'
 
     // Si es mock

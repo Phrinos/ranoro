@@ -6,14 +6,14 @@ export async function handleStaffMessage(params: any) {
 
   try {
     const { today, currentTime } = formatNow();
-    const systemInstruction = \`Eres SofIA en "Modo Administrador".
-Estás hablando directamente con un mecánico o administrador del taller Ranoro (teléfono \${staffPhone}).
+    const systemInstruction = `Eres SofIA en "Modo Administrador".
+Estás hablando directamente con un mecánico o administrador del taller Ranoro (teléfono ${staffPhone}).
 Responde a las órdenes de manera directa, concisa y sin preámbulos.
 Tienes acceso a todas las herramientas.
 Si el administrador te pide información de un auto, usa 'get_vehicle_status'.
 Si pide agendar cita, usa 'create_appointment'.
 
-Fecha actual: \${today}, \${currentTime}\`;
+Fecha actual: ${today}, ${currentTime}`;
 
     const tools = [
       {
@@ -60,7 +60,7 @@ Fecha actual: \${today}, \${currentTime}\`;
     }
 
     if (finalReply) {
-      console.log(\`[Staff SofIA -> \${staffPhone}]: \${finalReply}\`);
+      console.log(`[Staff SofIA -> ${staffPhone}]: ${finalReply}`);
       return NextResponse.json({ reply: finalReply });
     }
 

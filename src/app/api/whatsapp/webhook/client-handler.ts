@@ -25,7 +25,7 @@ export async function handleClientMessage(params: any) {
   }, { merge: true });
 
   // Read-before-respond logic
-  return new Promise((resolve) => {
+  return new Promise<NextResponse>((resolve) => {
     if (pendingMessages.has(conversationId)) {
       const pending = pendingMessages.get(conversationId)!;
       clearTimeout(pending.timer);
@@ -53,7 +53,7 @@ async function processAggregatedMessage(conversationId: string, params: any, par
     }
 
     const { today, currentTime } = formatNow();
-    const systemInstruction = getSystemPrompt(config) + \`\\n\\nContexto actual: Hoy es \${today}, la hora actual es \${currentTime}.\`;
+    const systemInstruction = getSystemPrompt(config) + `\n\nContexto actual: Hoy es ${today}, la hora actual es ${currentTime}.`;
 
     // Tool declarations
     const tools = [
@@ -109,7 +109,7 @@ async function processAggregatedMessage(conversationId: string, params: any, par
       await adminDb.collection('whatsapp-conversations').doc(conversationId).collection('messages').add({
         role: 'assistant', content: finalReply, timestamp: FieldValue.serverTimestamp()
       });
-      console.log(\`[SofIA -> \${conversationId}]: \${finalReply.substring(0, 100)}...\`);
+      console.log(`[SofIA -> ${conversationId}]: ${finalReply.substring(0, 100)}...`);
       resolve(NextResponse.json({ reply: finalReply }));
     } else {
       resolve(NextResponse.json({ reply: null }));

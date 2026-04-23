@@ -145,7 +145,7 @@ export async function cancelInvoice(invoiceId: string): Promise<{ success: boole
     const facturapi = await getFacturapiInstance();
     if (!facturapi) throw new Error('Credenciales de Facturapi no configuradas.');
 
-    await facturapi.invoices.cancel(invoiceId, { motive: '02' as any }); // '02' Comprobante emitido con errores sin relacion
+    await (facturapi as any).invoices.cancel(invoiceId, { motive: '02' as any }); // '02' Comprobante emitido con errores sin relacion
     return { success: true };
   } catch (e: any) {
     console.error('Cancelación fallida:', e.message);
@@ -159,7 +159,7 @@ export async function getInvoicePdfUrl(invoiceId: string): Promise<{ success: bo
     if (!facturapi) throw new Error('Credenciales no configuradas.');
 
     // Facturapi provides download URLs in the API but also a `verification_url`
-    const invoice = await facturapi.invoices.retrieve(invoiceId);
+    const invoice = await (facturapi as any).invoices.retrieve(invoiceId);
     if (!invoice) throw new Error('Factura no encontrada.');
 
     // Alternatively, Facturapi allows downloading PDF directly via facturapi.invoices.downloadPdf(invoiceId)
@@ -176,7 +176,7 @@ export async function getInvoices(): Promise<{ data: any[], error?: string, tota
     const facturapi = await getFacturapiInstance();
     if (!facturapi) return { data: [], error: "No se han configurado las credenciales de Facturapi." };
     
-    const result = await facturapi.invoices.list();
+    const result = await (facturapi as any).invoices.list();
 
     return {
       data: result.data || [], 

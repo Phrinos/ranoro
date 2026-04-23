@@ -5,23 +5,24 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { db } from '@/lib/firebaseClient';
-import { collection, doc, getDoc, setDoc, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { Button } from '@/components/ui/button';
-import { Loader2, Phone, MessageCircle, Cpu, Server, MessageSquare, FileText, Save } from 'lucide-react';
+import { db as firestore } from '@/lib/firebaseClient';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { Loader2, Phone, MessageCircle, Cpu, Server, FileText, BookOpen, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { DEFAULT_CONFIG, DEFAULT_TEMPLATES, generateApiKey } from './lib/constants';
-import type { WhatsAppAgentConfig, WhatsAppTemplate } from './lib/types';
+import { DEFAULT_CONFIG, generateApiKey } from './lib/constants';
+import type { WhatsAppAgentConfig } from './lib/types';
 
 // ── Tab components ─────────────────────────────────────────────────
 import { TabConexion } from './components/tab-conexion';
-import { TabMensajes } from './components/tab-mensajes';
 import { TabPrompt } from './components/tab-prompt';
+import { TabConocimiento } from './components/tab-conocimiento';
+import { TabHistorial } from './components/tab-historial';
 
 // ── Component ──────────────────────────────────────────────────────
 
 export default function WhatsAppPage() {
   const { toast } = useToast();
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isPurging, setIsPurging] = useState(false);
@@ -29,28 +30,22 @@ export default function WhatsAppPage() {
   const [copiedApiKey, setCopiedApiKey] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'connected' | 'error'>('idle');
   const [config, setConfig] = useState<WhatsAppAgentConfig>(DEFAULT_CONFIG);
-  const [templates, setTemplates] = useState<WhatsAppTemplate>(DEFAULT_TEMPLATES);
-  const [conversations, setConversations] = useState<any[]>([]);
+  const [conversationCount, setConversationCount] = useState(0);
   const [activeTab, setActiveTab] = useState('ia');
 
   // ── Data Loading ────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!db) return;
+    if (!firestore) return;
     let cancelled = false;
 
     const load = async () => {
       try {
-        const [configSnap, templateSnap] = await Promise.all([
-          getDoc(doc(db, 'settings', 'whatsapp-agent')),
-          getDoc(doc(db, 'settings', 'whatsapp-templates')),
-        ]);
+        const configSnap = await getDoc(doc(firestore, 'settings', 'whatsapp-agent'));
         if (!cancelled) {
           if (configSnap.exists()) {
-            setConfig({ ...DEFAULT_CONFIG, ...configSnap.data() as WhatsAppAgentConfig });
-          }
-          if (templateSnap.exists()) {
-            setTemplates({ ...DEFAULT_TEMPLATES, ...templateSnap.data() as WhatsAppTemplate });
+            const data = configSnap.data() as WhatsAppAgentConfig;
+            setConfig({ ...DEFAULT_CONFIG, ...data });
           }
           setIsLoading(false);
         }
@@ -62,31 +57,15 @@ export default function WhatsAppPage() {
 
     load();
     return () => { cancelled = true; };
-  }, []);
-
-  // Live conversations listener
-  useEffect(() => {
-    if (!db) return;
-    const q = query(
-      collection(db, 'whatsapp-conversations'),
-      orderBy('lastMessageAt', 'desc'),
-      limit(20)
-    );
-    const unsub = onSnapshot(q, (snap) => {
-      setConversations(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }, (err) => {
-      console.error('Error listening to conversations:', err);
-    });
-    return unsub;
-  }, []);
+  }, [firestore]);
 
   // ── Action Handlers ─────────────────────────────────────────────
 
   const handleSaveConfig = useCallback(async () => {
-    if (!db) return;
+    if (!firestore) return;
     setIsSaving(true);
     try {
-      await setDoc(doc(db, 'settings', 'whatsapp-agent'), {
+      await setDoc(doc(firestore, 'settings', 'whatsapp-agent'), {
         ...config,
         updatedAt: new Date(),
       });
@@ -96,23 +75,7 @@ export default function WhatsAppPage() {
     } finally {
       setIsSaving(false);
     }
-  }, [config, toast]);
-
-  const handleSaveTemplates = useCallback(async () => {
-    if (!db) return;
-    setIsSaving(true);
-    try {
-      await setDoc(doc(db, 'settings', 'whatsapp-templates'), {
-        ...templates,
-        updatedAt: new Date(),
-      });
-      toast({ title: 'Plantillas Guardadas', description: 'Los mensajes han sido actualizados.' });
-    } catch (err: any) {
-      toast({ title: 'Error', description: err.message, variant: 'destructive' });
-    } finally {
-      setIsSaving(false);
-    }
-  }, [templates, toast]);
+  }, [firestore, config, toast]);
 
   const webhookUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/api/whatsapp/webhook`
@@ -142,11 +105,7 @@ export default function WhatsAppPage() {
     try {
       const host = `${config.baileysHost}:${config.baileysPort}`;
       const res = await fetch(`/api/whatsapp/test-connection?host=${encodeURIComponent(host)}`, {
-        headers: { 
-          'x-api-key': config.webhookSecret,
-          'x-baileys-user': config.baileysAdminUser || 'ranoro',
-          'x-baileys-password': config.baileysAdminPassword || ''
-        },
+        headers: { 'x-api-key': config.webhookSecret },
         signal: AbortSignal.timeout(5000),
       });
       const data = await res.json().catch(() => ({}));
@@ -163,7 +122,7 @@ export default function WhatsAppPage() {
       toast({ title: 'Sin Conexión', description: 'No se pudo conectar al servidor Baileys. Verifica IP y puerto.', variant: 'destructive' });
     }
     setTimeout(() => setConnectionStatus('idle'), 8000);
-  }, [config.baileysHost, config.baileysPort, config.webhookSecret, config.baileysAdminUser, config.baileysAdminPassword, toast]);
+  }, [config.baileysHost, config.baileysPort, config.webhookSecret, toast]);
 
   const handlePurge = useCallback(async () => {
     setIsPurging(true);
@@ -196,9 +155,10 @@ export default function WhatsAppPage() {
   }
 
   const tabDefs = [
-    { value: 'ia',         label: 'Inteligencia Artificial', icon: FileText },
-    { value: 'mensajes',   label: 'Mensajes',                icon: MessageSquare },
-    { value: 'conexion',   label: 'Conexión',                icon: Server },
+    { value: 'ia',           label: 'Bot IA',              icon: FileText },
+    { value: 'conocimiento', label: 'Base de Conocimiento', icon: BookOpen },
+    { value: 'historial',    label: 'Historial',           icon: History },
+    { value: 'conexion',     label: 'Conexión',            icon: Server },
   ];
 
   return (
@@ -207,12 +167,9 @@ export default function WhatsAppPage() {
       <div className="flex items-start justify-between flex-wrap gap-4 px-1 pb-4">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight">
-            WhatsApp Bot
+            Sof<span className="text-blue-500 font-extrabold">-IA</span> WhatsApp
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Configura el agente de mensajería inteligente del taller.
-          </p>
-          <div className="flex items-center gap-2 flex-wrap mt-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {config.whatsappPhone && (
               <Badge variant="outline" className="gap-1.5 text-xs font-mono py-0.5 px-2">
                 <Phone className="h-3 w-3 text-green-500" />
@@ -221,11 +178,7 @@ export default function WhatsAppPage() {
             )}
             <Badge variant="secondary" className="gap-1.5 text-xs py-0.5 px-2">
               <Cpu className="h-3 w-3" />
-              {config.geminiModel || 'gemini-2.5-flash'}
-            </Badge>
-            <Badge variant="secondary" className="gap-1.5 text-xs py-0.5 px-2">
-              <MessageCircle className="h-3 w-3" />
-              {conversations.length} conversaciones
+              {config.geminiModel || 'gemini-2.0-flash-lite'}
             </Badge>
           </div>
         </div>
@@ -242,69 +195,63 @@ export default function WhatsAppPage() {
         </div>
       </div>
 
-      {/* Sticky Tabs Bar */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-md pt-4 pb-2 mb-6 border-b -px-4 sm:px-0">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <nav className="flex overflow-x-auto gap-2.5 bg-transparent p-1 border-0 h-auto w-full no-scrollbar justify-start mb-2">
-            {tabDefs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.value;
-              return (
-                <button
-                  key={tab.value}
-                  onClick={() => setActiveTab(tab.value)}
-                  className={cn(
-                    'flex h-15 min-w-[120px] flex-col justify-center items-center gap-1.5 rounded-2xl border transition-all shadow-none px-4 overflow-hidden group',
-                    isActive
-                      ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                      : 'bg-white text-slate-500 border-slate-200 hover:bg-primary/5 hover:text-primary hover:border-primary/40'
-                  )}
-                >
-                  <Icon className={cn("h-5 w-5 shrink-0 transition-transform duration-300 group-hover:scale-110", isActive && "fill-white/10 drop-shadow-xs")} />
-                  <span className="text-[10px] sm:text-xs font-bold leading-none tracking-tight">{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-          
-          <Button 
-            onClick={async () => {
-              if (activeTab === 'mensajes') {
-                 await handleSaveTemplates();
-                 await handleSaveConfig();
-              } else {
-                 await handleSaveConfig();
-              }
-            }}
-            disabled={isSaving}
-            className="w-full sm:w-auto gap-2 rounded-full px-6 shadow-xs shrink-0 mb-2 sm:mb-0"
-          >
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-          </Button>
-        </div>
+      {/* Tabs */}
+      <div className="border-b mb-6">
+        <nav className="flex overflow-x-auto">
+          {tabDefs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.value;
+            return (
+              <button
+                key={tab.value}
+                onClick={() => setActiveTab(tab.value)}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors',
+                  isActive
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/30'
+                )}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+                {tab.label}
+              </button>
+            );
+          })}
+        </nav>
       </div>
 
       {/* Tab content */}
       <div>
         {activeTab === 'ia' && (
-          <TabPrompt config={config} setConfig={setConfig} onSave={handleSaveConfig} isSaving={isSaving} onPurge={handlePurge} isPurging={isPurging} />
-        )}
-        {activeTab === 'mensajes' && (
-          <TabMensajes
-            templates={templates} setTemplates={setTemplates}
-            config={config} setConfig={setConfig}
-            onSaveTemplates={handleSaveTemplates} onSaveConfig={handleSaveConfig}
+          <TabPrompt
+            config={config}
+            setConfig={setConfig}
+            onSave={handleSaveConfig}
             isSaving={isSaving}
+            onPurge={handlePurge}
+            isPurging={isPurging}
           />
+        )}
+        {activeTab === 'conocimiento' && (
+          <TabConocimiento />
+        )}
+        {activeTab === 'historial' && (
+          <TabHistorial config={config} />
         )}
         {activeTab === 'conexion' && (
           <TabConexion
-            config={config} setConfig={setConfig} onSave={handleSaveConfig} isSaving={isSaving}
-            conversations={conversations} webhookUrl={webhookUrl}
-            copiedWebhook={copiedWebhook} copiedApiKey={copiedApiKey}
-            onCopyWebhook={handleCopyWebhook} onCopyApiKey={handleCopyApiKey}
-            onRegenerateKey={handleRegenerateKey} connectionStatus={connectionStatus}
+            config={config}
+            setConfig={setConfig}
+            onSave={handleSaveConfig}
+            isSaving={isSaving}
+            conversations={[]}
+            webhookUrl={webhookUrl}
+            copiedWebhook={copiedWebhook}
+            copiedApiKey={copiedApiKey}
+            onCopyWebhook={handleCopyWebhook}
+            onCopyApiKey={handleCopyApiKey}
+            onRegenerateKey={handleRegenerateKey}
+            connectionStatus={connectionStatus}
             onTestConnection={handleTestConnection}
           />
         )}
