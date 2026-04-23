@@ -20,7 +20,7 @@ import {
 
 // ── Types ─────────────────────────────────────────────────────────────
 
-interface LinkedPatient { id: string; name: string; }
+interface LinkedClient { id: string; name: string; }
 
 interface Conversation {
   id: string;
@@ -30,7 +30,7 @@ interface Conversation {
   messageCount?: number;
   humanTakeover?: boolean;
   needsAttention?: boolean;
-  linkedPatients?: LinkedPatient[];
+  linkedClients?: LinkedClient[];
 }
 
 interface ChatMessage {
@@ -58,11 +58,11 @@ function relativeTime(ts: any): string {
 // ── Chat Panel ────────────────────────────────────────────────────────
 
 function ChatPanel({
-  conversation, onClose, onLinkPatient,
+  conversation, onClose, onLinkClient,
 }: {
   conversation: Conversation;
   onClose: () => void;
-  onLinkPatient: (conv: Conversation) => void;
+  onLinkClient: (conv: Conversation) => void;
 }) {
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -95,9 +95,9 @@ function ChatPanel({
         <div className="min-w-0">
           <p className="font-semibold text-sm truncate">{conversation.pushName || 'Desconocido'}</p>
           <p className="text-[10px] text-muted-foreground font-mono truncate">{conversation.id}</p>
-          {conversation.linkedPatients && conversation.linkedPatients.length > 0 && (
+          {conversation.linkedClients && conversation.linkedClients.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
-              {conversation.linkedPatients.map(p => (
+              {conversation.linkedClients.map(p => (
                 <Badge key={p.id} variant="secondary" className="text-[10px] py-0">👶 {p.name}</Badge>
               ))}
             </div>
@@ -105,7 +105,7 @@ function ChatPanel({
         </div>
         <div className="flex gap-1.5 flex-shrink-0 ml-2">
           <Button variant="outline" size="sm" className="gap-1 text-xs h-7"
-            onClick={() => onLinkPatient(conversation)}>
+            onClick={() => onLinkClient(conversation)}>
             <Link2 className="h-3 w-3" /> Vincular
           </Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
@@ -158,9 +158,9 @@ function ChatPanel({
   );
 }
 
-// ── Patient Linker Modal ───────────────────────────────────────────────
+// ── Client Linker Modal ───────────────────────────────────────────────
 
-function PatientLinker({
+function ClientLinker({
   conversation, onClose, onLinked,
 }: {
   conversation: Conversation;
@@ -172,15 +172,15 @@ function PatientLinker({
   const [results, setResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isLinking, setIsLinking] = useState<string | null>(null);
-  const [linked, setLinked] = useState<LinkedPatient[]>(conversation.linkedPatients || []);
+  const [linked, setLinked] = useState<LinkedClient[]>(conversation.linkedClients || []);
 
-  // Search patients — no orderBy to avoid index requirement
+  // Search clients — no orderBy to avoid index requirement
   const doSearch = useCallback(async (q: string) => {
     if (q.trim().length < 2) { setResults([]); return; }
     setIsSearching(true);
     try {
-      // Fetch all patients and filter client-side (small collection, <1000)
-      const snap = await getDocs(collection(firestore, 'patients'));
+      // Fetch all clients and filter client-side (small collection, <1000)
+      const snap = await getDocs(collection(firestore, 'clients'));
       const qLower = q.toLowerCase();
       const matched = snap.docs
         .map(d => ({ id: d.id, ...(d.data() as any) }))
@@ -194,7 +194,7 @@ function PatientLinker({
         .slice(0, 10);
       setResults(matched);
     } catch (e) {
-      console.error('Patient search error:', e);
+      console.error('Client search error:', e);
     } finally {
       setIsSearching(false);
     }
@@ -205,36 +205,36 @@ function PatientLinker({
     return () => clearTimeout(t);
   }, [search, doSearch]);
 
-  const linkPatient = async (patient: any) => {
+  const linkClient = async (client: any) => {
     if (linked.length >= 6) return;
-    const patientName = patient.name || [patient.firstName, patient.lastName].filter(Boolean).join(' ') || patient.id;
-    setIsLinking(patient.id);
+    const clientName = client.name || [client.firstName, client.lastName].filter(Boolean).join(' ') || client.id;
+    setIsLinking(client.id);
     try {
-      const res = await fetch(`/api/whatsapp/conversations/${conversation.id}/link-patient`, {
+      const res = await fetch(`/api/whatsapp/conversations/${conversation.id}/link-client`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ patientId: patient.id, patientName }),
+        body: JSON.stringify({ clientId: client.id, clientName }),
       });
       const d = await res.json();
       if (res.ok) {
-        setLinked(d.linkedPatients || [...linked, { id: patient.id, name: patientName }]);
+        setLinked(d.linkedClients || [...linked, { id: client.id, name: clientName }]);
         onLinked();
       }
     } catch (e) { console.error(e); }
     finally { setIsLinking(null); }
   };
 
-  const unlinkPatient = async (patientId: string) => {
-    const p = linked.find(l => l.id === patientId);
+  const unlinkClient = async (clientId: string) => {
+    const p = linked.find(l => l.id === clientId);
     if (!p) return;
-    setIsLinking(patientId);
+    setIsLinking(clientId);
     try {
-      await fetch(`/api/whatsapp/conversations/${conversation.id}/link-patient`, {
+      await fetch(`/api/whatsapp/conversations/${conversation.id}/link-client`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ patientId }),
+        body: JSON.stringify({ clientId }),
       });
-      setLinked(prev => prev.filter(l => l.id !== patientId));
+      setLinked(prev => prev.filter(l => l.id !== clientId));
       onLinked();
     } catch (e) { console.error(e); }
     finally { setIsLinking(null); }
@@ -247,7 +247,7 @@ function PatientLinker({
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b">
           <div>
-            <h3 className="font-semibold">Vincular Pacientes</h3>
+            <h3 className="font-semibold">Vincular Clientes</h3>
             <p className="text-xs text-muted-foreground">{conversation.pushName || conversation.id}</p>
           </div>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
@@ -263,7 +263,7 @@ function PatientLinker({
               {linked.map(p => (
                 <div key={p.id} className="flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 pl-2 pr-1 py-0.5">
                   <span className="text-xs font-medium text-emerald-700">{p.name}</span>
-                  <button onClick={() => unlinkPatient(p.id)}
+                  <button onClick={() => unlinkClient(p.id)}
                     className="h-4 w-4 rounded-full hover:bg-emerald-200 flex items-center justify-center"
                     disabled={isLinking === p.id}>
                     {isLinking === p.id ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <X className="h-2.5 w-2.5 text-emerald-600" />}
@@ -271,7 +271,7 @@ function PatientLinker({
                 </div>
               ))}
             </div>
-          ) : <p className="text-xs text-muted-foreground mt-1">Sin pacientes vinculados.</p>}
+          ) : <p className="text-xs text-muted-foreground mt-1">Sin clientes vinculados.</p>}
         </div>
 
         {/* Search */}
@@ -315,7 +315,7 @@ function PatientLinker({
                   ) : (
                     <Button size="sm" variant="outline" className="h-7 text-xs flex-shrink-0 ml-2"
                       disabled={maxReached || isLinking === p.id}
-                      onClick={() => linkPatient(p)}>
+                      onClick={() => linkClient(p)}>
                       {isLinking === p.id ? <Loader2 className="h-3 w-3 animate-spin" />
                         : maxReached ? 'Máx.' : 'Vincular'}
                     </Button>
@@ -327,7 +327,7 @@ function PatientLinker({
           {linked.length >= 6 && (
             <Alert className="bg-amber-50 border-amber-200">
               <AlertTriangle className="h-4 w-4 text-amber-500" />
-              <AlertDescription className="text-amber-700 text-xs">Máximo de 6 pacientes alcanzado.</AlertDescription>
+              <AlertDescription className="text-amber-700 text-xs">Máximo de 6 clientes alcanzado.</AlertDescription>
             </Alert>
           )}
         </div>
@@ -356,7 +356,7 @@ function PurgeSection({ onPurged }: { onPurged: () => void }) {
         <AlertTriangle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
         <div>
           <p className="text-sm font-medium text-red-700">Purgar conversaciones</p>
-          <p className="text-xs text-red-500 mt-0.5">Elimina el historial de chat de todos los pacientes. No se puede deshacer.</p>
+          <p className="text-xs text-red-500 mt-0.5">Elimina el historial de chat de todos los clientes. No se puede deshacer.</p>
         </div>
       </div>
       {!confirm ? (
@@ -413,11 +413,11 @@ export function TabHistorial({ config }: { config: any }) {
       c.pushName?.toLowerCase().includes(q) ||
       c.id.includes(q) ||
       c.tutorPhone?.includes(q) ||
-      c.linkedPatients?.some(p => p.name.toLowerCase().includes(q));
+      c.linkedClients?.some(p => p.name.toLowerCase().includes(q));
     const matchStatus =
       statusFilter === 'all' ||
       (statusFilter === 'escalated' && c.humanTakeover) ||
-      (statusFilter === 'unlinked' && (!c.linkedPatients || c.linkedPatients.length === 0));
+      (statusFilter === 'unlinked' && (!c.linkedClients || c.linkedClients.length === 0));
     return matchSearch && matchStatus;
   });
 
@@ -428,8 +428,8 @@ export function TabHistorial({ config }: { config: any }) {
         {[
           { label: 'Total', value: conversations.length, color: 'text-foreground' },
           { label: 'Escaladas', value: conversations.filter(c => c.humanTakeover).length, color: 'text-red-600' },
-          { label: 'Sin vincular', value: conversations.filter(c => !c.linkedPatients?.length).length, color: 'text-amber-600' },
-          { label: 'Vinculadas', value: conversations.filter(c => c.linkedPatients?.length).length, color: 'text-emerald-600' },
+          { label: 'Sin vincular', value: conversations.filter(c => !c.linkedClients?.length).length, color: 'text-amber-600' },
+          { label: 'Vinculadas', value: conversations.filter(c => c.linkedClients?.length).length, color: 'text-emerald-600' },
         ].map(s => (
           <div key={s.label} className="rounded-lg border bg-card p-3 text-center">
             <p className={cn('text-2xl font-bold', s.color)}>{s.value}</p>
@@ -442,7 +442,7 @@ export function TabHistorial({ config }: { config: any }) {
       <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar por nombre, teléfono, UID o paciente…" value={filter}
+          <Input placeholder="Buscar por nombre, teléfono, UID o cliente…" value={filter}
             onChange={e => setFilter(e.target.value)} className="pl-9" />
           {filter && <button onClick={() => setFilter('')}
             className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground">
@@ -501,19 +501,19 @@ export function TabHistorial({ config }: { config: any }) {
                       <div className="flex items-center gap-1 flex-wrap">
                         <p className="font-medium text-sm truncate max-w-[160px]">{conv.pushName || 'Desconocido'}</p>
                         {conv.humanTakeover && <span className="text-[9px] text-red-500 font-bold">🔴</span>}
-                        {!conv.linkedPatients?.length && <span className="text-[9px] text-amber-500">⚠️</span>}
+                        {!conv.linkedClients?.length && <span className="text-[9px] text-amber-500">⚠️</span>}
                       </div>
                       {conv.tutorPhone && (
                         <p className="text-[10px] text-muted-foreground font-mono">📱 {conv.tutorPhone}</p>
                       )}
                       <p className="text-[10px] text-muted-foreground font-mono truncate" title={conv.id}>🆔 {conv.id}</p>
-                      {conv.linkedPatients && conv.linkedPatients.length > 0 && (
+                      {conv.linkedClients && conv.linkedClients.length > 0 && (
                         <div className="flex flex-wrap gap-0.5 mt-0.5">
-                          {conv.linkedPatients.slice(0, 2).map(p => (
+                          {conv.linkedClients.slice(0, 2).map(p => (
                             <Badge key={p.id} variant="secondary" className="text-[9px] py-0 px-1">👶 {p.name}</Badge>
                           ))}
-                          {conv.linkedPatients.length > 2 && (
-                            <Badge variant="secondary" className="text-[9px] py-0 px-1">+{conv.linkedPatients.length - 2}</Badge>
+                          {conv.linkedClients.length > 2 && (
+                            <Badge variant="secondary" className="text-[9px] py-0 px-1">+{conv.linkedClients.length - 2}</Badge>
                           )}
                         </div>
                       )}
@@ -535,7 +535,7 @@ export function TabHistorial({ config }: { config: any }) {
           {selectedConv ? (
             <div style={{ height: 'calc(100vh - 320px)', minHeight: '400px' }} className="flex flex-col">
               <ChatPanel conversation={selectedConv} onClose={() => setSelectedConv(null)}
-                onLinkPatient={conv => setLinkingConv(conv)} />
+                onLinkClient={conv => setLinkingConv(conv)} />
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-full text-muted-foreground py-16">
@@ -552,7 +552,7 @@ export function TabHistorial({ config }: { config: any }) {
 
       {/* Linker modal */}
       {linkingConv && (
-        <PatientLinker conversation={linkingConv} onClose={() => setLinkingConv(null)}
+        <ClientLinker conversation={linkingConv} onClose={() => setLinkingConv(null)}
           onLinked={() => setLinkingConv(null)} />
       )}
     </div>

@@ -84,7 +84,7 @@ export function TabPrompt({ config, setConfig, onSave, isSaving, onPurge, isPurg
           </CardTitle>
           <CardDescription className="text-xs">
             Define aquí la personalidad, reglas de comportamiento, flujos de conversación y límites de Sof-IA.
-            Los datos del consultorio (precios, ubicación) se configuran en la pestaña "Base de Conocimiento".
+            Los datos del taller (precios, ubicación) se configuran en la pestaña "Base de Conocimiento".
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -202,7 +202,7 @@ export function TabPrompt({ config, setConfig, onSave, isSaving, onPurge, isPurg
           </CardTitle>
           <CardDescription className="text-xs">
             Miembros con acceso de staff al bot. Usa el UID de WhatsApp (Baileys) — no el número de teléfono.
-            Los miembros con notificación activada reciben alertas cuando un paciente solicita asistencia humana.
+            Los miembros con notificación activada reciben alertas cuando un cliente solicita asistencia humana.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

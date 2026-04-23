@@ -1,9 +1,9 @@
 /**
- * API: Link / Unlink Patient from Conversation
- * POST  /api/whatsapp/conversations/[id]/link-patient — Link a patient
- * DELETE /api/whatsapp/conversations/[id]/link-patient — Unlink a patient
+ * API: Link / Unlink Client from Conversation
+ * POST  /api/whatsapp/conversations/[id]/link-client — Link a client
+ * DELETE /api/whatsapp/conversations/[id]/link-client — Unlink a client
  *
- * Supports up to 6 linked patients per conversation (for families with many children).
+ * Supports up to 6 linked clients per conversation (for families with many children).
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -19,10 +19,10 @@ export async function POST(
   try {
     const { id } = await context.params;
     const body = await req.json();
-    const { patientId, patientName, tutorPhone } = body;
+    const { clientId, clientName, tutorPhone } = body;
 
-    if (!patientId || !patientName) {
-      return NextResponse.json({ error: 'patientId and patientName are required' }, { status: 400 });
+    if (!clientId || !clientName) {
+      return NextResponse.json({ error: 'clientId and clientName are required' }, { status: 400 });
     }
 
     const db = getAdminDb();
@@ -34,23 +34,23 @@ export async function POST(
     }
 
     const data = convSnap.data() || {};
-    const current: Array<{ id: string; name: string }> = data.linkedPatients || [];
+    const current: Array<{ id: string; name: string }> = data.linkedClients || [];
 
     // Check if already linked
-    if (current.some(p => p.id === patientId)) {
-      return NextResponse.json({ ok: true, message: 'Patient already linked', linkedPatients: current });
+    if (current.some(p => p.id === clientId)) {
+      return NextResponse.json({ ok: true, message: 'Client already linked', linkedClients: current });
     }
 
     // Enforce max limit
     if (current.length >= MAX_LINKED_PATIENTS) {
       return NextResponse.json({
-        error: `Maximum of ${MAX_LINKED_PATIENTS} patients per conversation reached`,
+        error: `Maximum of ${MAX_LINKED_PATIENTS} clients per conversation reached`,
       }, { status: 400 });
     }
 
-    const newEntry = { id: patientId, name: patientName };
+    const newEntry = { id: clientId, name: clientName };
     const updates: Record<string, any> = {
-      linkedPatients: FieldValue.arrayUnion(newEntry),
+      linkedClients: FieldValue.arrayUnion(newEntry),
       updatedAt: FieldValue.serverTimestamp(),
     };
 
@@ -61,9 +61,9 @@ export async function POST(
 
     await convRef.set(updates, { merge: true });
 
-    return NextResponse.json({ ok: true, linkedPatients: [...current, newEntry] });
+    return NextResponse.json({ ok: true, linkedClients: [...current, newEntry] });
   } catch (e: any) {
-    console.error('[Sof-IA] POST link-patient error:', e);
+    console.error('[Sof-IA] POST link-client error:', e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
@@ -75,10 +75,10 @@ export async function DELETE(
   try {
     const { id } = await context.params;
     const body = await req.json();
-    const { patientId, patientName } = body;
+    const { clientId, clientName } = body;
 
-    if (!patientId) {
-      return NextResponse.json({ error: 'patientId is required' }, { status: 400 });
+    if (!clientId) {
+      return NextResponse.json({ error: 'clientId is required' }, { status: 400 });
     }
 
     const db = getAdminDb();
@@ -86,21 +86,21 @@ export async function DELETE(
 
     // FieldValue.arrayRemove requires the exact object — we fetch to find it
     const snap = await convRef.get();
-    const current: Array<{ id: string; name: string }> = snap.data()?.linkedPatients || [];
-    const toRemove = current.find(p => p.id === patientId);
+    const current: Array<{ id: string; name: string }> = snap.data()?.linkedClients || [];
+    const toRemove = current.find(p => p.id === clientId);
 
     if (!toRemove) {
-      return NextResponse.json({ ok: true, message: 'Patient not linked' });
+      return NextResponse.json({ ok: true, message: 'Client not linked' });
     }
 
     await convRef.set({
-      linkedPatients: FieldValue.arrayRemove(toRemove),
+      linkedClients: FieldValue.arrayRemove(toRemove),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
 
-    return NextResponse.json({ ok: true, linkedPatients: current.filter(p => p.id !== patientId) });
+    return NextResponse.json({ ok: true, linkedClients: current.filter(p => p.id !== clientId) });
   } catch (e: any) {
-    console.error('[Sof-IA] DELETE link-patient error:', e);
+    console.error('[Sof-IA] DELETE link-client error:', e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
