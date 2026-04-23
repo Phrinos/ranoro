@@ -611,6 +611,7 @@ export interface WhatsAppAgentConfig {
   escalationMessage: string;
   returnMessage: string;
   advisorPhoneNumber: string;
+  staffMembers?: { uid: string, phone?: string, role?: string }[];
   // ── Base de Conocimiento ──
   knowledgeBase: string;
   // ── Display ──
