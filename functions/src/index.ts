@@ -1,13 +1,14 @@
 
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import * as logger from 'firebase-functions/logger';
 import { startOfDay, endOfDay } from 'date-fns';
-import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
+import { toZonedTime, fromZonedTime, formatInTimeZone } from 'date-fns-tz';
 
 admin.initializeApp();
 
-const db = admin.firestore();
+const db = getFirestore();
 const TZ = 'America/Mexico_City';
 
 // --- Daily Rental Charges Generation ---
@@ -24,8 +25,10 @@ export const generateDailyRentalCharges = onSchedule(
     const startOfTodayInMexico = startOfDay(nowInMexico);
     const endOfTodayInMexico = endOfDay(nowInMexico);
 
-    const startOfTodayUtc = toZonedTime(startOfTodayInMexico, TZ);
-    const endOfTodayUtc = toZonedTime(endOfTodayInMexico, TZ);
+    // Volver de hora local (Mexico) a UTC requiere fromZonedTime; usar toZonedTime
+    // aquí aplicaba el offset dos veces y corrompía el rango del día.
+    const startOfTodayUtc = fromZonedTime(startOfTodayInMexico, TZ);
+    const endOfTodayUtc = fromZonedTime(endOfTodayInMexico, TZ);
     
     const dateKey = formatInTimeZone(nowInMexico, TZ, 'yyyy-MM-dd');
 
@@ -40,16 +43,29 @@ export const generateDailyRentalCharges = onSchedule(
       return;
     }
 
-    const ops = activeDriversSnap.docs.map(async (driverDoc) => {
-      const driver = driverDoc.data() as any;
-      const vehicleId = driver.assignedVehicleId as string | undefined;
-      if (!vehicleId) return;
+    // Pre-cargar todos los vehículos asignados en UNA lectura batch (evita el N+1).
+    const driversWithVehicle = activeDriversSnap.docs.filter(
+      (d) => (d.data() as any).assignedVehicleId
+    );
+    const uniqueVehicleIds = [
+      ...new Set(driversWithVehicle.map((d) => (d.data() as any).assignedVehicleId as string)),
+    ];
+    const vehicleMap = new Map<string, any>();
+    if (uniqueVehicleIds.length > 0) {
+      const refs = uniqueVehicleIds.map((id) => db.collection('vehicles').doc(id));
+      const vehicleDocs = await db.getAll(...refs);
+      vehicleDocs.forEach((vd) => {
+        if (vd.exists) vehicleMap.set(vd.id, vd.data());
+      });
+    }
 
-      const vehicleDoc = await db.collection('vehicles').doc(vehicleId).get();
-      const vehicle = vehicleDoc.data() as any;
+    const ops = driversWithVehicle.map(async (driverDoc) => {
+      const driver = driverDoc.data() as any;
+      const vehicleId = driver.assignedVehicleId as string;
+      const vehicle = vehicleMap.get(vehicleId);
 
       const dailyRentalCost = vehicle?.dailyRentalCost;
-      if (!vehicleDoc.exists || !dailyRentalCost) {
+      if (!vehicle || !dailyRentalCost) {
         logger.warn(
           `Vehicle ${vehicleId} for driver ${driver.name} not found or has no daily rental cost.`
         );
@@ -65,10 +81,10 @@ export const generateDailyRentalCharges = onSchedule(
           vehicleId,
           amount: dailyRentalCost,
           vehicleLicensePlate: vehicle?.licensePlate || '',
-          date: admin.firestore.Timestamp.fromDate(startOfTodayUtc),
+          date: Timestamp.fromDate(startOfTodayUtc),
           dateKey,
-          dayStartUtc: admin.firestore.Timestamp.fromDate(startOfTodayUtc),
-          dayEndUtc: admin.firestore.Timestamp.fromDate(endOfTodayUtc),
+          dayStartUtc: Timestamp.fromDate(startOfTodayUtc),
+          dayEndUtc: Timestamp.fromDate(endOfTodayUtc),
         });
         logger.info(`Created daily charge for ${driver.name} (${dateKey}).`);
       } catch (err: any) {

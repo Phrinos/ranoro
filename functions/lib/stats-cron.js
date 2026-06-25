@@ -35,9 +35,9 @@ var __importStar = (this && this.__importStar) || (function () {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateDailyVehicleStats = void 0;
 const scheduler_1 = require("firebase-functions/v2/scheduler");
-const admin = __importStar(require("firebase-admin"));
+const firestore_1 = require("firebase-admin/firestore");
 const logger = __importStar(require("firebase-functions/logger"));
-const db = admin.firestore();
+const db = (0, firestore_1.getFirestore)();
 exports.generateDailyVehicleStats = (0, scheduler_1.onSchedule)({
     schedule: "0 12 * * *", // 12:00 every day
     timeZone: "America/Mexico_City",
@@ -110,7 +110,7 @@ exports.generateDailyVehicleStats = (0, scheduler_1.onSchedule)({
             vencidos,
             sinContacto,
             dups: dupsCount,
-            lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+            lastUpdated: firestore_1.FieldValue.serverTimestamp()
         };
         await db.doc("systemStats/vehicles").set(stats, { merge: true });
         logger.info("Daily vehicle stats successfully generated.", stats);

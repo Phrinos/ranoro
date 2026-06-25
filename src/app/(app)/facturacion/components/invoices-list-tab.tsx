@@ -14,29 +14,53 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
+import { authedFetch, getIdTokenOrThrow } from "@/lib/client-auth";
 
 export function InvoicesListTab() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const handleDownload = async (invoiceId: string, type: 'pdf' | 'xml') => {
+    setDownloadingId(`${invoiceId}:${type}`);
+    try {
+      const res = await authedFetch(`/api/invoices/${invoiceId}/download?type=${type}`);
+      if (!res.ok) throw new Error('No se pudo descargar el comprobante.');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `factura_${invoiceId}.${type}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      toast({ title: "Error", description: e?.message ?? "Fallo en la descarga.", variant: "destructive" });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
-    getInvoicedTicketsAction()
-      .then((res) => {
+    (async () => {
+      try {
+        const idToken = await getIdTokenOrThrow();
+        const res = await getInvoicedTicketsAction(idToken);
         if (!isMounted) return;
         if (res.success && res.data) {
           setInvoices(res.data);
         } else if (res.error) {
           toast({ title: "Error", description: res.error, variant: "destructive" });
         }
-      })
-      .catch(() => {
+      } catch {
         if (isMounted) toast({ title: "Error", description: "Fallo al cargar facturas.", variant: "destructive" });
-      })
-      .finally(() => {
+      } finally {
         if (isMounted) setLoading(false);
-      });
+      }
+    })();
     return () => { isMounted = false; };
   }, [toast]);
 
@@ -144,15 +168,11 @@ export function InvoicesListTab() {
                     <TableCell className="align-top text-right py-5">
                       {inv.invoiceId ? (
                         <div className="flex flex-col items-end gap-2.5">
-                          <Button asChild size="sm" variant="outline" className="h-9 px-4 text-xs font-black text-red-600 border-red-200 bg-white hover:bg-red-50 hover:border-red-300 hover:text-red-700 shadow-xs w-28 transition-all">
-                            <a href={`/api/invoices/${inv.invoiceId}/download?type=pdf`} target="_blank" rel="noreferrer">
-                              <FileText className="h-4 w-4 mr-2" /> PDF
-                            </a>
+                          <Button onClick={() => handleDownload(inv.invoiceId, 'pdf')} disabled={downloadingId === `${inv.invoiceId}:pdf`} size="sm" variant="outline" className="h-9 px-4 text-xs font-black text-red-600 border-red-200 bg-white hover:bg-red-50 hover:border-red-300 hover:text-red-700 shadow-xs w-28 transition-all">
+                            {downloadingId === `${inv.invoiceId}:pdf` ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />} PDF
                           </Button>
-                          <Button asChild size="sm" variant="outline" className="h-9 px-4 text-xs font-black text-blue-600 border-blue-200 bg-white hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 shadow-xs w-28 transition-all">
-                            <a href={`/api/invoices/${inv.invoiceId}/download?type=xml`} target="_blank" rel="noreferrer">
-                              <Code className="h-4 w-4 mr-2" /> XML
-                            </a>
+                          <Button onClick={() => handleDownload(inv.invoiceId, 'xml')} disabled={downloadingId === `${inv.invoiceId}:xml`} size="sm" variant="outline" className="h-9 px-4 text-xs font-black text-blue-600 border-blue-200 bg-white hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 shadow-xs w-28 transition-all">
+                            {downloadingId === `${inv.invoiceId}:xml` ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Code className="h-4 w-4 mr-2" />} XML
                           </Button>
                         </div>
                       ) : (

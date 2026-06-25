@@ -435,17 +435,18 @@ export default function ServicioEditorPage() {
         
         if (cu) {
           adminService.logAudit(
-            "Eliminar",
-            `Eliminó el servicio #${folio} permanentemente. Motivo: ${cancellationReason}`,
+            "Editar",
+            `Canceló el servicio #${folio} (se devolvió stock si aplicaba). Motivo: ${cancellationReason}`,
             { entityType: "Servicio", entityId: initialData.id, userId: cu.id, userName: cu.name }
           );
         }
-        
-        await serviceService.deleteService(initialData.id);
-        toast({ title: "Servicio Eliminado", description: "El servicio ha sido borrado del sistema." });
-        router.push("/servicios?tab=activos");
+
+        // Cancelar (no borrar): restaura el stock descontado y conserva el registro.
+        await serviceService.cancelService(initialData.id, cancellationReason);
+        toast({ title: "Servicio Cancelado", description: "El servicio fue cancelado y el stock devuelto si aplicaba." });
+        router.push("/servicios?tab=historial");
       } catch (error) {
-        toast({ title: "Error", description: "No se pudo eliminar el servicio.", variant: "destructive" });
+        toast({ title: "Error", description: "No se pudo cancelar el servicio.", variant: "destructive" });
       } finally {
         setIsSubmitting(false);
       }

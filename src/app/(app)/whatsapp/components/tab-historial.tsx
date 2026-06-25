@@ -6,6 +6,7 @@ import {
   deleteDoc, doc, writeBatch, updateDoc, getDocs, where,
 } from 'firebase/firestore';
 import { db as firestore } from '@/lib/firebaseClient';
+import { authedFetch } from '@/lib/client-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -210,7 +211,7 @@ function ClientLinker({
     const clientName = client.name || [client.firstName, client.lastName].filter(Boolean).join(' ') || client.id;
     setIsLinking(client.id);
     try {
-      const res = await fetch(`/api/whatsapp/conversations/${conversation.id}/link-client`, {
+      const res = await authedFetch(`/api/whatsapp/conversations/${conversation.id}/link-client`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId: client.id, clientName }),
@@ -229,7 +230,7 @@ function ClientLinker({
     if (!p) return;
     setIsLinking(clientId);
     try {
-      await fetch(`/api/whatsapp/conversations/${conversation.id}/link-client`, {
+      await authedFetch(`/api/whatsapp/conversations/${conversation.id}/link-client`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId }),
@@ -344,7 +345,8 @@ function PurgeSection({ onPurged }: { onPurged: () => void }) {
   const handlePurge = async () => {
     setIsPurging(true);
     try {
-      await fetch('/api/whatsapp/purge', { method: 'POST' });
+      const res = await authedFetch('/api/whatsapp/purge?confirm=yes', { method: 'DELETE' });
+      if (!res.ok) throw new Error('No se pudo purgar.');
       setConfirm(false);
       onPurged();
     } catch (e) { console.error(e); }

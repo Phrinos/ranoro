@@ -11,6 +11,8 @@
 
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { authGuard } from '@/lib/server-auth';
+import { FieldValue } from 'firebase-admin/firestore';
 import type { WhatsAppAgentConfig } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -18,15 +20,6 @@ export const dynamic = 'force-dynamic';
 export async function DELETE(request: Request) {
   const adminDb = getAdminDb();
   try {
-    // ── 1. Authenticate via API key ──
-    const apiKey = request.headers.get('x-api-key');
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'Missing x-api-key header' },
-        { status: 401 }
-      );
-    }
-
     const configSnap = await adminDb.collection('settings').doc('whatsapp-agent').get();
     if (!configSnap.exists) {
       return NextResponse.json(
@@ -36,13 +29,9 @@ export async function DELETE(request: Request) {
     }
     const config = configSnap.data() as WhatsAppAgentConfig;
 
-    if (apiKey !== config.webhookSecret) {
-      console.warn('[SinergIA Purge] Invalid API key attempt');
-      return NextResponse.json(
-        { error: 'Unauthorized: invalid API key' },
-        { status: 401 }
-      );
-    }
+    // ── 1. Operación destructiva: exige Superadministrador (Bearer) o x-api-key de servicio (timing-safe) ──
+    const guard = await authGuard(request, { minRole: 'superadmin', apiKey: config.webhookSecret });
+    if ('response' in guard) return guard.response;
 
     // ── 2. Require explicit confirmation ──
     const url = new URL(request.url);
@@ -53,6 +42,14 @@ export async function DELETE(request: Request) {
         { status: 400 }
       );
     }
+
+    // ── Audit log previo a la operación destructiva ──
+    await adminDb.collection('auditLogs').add({
+      action: 'whatsapp.purge',
+      actorUid: guard.actor.uid,
+      actorRole: guard.actor.role,
+      timestamp: FieldValue.serverTimestamp(),
+    }).catch((e) => console.error('[SinergIA Purge] audit log failed:', e));
 
     // ── 3. Execute purge ──
     const conversationsRef = adminDb.collection('whatsapp-conversations');

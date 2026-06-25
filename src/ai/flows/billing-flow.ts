@@ -98,7 +98,9 @@ export async function createInvoice(
     }
 
     const conceptos = ticketItems.map(item => {
-        const priceBeforeTax = item.price / (1 + IVA_RATE);
+        // Redondeo a 2 decimales (centavos): un precio base con cola de float
+        // descuadra subtotal+IVA vs total al timbrar el CFDI.
+        const priceBeforeTax = Math.round((item.price / (1 + IVA_RATE)) * 100) / 100;
         return {
             product: {
                 description: item.description,

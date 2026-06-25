@@ -46,9 +46,6 @@ const tallerSchema = z.object({
   contactPersonName: z.string().optional(),
   contactPersonPhone: z.string().optional(),
   contactPersonRole: z.string().optional(),
-  facturaComApiKey: z.string().optional(),
-  facturaComApiSecret: z.string().optional(),
-  facturaComBillingMode: z.enum(['live', 'test']).optional(),
 });
 
 type TallerFormInput = z.input<typeof tallerSchema>;

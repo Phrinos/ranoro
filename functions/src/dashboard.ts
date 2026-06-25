@@ -1,6 +1,6 @@
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { onCall } from 'firebase-functions/v2/https';
-import * as admin from 'firebase-admin';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import * as logger from 'firebase-functions/logger';
 import { subMonths, format, getDaysInMonth, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -16,7 +16,7 @@ const parseDate = (dateStr: any) => {
 
 async function executeDashboardGeneration() {
     logger.info('Starting dashboard stats generation...');
-    const db = admin.firestore();
+    const db = getFirestore();
     const now = new Date();
 
     
@@ -32,13 +32,13 @@ async function executeDashboardGeneration() {
       db.collection('users').get()
     ]);
 
-    const services = servicesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const sales = salesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const inventory = inventorySnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const fixedExpenses = fixedExpSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const personnel = personnelSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const services = servicesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+    const sales = salesSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+    const inventory = inventorySnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+    const fixedExpenses = fixedExpSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
+    const personnel = personnelSnap.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
-    const inventoryMap = new Map(inventory.map(i => [i.id, i]));
+    const inventoryMap = new Map(inventory.map((i: any) => [i.id, i]));
 
     // --- FINANCIAL DATA ---
     const dataByMonth: { [key: string]: any } = {};
@@ -92,8 +92,8 @@ async function executeDashboardGeneration() {
         }
     });
 
-    const totalMonthlyFixedSalaries = personnel.filter((p: any) => !p.isArchived).reduce((sum, p: any) => sum + (p.monthlySalary || 0), 0);
-    const totalOtherFixedExpenses = fixedExpenses.reduce((sum, exp: any) => sum + (Number(exp.amount) || 0), 0);
+    const totalMonthlyFixedSalaries = personnel.filter((p: any) => !p.isArchived).reduce((sum: any, p: any) => sum + (p.monthlySalary || 0), 0);
+    const totalOtherFixedExpenses = fixedExpenses.reduce((sum: any, exp: any) => sum + (Number(exp.amount) || 0), 0);
     const totalMonthlyFixedExpenses = totalMonthlyFixedSalaries + totalOtherFixedExpenses;
 
     Object.keys(dataByMonth).forEach(monthKey => {
@@ -176,7 +176,7 @@ async function executeDashboardGeneration() {
     await db.collection('system').doc('dashboard_stats').set({
         financialData,
         operationalData,
-        lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+        lastUpdated: FieldValue.serverTimestamp()
     });
 
     logger.info('Dashboard stats generated and saved to system/dashboard_stats');
@@ -193,9 +193,14 @@ export const generateDashboardStats = onSchedule(
   }
 );
 
-export const forceGenerateDashboardStats = onCall({
-    cors: true
-}, async (request) => {
-    // You could add auth checks here: if (!request.auth) throw new HttpsError...
+export const forceGenerateDashboardStats = onCall(async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'Debes iniciar sesión.');
+    }
+    const userSnap = await getFirestore().collection('users').doc(request.auth.uid).get();
+    const role = userSnap.exists ? (userSnap.data()?.role || '') : '';
+    if (role !== 'Superadministrador') {
+        throw new HttpsError('permission-denied', 'Requiere rol Superadministrador.');
+    }
     return await executeDashboardGeneration();
 });

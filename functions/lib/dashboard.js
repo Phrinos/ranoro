@@ -36,7 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.forceGenerateDashboardStats = exports.generateDashboardStats = void 0;
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const https_1 = require("firebase-functions/v2/https");
-const admin = __importStar(require("firebase-admin"));
+const firestore_1 = require("firebase-admin/firestore");
 const logger = __importStar(require("firebase-functions/logger"));
 const date_fns_1 = require("date-fns");
 const locale_1 = require("date-fns/locale");
@@ -50,7 +50,7 @@ const parseDate = (dateStr) => {
 };
 async function executeDashboardGeneration() {
     logger.info('Starting dashboard stats generation...');
-    const db = admin.firestore();
+    const db = (0, firestore_1.getFirestore)();
     const now = new Date();
     // We want data for the last 3 months
     const threeMonthsAgo = (0, date_fns_1.subMonths)(now, 3);
@@ -62,12 +62,12 @@ async function executeDashboardGeneration() {
         db.collection('fixedExpenses').get(),
         db.collection('users').get()
     ]);
-    const services = servicesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const sales = salesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const inventory = inventorySnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const fixedExpenses = fixedExpSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const personnel = personnelSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const inventoryMap = new Map(inventory.map(i => [i.id, i]));
+    const services = servicesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const sales = salesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const inventory = inventorySnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const fixedExpenses = fixedExpSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const personnel = personnelSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    const inventoryMap = new Map(inventory.map((i) => [i.id, i]));
     // --- FINANCIAL DATA ---
     const dataByMonth = {};
     for (let i = 2; i >= 0; i--) {
@@ -191,7 +191,7 @@ async function executeDashboardGeneration() {
     await db.collection('system').doc('dashboard_stats').set({
         financialData,
         operationalData,
-        lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+        lastUpdated: firestore_1.FieldValue.serverTimestamp()
     });
     logger.info('Dashboard stats generated and saved to system/dashboard_stats');
     return { success: true, message: 'Stats updated.' };

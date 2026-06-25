@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { formatCurrency, cn } from "@/lib/utils";
 import { db } from "@/lib/firebaseClient";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { doc, runTransaction, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Scissors, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
@@ -44,29 +44,42 @@ export function DailyCutDialog({ open, onOpenChange, date, breakdown, currentUse
     if (!currentUser) return toast({ title: "No autenticado", variant: "destructive" });
     setSaving(true);
     try {
-      await addDoc(collection(db, "dailyCuts"), {
-        date,
-        income: breakdown.income,
-        expenses: breakdown.expenses,
-        netBalance: breakdown.net,
-        breakdown: {
-          cash: breakdown.cash,
-          card: breakdown.card,
-          transfer: breakdown.transfer,
-        },
-        bySource: breakdown.bySource,
-        transactionCount: breakdown.count,
-        closedBy: currentUser.id,
-        closedByName: currentUser.name,
-        notes: notes.trim() || null,
-        closedAt: serverTimestamp(),
+      // ID determinista por fecha + transacción: el corte del día es idempotente
+      // (un doble-click no crea dos cortes).
+      await runTransaction(db, async (tx) => {
+        const ref = doc(db, "dailyCuts", date);
+        const snap = await tx.get(ref);
+        if (snap.exists()) {
+          throw new Error("DUPLICATE_CUT");
+        }
+        tx.set(ref, {
+          date,
+          income: breakdown.income,
+          expenses: breakdown.expenses,
+          netBalance: breakdown.net,
+          breakdown: {
+            cash: breakdown.cash,
+            card: breakdown.card,
+            transfer: breakdown.transfer,
+          },
+          bySource: breakdown.bySource,
+          transactionCount: breakdown.count,
+          closedBy: currentUser.id,
+          closedByName: currentUser.name,
+          notes: notes.trim() || null,
+          closedAt: serverTimestamp(),
+        });
       });
       toast({ title: "✅ Corte guardado", description: `Corte del ${format(new Date(date + "T12:00:00"), "dd 'de' MMMM yyyy", { locale: es })} cerrado correctamente.` });
       onSaved();
       onOpenChange(false);
       setNotes("");
-    } catch {
-      toast({ title: "Error al guardar corte", variant: "destructive" });
+    } catch (e: any) {
+      if (e?.message === "DUPLICATE_CUT") {
+        toast({ title: "El corte de este día ya fue cerrado", variant: "destructive" });
+      } else {
+        toast({ title: "Error al guardar corte", variant: "destructive" });
+      }
     } finally {
       setSaving(false);
     }

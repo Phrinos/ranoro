@@ -6,12 +6,16 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { authGuard } from '@/lib/server-auth';
 
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const guard = await authGuard(req, { minRole: 'staff' });
+    if ('response' in guard) return guard.response;
+
     const { id } = await context.params;
     const limit = parseInt(req.nextUrl.searchParams.get('limit') || '50', 10);
     const before = req.nextUrl.searchParams.get('before'); // ISO timestamp for cursor

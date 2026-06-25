@@ -6,6 +6,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { db as firestore } from '@/lib/firebaseClient';
+import { authedFetch } from '@/lib/client-auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Loader2, Phone, MessageCircle, Cpu, Server, FileText, BookOpen, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -104,7 +105,7 @@ export default function WhatsAppPage() {
     setConnectionStatus('testing');
     try {
       const host = `${config.baileysHost}:${config.baileysPort}`;
-      const res = await fetch(`/api/whatsapp/test-connection?host=${encodeURIComponent(host)}`, {
+      const res = await authedFetch(`/api/whatsapp/test-connection?host=${encodeURIComponent(host)}`, {
         headers: { 'x-api-key': config.webhookSecret },
         signal: AbortSignal.timeout(5000),
       });
@@ -127,7 +128,7 @@ export default function WhatsAppPage() {
   const handlePurge = useCallback(async () => {
     setIsPurging(true);
     try {
-      const res = await fetch(`/api/whatsapp/purge?confirm=yes`, {
+      const res = await authedFetch(`/api/whatsapp/purge?confirm=yes`, {
         method: 'DELETE',
         headers: { 'x-api-key': config.webhookSecret },
       });

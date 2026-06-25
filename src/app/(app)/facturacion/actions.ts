@@ -1,9 +1,45 @@
 'use server';
 
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { requireActionAuth } from '@/lib/server-auth';
 
-export async function getInvoicedTicketsAction() {
+/**
+ * Estado de la config de facturación SIN exponer la sk_live_ al cliente.
+ * Devuelve solo flags de "ya configurado" y el usuario (no secreto).
+ */
+export async function getBillingConfigAction(idToken: string): Promise<{ facturapiUser: string; hasLiveKey: boolean; hasPass: boolean }> {
+  await requireActionAuth(idToken, { minRole: 'superadmin' });
+  const db = getAdminDb();
+  const snap = await db.collection('settings').doc('billing').get();
+  const d = (snap.exists ? snap.data() : {}) as { facturapiUser?: string; liveSecretKey?: string; facturapiPass?: string };
+  return { facturapiUser: d.facturapiUser || '', hasLiveKey: !!d.liveSecretKey, hasPass: !!d.facturapiPass };
+}
+
+/**
+ * Guarda la config de facturación. La key/contraseña solo se sobrescriben si
+ * el usuario ingresó un valor nuevo (campo vacío = conservar el actual).
+ */
+export async function saveBillingConfigAction(
+  idToken: string,
+  values: { liveSecretKey?: string; facturapiUser?: string; facturapiPass?: string },
+): Promise<{ success: boolean; error?: string }> {
   try {
+    await requireActionAuth(idToken, { minRole: 'superadmin' });
+    const db = getAdminDb();
+    const update: Record<string, string> = {};
+    if (typeof values.facturapiUser === 'string') update.facturapiUser = values.facturapiUser;
+    if (values.liveSecretKey) update.liveSecretKey = values.liveSecretKey;
+    if (values.facturapiPass) update.facturapiPass = values.facturapiPass;
+    await db.collection('settings').doc('billing').set(update, { merge: true });
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e?.message ?? 'No autorizado' };
+  }
+}
+
+export async function getInvoicedTicketsAction(idToken: string) {
+  try {
+    await requireActionAuth(idToken, { minRole: 'staff' });
     const adminDb = getAdminDb();
     
     const invoiced: any[] = [];

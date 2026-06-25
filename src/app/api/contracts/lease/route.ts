@@ -5,6 +5,7 @@ import { pdf } from "@react-pdf/renderer";
 import { LeasePdf } from "@/lib/contracts/LeasePdf";
 import type { LeaseContractInput } from "@/lib/contracts/types";
 import type { DocumentProps } from "@react-pdf/renderer";
+import { authGuard } from "@/lib/server-auth";
 
 
 export const runtime = "nodejs";
@@ -65,6 +66,9 @@ function coerce(input: any): LeaseContractInput {
 
 export async function POST(req: NextRequest) {
   try {
+    const guard = await authGuard(req, { minRole: 'staff' });
+    if ('response' in guard) return guard.response;
+
     const raw = await req.json().catch(() => ({}));
     const data = coerce(raw);
 

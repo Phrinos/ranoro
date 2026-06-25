@@ -9,6 +9,7 @@ import { getAdminDb } from '@/lib/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { buildSystemPrompt, type PromptContext } from './system-prompt';
 import { findCustomersByPhone, toolDeclarations, type PhoneCustomerResult } from './tools';
+import { resolveGeminiKey } from './gemini-key';
 import type { WhatsAppAgentConfig } from '@/lib/types';
 import { notifyStaffOfEscalation } from './staff-handler';
 
@@ -44,12 +45,6 @@ export interface ClientHandlerParams {
   loadConversationHistory: (phone: string, ttlHours: number, limit?: number) => Promise<Content[]>;
   formatNow: () => { today: string; currentTime: string };
   requestUrl: string;
-}
-
-function resolveGeminiKey(): string {
-  let key = process.env.GEMINI_API_KEY || '';
-  if (key.includes('=')) { const m = key.match(/GEMINI_API_KEY=([A-Za-z0-9_\-]+)/); if (m) key = m[1]; }
-  return key.trim().replace(/^["']|["']$/g, '');
 }
 
 export async function handleClientMessage(params: ClientHandlerParams): Promise<NextResponse> {

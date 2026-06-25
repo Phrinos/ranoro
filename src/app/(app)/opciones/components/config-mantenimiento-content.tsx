@@ -10,11 +10,39 @@ import {
   CalendarX2, Truck, PackageX, Scale, Ticket,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { collection, getDocs, query, where, writeBatch, doc } from "firebase/firestore";
+import { collection, getDocs, query, where, writeBatch, doc, type QueryDocumentSnapshot, type DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
 import { parseDate } from "@/lib/forms";
 import { generateTicketId, cn } from '@/lib/utils';
 import { isBefore, subDays } from 'date-fns';
+
+// Firestore limita a 500 operaciones por writeBatch. Este helper trocea los
+// updates en lotes de 450 para que las herramientas de mantenimiento no fallen
+// sobre colecciones grandes.
+const BATCH_LIMIT = 450;
+async function commitUpdatesInChunks(
+  docs: QueryDocumentSnapshot<DocumentData>[],
+  collectionName: string,
+  build: (d: QueryDocumentSnapshot<DocumentData>) => Record<string, unknown> | null,
+): Promise<number> {
+  let batch = writeBatch(db);
+  let pending = 0;
+  let total = 0;
+  for (const d of docs) {
+    const data = build(d);
+    if (!data) continue;
+    batch.update(doc(db, collectionName, d.id), data);
+    pending++;
+    total++;
+    if (pending >= BATCH_LIMIT) {
+      await batch.commit();
+      batch = writeBatch(db);
+      pending = 0;
+    }
+  }
+  if (pending > 0) await batch.commit();
+  return total;
+}
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -212,22 +240,16 @@ export function ConfigMantenimientoPageContent() {
   const executeFixChronology = async () => {
     const q = query(collection(db, "serviceRecords"), where("status", "==", "Entregado"));
     const snap = await getDocs(q);
-    const batch = writeBatch(db);
-    let updates = 0;
-
-    snap.forEach((d) => {
+    const updates = await commitUpdatesInChunks(snap.docs, "serviceRecords", (d) => {
       const s = d.data();
-      if (!s.deliveryDateTime) {
-        const candidate =
-          parseDate(s.completedAt) || parseDate(s.closedAt) ||
-          (Array.isArray(s.payments) && s.payments.length ? parseDate(s.payments[0]?.date) : null) ||
-          parseDate(s.serviceDate) || new Date();
-        batch.update(doc(db, "serviceRecords", d.id), { deliveryDateTime: candidate.toISOString() });
-        updates++;
-      }
+      if (s.deliveryDateTime) return null;
+      const candidate =
+        parseDate(s.completedAt) || parseDate(s.closedAt) ||
+        (Array.isArray(s.payments) && s.payments.length ? parseDate(s.payments[0]?.date) : null) ||
+        parseDate(s.serviceDate) || new Date();
+      return { deliveryDateTime: candidate.toISOString() };
     });
 
-    if (updates > 0) await batch.commit();
     return updates > 0
       ? `Se corrigió la fecha de entrega en ${updates} servicio${updates > 1 ? 's' : ''}.`
       : "Todos los servicios entregados tienen fecha correcta.";
@@ -236,23 +258,17 @@ export function ConfigMantenimientoPageContent() {
   const executeCleanOrphanAppointments = async () => {
     const q = query(collection(db, "serviceRecords"), where("status", "==", "Agendado"));
     const snap = await getDocs(q);
-    const batch = writeBatch(db);
-    let canceled = 0;
     const thirtyDaysAgo = subDays(new Date(), 30);
-
-    snap.forEach((d) => {
+    const canceled = await commitUpdatesInChunks(snap.docs, "serviceRecords", (d) => {
       const s = d.data();
       const appointmentDate = parseDate(s.appointmentDateTime);
-      if (appointmentDate && isBefore(appointmentDate, thirtyDaysAgo)) {
-        batch.update(doc(db, "serviceRecords", d.id), {
-          status: "Cancelado",
-          cancellationReason: "Mantenimiento automático: Cita expirada",
-        });
-        canceled++;
-      }
+      if (!appointmentDate || !isBefore(appointmentDate, thirtyDaysAgo)) return null;
+      return {
+        status: "Cancelado",
+        cancellationReason: "Mantenimiento automático: Cita expirada",
+      };
     });
 
-    if (canceled > 0) await batch.commit();
     return canceled > 0
       ? `Se cancelaron ${canceled} cita${canceled > 1 ? 's' : ''} fantasma muy antigua${canceled > 1 ? 's' : ''}.`
       : "El calendario de citas se encuentra completamente limpio.";
@@ -292,22 +308,15 @@ export function ConfigMantenimientoPageContent() {
     });
 
     const vSnap = await getDocs(collection(db, "vehicles"));
-    const batch = writeBatch(db);
-    let updates = 0;
-
-    vSnap.forEach(d => {
+    const updates = await commitUpdatesInChunks(vSnap.docs, "vehicles", (d) => {
       const v = d.data();
       const latest = latestServices[d.id];
-      if (latest) {
-        const formattedDate = latest.date.toISOString();
-        if (v.lastServiceDate !== formattedDate) {
-          batch.update(doc(db, "vehicles", d.id), { lastServiceDate: formattedDate });
-          updates++;
-        }
-      }
+      if (!latest) return null;
+      const formattedDate = latest.date.toISOString();
+      if (v.lastServiceDate === formattedDate) return null;
+      return { lastServiceDate: formattedDate };
     });
 
-    if (updates > 0) await batch.commit();
     return updates > 0
       ? `Se sincronizó la fecha de último servicio en ${updates} vehículo${updates > 1 ? 's' : ''}.`
       : "Todos los vehículos están sincronizados correctamente.";
@@ -317,19 +326,13 @@ export function ConfigMantenimientoPageContent() {
 
   const executeResetNegativeInventory = async () => {
     const snap = await getDocs(collection(db, "inventoryItems"));
-    const batch = writeBatch(db);
-    let updates = 0;
-
-    snap.forEach((d) => {
+    const updates = await commitUpdatesInChunks(snap.docs, "inventoryItems", (d) => {
       const item = d.data();
       // inventoryItems uses 'stock' field
-      if (typeof item.stock === 'number' && item.stock < 0) {
-        batch.update(doc(db, "inventoryItems", d.id), { stock: 0 });
-        updates++;
-      }
+      if (typeof item.stock === 'number' && item.stock < 0) return { stock: 0 };
+      return null;
     });
 
-    if (updates > 0) await batch.commit();
     return updates > 0
       ? `Se detectaron y resetearon a cero ${updates} artículo${updates > 1 ? 's' : ''} con stock negativo.`
       : "El inventario no presenta artículos con stock negativo.";
@@ -372,18 +375,14 @@ export function ConfigMantenimientoPageContent() {
 
   const executeStandardizeTickets = async () => {
     const snap = await getDocs(collection(db, "serviceRecords"));
-    const batch = writeBatch(db);
-    let updates = 0;
-
-    snap.forEach((d) => {
+    const updates = await commitUpdatesInChunks(snap.docs, "serviceRecords", (d) => {
       const s = d.data();
       if (!s.folio || (s.folio.length > 10 && !s.folio.startsWith('RNR-'))) {
-        batch.update(doc(db, "serviceRecords", d.id), { folio: generateTicketId() });
-        updates++;
+        return { folio: generateTicketId() };
       }
+      return null;
     });
 
-    if (updates > 0) await batch.commit();
     return updates > 0
       ? `Se inyectaron folios (RNR-XXXX) a ${updates} servicio${updates > 1 ? 's' : ''} con formato antiguo.`
       : "Todos los servicios ya cuentan con folios homologados.";

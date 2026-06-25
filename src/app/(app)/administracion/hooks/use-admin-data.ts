@@ -3,7 +3,12 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { db } from "@/lib/firebaseClient";
-import { collection, onSnapshot, orderBy, query, Timestamp } from "firebase/firestore";
+import { collection, onSnapshot, orderBy, query, limit, Timestamp } from "firebase/firestore";
+
+// Cap de seguridad contra OOM: las colecciones transaccionales crecen sin techo.
+// orderBy desc + limit trae lo más reciente (cubre meses de operación) y evita
+// cargar decenas de miles de docs en memoria por pestaña.
+const MAX_TX = 3000;
 import type { ServiceRecord, SaleReceipt, User, CashDrawerTransaction, InventoryItem } from "@/types";
 
 // ── Tipos nuevos ──────────────────────────────────────────────────────────────
@@ -92,17 +97,17 @@ export function useAdminData(): AdminData {
     const unsubs: (() => void)[] = [];
 
     unsubs.push(onSnapshot(
-      query(collection(db, "serviceRecords"), orderBy("createdAt", "desc")),
+      query(collection(db, "serviceRecords"), orderBy("createdAt", "desc"), limit(MAX_TX)),
       (snap) => { setServices(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }))); done(); }
     ));
 
     unsubs.push(onSnapshot(
-      query(collection(db, "sales"), orderBy("saleDate", "desc")),
+      query(collection(db, "sales"), orderBy("saleDate", "desc"), limit(MAX_TX)),
       (snap) => { setSales(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }))); done(); }
     ));
 
     unsubs.push(onSnapshot(
-      query(collection(db, "cashDrawerTransactions"), orderBy("date", "desc")),
+      query(collection(db, "cashDrawerTransactions"), orderBy("date", "desc"), limit(MAX_TX)),
       (snap) => {
         setAllCashTxs(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
         done();
@@ -120,7 +125,7 @@ export function useAdminData(): AdminData {
     }));
 
     unsubs.push(onSnapshot(
-      query(collection(db, "purchases"), orderBy("invoiceDate", "desc")),
+      query(collection(db, "purchases"), orderBy("invoiceDate", "desc"), limit(MAX_TX)),
       (snap) => { setPurchases(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) } as AdminPurchase))); done(); }
     ));
 

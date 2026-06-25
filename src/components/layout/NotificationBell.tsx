@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { db } from '@/lib/firebaseClient';
+import { authedFetch } from '@/lib/client-auth';
 
 import {
   collection,
@@ -222,7 +223,7 @@ export function NotificationBell() {
     setTogglingId(n.id);
     try {
       const action = n.humanTakeover ? 'resume' : 'pause';
-      const res = await fetch('/api/whatsapp/toggle-bot', {
+      const res = await authedFetch('/api/whatsapp/toggle-bot', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ conversationId: n.firestoreId, action }),

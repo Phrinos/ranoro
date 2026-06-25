@@ -183,7 +183,8 @@ const addRentalPayment = async (
         savedPaymentId = docRef.id;
     }
 
-    if (paymentMethod === 'Efectivo') {
+    // Solo se registra en caja al CREAR el pago; en edición no se duplica la entrada.
+    if (paymentMethod === 'Efectivo' && !paymentId) {
         await cashService.addCashTransaction({
             type: 'Entrada',
             amount: Number(amount) || 0,

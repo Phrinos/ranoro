@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { authedFetch } from '@/lib/client-auth';
 import { 
   Wrench, MapPin, DollarSign, Clock, Info, ExternalLink, 
   Eye, EyeOff, Loader2, CheckCircle2, CreditCard, Settings2 
@@ -129,7 +130,7 @@ export function TabConocimiento() {
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   useEffect(() => {
-    fetch('/api/whatsapp/knowledge')
+    authedFetch('/api/whatsapp/knowledge')
       .then(r => r.json())
       .then(d => {
         if (d.structured) setData(d.structured);
@@ -142,7 +143,7 @@ export function TabConocimiento() {
     setIsSaving(true);
     try {
       const content = buildKnowledgeString(data);
-      await fetch('/api/whatsapp/knowledge', {
+      await authedFetch('/api/whatsapp/knowledge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content, structured: data }),

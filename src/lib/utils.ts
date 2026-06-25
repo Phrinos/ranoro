@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { customAlphabet } from "nanoid";
 import { Car, Clock, CheckCircle, XCircle, Wrench, Package, AlertCircle } from 'lucide-react';
 import type { PaymentMethod, ServiceSubStatus, Driver, RentalPayment, Vehicle, ManualDebtEntry } from '@/types';
 import { parseISO, isAfter, startOfDay, differenceInCalendarDays, format as formatFns } from 'date-fns';
@@ -10,13 +11,13 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Alfabeto sin caracteres ambiguos (0/O, 1/I) para un folio legible.
+// 8 chars sobre 32 símbolos ≈ 1.1e12 combinaciones: colisión despreciable.
+// Se usa como document ID de ventas/servicios, por eso NO puede colisionar.
+const folioNanoid = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 8);
+
 export function generateTicketId(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = 'RNR-';
-  for (let i = 0; i < 4; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
+  return `RNR-${folioNanoid()}`;
 }
 
 export function normalizeDataUrl(dataUrl: string): string {

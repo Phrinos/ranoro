@@ -16,6 +16,7 @@ import type { User as AppUser, AppRole } from "@/types";
 import type { UserFormValues } from "@/schemas/user-form-schema";
 import { useToast } from "@/hooks/use-toast";
 import { syncFirebaseAuthUser } from "@/app/(app)/usuarios/actions";
+import { getIdTokenOrThrow } from "@/lib/client-auth";
 import { Loader2, ArrowLeft, Archive, ArchiveRestore } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AUTH_USER_LOCALSTORAGE_KEY } from "@/lib/constants/app";
@@ -71,7 +72,9 @@ export default function UsuarioDetailPage() {
   const onSubmit = async (values: UserFormValues) => {
     if (!currentUser) return;
     try {
+      const idToken = await getIdTokenOrThrow();
       const authUserId = await syncFirebaseAuthUser({
+        idToken,
         id: isNew ? undefined : targetUser?.id,
         email: values.email,
         name: values.name,

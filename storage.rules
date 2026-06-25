@@ -2,11 +2,27 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Regla de Producción:
-    // Solo permite la lectura y escritura de archivos a usuarios
-    // que están autenticados en tu aplicación.
+
+    // Fotos de servicios: visibles en el portal público del cliente; solo un
+    // usuario autenticado puede subir, y únicamente imágenes de hasta 10 MB.
+    match /service-photos/{serviceId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 10 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Logos del taller: públicos (aparecen en tickets/landing); subida autenticada.
+    match /workshop-logos/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 5 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Deny-by-default: nada más es accesible.
     match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }

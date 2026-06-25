@@ -8,6 +8,7 @@
 
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { authGuard } from '@/lib/server-auth';
 import { FieldValue } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
@@ -20,6 +21,7 @@ interface WhatsAppSendConfig {
   baileysAdminPassword?: string;
   defaultCountryCode: string;
   webhookSecret?: string;
+  enabled?: boolean;
 }
 
 async function loadSendConfig(): Promise<WhatsAppSendConfig | null> {
@@ -39,6 +41,16 @@ export async function POST(request: Request) {
     const config = await loadSendConfig();
     if (!config) {
       return NextResponse.json({ error: 'WhatsApp agent not configured' }, { status: 500 });
+    }
+
+    // Autoriza: servicio interno (x-api-key === webhookSecret) o usuario staff autenticado.
+    const guard = await authGuard(request, { minRole: 'staff', apiKey: config.webhookSecret });
+    if ('response' in guard) return guard.response;
+
+    // Kill-switch: las llamadas automáticas de servicio quedan silenciadas cuando enabled=false.
+    // Los mensajes manuales de un staff autenticado sí pasan.
+    if (guard.actor.isService && config.enabled === false) {
+      return NextResponse.json({ skipped: true, reason: 'bot disabled' });
     }
 
     const body = await request.json();

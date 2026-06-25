@@ -1,9 +1,13 @@
 // src/app/(app)/usuarios/actions.ts
 "use server";
 
+import type { UpdateRequest } from "firebase-admin/auth";
 import { getAdminAuth } from "@/lib/firebaseAdmin";
+import { requireActionAuth } from "@/lib/server-auth";
 
 interface SyncUserParams {
+  /** ID token del usuario que invoca (debe ser Superadministrador). */
+  idToken: string;
   id?: string;
   email: string;
   name: string;
@@ -14,13 +18,18 @@ interface SyncUserParams {
  * Creates or updates a Firebase Auth user and returns their UID.
  * On create: a new user is created in Firebase Auth.
  * On update: email/displayName are updated; password only if provided.
+ *
+ * SEGURIDAD: usa el Admin SDK (privilegios totales). Exige que el invocador
+ * sea Superadministrador — sin esto sería un vector de account-takeover.
  */
 export async function syncFirebaseAuthUser(params: SyncUserParams): Promise<string> {
-  const { id, email, name, password } = params;
+  const { idToken, id, email, name, password } = params;
+  await requireActionAuth(idToken, { minRole: "superadmin" });
+
   const auth = getAdminAuth();
 
   if (id) {
-    const updateData: any = { email, displayName: name };
+    const updateData: UpdateRequest = { email, displayName: name };
     if (password && password.length >= 6) {
       updateData.password = password;
     }

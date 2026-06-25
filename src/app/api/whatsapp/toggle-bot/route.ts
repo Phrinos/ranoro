@@ -10,12 +10,16 @@
 
 import { NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { authGuard } from '@/lib/server-auth';
 import { FieldValue } from 'firebase-admin/firestore';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   try {
+    const guard = await authGuard(request, { minRole: 'staff' });
+    if ('response' in guard) return guard.response;
+
     const body = await request.json();
     const { conversationId, action } = body;
 

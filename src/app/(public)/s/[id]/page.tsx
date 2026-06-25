@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, ShieldAlert } from "lucide-react";
-import { doc, onSnapshot, Timestamp } from "firebase/firestore";
+import { doc, getDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebaseClient";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -238,6 +238,27 @@ export default function PublicServicePage() {
   const [isTicketDialogOpen, setIsTicketDialogOpen] = useState(false);
   const [workshopInfo, setWorkshopInfo] = useState<any | null>(null);
 
+  // Carga puntual (getDoc) en lugar de un listener realtime: una página pública
+  // anónima no debe mantener un websocket Firestore por visitante. Se re-carga
+  // explícitamente tras cada acción (firmar, agendar, confirmar, cancelar).
+  const loadService = useCallback(async () => {
+    if (!db || !publicId) return;
+    try {
+      const snap = await getDoc(doc(db, "publicServices", publicId));
+      if (!snap.exists()) {
+        setService((prev) => (prev ? prev : null));
+        setError("El servicio no fue encontrado o el enlace es incorrecto.");
+        return;
+      }
+      setService({ id: snap.id, ...(snap.data() as PublicServiceDoc) });
+      setError(null);
+    } catch (err) {
+      console.error("loadService error", err);
+      // permission-denied transitorio: no borrar datos previos
+      setService((prev) => (prev === undefined ? null : prev));
+    }
+  }, [publicId]);
+
   useEffect(() => {
     try {
       const stored = localStorage.getItem("workshopTicketInfo");
@@ -251,34 +272,17 @@ export default function PublicServicePage() {
       setService(null);
       return;
     }
-
     if (!db) {
       setError("No hay conexión a la base de datos pública.");
       setService(null);
       return;
     }
-    
-    getPublicServiceData(publicId).catch((e: any) => console.warn("auto-repair failed:", e));
 
-    const ref = doc(db, "publicServices", publicId);
-    const unsub = onSnapshot(
-      ref,
-      (snap) => {
-        if (!snap.exists()) {
-          setService(null);
-          setError("El servicio no fue encontrado o el enlace es incorrecto.");
-          return;
-        }
-        setService({ id: snap.id, ...(snap.data() as PublicServiceDoc) });
-        setError(null);
-      },
-      (err) => {
-        console.error("onSnapshot error", err);
-        setError("No se pudo escuchar actualizaciones del servicio.");
-      }
-    );
-    return () => unsub();
-  }, [publicId]);
+    // Auto-repair primero, luego cargar el documento ya reparado.
+    getPublicServiceData(publicId)
+      .catch((e: any) => console.warn("auto-repair failed:", e))
+      .finally(() => { loadService(); });
+  }, [publicId, loadService]);
 
   useEffect(() => {
     if (!service) return;
@@ -301,6 +305,7 @@ export default function PublicServicePage() {
       const result = await saveSignatureAction(publicId, signatureDataUrl, signatureType);
       if (!result?.success) throw new Error(result?.error);
       toast({ title: signatureType === "reception" ? "Firma de Recepción Guardada" : "Firma de Conformidad Guardada" });
+      await loadService();
     } catch (e: any) {
       toast({ title: "Error al Guardar Firma", description: e?.message ?? "No se pudo guardar la firma.", variant: "destructive" });
     } finally {
@@ -316,6 +321,7 @@ export default function PublicServicePage() {
       const result = await confirmAppointmentAction(publicId);
       if (!result?.success) throw new Error(result?.error);
       toast({ title: "Cita Confirmada", description: "¡Gracias! Hemos confirmado tu cita." });
+      await loadService();
     } catch (e: any) {
       toast({ title: "Error al Confirmar", description: e?.message ?? "No se pudo confirmar la cita.", variant: "destructive" });
     } finally {
@@ -329,6 +335,7 @@ export default function PublicServicePage() {
       const result = await cancelAppointmentAction(publicId);
       if (!result?.success) throw new Error(result?.error);
       toast({ title: "Cita Cancelada", description: "Tu cita ha sido cancelada exitosamente." });
+      await loadService();
     } catch (e: any) {
       toast({ title: "Error", description: e?.message ?? "No se pudo cancelar la cita.", variant: "destructive" });
     }
@@ -341,6 +348,7 @@ export default function PublicServicePage() {
       if (!result?.success) throw new Error(result?.error);
       toast({ title: "Cita Agendada", description: "Tu cita ha sido registrada." });
       setIsScheduling(false);
+      await loadService();
     } catch (e: any) {
       console.error("[CLIENT] Error in handleScheduleAppointment:", e);
       toast({ title: "Error al Agendar", description: e?.message ?? "No se pudo agendar la cita.", variant: "destructive" });

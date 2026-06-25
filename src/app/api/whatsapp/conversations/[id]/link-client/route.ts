@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { authGuard } from '@/lib/server-auth';
 import { FieldValue } from 'firebase-admin/firestore';
 
 const MAX_LINKED_PATIENTS = 6;
@@ -17,6 +18,9 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const guard = await authGuard(req, { minRole: 'staff' });
+    if ('response' in guard) return guard.response;
+
     const { id } = await context.params;
     const body = await req.json();
     const { clientId, clientName, tutorPhone } = body;
@@ -73,6 +77,9 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const guard = await authGuard(req, { minRole: 'staff' });
+    if ('response' in guard) return guard.response;
+
     const { id } = await context.params;
     const body = await req.json();
     const { clientId, clientName } = body;

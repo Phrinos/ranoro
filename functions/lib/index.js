@@ -39,11 +39,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateDailyRentalCharges = void 0;
 const scheduler_1 = require("firebase-functions/v2/scheduler");
 const admin = __importStar(require("firebase-admin"));
+const firestore_1 = require("firebase-admin/firestore");
 const logger = __importStar(require("firebase-functions/logger"));
 const date_fns_1 = require("date-fns");
 const date_fns_tz_1 = require("date-fns-tz");
 admin.initializeApp();
-const db = admin.firestore();
+const db = (0, firestore_1.getFirestore)();
 const TZ = 'America/Mexico_City';
 // --- Daily Rental Charges Generation ---
 exports.generateDailyRentalCharges = (0, scheduler_1.onSchedule)({
@@ -86,10 +87,10 @@ exports.generateDailyRentalCharges = (0, scheduler_1.onSchedule)({
                 vehicleId,
                 amount: dailyRentalCost,
                 vehicleLicensePlate: vehicle?.licensePlate || '',
-                date: admin.firestore.Timestamp.fromDate(startOfTodayUtc),
+                date: firestore_1.Timestamp.fromDate(startOfTodayUtc),
                 dateKey,
-                dayStartUtc: admin.firestore.Timestamp.fromDate(startOfTodayUtc),
-                dayEndUtc: admin.firestore.Timestamp.fromDate(endOfTodayUtc),
+                dayStartUtc: firestore_1.Timestamp.fromDate(startOfTodayUtc),
+                dayEndUtc: firestore_1.Timestamp.fromDate(endOfTodayUtc),
             });
             logger.info(`Created daily charge for ${driver.name} (${dateKey}).`);
         }

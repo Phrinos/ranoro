@@ -3,11 +3,10 @@
 import { withSuspense } from "@/lib/withSuspense";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { Suspense, lazy, useState, useEffect, useMemo } from 'react';
-import { Loader2, Settings, Building, Shapes, Wrench, FileJson } from 'lucide-react';
+import { Loader2, Settings, Building, Wrench } from 'lucide-react';
 import { TabbedPageLayout } from '@/components/layout/tabbed-page-layout';
-import type { User, AppRole, ServiceTypeRecord } from '@/types';
+import type { User } from '@/types';
 import { AUTH_USER_LOCALSTORAGE_KEY, defaultSuperAdmin, placeholderAppRoles } from '@/lib/constants/app';
-import { inventoryService } from '@/lib/services';
 import { useRoles } from '@/lib/contexts/roles-context';
 const ConfigTallerPageContent = lazy(() => import('./components/config-taller-content').then(module => ({ default: module.ConfigTallerPageContent })));
 const ConfiguracionTicketPageContent = lazy(() => import('./components/config-ticket-content').then(module => ({ default: module.ConfiguracionTicketPageContent })));
@@ -21,23 +20,17 @@ function PageInner() {
   const [activeTab, setActiveTab] = useState(activeTabQuery || 'taller');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const roles = useRoles(); // Usa el contexto centralizado — sin listener propio
-  const [serviceTypes, setServiceTypes] = useState<ServiceTypeRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
     const authUserString = localStorage.getItem(AUTH_USER_LOCALSTORAGE_KEY);
-    
     try {
         setCurrentUser(authUserString ? JSON.parse(authUserString) : defaultSuperAdmin);
     } catch (e) {
         console.error("Failed to parse user from localStorage:", e);
         setCurrentUser(defaultSuperAdmin);
     }
-
-    const unsub = inventoryService.onServiceTypesUpdate(setServiceTypes);
     setIsLoading(false);
-    return () => unsub();
   }, []);
   
   const userPermissions = useMemo(() => {

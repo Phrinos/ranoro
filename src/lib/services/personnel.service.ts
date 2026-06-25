@@ -54,7 +54,8 @@ const savePersonnel = async (data: UserFormValues, id?: string): Promise<User> =
 
 const archivePersonnel = async (id: string, isArchived: boolean): Promise<void> => {
     if (!db) throw new Error("Database not initialized.");
-    await updateDoc(doc(db, 'personnel', id), { isArchived });
+    // El personal vive en la colección 'users', no en 'personnel' (inexistente).
+    await updateDoc(doc(db, 'users', id), { isArchived });
 };
 
 // --- Areas ---

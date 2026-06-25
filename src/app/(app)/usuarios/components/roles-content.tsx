@@ -77,11 +77,10 @@ export function RolesPageContent({ currentUser, initialRoles }: RolesPageContent
     setIsSaving(true);
     try {
       const roleData: Partial<AppRole> = {
-        id: editingRole?.id,
         name: roleName.trim(),
         permissions: Array.from(selectedPerms),
       };
-      await adminService.saveRole(roleData as any, currentUser!);
+      await adminService.saveRole(roleData as any, currentUser!, editingRole?.id);
       toast({ title: editingRole ? 'Rol actualizado' : 'Rol creado' });
       setIsDialogOpen(false);
     } catch (e: any) {

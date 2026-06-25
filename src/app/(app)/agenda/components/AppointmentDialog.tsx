@@ -76,7 +76,18 @@ export function AppointmentDialog({
   useEffect(() => {
     if (open) {
       if (appointment) {
-        // Edit mode
+        // Edit mode — resetear el estado para NO arrastrar el vehículo de una edición previa
+        // (si no, al editar una cita temporal se guardaría el vehículo equivocado).
+        setSelectedVehicle(null);
+        setSearchResults([]);
+        setHasSearched(false);
+        setPrevQuotes([]);
+        setTempName(appointment.ownerName || "");
+        setTempPhone(appointment.ownerPhone || "");
+        setTempMake("");
+        setTempModel("");
+        setTempYear("");
+
         setPlateQuery(appointment.licensePlate || "");
         if (appointment.appointmentDateTime) {
           const d = new Date(appointment.appointmentDateTime);
@@ -87,7 +98,7 @@ export function AppointmentDialog({
         setSingleServiceType(appointment.serviceTypeLabels?.[0] || "");
         setNotes(appointment.notes || "");
         setSelectedQuoteId(appointment.relatedQuoteId || "none");
-        
+
         // Auto-select true vehicle if ID is not "temporal"
         if (appointment.vehicleId && appointment.vehicleId !== "temporal") {
           inventoryService.getVehicleById(appointment.vehicleId).then((v) => {

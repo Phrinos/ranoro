@@ -16,6 +16,7 @@ import {
   runTransaction,
   deleteDoc,
   updateDoc,
+  increment,
 } from 'firebase/firestore';
 import { db } from '../firebaseClient';
 import type { RegisterPurchaseFormValues } from '@/schemas/register-purchase-schema';
@@ -166,8 +167,8 @@ const registerPurchase = async (data: PurchaseFormValues): Promise<void> => {
     } as any;
 
     batch.set(payableRef, cleanObjectForFirestore(newPayableAccount));
-    const currentDebt = (supplierDoc as any)?.debtAmount || 0;
-    batch.set(supplierRef, { debtAmount: asMoney(currentDebt + invoiceTotal) }, { merge: true });
+    // increment() es atómico server-side: evita el lost-update de leer-sumar-escribir.
+    batch.set(supplierRef, { debtAmount: increment(invoiceTotal) }, { merge: true });
   } else if (isCash(data.paymentMethod) && cashTxRef) {
     // 5b) Pago inmediato: salida en caja
     batch.set(
@@ -230,12 +231,8 @@ const deletePurchase = async (purchaseId: string, currentUser: User | null): Pro
     if (payableSnap.exists()) {
       const payableData = payableSnap.data();
       const supplierRef = doc(db, 'suppliers', data.supplierId);
-      const supplierSnap = await getDoc(supplierRef);
-      if (supplierSnap.exists()) {
-        const currentDebt = supplierSnap.data().debtAmount || 0;
-        // Restar el total de la factura de la deuda acumulada del proveedor
-        batch.update(supplierRef, { debtAmount: Math.max(0, currentDebt - (payableData.totalAmount || 0)) });
-      }
+      // increment() atómico: resta el total de la factura de la deuda del proveedor.
+      batch.update(supplierRef, { debtAmount: increment(-(payableData.totalAmount || 0)) });
       batch.delete(payableRef);
     }
   }

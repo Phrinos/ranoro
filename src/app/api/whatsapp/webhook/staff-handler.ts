@@ -9,6 +9,7 @@ import { getAdminDb } from '@/lib/firebaseAdmin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { buildStaffPrompt } from './system-prompt';
 import { staffToolDeclarations } from './tools';
+import { resolveGeminiKey } from './gemini-key';
 import type { WhatsAppAgentConfig } from '@/lib/types';
 
 export interface StaffHandlerParams {
@@ -19,12 +20,6 @@ export interface StaffHandlerParams {
   loadStaffHistory: (phone: string) => Promise<any[]>;
   formatNow: () => { today: string; currentTime: string };
   requestUrl: string;
-}
-
-function resolveGeminiKey(): string {
-  let key = process.env.GEMINI_API_KEY || '';
-  if (key.includes('=')) { const m = key.match(/GEMINI_API_KEY=([A-Za-z0-9_\-]+)/); if (m) key = m[1]; }
-  return key.trim().replace(/^["']|["']$/g, '');
 }
 
 export async function notifyStaffOfEscalation(params: {

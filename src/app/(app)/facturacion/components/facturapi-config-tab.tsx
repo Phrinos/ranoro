@@ -10,8 +10,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Loader2, Save, KeyRound, ExternalLink, User, Lock, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebaseClient";
+import { getIdTokenOrThrow } from "@/lib/client-auth";
+import { getBillingConfigAction, saveBillingConfigAction } from "../actions";
 import { Separator } from "@/components/ui/separator";
 
 const configSchema = z.object({
@@ -26,6 +26,8 @@ export function FacturapiConfigTab() {
   const [isLoading, setIsLoading] = useState(true);
   const [showKey, setShowKey] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [hasLiveKey, setHasLiveKey] = useState(false);
+  const [hasPass, setHasPass] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<ConfigValues>({
@@ -37,16 +39,13 @@ export function FacturapiConfigTab() {
     let isMounted = true;
     const loadConfig = async () => {
       try {
-        const docRef = doc(db, "settings", "billing");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && isMounted) {
-          const data = docSnap.data();
-          form.reset({ 
-            liveSecretKey: data.liveSecretKey || "",
-            facturapiUser: data.facturapiUser || "",
-            facturapiPass: data.facturapiPass || ""
-          });
-        }
+        const idToken = await getIdTokenOrThrow();
+        const cfg = await getBillingConfigAction(idToken);
+        if (!isMounted) return;
+        // La key/contraseña NUNCA viajan al cliente: solo el usuario y flags de "ya configurado".
+        form.reset({ liveSecretKey: "", facturapiUser: cfg.facturapiUser, facturapiPass: "" });
+        setHasLiveKey(cfg.hasLiveKey);
+        setHasPass(cfg.hasPass);
       } catch (e: any) {
         console.error("Error loading config:", e);
       } finally {
@@ -59,12 +58,17 @@ export function FacturapiConfigTab() {
 
   const onSubmit = async (values: ConfigValues) => {
     try {
-      const docRef = doc(db, "settings", "billing");
-      await setDoc(docRef, { 
+      const idToken = await getIdTokenOrThrow();
+      const res = await saveBillingConfigAction(idToken, {
         liveSecretKey: values.liveSecretKey,
         facturapiUser: values.facturapiUser,
-        facturapiPass: values.facturapiPass
-      }, { merge: true });
+        facturapiPass: values.facturapiPass,
+      });
+      if (!res.success) throw new Error(res.error);
+      if (values.liveSecretKey) setHasLiveKey(true);
+      if (values.facturapiPass) setHasPass(true);
+      form.setValue("liveSecretKey", "");
+      form.setValue("facturapiPass", "");
       toast({ title: "Configuración Guardada", description: "Las credenciales de Facturapi han sido actualizadas." });
     } catch (e: any) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
@@ -112,11 +116,11 @@ export function FacturapiConfigTab() {
                       <FormLabel className="text-slate-600">Secret Key (Live o Test)</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Input 
-                            type={showKey ? "text" : "password"} 
-                            placeholder="sk_live_..." 
+                          <Input
+                            type={showKey ? "text" : "password"}
+                            placeholder={hasLiveKey ? "•••• configurada — deja en blanco para conservar" : "sk_live_..."}
                             className="pr-10 font-mono text-sm bg-slate-50/50"
-                            {...field} 
+                            {...field}
                           />
                           <button
                             type="button"
@@ -170,11 +174,11 @@ export function FacturapiConfigTab() {
                         <FormControl>
                           <div className="relative">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                            <Input 
-                              type={showPass ? "text" : "password"} 
-                              placeholder="••••••••" 
-                              className="pl-9 pr-10 bg-slate-50/50" 
-                              {...field} 
+                            <Input
+                              type={showPass ? "text" : "password"}
+                              placeholder={hasPass ? "•••• guardada — deja en blanco para conservar" : "••••••••"}
+                              className="pl-9 pr-10 bg-slate-50/50"
+                              {...field}
                             />
                             <button
                               type="button"

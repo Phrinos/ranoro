@@ -7,14 +7,20 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { authGuard } from '@/lib/server-auth';
 
 
 const DOC_PATH = { collection: 'settings', doc: 'whatsapp-knowledge' };
 
+const MAX_CONTENT_LENGTH = 50_000;
+
 // ── GET ───────────────────────────────────────────────────────────────
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const guard = await authGuard(req, { minRole: 'staff' });
+    if ('response' in guard) return guard.response;
+
     const db = getAdminDb();
     const snap = await db.collection(DOC_PATH.collection).doc(DOC_PATH.doc).get();
     if (!snap.exists) {
@@ -36,6 +42,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const guard = await authGuard(req, { minRole: 'staff' });
+    if ('response' in guard) return guard.response;
+
     const action = req.nextUrl.searchParams.get('action');
 
     // Invalidate cache only (called after save to make bot pick up changes)
@@ -48,6 +57,9 @@ export async function POST(req: NextRequest) {
 
     if (typeof content !== 'string') {
       return NextResponse.json({ error: 'content must be a string' }, { status: 400 });
+    }
+    if (content.length > MAX_CONTENT_LENGTH) {
+      return NextResponse.json({ error: 'content demasiado largo' }, { status: 400 });
     }
 
     const db = getAdminDb();

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminDb } from '@/lib/firebaseAdmin';
+import { authGuard } from '@/lib/server-auth';
 import Facturapi from 'facturapi';
 
 export async function GET(
@@ -7,6 +8,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const guard = await authGuard(req, { minRole: 'staff' });
+    if ('response' in guard) return guard.response;
+
     const { id } = await params;
     const type = req.nextUrl.searchParams.get('type') || 'pdf'; // 'pdf' | 'xml' | 'zip'
 
@@ -62,6 +66,6 @@ export async function GET(
     return response;
   } catch (error: any) {
     console.error('Error downloading invoice:', error);
-    return new NextResponse(error.message || 'Error descargando la factura', { status: 500 });
+    return new NextResponse('Error descargando la factura', { status: 500 });
   }
 }

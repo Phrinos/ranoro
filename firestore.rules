@@ -49,7 +49,17 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isSignedIn();
       allow create: if isSuperAdmin();
-      allow update: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
+      // Un usuario puede editar SU propio doc pero NUNCA campos privilegiados
+      // (role/sueldo/comisión/archivado/permisos): eso evita la auto-promoción.
+      allow update: if isSuperAdmin() || (
+        request.auth.uid == userId
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.get('monthlySalary', 0) == resource.data.get('monthlySalary', 0)
+        && request.resource.data.get('commissionRate', 0) == resource.data.get('commissionRate', 0)
+        && request.resource.data.get('isArchived', false) == resource.data.get('isArchived', false)
+        && request.resource.data.get('permissions', []) == resource.data.get('permissions', [])
+        && request.resource.data.get('functions', []) == resource.data.get('functions', [])
+      );
       allow delete: if isSuperAdmin();
     }
 
@@ -77,14 +87,23 @@ service cloud.firestore {
     match /serviceRecords/{id} {
       allow read: if isSignedIn();
       allow create: if isStaff();
-      allow update: if isSignedIn();  // Técnicos pueden actualizar servicios
+      // Staff edita libre; un Técnico puede actualizar campos operativos pero
+      // NO los montos ni el estado de facturación.
+      allow update: if isStaff() || (
+        isAnyRole()
+        && request.resource.data.get('total', 0) == resource.data.get('total', 0)
+        && request.resource.data.get('totalCost', 0) == resource.data.get('totalCost', 0)
+        && request.resource.data.get('totalAmount', 0) == resource.data.get('totalAmount', 0)
+        && request.resource.data.get('invoiceId', '') == resource.data.get('invoiceId', '')
+      );
       allow delete: if isSuperAdmin();
     }
 
     match /publicServices/{id} {
-      allow read: if true;   // Público (clientes ven estado de su servicio)
-      allow update: if true; // Los clientes pueden autorizar/firmar
-      allow create, delete: if isStaff();
+      allow read: if true;    // Público (clientes ven estado de su servicio)
+      // Las firmas/citas del cliente se escriben vía Server Actions (Admin SDK),
+      // nunca desde el SDK del cliente: por eso el cliente no necesita escribir aquí.
+      allow create, update, delete: if isStaff();
     }
 
     match /sales/{id} {
@@ -206,12 +225,12 @@ service cloud.firestore {
     // ─── Caja y Finanzas ──────────────────────────────────────────────
     match /cashDrawerState/{id} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow write: if isStaff();
     }
 
     match /cashDrawerTransactions/{id} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow write: if isStaff();
     }
 
     match /monthlyBalances/{id} {
@@ -240,9 +259,11 @@ service cloud.firestore {
       allow write: if isSuperAdmin();
     }
 
+    // Los docs con secretos (Facturapi sk_live_, credenciales Baileys, webhookSecret)
+    // SOLO los lee/escribe Superadmin; el resto de settings sigue abierto a staff.
     match /settings/{id} {
-      allow read: if isSignedIn();
-      allow write: if isStaff();
+      allow read: if isSuperAdmin() || (isSignedIn() && !(id in ['billing', 'whatsapp-agent']));
+      allow write: if isSuperAdmin() || (isStaff() && !(id in ['billing', 'whatsapp-agent']));
     }
 
     // ─── Auditoría ────────────────────────────────────────────────────
@@ -272,12 +293,12 @@ service cloud.firestore {
     // ─── Citas ────────────────────────────────────────────────────────
     match /appointments/{id} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow write: if isStaff();
     }
 
     match /spaAppointments/{id} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow write: if isStaff();
     }
 
     // ─── Denegar por defecto ──────────────────────────────────────────

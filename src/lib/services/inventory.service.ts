@@ -376,7 +376,11 @@ const savePaperwork = async (vehicleId: string, paperwork: Omit<Paperwork, 'id'>
     const existingPaperwork: Paperwork[] = (vehicleDoc.data() as any).paperwork || [];
     if (id) {
         const index = existingPaperwork.findIndex(p => p.id === id);
-        existingPaperwork[index] = { ...(paperwork as Paperwork), id };
+        if (index >= 0) {
+            existingPaperwork[index] = { ...(paperwork as Paperwork), id };
+        } else {
+            existingPaperwork.push({ ...(paperwork as Paperwork), id });
+        }
     } else {
         existingPaperwork.push({ ...(paperwork as Paperwork), id: nanoid() });
     }
@@ -401,7 +405,11 @@ const saveFineCheck = async (vehicleId: string, fineCheck: Omit<FineCheck, 'id'>
     const existingFineChecks: FineCheck[] = (vehicleDoc.data() as any).fineChecks || [];
     if (id) {
         const index = existingFineChecks.findIndex(f => f.id === id);
-        existingFineChecks[index] = { ...(fineCheck as FineCheck), id };
+        if (index >= 0) {
+            existingFineChecks[index] = { ...(fineCheck as FineCheck), id };
+        } else {
+            existingFineChecks.push({ ...(fineCheck as FineCheck), id });
+        }
     } else {
         existingFineChecks.push({ ...(fineCheck as FineCheck), id: nanoid() });
     }

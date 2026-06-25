@@ -1,9 +1,8 @@
 // src/lib/firebaseAdmin.ts
 import 'server-only';
 import { initializeApp, getApps, cert, getApp } from 'firebase-admin/app';
-import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { getFirestore, type Firestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
-import admin from 'firebase-admin';
 
 /**
  * Inicializa y devuelve la instancia de Firestore del SDK de Firebase Admin,
@@ -56,4 +55,4 @@ export function getAdminAuth() {
   return getAuth(getApp());
 }
 
-export const serverTimestamp = () => admin.firestore.FieldValue.serverTimestamp();
+export const serverTimestamp = () => FieldValue.serverTimestamp();

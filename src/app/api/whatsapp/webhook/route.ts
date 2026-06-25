@@ -271,6 +271,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ reply: null });
     }
 
+    // Kill-switch global: con enabled=false, silencio absoluto en TODOS los canales de IA
+    // (staff y cliente). Los comandos de control (pause/resume) ya se procesaron arriba.
+    if (config.enabled === false) return NextResponse.json({ reply: null });
+
     const legacyPhones: string[] = Array.isArray((config as any).adminPhones) ? (config as any).adminPhones : [];
     const memberUids: string[] = getStaffUids(config as any);
     const staffPhonesList: string[] = [...legacyPhones, ...memberUids];

@@ -1,8 +1,8 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
-import * as admin from "firebase-admin";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import * as logger from "firebase-functions/logger";
 
-const db = admin.firestore();
+const db = getFirestore();
 
 export const generateDailyVehicleStats = onSchedule(
   {
@@ -12,18 +12,28 @@ export const generateDailyVehicleStats = onSchedule(
   async () => {
     logger.info("Starting daily aggregate job for vehicles...");
     try {
-      const snapshot = await db.collection("vehicles").get();
-      
       const now = new Date();
+      let total = 0;
       let recientes = 0;
       let vencidos = 0;
       let sinContacto = 0;
-      
+
       const duplicateMap = new Map<string, string[]>();
-      
-      snapshot.docs.forEach((doc) => {
+
+      // Paginar la colección para no cargar miles de vehículos en memoria de golpe.
+      const PAGE = 500;
+      let lastDoc: FirebaseFirestore.QueryDocumentSnapshot | null = null;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        let q = db.collection("vehicles").orderBy("__name__").limit(PAGE);
+        if (lastDoc) q = q.startAfter(lastDoc);
+        const snapshot = await q.get();
+        if (snapshot.empty) break;
+
+        snapshot.docs.forEach((doc) => {
+        total++;
         const data = doc.data();
-        
+
         // Calcular fechas
         if (data.lastServiceDate) {
           const serviceDateStr = data.lastServiceDate;
@@ -65,22 +75,27 @@ export const generateDailyVehicleStats = onSchedule(
              duplicateMap.set(p, existing);
           }
         }
-      });
-      
+        });
+
+        lastDoc = snapshot.docs[snapshot.docs.length - 1];
+        if (snapshot.size < PAGE) break;
+      }
+
       let dupsCount = 0;
       duplicateMap.forEach((ids) => {
         if (ids.length > 1) {
-           dupsCount += ids.length;
+           // 'dups' = placas sobrantes (N-1 por grupo duplicado), no el total del grupo.
+           dupsCount += ids.length - 1;
         }
       });
 
       const stats = {
-         total: snapshot.size,
+         total,
          recientes,
          vencidos,
          sinContacto,
          dups: dupsCount,
-         lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+         lastUpdated: FieldValue.serverTimestamp()
       };
       
       await db.doc("systemStats/vehicles").set(stats, { merge: true });
