@@ -53,8 +53,7 @@ exports.generateDailyVehicleStats = (0, scheduler_1.onSchedule)({
         // Paginar la colección para no cargar miles de vehículos en memoria de golpe.
         const PAGE = 500;
         let lastDoc = null;
-        // eslint-disable-next-line no-constant-condition
-        while (true) {
+        for (;;) {
             let q = db.collection("vehicles").orderBy("__name__").limit(PAGE);
             if (lastDoc)
                 q = q.startAfter(lastDoc);
