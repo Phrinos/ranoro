@@ -33,7 +33,7 @@ export default function LegalLayout({
         <div className="container mx-auto max-w-4xl px-4 md:px-6">
             <div className="relative h-48 md:h-64 w-full overflow-hidden rounded-t-xl">
                  <Image
-                    src="/login.png"
+                    src="/login.jpg"
                     alt="Mecánico trabajando en un vehículo"
                     fill
                     className="object-cover object-center"

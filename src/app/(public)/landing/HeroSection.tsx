@@ -15,7 +15,7 @@ export function HeroSection() {
     <section className="relative w-full min-h-svh flex items-center justify-center md:justify-start overflow-hidden">
       <div className="absolute inset-0 z-0">
         <Image
-          src="/home.png"
+          src="/home.jpg"
           alt="Taller mecánico Ranoro en Aguascalientes con un coche en servicio"
           fill
           className="object-cover object-top"

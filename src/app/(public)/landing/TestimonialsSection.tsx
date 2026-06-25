@@ -27,18 +27,20 @@ const testimonials = [
 const TestimonialCard = ({ quote, author, rating }: { quote: string; author: string; rating: number }) => (
   <Card className="w-[340px] md:w-[420px] shrink-0 mx-4 bg-white/50 backdrop-blur-xl border-slate-200/50 shadow-xs rounded-3xl overflow-hidden hover:shadow-xl transition-shadow duration-300">
       <CardContent className="p-8">
-          <div className="flex gap-1 text-amber-400 mb-6 drop-shadow-xs">
-              {Array.from({ length: 5 }, (_, i) => (
-                  <Icon key={i} icon={i < rating ? "solar:star-bold" : "solar:star-linear"} className="h-6 w-6"/>
-              ))}
-          </div>
-          <blockquote className="text-xl md:text-2xl font-light text-slate-700 mb-6 leading-relaxed">"{quote}"</blockquote>
-          <div className="flex items-center mt-auto">
-             <div className="h-10 w-10 rounded-full bg-linear-to-br from-primary/20 to-primary/50 flex items-center justify-center text-primary font-bold mr-3 border border-primary/20">
-               {author.charAt(0)}
-             </div>
-             <p className="font-semibold text-slate-900">{author}</p>
-          </div>
+          <figure className="m-0">
+            <div className="flex gap-1 text-amber-400 mb-6 drop-shadow-xs" role="img" aria-label={`${rating} de 5 estrellas`}>
+                {Array.from({ length: 5 }, (_, i) => (
+                    <Icon key={i} icon={i < rating ? "solar:star-bold" : "solar:star-linear"} className="h-6 w-6" aria-hidden="true"/>
+                ))}
+            </div>
+            <blockquote className="text-xl md:text-2xl font-light text-slate-700 mb-6 leading-relaxed">"{quote}"</blockquote>
+            <figcaption className="flex items-center mt-auto">
+               <div className="h-10 w-10 rounded-full bg-linear-to-br from-primary/20 to-primary/50 flex items-center justify-center text-primary font-bold mr-3 border border-primary/20" aria-hidden="true">
+                 {author.charAt(0)}
+               </div>
+               <cite className="font-semibold text-slate-900 not-italic">{author}</cite>
+            </figcaption>
+          </figure>
       </CardContent>
   </Card>
 );
@@ -111,12 +113,12 @@ export function TestimonialsSection() {
                 <div className="mt-20 pt-10 border-t border-slate-200/60 flex flex-wrap justify-center items-center gap-4 md:gap-8">
                     <div className="flex flex-col items-center">
                       <span className="text-3xl font-extrabold text-slate-900">4.7</span>
-                      <div className="flex text-amber-400 mt-1 mb-1">
-                        <Icon icon="solar:star-bold" className="h-4 w-4"/>
-                        <Icon icon="solar:star-bold" className="h-4 w-4"/>
-                        <Icon icon="solar:star-bold" className="h-4 w-4"/>
-                        <Icon icon="solar:star-bold" className="h-4 w-4"/>
-                        <Icon icon="solar:star-half-bold" className="h-4 w-4"/>
+                      <div className="flex text-amber-400 mt-1 mb-1" role="img" aria-label="4.7 de 5 estrellas">
+                        <Icon icon="solar:star-bold" className="h-4 w-4" aria-hidden="true"/>
+                        <Icon icon="solar:star-bold" className="h-4 w-4" aria-hidden="true"/>
+                        <Icon icon="solar:star-bold" className="h-4 w-4" aria-hidden="true"/>
+                        <Icon icon="solar:star-bold" className="h-4 w-4" aria-hidden="true"/>
+                        <Icon icon="solar:star-half-bold" className="h-4 w-4" aria-hidden="true"/>
                       </div>
                       <span className="text-xs text-slate-500 font-medium uppercase tracking-wider">Estrellas</span>
                     </div>

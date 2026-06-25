@@ -37,6 +37,12 @@ export function Footer() {
                                 <Icon icon="simple-icons:whatsapp" className="w-5 h-5"/>
                              </a>
                         </div>
+                        <address className="mt-8 not-italic text-sm text-slate-400 font-light leading-relaxed space-y-1">
+                            <p>Av. de la Convención de 1914 Sur #1421, Jardines de la Concepción I, C.P. 20267, Aguascalientes, Ags.</p>
+                            <p>
+                                <a href="tel:+524491425323" className="hover:text-primary transition-colors">+52 449 142 5323</a>
+                            </p>
+                        </address>
                     </div>
 
                     <div>
