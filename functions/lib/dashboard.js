@@ -58,7 +58,7 @@ async function executeDashboardGeneration() {
     const [servicesSnap, salesSnap, inventorySnap, fixedExpSnap, personnelSnap] = await Promise.all([
         db.collection('serviceRecords').where('updatedAt', '>=', threeMonthsAgo).get(),
         db.collection('sales').where('saleDate', '>=', threeMonthsAgoISO).get(),
-        db.collection('inventory').get(), // inventory is small enough for backend
+        db.collection('inventoryItems').get(), // inventory is small enough for backend
         db.collection('fixedExpenses').get(),
         db.collection('users').get()
     ]);
@@ -105,11 +105,15 @@ async function executeDashboardGeneration() {
             const monthKey = (0, date_fns_1.format)(saleDate, 'yyyy-MM');
             if (dataByMonth[monthKey]) {
                 const income = Number(s.totalAmount) || 0;
-                const costOfGoods = s.items?.reduce((sum, item) => {
-                    const invItem = inventoryMap.get(item.inventoryItemId);
-                    const itemUnitCost = invItem?.unitPrice ?? 0;
-                    return sum + (itemUnitCost * item.quantity);
-                }, 0) ?? 0;
+                // Preferir el costo denormalizado de la venta; si no existe, recalcular
+                // desde inventoryItems usando costPrice (campo canónico; unitPrice es legacy).
+                const costOfGoods = Number(s.totalCost) > 0
+                    ? Number(s.totalCost)
+                    : (s.items?.reduce((sum, item) => {
+                        const invItem = inventoryMap.get(item.inventoryItemId);
+                        const itemUnitCost = invItem?.costPrice ?? invItem?.unitPrice ?? 0;
+                        return sum + (itemUnitCost * item.quantity);
+                    }, 0) ?? 0);
                 dataByMonth[monthKey].ingresos += income;
                 dataByMonth[monthKey].costoInsumos += costOfGoods;
             }
