@@ -202,9 +202,14 @@ exports.generateDashboardStats = (0, scheduler_1.onSchedule)({
 }, async () => {
     await executeDashboardGeneration();
 });
-exports.forceGenerateDashboardStats = (0, https_1.onCall)({
-    cors: true
-}, async (request) => {
-    // You could add auth checks here: if (!request.auth) throw new HttpsError...
+exports.forceGenerateDashboardStats = (0, https_1.onCall)(async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError('unauthenticated', 'Debes iniciar sesión.');
+    }
+    const userSnap = await (0, firestore_1.getFirestore)().collection('users').doc(request.auth.uid).get();
+    const role = userSnap.exists ? (userSnap.data()?.role || '') : '';
+    if (role !== 'Superadministrador') {
+        throw new https_1.HttpsError('permission-denied', 'Requiere rol Superadministrador.');
+    }
     return await executeDashboardGeneration();
 });

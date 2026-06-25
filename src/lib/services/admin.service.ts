@@ -14,7 +14,7 @@ import {
   getDocs,
   serverTimestamp,
 } from 'firebase/firestore';
-import { db } from '../firebaseClient';
+import { db, auth } from '../firebaseClient';
 import type { User, AppRole, AuditLog, AuditLogAction } from "@/types";
 import { cleanObjectForFirestore, parseDate } from '../forms';
 
@@ -33,8 +33,12 @@ export const logAudit = async (
     console.error("Audit log failed: Database not initialized.");
     return;
   }
+  // El userId se sella con el uid real de Firebase Auth (no el que pase el caller),
+  // para que la regla `userId == request.auth.uid` impida logs forjados a nombre de otro.
+  const uid = auth?.currentUser?.uid;
   const newLog: Omit<AuditLog, "id"> = {
     ...details,
+    userId: uid ?? (details as { userId?: string }).userId,
     actionType: actionType,
     description,
     createdAt: new Date().toISOString(),

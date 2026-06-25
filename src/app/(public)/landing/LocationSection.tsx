@@ -33,8 +33,8 @@ function LocationSection() {
                                         <Icon icon="solar:routing-2-bold-duotone" className="h-6 w-6"/>
                                     </div>
                                     <div>
-                                        <h4 className="font-semibold text-slate-900">Dirección</h4>
-                                        <p className="text-sm text-slate-600 mt-1 leading-snug">Av. de la Convención de 1914 Sur #1421,<br/>Jardines de la Convención, 20267,<br/>Aguascalientes, Ags.</p>
+                                        <h3 className="font-semibold text-slate-900">Dirección</h3>
+                                        <p className="text-sm text-slate-600 mt-1 leading-snug">Av. de la Convención de 1914 Sur #1421,<br/>Jardines de la Concepción I, C.P. 20267,<br/>Aguascalientes, Ags.</p>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -45,7 +45,7 @@ function LocationSection() {
                                         <Icon icon="solar:clock-circle-bold-duotone" className="h-6 w-6"/>
                                     </div>
                                     <div>
-                                        <h4 className="font-semibold text-slate-900">Horarios de Atención</h4>
+                                        <h3 className="font-semibold text-slate-900">Horarios de Atención</h3>
                                         <p className="text-sm text-slate-600 mt-1">Lunes a Viernes: <span className="font-medium text-slate-900">8:30 AM – 5:30 PM</span></p>
                                         <p className="text-sm text-slate-600">Sábados: <span className="font-medium text-slate-900">8:30 AM - 1:30 PM</span></p>
                                     </div>
@@ -66,9 +66,10 @@ function LocationSection() {
                     <AnimatedDiv className="lg:col-span-7 h-full min-h-[400px] lg:min-h-[600px]">
                         <div className="h-full w-full rounded-4xl overflow-hidden border border-slate-200 shadow-2xl relative group">
                             <div className="absolute inset-0 z-10 pointer-events-none ring-1 ring-inset ring-black/10 rounded-4xl" />
-                             <iframe 
-                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3702.570339299484!2d-102.3021980247293!3d21.8741344584067!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8681fe76822c9a91%3A0x8313459c53644f15!2sAv.%20de%20la%20Convenci%C3%B3n%20de%201914%20Sur%201421%2C%20Jardines%20de%20la%20Concepci%C3%B3n%20I%2C%2020267%20Aguascalientes%2C%20Ags.!5e0!3m2!1ses-419!2smx!4v1721855619840!5m2!1ses-419!2smx" 
-                                className="w-full h-full grayscale-20 group-hover:grayscale-0 transition-all duration-700" 
+                             <iframe
+                                title="Mapa de ubicación de Ranoro Taller en Aguascalientes"
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3702.570339299484!2d-102.3021980247293!3d21.8741344584067!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8681fe76822c9a91%3A0x8313459c53644f15!2sAv.%20de%20la%20Convenci%C3%B3n%20de%201914%20Sur%201421%2C%20Jardines%20de%20la%20Concepci%C3%B3n%20I%2C%2020267%20Aguascalientes%2C%20Ags.!5e0!3m2!1ses-419!2smx!4v1721855619840!5m2!1ses-419!2smx"
+                                className="w-full h-full grayscale-20 group-hover:grayscale-0 transition-all duration-700"
                                 style={{ border: 0 }} 
                                 allowFullScreen 
                                 loading="lazy" 

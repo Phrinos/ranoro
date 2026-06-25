@@ -55,8 +55,10 @@ exports.generateDailyRentalCharges = (0, scheduler_1.onSchedule)({
     const nowInMexico = (0, date_fns_tz_1.toZonedTime)(new Date(), TZ);
     const startOfTodayInMexico = (0, date_fns_1.startOfDay)(nowInMexico);
     const endOfTodayInMexico = (0, date_fns_1.endOfDay)(nowInMexico);
-    const startOfTodayUtc = (0, date_fns_tz_1.toZonedTime)(startOfTodayInMexico, TZ);
-    const endOfTodayUtc = (0, date_fns_tz_1.toZonedTime)(endOfTodayInMexico, TZ);
+    // Volver de hora local (Mexico) a UTC requiere fromZonedTime; usar toZonedTime
+    // aquí aplicaba el offset dos veces y corrompía el rango del día.
+    const startOfTodayUtc = (0, date_fns_tz_1.fromZonedTime)(startOfTodayInMexico, TZ);
+    const endOfTodayUtc = (0, date_fns_tz_1.fromZonedTime)(endOfTodayInMexico, TZ);
     const dateKey = (0, date_fns_tz_1.formatInTimeZone)(nowInMexico, TZ, 'yyyy-MM-dd');
     const activeDriversSnap = await db
         .collection('drivers')
@@ -67,15 +69,26 @@ exports.generateDailyRentalCharges = (0, scheduler_1.onSchedule)({
         logger.info('No active drivers with assigned vehicles found.');
         return;
     }
-    const ops = activeDriversSnap.docs.map(async (driverDoc) => {
+    // Pre-cargar todos los vehículos asignados en UNA lectura batch (evita el N+1).
+    const driversWithVehicle = activeDriversSnap.docs.filter((d) => d.data().assignedVehicleId);
+    const uniqueVehicleIds = [
+        ...new Set(driversWithVehicle.map((d) => d.data().assignedVehicleId)),
+    ];
+    const vehicleMap = new Map();
+    if (uniqueVehicleIds.length > 0) {
+        const refs = uniqueVehicleIds.map((id) => db.collection('vehicles').doc(id));
+        const vehicleDocs = await db.getAll(...refs);
+        vehicleDocs.forEach((vd) => {
+            if (vd.exists)
+                vehicleMap.set(vd.id, vd.data());
+        });
+    }
+    const ops = driversWithVehicle.map(async (driverDoc) => {
         const driver = driverDoc.data();
         const vehicleId = driver.assignedVehicleId;
-        if (!vehicleId)
-            return;
-        const vehicleDoc = await db.collection('vehicles').doc(vehicleId).get();
-        const vehicle = vehicleDoc.data();
+        const vehicle = vehicleMap.get(vehicleId);
         const dailyRentalCost = vehicle?.dailyRentalCost;
-        if (!vehicleDoc.exists || !dailyRentalCost) {
+        if (!vehicle || !dailyRentalCost) {
             logger.warn(`Vehicle ${vehicleId} for driver ${driver.name} not found or has no daily rental cost.`);
             return;
         }

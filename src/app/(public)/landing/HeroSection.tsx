@@ -7,22 +7,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { StaggerContainer, StaggerItem, AnimatedDiv } from './AnimatedDiv';
 import { ChevronRight } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 const whatsappLink = "https://wa.me/524491425323?text=Hola%2C%20quisiera%20agendar%20una%20cita.";
 
 export function HeroSection() {
   return (
     <section className="relative w-full min-h-svh flex items-center justify-center md:justify-start overflow-hidden">
-      <motion.div
-        initial={{ scale: 1.05 }}
-        animate={{ scale: 1 }}
-        transition={{ duration: 1.4, ease: "easeOut" }}
-        className="absolute inset-0 z-0"
-      >
+      <div className="absolute inset-0 z-0">
         <Image
           src="/home.png"
-          alt="Taller mecánico moderno con un coche deportivo"
+          alt="Taller mecánico Ranoro en Aguascalientes con un coche en servicio"
           fill
           className="object-cover object-top"
           sizes="100vw"
@@ -31,7 +25,7 @@ export function HeroSection() {
         />
         {/* Premium elegant gradient for left side text contrast focusing only on the left text area */}
         <div className="absolute inset-0 bg-linear-to-r from-black/80 via-black/40 to-transparent z-10 pointer-events-none"></div>
-      </motion.div>
+      </div>
 
       <div className="relative z-20 container mx-auto px-4 sm:px-6 lg:px-8 mt-16 md:mt-24">
         <div className="flex justify-center md:justify-start">
@@ -50,13 +44,13 @@ export function HeroSection() {
 
                 <StaggerItem>
                   <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-linear-to-r from-white via-gray-200 to-gray-400">
-                    Servicio Profesional<br />Certificado
+                    Taller Mecánico en Aguascalientes
                   </h1>
                 </StaggerItem>
 
                 <StaggerItem>
                   <p className="mt-5 text-lg md:text-xl text-gray-300 leading-relaxed font-light">
-                    El mejor servicio automotriz en Aguascalientes con un diagnóstico claro y nuestra <strong className="text-white font-semibold">Garantía Ranoro</strong> de 60 días o 1000km.
+                    Servicio automotriz profesional y certificado: mecánica, frenos, suspensión, hojalatería y pintura con diagnóstico claro y nuestra <strong className="text-white font-semibold">Garantía Ranoro</strong> de 60 días o 1000 km.
                   </p>
                 </StaggerItem>
 

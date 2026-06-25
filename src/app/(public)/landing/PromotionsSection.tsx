@@ -10,7 +10,6 @@ import { es } from 'date-fns/locale';
 import { capitalizeWords, cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Icon } from '@iconify/react';
-import { motion } from 'framer-motion';
 
 const whatsappUrl = "https://wa.me/524491425323?text=Vengo%20de%20su%20sitio%20web";
 

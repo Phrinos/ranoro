@@ -403,7 +403,7 @@ export default function PublicServicePage() {
 
   return (
     <>
-      <div className="container mx-auto py-4 sm:py-8">
+      <main className="container mx-auto py-4 sm:py-8">
         <ServiceSheetContent
           service={serviceForSheet as any}
           vehicle={vehicle as any}
@@ -415,7 +415,7 @@ export default function PublicServicePage() {
           onShowTicketClick={() => setIsTicketDialogOpen(true)}
           isSigning={isSigning}
         />
-      </div>
+      </main>
 
       <AutoSignatureModal
         open={isSigning}

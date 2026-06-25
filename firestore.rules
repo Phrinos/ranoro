@@ -269,7 +269,8 @@ service cloud.firestore {
     // ─── Auditoría ────────────────────────────────────────────────────
     match /auditLogs/{id} {
       allow read: if isSuperAdmin();
-      allow create: if isSignedIn();    // Cualquier acción genera log
+      // El actor debe ser quien firma la escritura: no se pueden forjar logs ajenos.
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if false;   // Los logs son inmutables
     }
 

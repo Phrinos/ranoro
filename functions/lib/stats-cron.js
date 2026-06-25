@@ -44,68 +44,85 @@ exports.generateDailyVehicleStats = (0, scheduler_1.onSchedule)({
 }, async () => {
     logger.info("Starting daily aggregate job for vehicles...");
     try {
-        const snapshot = await db.collection("vehicles").get();
         const now = new Date();
+        let total = 0;
         let recientes = 0;
         let vencidos = 0;
         let sinContacto = 0;
         const duplicateMap = new Map();
-        snapshot.docs.forEach((doc) => {
-            const data = doc.data();
-            // Calcular fechas
-            if (data.lastServiceDate) {
-                const serviceDateStr = data.lastServiceDate;
-                // Parse YYYY-MM-DD o formato similar (depende de cómo se guarde en Ranoro)
-                const parts = serviceDateStr.split('-');
-                if (parts.length === 3) {
-                    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
-                    if (!isNaN(d.getTime())) {
-                        const diffTime = Math.abs(now.getTime() - d.getTime());
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                        if (diffDays <= 60)
-                            recientes++;
-                        if (diffDays > 180)
-                            vencidos++;
+        // Paginar la colección para no cargar miles de vehículos en memoria de golpe.
+        const PAGE = 500;
+        let lastDoc = null;
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            let q = db.collection("vehicles").orderBy("__name__").limit(PAGE);
+            if (lastDoc)
+                q = q.startAfter(lastDoc);
+            const snapshot = await q.get();
+            if (snapshot.empty)
+                break;
+            snapshot.docs.forEach((doc) => {
+                total++;
+                const data = doc.data();
+                // Calcular fechas
+                if (data.lastServiceDate) {
+                    const serviceDateStr = data.lastServiceDate;
+                    // Parse YYYY-MM-DD o formato similar (depende de cómo se guarde en Ranoro)
+                    const parts = serviceDateStr.split('-');
+                    if (parts.length === 3) {
+                        const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                        if (!isNaN(d.getTime())) {
+                            const diffTime = Math.abs(now.getTime() - d.getTime());
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            if (diffDays <= 60)
+                                recientes++;
+                            if (diffDays > 180)
+                                vencidos++;
+                        }
+                    }
+                    else {
+                        // Intento directo si es timestamp u otro iso str
+                        const d2 = new Date(serviceDateStr);
+                        if (!isNaN(d2.getTime())) {
+                            const diffTime = Math.abs(now.getTime() - d2.getTime());
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            if (diffDays <= 60)
+                                recientes++;
+                            if (diffDays > 180)
+                                vencidos++;
+                        }
                     }
                 }
                 else {
-                    // Intento directo si es timestamp u otro iso str
-                    const d2 = new Date(serviceDateStr);
-                    if (!isNaN(d2.getTime())) {
-                        const diffTime = Math.abs(now.getTime() - d2.getTime());
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                        if (diffDays <= 60)
-                            recientes++;
-                        if (diffDays > 180)
-                            vencidos++;
+                    vencidos++;
+                }
+                // Contactos
+                if (!data.ownerName || !data.ownerPhone) {
+                    sinContacto++;
+                }
+                // Para check duplicados
+                if (data.licensePlate) {
+                    const p = data.licensePlate.trim().toUpperCase();
+                    if (p) {
+                        const existing = duplicateMap.get(p) || [];
+                        existing.push(doc.id);
+                        duplicateMap.set(p, existing);
                     }
                 }
-            }
-            else {
-                vencidos++;
-            }
-            // Contactos
-            if (!data.ownerName || !data.ownerPhone) {
-                sinContacto++;
-            }
-            // Para check duplicados
-            if (data.licensePlate) {
-                const p = data.licensePlate.trim().toUpperCase();
-                if (p) {
-                    const existing = duplicateMap.get(p) || [];
-                    existing.push(doc.id);
-                    duplicateMap.set(p, existing);
-                }
-            }
-        });
+            });
+            lastDoc = snapshot.docs[snapshot.docs.length - 1];
+            if (snapshot.size < PAGE)
+                break;
+        }
         let dupsCount = 0;
         duplicateMap.forEach((ids) => {
             if (ids.length > 1) {
-                dupsCount += ids.length;
+                // 'dups' = placas sobrantes (N-1 por grupo duplicado), no el total del grupo.
+                dupsCount += ids.length - 1;
             }
         });
         const stats = {
-            total: snapshot.size,
+            total,
             recientes,
             vencidos,
             sinContacto,

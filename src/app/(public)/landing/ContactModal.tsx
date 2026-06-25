@@ -34,11 +34,11 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
         <div className="space-y-4 py-4">
             <div className="text-center">
                 <p className="text-sm text-muted-foreground">Dirección</p>
-                <p>Av. de la Convencion de 1914 Sur #1421, Jardines de la Convencion, 20267, Aguascalientes, Aguascalientes.</p>
+                <p>Av. de la Convención de 1914 Sur #1421, Jardines de la Concepción I, C.P. 20267, Aguascalientes, Ags.</p>
             </div>
              <div className="text-center">
                 <p className="text-sm text-muted-foreground">Teléfono</p>
-                <p>449 142 5323</p>
+                <p><a href="tel:+524491425323" className="hover:underline">+52 449 142 5323</a></p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 mt-4">
                  <Button asChild className="w-full bg-green-500 hover:bg-green-600 text-white">

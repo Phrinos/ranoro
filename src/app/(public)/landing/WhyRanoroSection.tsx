@@ -53,7 +53,7 @@ export function WhyRanoroSection() {
                                 <div className="mb-6 h-20 w-20 rounded-2xl bg-white shadow-xs border border-slate-100 flex items-center justify-center group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
                                     <Icon icon={benefit.icon} className="h-10 w-10"/>
                                 </div>
-                                <h4 className="font-bold text-xl text-slate-900 mb-3">{benefit.title}</h4>
+                                <h3 className="font-bold text-xl text-slate-900 mb-3">{benefit.title}</h3>
                                 <p className="text-slate-600 leading-relaxed font-light">{benefit.description}</p>
                             </motion.div>
                         </StaggerItem>

@@ -1,3 +1,10 @@
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Aviso de Privacidad',
+  description: 'Aviso de Privacidad y tratamiento de datos personales de la plataforma Ranoro.',
+  alternates: { canonical: '/legal/privacidad' },
+};
 
 export default function PrivacidadPage() {
   return (

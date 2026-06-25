@@ -1,6 +1,5 @@
 // app/layout.tsx
 import type { Metadata, Viewport } from "next";
-import Script from "next/script";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
@@ -76,8 +75,6 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    site: "@ranoromx",
-    creator: "@ranoromx",
     title: "Ranoro Taller en Aguascalientes",
     description:
       "Mecánica, frenos, suspensión y pintura con trato honesto y garantía.",
@@ -95,24 +92,81 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const orgJsonLd = {
     "@context": "https://schema.org",
-    "@type": "AutoRepair",
-    name: "Ranoro",
-    url: "https://ranoro.mx/",
-    image: "https://ranoro.mx/og.jpg",
-    telephone: "+52 449 142 5323",
-    priceRange: "$$",
-    address: {
-      "@type": "PostalAddress",
-      streetAddress: "Av. de la Convención de 1914 No. 1421",
-      addressLocality: "Aguascalientes",
-      addressRegion: "AGS",
-      postalCode: "20267",
-      addressCountry: "MX",
-    },
-    areaServed: "Aguascalientes",
-    sameAs: [
-      "https://www.facebook.com/ranoromx",
-      "https://www.instagram.com/ranoromx",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://ranoro.mx/#website",
+        url: "https://ranoro.mx/",
+        name: "Ranoro",
+        inLanguage: "es-MX",
+        publisher: { "@id": "https://ranoro.mx/#localbusiness" },
+      },
+      {
+        "@type": "AutoRepair",
+        "@id": "https://ranoro.mx/#localbusiness",
+        name: "Ranoro",
+        url: "https://ranoro.mx/",
+        image: "https://ranoro.mx/og.jpg",
+        logo: "https://ranoro.mx/ranoro-logo-negro.png",
+        telephone: "+524491425323",
+        priceRange: "$$",
+        currenciesAccepted: "MXN",
+        address: {
+          "@type": "PostalAddress",
+          streetAddress:
+            "Av. de la Convención de 1914 Sur #1421, Jardines de la Concepción I",
+          addressLocality: "Aguascalientes",
+          addressRegion: "Aguascalientes",
+          postalCode: "20267",
+          addressCountry: "MX",
+        },
+        geo: {
+          "@type": "GeoCoordinates",
+          latitude: 21.8741344,
+          longitude: -102.302198,
+        },
+        areaServed: { "@type": "City", name: "Aguascalientes" },
+        openingHoursSpecification: [
+          {
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+            opens: "08:30",
+            closes: "17:30",
+          },
+          {
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: "Saturday",
+            opens: "08:30",
+            closes: "13:30",
+          },
+        ],
+        sameAs: [
+          "https://www.facebook.com/ranoromecanica",
+          "https://www.instagram.com/ranoromecanica",
+        ],
+        hasOfferCatalog: {
+          "@type": "OfferCatalog",
+          name: "Servicios de taller automotriz",
+          itemListElement: [
+            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Afinación Integral" } },
+            {
+              "@type": "Offer",
+              itemOffered: { "@type": "Service", name: "Cambio de Aceite" },
+              priceSpecification: {
+                "@type": "PriceSpecification",
+                price: "799",
+                priceCurrency: "MXN",
+              },
+            },
+            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Diagnóstico Computarizado" } },
+            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Frenos ABS/EBD" } },
+            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Suspensión y Dirección" } },
+            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Hojalatería y Pintura" } },
+            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Reparación de Plásticos" } },
+            { "@type": "Offer", itemOffered: { "@type": "Service", name: "Servicio a Flotillas" } },
+          ],
+        },
+      },
     ],
   };
 
@@ -120,10 +174,8 @@ export default function RootLayout({
     <html lang="es-MX" suppressHydrationWarning>
       <body className={inter.className}>
         {children}
-        <Script
-          id="ld-localbusiness"
+        <script
           type="application/ld+json"
-          strategy="afterInteractive"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }}
         />
       </body>
