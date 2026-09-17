@@ -12,7 +12,7 @@ import {
   Settings, LogOut, Wrench, Receipt, Package,
   Users, Truck, PlusCircle, ShoppingCart, Car,
   ListOrdered, BarChart3, FileJson, DollarSign,
-  MessageCircle, ChevronDown, Menu, X, CalendarDays,
+  ChevronDown, Menu, X, CalendarDays,
   HandCoins, TrendingDown, Gauge, FileText,
 } from "lucide-react";
 import {
@@ -106,7 +106,6 @@ const NAV_GROUPS: NavGroup[] = [
     label: 'Opciones',
     items: [
       { label: 'Configuración',   path: '/opciones',   icon: Settings,      permissions: ['admin:settings'] },
-      { label: 'WhatsApp',        path: '/whatsapp',   icon: MessageCircle, permissions: ['messaging:view', 'admin:settings'] },
       { label: 'Usuarios',        path: '/usuarios',   icon: Users,         permissions: ['admin:manage_users_roles'] },
       { label: 'Mantenimiento',   path: '/opciones?tab=mantenimiento', icon: Wrench, permissions: ['admin:settings'] },
     ],

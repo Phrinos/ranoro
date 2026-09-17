@@ -38,7 +38,6 @@ const LEGACY_ID_MAP: Record<string, string[]> = {
   'audits:view': ['admin:view_audit'],
   'ticket_config:manage': ['admin:settings'],
   'workshop:manage': ['admin:settings'],
-  'messaging:manage': ['messaging:view'],
 };
 
 /**

@@ -5,7 +5,7 @@ import type { MetadataRoute } from 'next';
 const PRIVATE_PATHS = [
   '/dashboard', '/servicios', '/vehiculos', '/usuarios', '/agenda',
   '/punto-de-venta', '/administracion', '/facturacion', '/flotilla',
-  '/listadeprecios', '/opciones', '/personal', '/ticket', '/whatsapp',
+  '/listadeprecios', '/opciones', '/personal', '/ticket',
   '/login', '/acceso-denegado', '/api/',
 ];
 

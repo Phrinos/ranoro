@@ -285,12 +285,6 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // ─── Comunicaciones ───────────────────────────────────────────────
-    match /whatsapp-conversations/{id} {
-      allow read: if isSignedIn();
-      allow write: if false;  // Solo Cloud Functions
-    }
-
     // ─── Citas ────────────────────────────────────────────────────────
     match /appointments/{id} {
       allow read: if isSignedIn();

@@ -108,15 +108,6 @@ export const PERMISSION_GROUPS = [
     ]
   },
 
-  // ── MÓDULO COMUNICACIONES ─────────────────────────────────────
-  {
-    groupName: "Comunicaciones y WhatsApp",
-    permissions: [
-      { id: 'messaging:view',   label: 'Ver Bandeja de Mensajes de WhatsApp' },
-      { id: 'messaging:reply',  label: 'Responder y Enviar Mensajes por WhatsApp' },
-    ]
-  },
-
   // ── MÓDULO REPORTES ───────────────────────────────────────────
   {
     groupName: "Reportes y Análisis",

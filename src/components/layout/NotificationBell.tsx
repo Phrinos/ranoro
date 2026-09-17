@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Bell, Calendar, MessageCircle, X, CheckCheck, Play, Pause } from 'lucide-react';
+import { Bell, Calendar, CheckCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { db } from '@/lib/firebaseClient';
-import { authedFetch } from '@/lib/client-auth';
 
 import {
   collection,
@@ -37,14 +36,11 @@ const toDate = (t: any): Date | null => {
 
 interface AppNotification {
   id: string;
-  firestoreId: string; // raw document ID for Firestore operations
   patientName: string;
-  type: 'cancelled' | 'reschedule-requested' | 'whatsapp-attention';
+  type: 'cancelled' | 'reschedule-requested';
   date: Date | null;
   updatedAt: Date;
   read: boolean;
-  reason?: string;
-  humanTakeover?: boolean;
 }
 
 // ── Persistence ────────────────────────────────────────────────────
@@ -109,7 +105,6 @@ export function NotificationBell() {
   const [notifications, setNotifications] = React.useState<AppNotification[]>([]);
   const [readTs, setReadTs] = React.useState<number>(0);
   const prevUnreadRef = React.useRef<number>(0);
-  const [togglingId, setTogglingId] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     setReadTs(getReadTimestamp());
@@ -135,7 +130,6 @@ export function NotificationBell() {
           const updatedAt = toDate(data.updatedAt) ?? new Date();
           return {
             id: `${collectionName}-${d.id}`,
-            firestoreId: d.id,
             patientName: data.patientName || data.patientFullName || 'Paciente',
             type: data.status as 'cancelled' | 'reschedule-requested',
             date: toDate(data.start ?? data.date),
@@ -156,43 +150,6 @@ export function NotificationBell() {
     const unsub1 = buildListener('appointments');
     const unsub2 = buildListener('spaAppointments');
     return () => { unsub1(); unsub2(); };
-  }, [readTs]);
-
-  // ── WhatsApp needsAttention listener ────────────────────────────
-  React.useEffect(() => {
-    if (!db) return;
-
-    const q = query(
-      collection(db as Firestore, 'whatsapp-conversations'),
-      where('needsAttention', '==', true)
-    );
-
-    const unsub = onSnapshot(q, (snap) => {
-      const parsed: AppNotification[] = snap.docs.map(d => {
-        const data = d.data();
-        const updatedAt = toDate(data.humanTakeoverAt ?? data.lastMessageAt) ?? new Date();
-        return {
-          id: `wa-${d.id}`,
-          firestoreId: d.id,
-          patientName: data.pushName || `Chat ${d.id.slice(-6)}`,
-          type: 'whatsapp-attention' as const,
-          date: null,
-          updatedAt,
-          read: updatedAt.getTime() <= readTs,
-          reason: data.escalationReason || (data.humanTakeover ? 'Bot pausado — esperando atención humana' : 'Paciente requiere atención'),
-          humanTakeover: data.humanTakeover === true,
-        };
-      });
-
-      setNotifications(prev => {
-        const fromOtherSources = prev.filter(n => !n.id.startsWith('wa-'));
-        return [...fromOtherSources, ...parsed].sort(
-          (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()
-        );
-      });
-    });
-
-    return () => unsub();
   }, [readTs]);
 
   // ── Sound alert ─────────────────────────────────────────────────
@@ -218,34 +175,12 @@ export function NotificationBell() {
     setOpen(false);
   };
 
-  const handleToggleBot = async (n: AppNotification) => {
-    if (!db) return;
-    setTogglingId(n.id);
-    try {
-      const action = n.humanTakeover ? 'resume' : 'pause';
-      const res = await authedFetch('/api/whatsapp/toggle-bot', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId: n.firestoreId, action }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        console.error('[NotificationBell] Toggle bot error:', err);
-      }
-    } catch (e) {
-      console.error('[NotificationBell] Toggle bot error:', e);
-    } finally {
-      setTogglingId(null);
-    }
-  };
-
   // ── Render helpers ──────────────────────────────────────────────
 
   const typeLabel = (type: AppNotification['type']) => {
     switch (type) {
       case 'cancelled': return 'canceló su cita';
       case 'reschedule-requested': return 'reagendó su cita';
-      case 'whatsapp-attention': return 'requiere atención en WhatsApp';
     }
   };
 
@@ -253,14 +188,6 @@ export function NotificationBell() {
     switch (type) {
       case 'cancelled': return 'bg-red-50 border-red-100 text-red-700';
       case 'reschedule-requested': return 'bg-amber-50 border-amber-100 text-amber-700';
-      case 'whatsapp-attention': return 'bg-green-50 border-green-100 text-green-700';
-    }
-  };
-
-  const TypeIcon = (type: AppNotification['type']) => {
-    switch (type) {
-      case 'whatsapp-attention': return MessageCircle;
-      default: return Calendar;
     }
   };
 
@@ -325,8 +252,6 @@ export function NotificationBell() {
           ) : (
             <div className="divide-y divide-zinc-50">
               {notifications.map(n => {
-                const Icon = TypeIcon(n.type);
-                const isToggling = togglingId === n.id;
                 return (
                   <div
                     key={n.id}
@@ -336,7 +261,7 @@ export function NotificationBell() {
                     )}
                   >
                     <div className={cn('mt-0.5 p-1.5 rounded-lg border text-xs font-bold shrink-0', typeBg(n.type))}>
-                      <Icon className="h-3 w-3" />
+                      <Calendar className="h-3 w-3" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-zinc-800 truncate">
@@ -348,44 +273,9 @@ export function NotificationBell() {
                           <> — <span className="font-medium">{format(n.date, "d MMM 'a las' HH:mm", { locale: es })}</span></>
                         )}
                       </p>
-                      {n.reason && n.type === 'whatsapp-attention' && (
-                        <p className="text-[10px] text-green-600 mt-0.5 italic truncate">
-                          {n.reason}
-                        </p>
-                      )}
                       <p className="text-[10px] text-zinc-400 mt-1">
                         {format(n.updatedAt, "d 'de' MMM, HH:mm", { locale: es })}
                       </p>
-
-                      {/* WhatsApp bot toggle button */}
-                      {n.type === 'whatsapp-attention' && (
-                        <Button
-                          size="sm"
-                          variant={n.humanTakeover ? 'default' : 'outline-solid'}
-                          disabled={isToggling}
-                          onClick={() => handleToggleBot(n)}
-                          className={cn(
-                            'mt-2 h-7 text-[10px] font-semibold rounded-lg gap-1.5 px-3',
-                            n.humanTakeover
-                              ? 'bg-green-600 hover:bg-green-700 text-white shadow-xs'
-                              : 'border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700'
-                          )}
-                        >
-                          {isToggling ? (
-                            <span className="animate-pulse">Procesando...</span>
-                          ) : n.humanTakeover ? (
-                            <>
-                              <Play className="h-3 w-3" />
-                              Reactivar Bot
-                            </>
-                          ) : (
-                            <>
-                              <Pause className="h-3 w-3" />
-                              Pausar Bot
-                            </>
-                          )}
-                        </Button>
-                      )}
                     </div>
                     {!n.read && (
                       <div className="mt-1.5 h-2 w-2 rounded-full bg-blue-500 shrink-0" />
